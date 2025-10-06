@@ -250,7 +250,10 @@
 
 	// ---- Utilities ----
 	function byKey(key) { return (a,b)=> (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0); }
-	function show(el){ el.classList.remove('hidden'); }
+	function show(el){ 
+		console.log('Showing element:', el?.id || 'unknown');
+		el.classList.remove('hidden'); 
+	}
 	function hide(el){ el.classList.add('hidden'); }
 	function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; show(t); setTimeout(()=> hide(t), 2000); }
 	function formatDate(iso){ try { return new Date(iso).toLocaleString(); } catch { return iso; } }
@@ -831,6 +834,7 @@
 
 	// ---- Rendering: Documents Table ----
 	async function renderDocuments(){
+		console.log('renderDocuments called, role:', state.role);
 		if (state.role === 'agent') {
 			renderAgentDocuments();
 		} else {
@@ -1706,6 +1710,7 @@
 
 	function route(){
 		const hash = location.hash.slice(1);
+		console.log('Route called with hash:', hash);
 		// public showcase route: #/sc_xxxxxx
 		if (hash.startsWith('/sc_')){
 			// render public showcase view (read-only)
@@ -1730,7 +1735,10 @@
 		}
 
 		// Hide all views
-		document.querySelectorAll('.route-view').forEach(view => hide(view));
+		document.querySelectorAll('.route-view').forEach(view => {
+			console.log('Hiding view:', view.id);
+			hide(view);
+		});
 
 		// Show appropriate view based on route
 		if (hash === '/agents') {
@@ -1751,6 +1759,9 @@
 			state.currentPage = 'documents';
 			show(document.getElementById('documentsView'));
 			setRoleLabel('documents');
+			// Initialize the documents view properly
+			document.getElementById('managerDocumentsView').classList.remove('hidden');
+			document.getElementById('agentDocumentsView').classList.add('hidden');
 			renderDocuments();
 		} else {
 			// default: leads
