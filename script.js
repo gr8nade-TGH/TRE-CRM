@@ -737,8 +737,11 @@
 		},
 
 		async getInterestedLeads(propertyId) {
+			console.log('getInterestedLeads called with propertyId:', propertyId);
 			if (USE_MOCK_DATA) {
-				return mockInterestedLeads[propertyId] || [];
+				const data = mockInterestedLeads[propertyId] || [];
+				console.log('Mock data for', propertyId, ':', data);
+				return data;
 			}
 			
 			try {
@@ -1525,9 +1528,11 @@
 	}
 
 	function renderInterestedLeads(interests) {
+		console.log('renderInterestedLeads called with:', interests);
 		const content = document.getElementById('interestedLeadsContent');
 		
 		if (interests.length === 0) {
+			console.log('No interests found, showing empty state');
 			content.innerHTML = `
 				<div style="text-align: center; padding: 40px; color: #6b7280;">
 					<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="margin-bottom: 16px; opacity: 0.5;">
@@ -1540,6 +1545,7 @@
 			return;
 		}
 
+		console.log('Rendering', interests.length, 'interests');
 		content.innerHTML = interests.map(interest => `
 			<div class="interested-lead-item">
 				<div class="interest-icon">
