@@ -1171,6 +1171,7 @@
 
 	// ---- Rendering: Listings Table ----
 	async function renderListings(){
+		console.log('renderListings called');
 		const tbody = document.getElementById('listingsTbody');
 		const search = state.search.toLowerCase();
 		
