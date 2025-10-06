@@ -413,6 +413,7 @@
 
 	// ---- Real API Layer ----
 	const API_BASE = 'http://localhost:3001/api';
+	const USE_MOCK_DATA = true; // Set to false when backend is deployed
 
 	// Helper function to handle API responses
 	async function handleResponse(response) {
@@ -425,6 +426,10 @@
 
 	const api = {
 		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters = {} }){
+			if (USE_MOCK_DATA) {
+				return mockLeads;
+			}
+			
 			const params = new URLSearchParams({
 				role,
 				agentId,
@@ -441,6 +446,10 @@
 		},
 
 		async getLead(id) {
+			if (USE_MOCK_DATA) {
+				return mockLeads.find(lead => lead.id === id) || mockLeads[0];
+			}
+			
 			const response = await fetch(`${API_BASE}/leads/${id}`);
 			return handleResponse(response);
 		},

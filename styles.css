@@ -1022,20 +1022,22 @@ body {
   min-height: 560px; 
 }
 .price-marker { 
-  background: #1e40af; 
+  background: #dc2626; 
   color: #fff; 
-  font-weight: 800; 
-  padding: 16px 24px; 
-  border-radius: 999px; 
-  border: 5px solid #fbbf24; 
-  box-shadow: 0 8px 25px rgba(0,0,0,.5); 
+  font-weight: 900; 
+  padding: 20px 28px; 
+  border-radius: 50px; 
+  border: 6px solid #fbbf24; 
+  box-shadow: 0 10px 30px rgba(0,0,0,.6); 
   white-space: nowrap; 
-  font-size: 18px;
-  min-width: 100px;
+  font-size: 20px;
+  min-width: 120px;
   text-align: center;
   transition: all 0.2s ease;
-  line-height: 1.1;
-  letter-spacing: 0.5px;
+  line-height: 1;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(0,0,0,.8);
+  font-family: 'Arial Black', Arial, sans-serif;
 }
 .price-marker:hover {
   transform: scale(1.1);
