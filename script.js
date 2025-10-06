@@ -831,64 +831,237 @@
 
 	// ---- Rendering: Documents Table ----
 	async function renderDocuments(){
-		const tbody = document.getElementById('documentsTbody');
-		tbody.innerHTML = '';
+		if (state.role === 'agent') {
+			renderAgentDocuments();
+		} else {
+			renderManagerDocuments();
+		}
+	}
+
+	async function renderManagerDocuments(){
+		// Show manager view, hide agent view
+		document.getElementById('managerDocumentsView').classList.remove('hidden');
+		document.getElementById('agentDocumentsView').classList.add('hidden');
+
+		// Render agent cards
+		renderAgentCards();
 		
+		// Render leads table
+		renderLeadsTable();
+	}
+
+	async function renderAgentDocuments(){
+		// Show agent view, hide manager view
+		document.getElementById('managerDocumentsView').classList.add('hidden');
+		document.getElementById('agentDocumentsView').classList.remove('hidden');
+
+		// Render agent's leads
+		renderAgentLeadsList();
+	}
+
+	function renderAgentCards(){
+		const agentsGrid = document.getElementById('agentsGrid');
+		agentsGrid.innerHTML = '';
+
 		// Group leads by agent
-		const agentLeads = {};
+		const agentGroups = {};
 		mockLeads.forEach(lead => {
-			if (lead.assigned_agent_id && mockDocumentStatuses[lead.id]) {
-				if (!agentLeads[lead.assigned_agent_id]) {
-					agentLeads[lead.assigned_agent_id] = [];
-				}
-				agentLeads[lead.assigned_agent_id].push(lead);
+			const agentId = lead.assigned_agent_id || 'unassigned';
+			if (!agentGroups[agentId]) {
+				agentGroups[agentId] = [];
 			}
+			agentGroups[agentId].push(lead);
 		});
 
-		// Render each agent with their leads
-		Object.keys(agentLeads).forEach(agentId => {
-			const agent = mockAgents.find(a => a.id === agentId);
-			const leads = agentLeads[agentId];
-			
-			if (!agent) return;
+		// Render agent cards
+		Object.entries(agentGroups).forEach(([agentId, leads]) => {
+			const agent = mockAgents.find(a => a.id === agentId) || { name: 'Unassigned', id: 'unassigned' };
+			const activeLeads = leads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
+			const completedLeads = activeLeads.filter(l => getDocumentProgress(l.id) === 100);
+			const progress = activeLeads.length > 0 ? (completedLeads.length / activeLeads.length) * 100 : 0;
+
+			const card = document.createElement('div');
+			card.className = 'agent-card';
+			card.innerHTML = `
+				<div class="agent-card-header">
+					<div class="agent-name">${agent.name}</div>
+					<div class="agent-status">${activeLeads.length} Active</div>
+				</div>
+				<div class="agent-stats">
+					<div class="stat-item">
+						<span class="stat-number">${activeLeads.length}</span>
+						<span class="stat-label">Active Leads</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-number">${completedLeads.length}</span>
+						<span class="stat-label">Completed</span>
+					</div>
+					<div class="stat-item">
+						<span class="stat-number">${Math.round(progress)}%</span>
+						<span class="stat-label">Progress</span>
+					</div>
+				</div>
+				<div class="agent-progress">
+					<div class="progress-bar">
+						<div class="progress-fill" style="width: ${progress}%"></div>
+					</div>
+					<div class="progress-text">${completedLeads.length}/${activeLeads.length} leads completed</div>
+				</div>
+				<div class="agent-actions">
+					<button class="btn-small btn-primary-small" onclick="viewAgentLeads('${agentId}')">
+						View Leads
+					</button>
+					<button class="btn-small btn-secondary-small" onclick="viewAgentDetails('${agentId}')">
+						Details
+					</button>
+				</div>
+			`;
+			agentsGrid.appendChild(card);
+		});
+	}
+
+	function renderLeadsTable(){
+		const tbody = document.getElementById('documentsTbody');
+		tbody.innerHTML = '';
+
+		// Get all active leads with their agent info
+		const activeLeads = mockLeads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
+		
+		activeLeads.forEach(lead => {
+			const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
+			const progress = getDocumentProgress(lead.id);
+			const currentStep = getCurrentDocumentStep(lead.id);
+			const lastUpdated = getLastDocumentUpdate(lead.id);
 
 			const tr = document.createElement('tr');
-			tr.className = 'agent-row';
 			tr.innerHTML = `
-				<td>
-					<div class="agent-info">
-						<div class="agent-name">${agent.name}</div>
-						<div class="agent-details">${agent.email} · ${agent.phone}</div>
-					</div>
+				<td data-sort="agent_name">${agent.name}</td>
+				<td data-sort="lead_name">
+					<div class="lead-name">${lead.name}</div>
+					<div class="subtle mono">${lead.email}</div>
 				</td>
-				<td>
-					<div class="leads-dropdown">
-						<button class="dropdown-toggle" data-agent="${agentId}">
-							${leads.length} Active Lead${leads.length !== 1 ? 's' : ''}
-							<span class="dropdown-arrow">▼</span>
-						</button>
-						<div class="dropdown-content hidden" id="dropdown-${agentId}">
-							${leads.map(lead => `
-								<div class="lead-item" data-lead="${lead.id}">
-									<div class="lead-name">${lead.name}</div>
-									${renderLeadDocumentSummary(lead.id)}
-									<button class="view-details-btn" data-lead="${lead.id}">View Details</button>
-								</div>
-							`).join('')}
-						</div>
-					</div>
+				<td data-sort="current_step">
+					<div class="current-step">${currentStep}</div>
 				</td>
-				<td>
-					<div class="overall-status">
-						${leads.length > 0 ? renderLeadDocumentSummary(leads[0].id) : 'No active leads'}
+				<td data-sort="progress">
+					<div class="progress-bar">
+						<div class="progress-fill" style="width: ${progress}%"></div>
 					</div>
+					<div class="progress-text">${progress}% complete</div>
 				</td>
+				<td data-sort="last_updated" class="mono">${formatDate(lastUpdated)}</td>
 				<td>
-					<button class="btn btn-secondary" data-agent="${agentId}">View All</button>
+					<button class="btn-small btn-primary-small" onclick="openDocumentDetails('${lead.id}')">
+						View Details
+					</button>
 				</td>
 			`;
 			tbody.appendChild(tr);
 		});
+	}
+
+	function renderAgentLeadsList(){
+		const agentLeadsList = document.getElementById('agentLeadsList');
+		agentLeadsList.innerHTML = '';
+
+		// Get current agent's leads
+		const agentLeads = mockLeads.filter(l => l.assigned_agent_id === state.agentId);
+		
+		agentLeads.forEach(lead => {
+			const progress = getDocumentProgress(lead.id);
+			const currentStep = getCurrentDocumentStep(lead.id);
+			const status = getDocumentStatus(lead.id);
+
+			const card = document.createElement('div');
+			card.className = 'lead-card';
+			card.innerHTML = `
+				<div class="lead-card-header">
+					<div class="lead-name">${lead.name}</div>
+					<div class="lead-status ${status}">${status}</div>
+				</div>
+				<div class="lead-progress">
+					<div class="progress-bar">
+						<div class="progress-fill" style="width: ${progress}%"></div>
+					</div>
+					<div class="progress-text">${progress}% complete - ${currentStep}</div>
+				</div>
+				<div class="document-steps">
+					${renderDocumentSteps(lead.id)}
+				</div>
+				<div class="lead-actions">
+					<button class="btn-small btn-primary-small" onclick="openDocumentDetails('${lead.id}')">
+						View Details
+					</button>
+					<button class="btn-small btn-secondary-small" onclick="updateDocumentStatus('${lead.id}')">
+						Update Status
+					</button>
+				</div>
+			`;
+			agentLeadsList.appendChild(card);
+		});
+	}
+
+	// Helper functions for document status
+	function getDocumentProgress(leadId) {
+		const status = mockDocumentStatuses[leadId];
+		if (!status) return 0;
+		
+		const completedSteps = status.steps.filter(step => step.status === 'completed').length;
+		return Math.round((completedSteps / status.steps.length) * 100);
+	}
+
+	function getCurrentDocumentStep(leadId) {
+		const status = mockDocumentStatuses[leadId];
+		if (!status) return 'Not Started';
+		
+		const currentStep = status.steps.find(step => step.status === 'current');
+		return currentStep ? currentStep.name : 'Completed';
+	}
+
+	function getDocumentStatus(leadId) {
+		const progress = getDocumentProgress(leadId);
+		if (progress === 0) return 'not-started';
+		if (progress === 100) return 'completed';
+		return 'active';
+	}
+
+	function getLastDocumentUpdate(leadId) {
+		const status = mockDocumentStatuses[leadId];
+		if (!status) return new Date();
+		
+		const lastStep = status.steps
+			.filter(step => step.status === 'completed')
+			.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+		
+		return lastStep ? lastStep.updated_at : new Date();
+	}
+
+	// Helper functions for agent actions
+	function viewAgentLeads(agentId) {
+		// Filter the leads table to show only this agent's leads
+		const tbody = document.getElementById('documentsTbody');
+		const rows = tbody.querySelectorAll('tr');
+		rows.forEach(row => {
+			const agentName = row.querySelector('[data-sort="agent_name"]')?.textContent.trim();
+			const agent = mockAgents.find(a => a.id === agentId);
+			if (agent && agentName === agent.name) {
+				row.style.display = '';
+			} else {
+				row.style.display = 'none';
+			}
+		});
+		toast(`Showing leads for ${mockAgents.find(a => a.id === agentId)?.name || 'Unknown Agent'}`);
+	}
+
+	function viewAgentDetails(agentId) {
+		const agent = mockAgents.find(a => a.id === agentId);
+		if (agent) {
+			openAgentDrawer(agentId);
+		}
+	}
+
+	function updateDocumentStatus(leadId) {
+		toast('Document status update feature coming soon!');
 	}
 
 	// ---- Rendering: Agents Table ----
@@ -1724,6 +1897,21 @@
 					const propertyId = interestedBtn.dataset.propertyId;
 					const propertyName = interestedBtn.dataset.propertyName;
 					openInterestedLeads(propertyId, propertyName);
+					return;
+				}
+			});
+		}
+
+		// documents table delegation
+		const documentsTableEl = document.getElementById('documentsTable');
+		if (documentsTableEl) {
+			documentsTableEl.addEventListener('click', (e)=>{
+				// Handle sorting
+				const sortableHeader = e.target.closest('th[data-sort]');
+				if (sortableHeader) {
+					const column = sortableHeader.dataset.sort;
+					sortTable(column, 'documentsTable');
+					e.preventDefault();
 					return;
 				}
 			});

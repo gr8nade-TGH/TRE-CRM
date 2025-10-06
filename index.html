@@ -225,20 +225,45 @@
 				<button id="historyBtn" class="btn btn-secondary">History</button>
 			</div>
 
-			<div class="table-wrapper">
-				<table id="documentsTable" class="data-table">
-					<thead>
-						<tr>
-							<th>Agent Name</th>
-							<th>Active Leads</th>
-							<th>Document Status</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody id="documentsTbody">
-						<!-- rows injected -->
-					</tbody>
-				</table>
+			<!-- Manager View -->
+			<div id="managerDocumentsView" class="documents-manager-view">
+				<div class="agents-overview">
+					<h3>Agents Overview</h3>
+					<div class="agents-grid" id="agentsGrid">
+						<!-- Agent cards will be populated here -->
+					</div>
+				</div>
+				
+				<div class="leads-details">
+					<h3>Lead Document Status</h3>
+					<div class="table-wrapper">
+						<table id="documentsTable" class="data-table">
+							<thead>
+								<tr>
+									<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
+									<th data-sort="lead_name" class="sortable">Lead <span class="sort-icon">↕</span></th>
+									<th data-sort="current_step" class="sortable">Current Step <span class="sort-icon">↕</span></th>
+									<th data-sort="progress" class="sortable">Progress <span class="sort-icon">↕</span></th>
+									<th data-sort="last_updated" class="sortable">Last Updated <span class="sort-icon">↕</span></th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="documentsTbody">
+								<!-- rows injected -->
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+			<!-- Agent View -->
+			<div id="agentDocumentsView" class="documents-agent-view hidden">
+				<div class="agent-leads-list">
+					<h3>My Leads - Document Status</h3>
+					<div id="agentLeadsList">
+						<!-- Agent's leads will be populated here -->
+					</div>
+				</div>
 			</div>
 		</section>
 	</main>
