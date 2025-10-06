@@ -1504,15 +1504,19 @@
 
 	// ---- Interested Leads Modal ----
 	async function openInterestedLeads(propertyId, propertyName) {
+		console.log('Opening interested leads for property:', propertyId, propertyName);
 		document.getElementById('propertyName').textContent = propertyName;
 		
 		try {
 			const interests = await api.getInterestedLeads(propertyId);
+			console.log('Fetched interests:', interests);
 			renderInterestedLeads(interests);
 			show(document.getElementById('interestedLeadsModal'));
 		} catch (error) {
 			console.error('Error loading interested leads:', error);
-			toast('Error loading interested leads');
+			// Show empty state if no data
+			renderInterestedLeads([]);
+			show(document.getElementById('interestedLeadsModal'));
 		}
 	}
 
@@ -1539,15 +1543,15 @@
 		content.innerHTML = interests.map(interest => `
 			<div class="interested-lead-item">
 				<div class="interest-icon">
-					${interest.lead.name.charAt(0).toUpperCase()}
+					${interest.leadName.charAt(0).toUpperCase()}
 				</div>
 				<div class="lead-info">
-					<div class="lead-name">${interest.lead.name}</div>
-					<div class="lead-contact">${interest.lead.email} • ${interest.lead.phone}</div>
-					<div class="lead-agent">via ${interest.agent.name}</div>
+					<div class="lead-name">${interest.leadName}</div>
+					<div class="lead-contact">Lead ID: ${interest.leadId}</div>
+					<div class="lead-agent">via ${interest.agentName}</div>
 				</div>
 				<div class="interest-details">
-					<div class="interest-date">${formatDate(interest.created_at)}</div>
+					<div class="interest-date">${formatDate(interest.date)}</div>
 					<div class="interest-status ${interest.status}">${interest.status.replace('_', ' ')}</div>
 				</div>
 			</div>
