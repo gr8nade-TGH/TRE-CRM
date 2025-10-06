@@ -1445,8 +1445,11 @@
 		const selectedProperties = Array.from(state.selectedMatches);
 		const propertyIds = selectedProperties.join(',');
 		
+		// Get current agent name (in real app, this would come from user data)
+		const agentName = 'John Smith'; // This would be dynamic in production
+		
 		// Create a preview URL with sample data
-		const previewUrl = `landing.html?showcase=preview_${Date.now()}&lead=sample_lead&properties=${propertyIds}`;
+		const previewUrl = `landing.html?showcase=preview_${Date.now()}&lead=sample_lead&agent=${encodeURIComponent(agentName)}&properties=${propertyIds}`;
 		
 		// Open in a new tab
 		window.open(previewUrl, '_blank');

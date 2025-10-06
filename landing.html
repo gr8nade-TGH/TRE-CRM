@@ -45,53 +45,37 @@
         }
 
         .perks-section {
-            background: white;
-            padding: 32px;
+            background: linear-gradient(135deg, #059669, #047857);
+            color: white;
+            padding: 24px;
             border-radius: 12px;
-            margin-bottom: 32px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 24px;
+            box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+            text-align: center;
         }
 
         .perks-section h2 {
-            color: #1e293b;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-
-        .perks-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 24px;
-        }
-
-        .perk-card {
-            text-align: center;
-            padding: 24px;
-            border: 1px solid #e5e7eb;
-            border-radius: 8px;
-            transition: transform 0.2s ease;
-        }
-
-        .perk-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-
-        .perk-icon {
-            font-size: 2.5rem;
+            color: white;
             margin-bottom: 16px;
+            font-size: 1.5rem;
         }
 
-        .perk-title {
+        .referral-offer {
             font-size: 1.125rem;
-            font-weight: 600;
-            color: #1e293b;
-            margin-bottom: 8px;
+            line-height: 1.6;
+            margin-bottom: 12px;
         }
 
-        .perk-description {
-            color: #64748b;
-            font-size: 0.875rem;
+        .offer-highlight {
+            font-weight: 700;
+            font-size: 1.25rem;
+            color: #fef3c7;
+            text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        }
+
+        .agent-name {
+            font-weight: 600;
+            color: #fef3c7;
         }
 
         .properties-section {
@@ -435,28 +419,13 @@
         </div>
 
         <div class="perks-section">
-            <h2>Why Work With Us?</h2>
-            <div class="perks-grid">
-                <div class="perk-card">
-                    <div class="perk-icon">🎯</div>
-                    <div class="perk-title">Exclusive Access</div>
-                    <div class="perk-description">Get first dibs on properties before they hit the market</div>
-                </div>
-                <div class="perk-card">
-                    <div class="perk-icon">💰</div>
-                    <div class="perk-title">Better Pricing</div>
-                    <div class="perk-description">Access to better rates through our direct relationships</div>
-                </div>
-                <div class="perk-card">
-                    <div class="perk-icon">⚡</div>
-                    <div class="perk-title">Priority Scheduling</div>
-                    <div class="perk-description">Skip the wait with priority property tour scheduling</div>
-                </div>
-                <div class="perk-card">
-                    <div class="perk-icon">🛡️</div>
-                    <div class="perk-title">Expert Guidance</div>
-                    <div class="perk-description">Professional support throughout your entire search</div>
-                </div>
+            <h2>🎁 Exclusive Referral Bonus</h2>
+            <div class="referral-offer">
+                Book with <span class="agent-name" id="agentName">Your Agent</span> to receive your exclusive offer of 
+                <span class="offer-highlight">ONE MONTH FREE RENT</span> on your new home!
+            </div>
+            <div style="font-size: 0.875rem; opacity: 0.9;">
+                *Terms apply. Offer valid for new leases signed through TRE CRM.
             </div>
         </div>
 
@@ -496,7 +465,11 @@
         const urlParams = new URLSearchParams(window.location.search);
         const showcaseId = urlParams.get('showcase');
         const leadId = urlParams.get('lead');
+        const agentName = urlParams.get('agent') || 'Your Agent';
         const propertyIds = urlParams.get('properties') ? urlParams.get('properties').split(',') : [];
+        
+        // Update agent name in the referral bonus section
+        document.getElementById('agentName').textContent = agentName;
 
         // Track page view
         if (showcaseId && leadId) {
