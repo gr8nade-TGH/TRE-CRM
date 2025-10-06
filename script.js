@@ -272,6 +272,27 @@
 			
 			// Handle numeric sorting for specific columns
 			if (['rent_min', 'rent_max', 'beds_min', 'baths_min', 'sqft_min', 'commission_pct'].includes(column)) {
+				// Special handling for commission_pct column
+				if (column === 'commission_pct') {
+					const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+					const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+					return isAscending ? aNum - bNum : bNum - aNum;
+				}
+				
+				// For rent columns, extract the first number (min value)
+				if (['rent_min', 'rent_max'].includes(column)) {
+					const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+					const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+					return isAscending ? aNum - bNum : bNum - aNum;
+				}
+				
+				// For beds/baths columns, extract the first number
+				if (['beds_min', 'baths_min'].includes(column)) {
+					const aNum = parseFloat(aVal.split('-')[0]) || 0;
+					const bNum = parseFloat(bVal.split('-')[0]) || 0;
+					return isAscending ? aNum - bNum : bNum - aNum;
+				}
+				
 				const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
 				const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
 				return isAscending ? aNum - bNum : bNum - aNum;
@@ -999,15 +1020,15 @@
 			tr.dataset.propertyId = prop.id;
 			
 			tr.innerHTML = `
-				<td>
+				<td data-sort="name">
 					<div class="lead-name">${prop.name}</div>
 					<div class="subtle mono">${prop.address}</div>
 				</td>
-				<td class="mono">${prop.market}</td>
-				<td class="mono">${prop.neighborhoods.join(', ')}</td>
-				<td class="mono">$${prop.rent_min} - $${prop.rent_max}</td>
-				<td class="mono">${prop.beds_min}-${prop.beds_max} / ${prop.baths_min}-${prop.baths_max}</td>
-				<td class="mono">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
+				<td class="mono" data-sort="market">${prop.market}</td>
+				<td class="mono" data-sort="neighborhoods">${prop.neighborhoods.join(', ')}</td>
+				<td class="mono" data-sort="rent_min">$${prop.rent_min} - $${prop.rent_max}</td>
+				<td class="mono" data-sort="beds_min">${prop.beds_min}-${prop.beds_max} / ${prop.baths_min}-${prop.baths_max}</td>
+				<td class="mono" data-sort="commission_pct">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
 				<td class="mono">
 					<div class="interest-count" onclick="openInterestedLeads('${prop.id}', '${prop.name}')">
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
@@ -1016,7 +1037,7 @@
 						0 interested
 					</div>
 				</td>
-				<td class="mono">${formatDate(prop.pricing_last_updated)}</td>
+				<td class="mono" data-sort="last_updated">${formatDate(prop.pricing_last_updated)}</td>
 			`;
 			
 			// Add click handler to table row
