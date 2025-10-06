@@ -1440,6 +1440,20 @@
 		hide(document.getElementById('emailPreviewModal')); 
 	}
 
+	function previewLandingPage() {
+		// Get the selected properties from the current showcase
+		const selectedProperties = Array.from(state.selectedMatches);
+		const propertyIds = selectedProperties.join(',');
+		
+		// Create a preview URL with sample data
+		const previewUrl = `landing.html?showcase=preview_${Date.now()}&lead=sample_lead&properties=${propertyIds}`;
+		
+		// Open in a new tab
+		window.open(previewUrl, '_blank');
+		
+		toast('Opening landing page preview in new tab...');
+	}
+
 	// ---- Interested Leads Modal ----
 	async function openInterestedLeads(propertyId, propertyName) {
 		document.getElementById('propertyName').textContent = propertyName;
@@ -2069,6 +2083,11 @@
 					await sendShowcaseEmail();
 				}
 			});
+		}
+		
+		const previewLandingBtnEl = document.getElementById('previewLandingBtn');
+		if (previewLandingBtnEl) {
+			previewLandingBtnEl.addEventListener('click', previewLandingPage);
 		}
 
 		// Interested leads modal events
