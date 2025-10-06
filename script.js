@@ -843,9 +843,6 @@
 		document.getElementById('managerDocumentsView').classList.remove('hidden');
 		document.getElementById('agentDocumentsView').classList.add('hidden');
 
-		// Render agent cards
-		renderAgentCards();
-		
 		// Render leads table
 		renderLeadsTable();
 	}
@@ -859,73 +856,31 @@
 		renderAgentLeadsList();
 	}
 
-	function renderAgentCards(){
-		const agentsGrid = document.getElementById('agentsGrid');
-		agentsGrid.innerHTML = '';
 
-		// Group leads by agent
-		const agentGroups = {};
-		mockLeads.forEach(lead => {
-			const agentId = lead.assigned_agent_id || 'unassigned';
-			if (!agentGroups[agentId]) {
-				agentGroups[agentId] = [];
-			}
-			agentGroups[agentId].push(lead);
-		});
-
-		// Render agent cards
-		Object.entries(agentGroups).forEach(([agentId, leads]) => {
-			const agent = mockAgents.find(a => a.id === agentId) || { name: 'Unassigned', id: 'unassigned' };
-			const activeLeads = leads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
-			const completedLeads = activeLeads.filter(l => getDocumentProgress(l.id) === 100);
-			const progress = activeLeads.length > 0 ? (completedLeads.length / activeLeads.length) * 100 : 0;
-
-			const card = document.createElement('div');
-			card.className = 'agent-card';
-			card.innerHTML = `
-				<div class="agent-card-header">
-					<div class="agent-name">${agent.name}</div>
-					<div class="agent-status">${activeLeads.length} Active</div>
-				</div>
-				<div class="agent-stats">
-					<div class="stat-item">
-						<span class="stat-number">${activeLeads.length}</span>
-						<span class="stat-label">Active Leads</span>
-					</div>
-					<div class="stat-item">
-						<span class="stat-number">${completedLeads.length}</span>
-						<span class="stat-label">Completed</span>
-					</div>
-					<div class="stat-item">
-						<span class="stat-number">${Math.round(progress)}%</span>
-						<span class="stat-label">Progress</span>
-					</div>
-				</div>
-				<div class="agent-progress">
-					<div class="progress-bar">
-						<div class="progress-fill" style="width: ${progress}%"></div>
-					</div>
-					<div class="progress-text">${completedLeads.length}/${activeLeads.length} leads completed</div>
-				</div>
-				<div class="agent-actions">
-					<button class="btn-small btn-primary-small" onclick="viewAgentLeads('${agentId}')">
-						View Leads
-					</button>
-					<button class="btn-small btn-secondary-small" onclick="viewAgentDetails('${agentId}')">
-						Details
-					</button>
-				</div>
-			`;
-			agentsGrid.appendChild(card);
-		});
-	}
-
-	function renderLeadsTable(){
+	function renderLeadsTable(searchTerm = '', searchType = 'both'){
 		const tbody = document.getElementById('documentsTbody');
 		tbody.innerHTML = '';
 
 		// Get all active leads with their agent info
-		const activeLeads = mockLeads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
+		let activeLeads = mockLeads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
+		
+		// Apply search filter
+		if (searchTerm.trim()) {
+			activeLeads = activeLeads.filter(lead => {
+				const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
+				const searchLower = searchTerm.toLowerCase();
+				
+				if (searchType === 'agent') {
+					return agent.name.toLowerCase().includes(searchLower);
+				} else if (searchType === 'lead') {
+					return lead.name.toLowerCase().includes(searchLower) || lead.email.toLowerCase().includes(searchLower);
+				} else { // both
+					return agent.name.toLowerCase().includes(searchLower) || 
+						   lead.name.toLowerCase().includes(searchLower) || 
+						   lead.email.toLowerCase().includes(searchLower);
+				}
+			});
+		}
 		
 		activeLeads.forEach(lead => {
 			const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
@@ -2044,34 +1999,42 @@
 		// Documents page event listeners
 		if (documentsTableEl) {
 			documentsTableEl.addEventListener('click', (e)=>{
-				// Dropdown toggle
-				const dropdownToggle = e.target.closest('.dropdown-toggle');
-				if (dropdownToggle) {
-					const agentId = dropdownToggle.dataset.agent;
-					const dropdown = document.getElementById(`dropdown-${agentId}`);
-					if (dropdown) {
-						dropdown.classList.toggle('hidden');
-						const arrow = dropdownToggle.querySelector('.dropdown-arrow');
-						arrow.textContent = dropdown.classList.contains('hidden') ? '▼' : '▲';
-					}
+				// Handle sorting
+				const sortableHeader = e.target.closest('th[data-sort]');
+				if (sortableHeader) {
+					const column = sortableHeader.dataset.sort;
+					sortTable(column, 'documentsTable');
+					e.preventDefault();
 					return;
 				}
+			});
+		}
 
-				// View details button
-				const viewDetailsBtn = e.target.closest('.view-details-btn');
-				if (viewDetailsBtn) {
-					const leadId = viewDetailsBtn.dataset.lead;
-					openDocumentDetails(leadId);
-					return;
-				}
+		// Documents search functionality
+		const documentsSearch = document.getElementById('documentsSearch');
+		const searchType = document.getElementById('searchType');
+		const clearDocumentsSearch = document.getElementById('clearDocumentsSearch');
 
-				// View all button
-				const viewAllBtn = e.target.closest('button[data-agent]');
-				if (viewAllBtn && !viewAllBtn.classList.contains('dropdown-toggle')) {
-					const agentId = viewAllBtn.dataset.agent;
-					toast(`Viewing all documents for agent ${agentId} (mock action)`);
-					return;
-				}
+		if (documentsSearch && searchType && clearDocumentsSearch) {
+			// Search input event
+			documentsSearch.addEventListener('input', (e) => {
+				const searchTerm = e.target.value;
+				const type = searchType.value;
+				renderLeadsTable(searchTerm, type);
+			});
+
+			// Search type change event
+			searchType.addEventListener('change', (e) => {
+				const searchTerm = documentsSearch.value;
+				const type = e.target.value;
+				renderLeadsTable(searchTerm, type);
+			});
+
+			// Clear search event
+			clearDocumentsSearch.addEventListener('click', () => {
+				documentsSearch.value = '';
+				searchType.value = 'both';
+				renderLeadsTable('', 'both');
 			});
 		}
 

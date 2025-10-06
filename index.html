@@ -227,10 +227,21 @@
 
 			<!-- Manager View -->
 			<div id="managerDocumentsView" class="documents-manager-view">
-				<div class="agents-overview">
-					<h3>Agents Overview</h3>
-					<div class="agents-grid" id="agentsGrid">
-						<!-- Agent cards will be populated here -->
+				<div class="documents-search">
+					<div class="search-controls">
+						<div class="search-field">
+							<label for="documentsSearch">Search:</label>
+							<input type="text" id="documentsSearch" placeholder="Search by agent name or lead name..." />
+						</div>
+						<div class="search-type">
+							<label for="searchType">Search by:</label>
+							<select id="searchType">
+								<option value="both">Agent & Lead</option>
+								<option value="agent">Agent Only</option>
+								<option value="lead">Lead Only</option>
+							</select>
+						</div>
+						<button id="clearDocumentsSearch" class="btn btn-secondary">Clear</button>
 					</div>
 				</div>
 				
