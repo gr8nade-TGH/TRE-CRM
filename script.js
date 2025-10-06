@@ -217,6 +217,42 @@
 		}
 	];
 
+	// Mock data for interested leads
+	const mockInterestedLeads = {
+		'prop_1': [
+			{ leadId: 'lead-1', leadName: 'Sarah Johnson', agentName: 'Alex Agent', date: '2024-01-15', status: 'interested' },
+			{ leadId: 'lead-3', leadName: 'Mike Chen', agentName: 'Alex Agent', date: '2024-01-18', status: 'tour-scheduled' },
+			{ leadId: 'lead-7', leadName: 'Emily Davis', agentName: 'Bailey Broker', date: '2024-01-20', status: 'interested' }
+		],
+		'prop_2': [
+			{ leadId: 'lead-2', leadName: 'David Wilson', agentName: 'Unassigned', date: '2024-01-16', status: 'interested' },
+			{ leadId: 'lead-5', leadName: 'Lisa Brown', agentName: 'Bailey Broker', date: '2024-01-19', status: 'converted' }
+		],
+		'prop_3': [
+			{ leadId: 'lead-4', leadName: 'Tom Anderson', agentName: 'Alex Agent', date: '2024-01-17', status: 'tour-scheduled' },
+			{ leadId: 'lead-6', leadName: 'Jessica Taylor', agentName: 'Unassigned', date: '2024-01-21', status: 'interested' },
+			{ leadId: 'lead-8', leadName: 'Robert Garcia', agentName: 'Bailey Broker', date: '2024-01-22', status: 'interested' }
+		],
+		'prop_4': [
+			{ leadId: 'lead-9', leadName: 'Amanda White', agentName: 'Alex Agent', date: '2024-01-23', status: 'interested' }
+		],
+		'prop_5': [
+			{ leadId: 'lead-10', leadName: 'Kevin Martinez', agentName: 'Bailey Broker', date: '2024-01-24', status: 'tour-scheduled' },
+			{ leadId: 'lead-11', leadName: 'Rachel Lee', agentName: 'Unassigned', date: '2024-01-25', status: 'interested' }
+		],
+		'prop_6': [
+			{ leadId: 'lead-12', leadName: 'Maria Rodriguez', agentName: 'Alex Agent', date: '2024-01-26', status: 'interested' },
+			{ leadId: 'lead-13', leadName: 'James Thompson', agentName: 'Bailey Broker', date: '2024-01-27', status: 'converted' }
+		],
+		'prop_7': [
+			{ leadId: 'lead-14', leadName: 'Jennifer Kim', agentName: 'Unassigned', date: '2024-01-28', status: 'tour-scheduled' }
+		],
+		'prop_8': [
+			{ leadId: 'lead-15', leadName: 'Michael Johnson', agentName: 'Alex Agent', date: '2024-01-29', status: 'interested' },
+			{ leadId: 'lead-16', leadName: 'Ashley Williams', agentName: 'Bailey Broker', date: '2024-01-30', status: 'interested' }
+		]
+	};
+
 	const mockProperties = Array.from({ length: 30 }).map((_, i) => {
 		const id = `prop_${i+1}`;
 		const market = ['Austin','Dallas','Houston'][i%3];
@@ -685,6 +721,11 @@
 		},
 
 		async getInterestedLeadsCount(propertyId) {
+			if (USE_MOCK_DATA) {
+				const interestedLeads = mockInterestedLeads[propertyId] || [];
+				return interestedLeads.length;
+			}
+			
 			try {
 				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
 				const interests = await handleResponse(response);
@@ -696,6 +737,10 @@
 		},
 
 		async getInterestedLeads(propertyId) {
+			if (USE_MOCK_DATA) {
+				return mockInterestedLeads[propertyId] || [];
+			}
+			
 			try {
 				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
 				return await handleResponse(response);
@@ -1157,14 +1202,14 @@
 				<td class="mono" data-sort="rent_min">$${prop.rent_min} - $${prop.rent_max}</td>
 				<td class="mono" data-sort="beds_min">${prop.beds_min}-${prop.beds_max} / ${prop.baths_min}-${prop.baths_max}</td>
 				<td class="mono" data-sort="commission_pct">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
-				<td class="mono">
-					<div class="interest-count" onclick="openInterestedLeads('${prop.id}', '${prop.name}')">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-						</svg>
-						0 interested
-					</div>
-				</td>
+			<td class="mono">
+				<div class="interest-count" onclick="openInterestedLeads('${prop.id}', '${prop.name}')">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+					</svg>
+					${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0} interested
+				</div>
+			</td>
 				<td class="mono" data-sort="last_updated">${formatDate(prop.pricing_last_updated)}</td>
 			`;
 			
