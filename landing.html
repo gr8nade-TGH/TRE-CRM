@@ -457,8 +457,37 @@
             } else {
                 selectedProperties.add(propertyId);
                 trackInteraction('property_selected', { showcaseId, leadId, propertyId });
+                
+                // Create lead interest record
+                if (showcaseId && leadId) {
+                    createLeadInterest(propertyId);
+                }
             }
             renderProperties();
+        }
+
+        // Create lead interest record
+        async function createLeadInterest(propertyId) {
+            try {
+                const response = await fetch('/api/lead-interests', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        lead_id: leadId,
+                        property_id: propertyId,
+                        agent_id: 'current-agent', // In real app, get from showcase data
+                        interest_type: 'showcase',
+                        status: 'interested',
+                        notes: 'Expressed interest via showcase landing page'
+                    })
+                });
+                
+                if (response.ok) {
+                    console.log('Lead interest recorded for property:', propertyId);
+                }
+            } catch (error) {
+                console.error('Error creating lead interest:', error);
+            }
         }
 
         function selectAllProperties() {

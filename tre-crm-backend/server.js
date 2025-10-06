@@ -296,6 +296,153 @@ app.get('/api/documents/leads/:leadId', async (req, res) => {
   }
 });
 
+// Showcase endpoints
+app.post('/api/showcases', async (req, res) => {
+  try {
+    const { lead_id, agent_id, listing_ids, message, showcase_id, landing_url } = req.body;
+    
+    const showcase = await prisma.showcase.create({
+      data: {
+        lead_id,
+        agent_id,
+        listing_ids,
+        message,
+        public_slug: showcase_id,
+        landing_url,
+        status: 'created'
+      },
+      include: {
+        lead: true,
+        agent: true
+      }
+    });
+
+    res.json(showcase);
+  } catch (error) {
+    console.error('Error creating showcase:', error);
+    res.status(500).json({ error: 'Failed to create showcase' });
+  }
+});
+
+app.get('/api/showcases/:id', async (req, res) => {
+  try {
+    const showcase = await prisma.showcase.findUnique({
+      where: { id: req.params.id },
+      include: {
+        lead: true,
+        agent: true,
+        listings: {
+          include: {
+            property: true
+          }
+        },
+        interactions: {
+          orderBy: { created_at: 'desc' }
+        }
+      }
+    });
+
+    if (!showcase) {
+      return res.status(404).json({ error: 'Showcase not found' });
+    }
+
+    res.json(showcase);
+  } catch (error) {
+    console.error('Error fetching showcase:', error);
+    res.status(500).json({ error: 'Failed to fetch showcase' });
+  }
+});
+
+app.post('/api/showcases/:id/track', async (req, res) => {
+  try {
+    const { action, property_id, metadata } = req.body;
+    
+    const interaction = await prisma.showcaseInteraction.create({
+      data: {
+        showcase_id: req.params.id,
+        action,
+        property_id,
+        metadata
+      }
+    });
+
+    // Update showcase status based on action
+    if (action === 'page_view') {
+      await prisma.showcase.update({
+        where: { id: req.params.id },
+        data: { status: 'opened' }
+      });
+    } else if (action === 'property_click') {
+      await prisma.showcase.update({
+        where: { id: req.params.id },
+        data: { status: 'clicked' }
+      });
+    }
+
+    res.json(interaction);
+  } catch (error) {
+    console.error('Error tracking interaction:', error);
+    res.status(500).json({ error: 'Failed to track interaction' });
+  }
+});
+
+// Lead interest endpoints
+app.post('/api/lead-interests', async (req, res) => {
+  try {
+    const { lead_id, property_id, agent_id, interest_type, status, notes } = req.body;
+    
+    const interest = await prisma.leadInterest.upsert({
+      where: {
+        lead_id_property_id: {
+          lead_id,
+          property_id
+        }
+      },
+      update: {
+        status,
+        notes,
+        updated_at: new Date()
+      },
+      create: {
+        lead_id,
+        property_id,
+        agent_id,
+        interest_type,
+        status,
+        notes
+      },
+      include: {
+        lead: true,
+        property: true,
+        agent: true
+      }
+    });
+
+    res.json(interest);
+  } catch (error) {
+    console.error('Error creating/updating lead interest:', error);
+    res.status(500).json({ error: 'Failed to create/update lead interest' });
+  }
+});
+
+app.get('/api/properties/:id/interests', async (req, res) => {
+  try {
+    const interests = await prisma.leadInterest.findMany({
+      where: { property_id: req.params.id },
+      include: {
+        lead: true,
+        agent: true
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json(interests);
+  } catch (error) {
+    console.error('Error fetching property interests:', error);
+    res.status(500).json({ error: 'Failed to fetch property interests' });
+  }
+});
+
 // Health check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', timestamp: new Date().toISOString() });

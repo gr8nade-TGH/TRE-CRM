@@ -28,6 +28,7 @@ model User {
   found_leads     Lead[] @relation("FoundByAgent")
   assigned_leads  Lead[] @relation("AssignedAgent")
   created_showcases Showcase[]
+  lead_interests  LeadInterest[]
 
   @@map("users")
 }
@@ -55,6 +56,7 @@ model Lead {
   assigned_agent    User?       @relation("AssignedAgent", fields: [assigned_agent_id], references: [id])
   document_status   DocumentStatus?
   showcases         Showcase[]
+  interests         LeadInterest[]
 
   @@map("leads")
 }
@@ -88,6 +90,7 @@ model Property {
 
   // Relations
   showcases             ShowcaseProperty[]
+  interests             LeadInterest[]
 
   @@map("properties")
 }
@@ -140,20 +143,24 @@ model Attachment {
 }
 
 model Showcase {
-  id           String   @id @default(cuid())
-  lead_id      String
-  agent_id     String
-  listing_ids  String[]
-  message      String?
-  public_slug  String   @unique
-  sent_at      DateTime?
-  created_at   DateTime @default(now())
-  updated_at   DateTime @updatedAt
+  id            String   @id @default(cuid())
+  lead_id       String
+  agent_id      String
+  listing_ids   String[]
+  message       String?
+  public_slug   String   @unique
+  status        String   @default("sent") // sent, opened, clicked, converted
+  landing_url   String?
+  expires_at    DateTime?
+  sent_at       DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
 
   // Relations
-  lead         Lead     @relation(fields: [lead_id], references: [id])
-  agent        User     @relation(fields: [agent_id], references: [id])
-  listings     ShowcaseProperty[]
+  lead          Lead     @relation(fields: [lead_id], references: [id])
+  agent         User     @relation(fields: [agent_id], references: [id])
+  listings      ShowcaseProperty[]
+  interactions  ShowcaseInteraction[]
 
   @@map("showcases")
 }
@@ -170,6 +177,40 @@ model ShowcaseProperty {
 
   @@unique([showcase_id, property_id])
   @@map("showcase_properties")
+}
+
+model ShowcaseInteraction {
+  id           String   @id @default(cuid())
+  showcase_id  String
+  action       String   // page_view, property_click, tour_scheduled, etc.
+  property_id  String?
+  metadata     Json?
+  created_at   DateTime @default(now())
+
+  // Relations
+  showcase     Showcase @relation(fields: [showcase_id], references: [id], onDelete: Cascade)
+
+  @@map("showcase_interactions")
+}
+
+model LeadInterest {
+  id            String   @id @default(cuid())
+  lead_id       String
+  property_id   String
+  agent_id      String
+  interest_type String   @default("showcase") // showcase, direct_interest, tour_scheduled
+  status        String   @default("interested") // interested, not_interested, converted
+  notes         String?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  // Relations
+  lead          Lead     @relation(fields: [lead_id], references: [id])
+  property      Property @relation(fields: [property_id], references: [id])
+  agent         User     @relation(fields: [agent_id], references: [id])
+
+  @@unique([lead_id, property_id])
+  @@map("lead_interests")
 }
 
 // Enums

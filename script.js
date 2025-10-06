@@ -581,6 +581,41 @@
 			// Mock for now
 			console.log('Sending email:', { to, subject, showcase_id });
 			return { ok: true };
+		},
+
+		async getInterestedLeadsCount(propertyId) {
+			try {
+				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
+				const interests = await handleResponse(response);
+				return interests.length;
+			} catch (error) {
+				console.error('Error fetching interested leads count:', error);
+				return 0;
+			}
+		},
+
+		async getInterestedLeads(propertyId) {
+			try {
+				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
+				return await handleResponse(response);
+			} catch (error) {
+				console.error('Error fetching interested leads:', error);
+				return [];
+			}
+		},
+
+		async createLeadInterest({ lead_id, property_id, agent_id, interest_type, status, notes }) {
+			try {
+				const response = await fetch(`${API_BASE}/lead-interests`, {
+					method: 'POST',
+					headers: { 'Content-Type': 'application/json' },
+					body: JSON.stringify({ lead_id, property_id, agent_id, interest_type, status, notes })
+				});
+				return await handleResponse(response);
+			} catch (error) {
+				console.error('Error creating lead interest:', error);
+				throw error;
+			}
 		}
 	};
 
@@ -879,9 +914,13 @@
 		filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
 
 		tbody.innerHTML = '';
-		filtered.forEach(prop => {
+		filtered.forEach(async (prop) => {
 			const tr = document.createElement('tr');
 			tr.dataset.propertyId = prop.id;
+			
+			// Get interested leads count for this property
+			const interestedCount = await getInterestedLeadsCount(prop.id);
+			
 			tr.innerHTML = `
 				<td>
 					<div class="lead-name">${prop.name}</div>
@@ -892,6 +931,14 @@
 				<td class="mono">$${prop.rent_min} - $${prop.rent_max}</td>
 				<td class="mono">${prop.beds_min}-${prop.beds_max} / ${prop.baths_min}-${prop.baths_max}</td>
 				<td class="mono">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
+				<td class="mono">
+					<div class="interest-count" onclick="openInterestedLeads('${prop.id}', '${prop.name}')">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+							<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+						</svg>
+						${interestedCount} interested
+					</div>
+				</td>
 				<td class="mono">${formatDate(prop.pricing_last_updated)}</td>
 			`;
 			
@@ -1166,6 +1213,61 @@
 	function closeEmailPreview(){ 
 		hide(document.getElementById('emailPreviewModal')); 
 	}
+
+	// ---- Interested Leads Modal ----
+	async function openInterestedLeads(propertyId, propertyName) {
+		document.getElementById('propertyName').textContent = propertyName;
+		
+		try {
+			const interests = await api.getInterestedLeads(propertyId);
+			renderInterestedLeads(interests);
+			show(document.getElementById('interestedLeadsModal'));
+		} catch (error) {
+			console.error('Error loading interested leads:', error);
+			toast('Error loading interested leads');
+		}
+	}
+
+	function closeInterestedLeads() {
+		hide(document.getElementById('interestedLeadsModal'));
+	}
+
+	function renderInterestedLeads(interests) {
+		const content = document.getElementById('interestedLeadsContent');
+		
+		if (interests.length === 0) {
+			content.innerHTML = `
+				<div style="text-align: center; padding: 40px; color: #6b7280;">
+					<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="margin-bottom: 16px; opacity: 0.5;">
+						<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+					</svg>
+					<p>No interested leads yet</p>
+					<p style="font-size: 0.875rem; margin-top: 8px;">Send showcases to generate interest!</p>
+				</div>
+			`;
+			return;
+		}
+
+		content.innerHTML = interests.map(interest => `
+			<div class="interested-lead-item">
+				<div class="interest-icon">
+					${interest.lead.name.charAt(0).toUpperCase()}
+				</div>
+				<div class="lead-info">
+					<div class="lead-name">${interest.lead.name}</div>
+					<div class="lead-contact">${interest.lead.email} • ${interest.lead.phone}</div>
+					<div class="lead-agent">via ${interest.agent.name}</div>
+				</div>
+				<div class="interest-details">
+					<div class="interest-date">${formatDate(interest.created_at)}</div>
+					<div class="interest-status ${interest.status}">${interest.status.replace('_', ' ')}</div>
+				</div>
+			</div>
+		`).join('');
+	}
+
+	// Global function for onclick
+	window.openInterestedLeads = openInterestedLeads;
 
 	async function sendShowcaseEmail(){
 		const lead = await api.getLead(state.selectedLeadId);
@@ -1661,6 +1763,12 @@
 					await sendShowcaseEmail();
 				}
 			});
+		}
+
+		// Interested leads modal events
+		const closeInterestedLeadsEl = document.getElementById('closeInterestedLeads');
+		if (closeInterestedLeadsEl) {
+			closeInterestedLeadsEl.addEventListener('click', closeInterestedLeads);
 		}
 
 		// History content delegation
