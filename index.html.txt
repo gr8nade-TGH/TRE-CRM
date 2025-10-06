@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>TRE CRM - Phase 1 Wireframe</title>
+	<link rel="stylesheet" href="styles.html.txt" />
+</head>
+<body>
+	<header class="app-header">
+		<div class="brand">TRE CRM</div>
+		<div class="role-switch">
+			<label for="roleSelect">Role:</label>
+			<select id="roleSelect">
+				<option value="manager">Manager</option>
+				<option value="agent">Agent</option>
+			</select>
+		</div>
+	</header>
+
+	<main id="appRoot">
+		<!-- Route: #/leads -->
+		<section id="leadsView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>Leads</h1>
+				<div id="roleLabel" class="role-label"></div>
+			</div>
+
+			<div class="table-actions">
+				<input id="leadSearch" type="search" placeholder="Search name, email, phone" />
+			</div>
+
+			<div class="table-wrapper">
+				<table id="leadsTable" class="data-table">
+					<thead>
+						<tr>
+							<th>Lead Name</th>
+							<th>View Details</th>
+							<th class="sortable" data-sort="submitted_at">LeadFoundDate</th>
+							<th>Preference Summary</th>
+							<th>Top Listing Options</th>
+							<th>Agent Assigned</th>
+						</tr>
+					</thead>
+					<tbody id="leadsTbody">
+						<!-- rows injected -->
+					</tbody>
+				</table>
+			</div>
+			<div class="pagination">
+				<button id="prevPage">Prev</button>
+				<span id="pageInfo"></span>
+				<button id="nextPage">Next</button>
+			</div>
+		</section>
+	</main>
+
+	<!-- Lead Details Drawer -->
+	<aside id="leadDrawer" class="drawer hidden">
+		<div class="drawer-header">
+			<h2>Lead Details</h2>
+			<button id="closeDrawer" class="icon-btn" aria-label="Close">×</button>
+		</div>
+		<div class="drawer-content" id="drawerContent">
+			<!-- details injected -->
+		</div>
+	</aside>
+
+	<!-- Matches Modal -->
+	<div id="matchesModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Top Listing Options</h3>
+				<button id="closeMatches" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body" id="matchesBody">
+				<!-- matches injected -->
+			</div>
+			<div class="modal-footer">
+				<button id="selectAllMatches">Select All</button>
+				<button id="clearMatches">Clear</button>
+				<button id="createShowcase" class="primary" disabled>Create ShowCase</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Showcase Preview Modal -->
+	<div id="showcaseModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Create ShowCase</h3>
+				<button id="closeShowcase" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div class="form-row">
+					<label>To</label>
+					<input id="showcaseTo" type="email" readonly />
+				</div>
+				<div class="form-row">
+					<label>Subject</label>
+					<input id="showcaseSubject" type="text" value="Top options hand picked for you" />
+				</div>
+				<div class="form-row">
+					<label>Optional Message</label>
+					<textarea id="showcaseMessage" rows="4" placeholder="Add a quick note..."></textarea>
+				</div>
+				<div id="showcasePreview" class="showcase-preview"><!-- injected --></div>
+			</div>
+			<div class="modal-footer">
+				<button id="sendShowcase" class="primary">Send Email</button>
+				<button id="copyShowcaseLink">Copy Share Link</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Toasts -->
+	<div id="toast" class="toast hidden"></div>
+
+	<script src="script.js.txt"></script>
+</body>
+</html>
+

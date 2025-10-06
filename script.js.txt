@@ -1,0 +1,481 @@
+(function() {
+	// ---- State ----
+	const state = {
+		role: 'manager',
+		agentId: 'agent_1',
+		page: 1,
+		pageSize: 10,
+		sort: { key: 'submitted_at', dir: 'desc' },
+		search: '',
+		selectedLeadId: null,
+		selectedMatches: new Set(),
+		currentMatches: [],
+		showcases: {}, // id -> showcase
+		publicBanner: 'Earn a $200 gift card when you lease through us.'
+	};
+
+	// ---- Mock Data ----
+	const mockAgents = [
+		{ id: 'agent_1', name: 'Alex Agent', email: 'alex@example.com', active: true },
+		{ id: 'agent_2', name: 'Bailey Broker', email: 'bailey@example.com', active: true },
+		{ id: 'agent_3', name: 'Casey Consultant', email: 'casey@example.com', active: true }
+	];
+
+	function prefsSummary(p) {
+		if (!p) return '';
+		const price = p.budget_max ? `<$${p.budget_max}/mo` : (p.budget ? `$${p.budget}/mo` : '');
+		return `${p.beds || '?'}bed/${p.baths || '?'}bath ${price}`;
+	}
+
+	function randomDate(daysBack=30){
+		const now = Date.now();
+		const past = now - Math.floor(Math.random()*daysBack)*24*3600*1000;
+		return new Date(past).toISOString();
+	}
+
+	const mockLeads = Array.from({ length: 37 }).map((_, i) => {
+		const id = `lead_${i+1}`;
+		const assigned = i % 2 === 0 ? 'agent_1' : (i % 3 === 0 ? 'agent_2' : null);
+		const foundBy = i % 4 === 0 ? 'agent_2' : 'agent_3';
+		return {
+			id,
+			name: `Lead ${i+1}`,
+			email: `lead${i+1}@example.com`,
+			phone: `555-000-${String(1000 + i)}`,
+			submitted_at: randomDate(45),
+			found_by_agent_id: foundBy,
+			assigned_agent_id: assigned,
+			prefs: {
+				market: ['Austin','Dallas','Houston'][i%3],
+				neighborhoods: ['Downtown','Uptown','Midtown'].slice(0, (i%3)+1),
+				budget_min: 1000 + (i%5)*100,
+				budget_max: 1800 + (i%5)*150,
+				beds: (i%3)+1,
+				baths: (i%2)+1,
+				move_in: '30-60 days',
+				pets: i%2===0 ? 'Yes' : 'No',
+				parking: i%3===0 ? 'Required' : 'Optional',
+				sqft_min: 650,
+				sqft_max: 1100,
+				amenities: ['Pool','Gym','In-Unit W/D'].slice(0, (i%3)+1),
+				credit_tier: ['A','B','C'][i%3],
+				background: ['None','Eviction'][i%2],
+				notes: 'Initial intake notes here.'
+			},
+			status: 'new',
+			source: 'web_form'
+		};
+	});
+
+	const mockProperties = Array.from({ length: 30 }).map((_, i) => {
+		const id = `prop_${i+1}`;
+		const market = ['Austin','Dallas','Houston'][i%3];
+		const rentMin = 1000 + (i%6)*150;
+		const rentMax = rentMin + 400 + (i%3)*100;
+		const escort_pct = [0.0, 1.5, 2.0, 2.5, 3.0][i%5];
+		const send_pct = [1.0, 2.0, 2.5, 3.5, 4.0][(i+2)%5];
+		return {
+			id,
+			name: `Community ${i+1}`,
+			market,
+			neighborhoods: ['Downtown','Uptown','Midtown'].slice(0, (i%3)+1),
+			beds_min: 1, beds_max: 3,
+			baths_min: 1, baths_max: 2,
+			rent_min: rentMin, rent_max: rentMax,
+			sqft_min: 600, sqft_max: 1300,
+			amenities: ['Pool','Gym','In-Unit W/D','Parking'].slice(0, (i%4)+1),
+			escort_pct, send_pct,
+			bonus_text: i%4===0 ? '$300 bonus' : '',
+			specials_text: i%3===0 ? '1 month free' : '',
+			website: 'https://example.com',
+			address: `${100+i} Example St`,
+			phone: '555-111-2222',
+			pricing_last_updated: randomDate(15)
+		};
+	});
+
+	// ---- Utilities ----
+	function byKey(key) { return (a,b)=> (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0); }
+	function show(el){ el.classList.remove('hidden'); }
+	function hide(el){ el.classList.add('hidden'); }
+	function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; show(t); setTimeout(()=> hide(t), 2000); }
+	function formatDate(iso){ try { return new Date(iso).toLocaleString(); } catch { return iso; } }
+
+	// ---- Mock API Layer ----
+	const api = {
+		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize }){
+			let rows = mockLeads.slice();
+			if (role === 'agent') {
+				rows = rows.filter(r => r.assigned_agent_id === agentId);
+			}
+			if (search) {
+				const q = search.toLowerCase();
+				rows = rows.filter(r => (
+					r.name.toLowerCase().includes(q) ||
+					r.email.toLowerCase().includes(q) ||
+					r.phone.toLowerCase().includes(q)
+				));
+			}
+			rows.sort((a,b)=>{
+				const dir = sortDir === 'asc' ? 1 : -1;
+				if (sortKey === 'submitted_at') {
+					return (a.submitted_at > b.submitted_at ? 1 : -1) * dir;
+				}
+				return (a[sortKey] > b[sortKey] ? 1 : -1) * dir;
+			});
+			const total = rows.length;
+			const start = (page-1)*pageSize;
+			const items = rows.slice(start, start+pageSize);
+			return { items, total };
+		},
+		async getLead(id){ return mockLeads.find(l => l.id === id); },
+		async assignLead(id, agent_id){
+			const lead = mockLeads.find(l => l.id === id);
+			if (!lead) throw new Error('Lead not found');
+			const before = { assigned_agent_id: lead.assigned_agent_id };
+			lead.assigned_agent_id = agent_id;
+			const after = { assigned_agent_id: agent_id };
+			return { ok: true, audit: { actor_id: state.agentId, entity_type: 'Lead', entity_id: id, action: 'assign', before, after, created_at: new Date().toISOString() } };
+		},
+		async getMatches(lead_id, limit=10){
+			const lead = mockLeads.find(l => l.id === lead_id);
+			if (!lead) return [];
+			const p = lead.prefs || {};
+			let rows = mockProperties.filter(prop => {
+				if (p.market && prop.market !== p.market) return false;
+				if (p.neighborhoods && p.neighborhoods.length) {
+					if (!prop.neighborhoods.some(n => p.neighborhoods.includes(n))) return false;
+				}
+				if (p.beds && !(prop.beds_min <= p.beds && prop.beds_max >= p.beds)) return false;
+				if (p.baths && !(prop.baths_min <= p.baths && prop.baths_max >= p.baths)) return false;
+				if (p.budget_max && !(prop.rent_min <= p.budget_max)) return false;
+				if (p.amenities && p.amenities.length) {
+					const mustHave = p.amenities;
+					for (const a of mustHave) { if (!prop.amenities.includes(a)) return false; }
+				}
+				return true;
+			});
+			function effective(prop){ return Math.max(prop.escort_pct || 0, prop.send_pct || 0); }
+			function midBudget(){ return p.budget_min && p.budget_max ? (p.budget_min + p.budget_max)/2 : p.budget_max || p.budget_min || ((rows[0]?.rent_min||0)+(rows[0]?.rent_max||0))/2; }
+			const mid = midBudget();
+			rows.sort((a,b)=>{
+				const e = effective(b) - effective(a);
+				if (e !== 0) return e;
+				const aMid = (a.rent_min + a.rent_max)/2;
+				const bMid = (b.rent_min + b.rent_max)/2;
+				const dist = Math.abs(aMid - mid) - Math.abs(bMid - mid);
+				if (dist !== 0) return dist;
+				return (b.pricing_last_updated > a.pricing_last_updated ? 1 : -1);
+			});
+			return rows.slice(0, limit).map(r => ({ ...r, effective_commission_pct: Math.max(r.escort_pct, r.send_pct) }));
+		},
+		async getProperty(id){ return mockProperties.find(p => p.id === id); },
+		async createShowcase({ lead_id, agent_id, listing_ids, message }){
+			const id = `show_${Date.now()}`;
+			const slug = `sc_${Math.random().toString(36).slice(2, 8)}`;
+			const showcase = { id, lead_id, agent_id, listing_ids, message, public_slug: slug, created_at: new Date().toISOString(), sent_at: null };
+			state.showcases[id] = showcase;
+			return { showcase_id: id, public_url: `${location.origin}${location.pathname}#/${slug}` };
+		},
+		async sendEmail({ to, subject, html, showcase_id }){
+			const sc = state.showcases[showcase_id];
+			if (sc) sc.sent_at = new Date().toISOString();
+			return { ok: true };
+		}
+	};
+
+	// ---- Rendering: Leads Table ----
+	async function renderLeads(){
+		const tbody = document.getElementById('leadsTbody');
+		const { items, total } = await api.getLeads({
+			role: state.role,
+			agentId: state.agentId,
+			search: state.search,
+			sortKey: state.sort.key,
+			sortDir: state.sort.dir,
+			page: state.page,
+			pageSize: state.pageSize
+		});
+		tbody.innerHTML = '';
+		items.forEach(lead => {
+			const tr = document.createElement('tr');
+			tr.innerHTML = `
+				<td>
+					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
+					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
+				</td>
+				<td><button class="icon-btn" data-view="${lead.id}" title="View">👁️</button></td>
+				<td class="mono">${formatDate(lead.submitted_at)}</td>
+				<td class="mono">
+					<span class="badge-dot"><span class="dot"></span>${prefsSummary(lead.prefs)}</span>
+				</td>
+				<td><button class="icon-btn" data-matches="${lead.id}" title="Top Options">📋</button></td>
+				<td>
+					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
+				</td>
+			`;
+			tbody.appendChild(tr);
+		});
+		document.getElementById('pageInfo').textContent = `Page ${state.page} · ${total} total`;
+	}
+
+	function renderAgentSelect(lead){
+		const opts = mockAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
+		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
+	}
+	function renderAgentReadOnly(lead){
+		const a = mockAgents.find(a => a.id === lead.assigned_agent_id);
+		return `<span class="subtle">${a ? a.name : 'Unassigned'}</span>`;
+	}
+
+	// ---- Drawer ----
+	async function openDrawer(leadId){
+		state.selectedLeadId = leadId;
+		const lead = await api.getLead(leadId);
+		const c = document.getElementById('drawerContent');
+		const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || '—';
+		c.innerHTML = `
+			<div class="field"><label>Lead</label><div class="value">${lead.name}</div></div>
+			<div class="field"><label>Contact</label><div class="value">${lead.email} · ${lead.phone}</div></div>
+			<div class="field"><label>Submitted at</label><div class="value mono">${formatDate(lead.submitted_at)}</div></div>
+			<div class="field"><label>Agent who found lead</label><div class="value">${foundBy}</div></div>
+			<hr />
+			<div class="field"><label>Market</label><div class="value">${lead.prefs.market}</div></div>
+			<div class="field"><label>Neighborhoods</label><div class="value">${lead.prefs.neighborhoods.join(', ')}</div></div>
+			<div class="field"><label>Budget</label><div class="value">$${lead.prefs.budget_min} - $${lead.prefs.budget_max}</div></div>
+			<div class="field"><label>Beds/Baths</label><div class="value">${lead.prefs.beds} / ${lead.prefs.baths}</div></div>
+			<div class="field"><label>Move in</label><div class="value">${lead.prefs.move_in}</div></div>
+			<div class="field"><label>Pets</label><div class="value">${lead.prefs.pets}</div></div>
+			<div class="field"><label>Parking</label><div class="value">${lead.prefs.parking}</div></div>
+			<div class="field"><label>Sqft</label><div class="value">${lead.prefs.sqft_min} - ${lead.prefs.sqft_max}</div></div>
+			<div class="field"><label>Amenities</label><div class="value">${lead.prefs.amenities.join(', ')}</div></div>
+			<div class="field"><label>Credit tier</label><div class="value">${lead.prefs.credit_tier}</div></div>
+			<div class="field"><label>Background</label><div class="value">${lead.prefs.background}</div></div>
+			<div class="field"><label>Notes</label><div class="value">${lead.prefs.notes}</div></div>
+			${state.role==='manager' ? `<div class="field"><label>Assign to</label>${renderAgentSelect(await api.getLead(leadId))}</div>` : ''}
+		`;
+		show(document.getElementById('leadDrawer'));
+	}
+
+	function closeDrawer(){ hide(document.getElementById('leadDrawer')); }
+
+	// ---- Matches Modal ----
+	async function openMatches(leadId){
+		state.selectedLeadId = leadId;
+		state.selectedMatches = new Set();
+		const body = document.getElementById('matchesBody');
+		const list = await api.getMatches(leadId, 10);
+		state.currentMatches = list;
+		body.innerHTML = '';
+		list.forEach(item => {
+			const div = document.createElement('div');
+			div.className = 'match-item';
+			div.innerHTML = `
+				<input type="checkbox" data-match="${item.id}" />
+				<div>
+					<div class="match-title">${item.name} — <span class="subtle">${item.neighborhoods[0] || ''}</span></div>
+					<div class="subtle">Rent: $${item.rent_min} - $${item.rent_max} · Beds/Baths: ${item.beds_min}-${item.beds_max}/${item.baths_min}-${item.baths_max} · Sqft: ${item.sqft_min}-${item.sqft_max}</div>
+					<div class="subtle">Bonus: ${item.bonus_text || '—'} · Specials: ${item.specials_text || '—'}</div>
+				</div>
+				<div class="subtle">eff. commission: ${item.effective_commission_pct}%</div>
+			`;
+			body.appendChild(div);
+		});
+		updateCreateShowcaseBtn();
+		show(document.getElementById('matchesModal'));
+	}
+	function closeMatches(){ hide(document.getElementById('matchesModal')); }
+	function updateCreateShowcaseBtn(){
+		const btn = document.getElementById('createShowcase');
+		btn.disabled = state.selectedMatches.size === 0;
+	}
+
+	// ---- Showcase ----
+	async function openShowcasePreview(){
+		const lead = await api.getLead(state.selectedLeadId);
+		document.getElementById('showcaseTo').value = lead.email;
+		const selected = Array.from(state.selectedMatches);
+		const preview = document.getElementById('showcasePreview');
+		preview.innerHTML = selected.map(id => {
+			const item = state.currentMatches.find(x => x.id === id);
+			return `<div class="public-card"><div><strong>${item.name}</strong> — ${item.neighborhoods[0] || ''}</div><div class="subtle">$${item.rent_min} - $${item.rent_max} · ${item.beds_min}-${item.beds_max} bd / ${item.baths_min}-${item.baths_max} ba · ${item.sqft_min}-${item.sqft_max} sqft</div><div class="subtle">${item.specials_text || ''}</div></div>`;
+		}).join('');
+		show(document.getElementById('showcaseModal'));
+	}
+	function closeShowcase(){ hide(document.getElementById('showcaseModal')); }
+
+	async function sendShowcase(){
+		const lead = await api.getLead(state.selectedLeadId);
+		const listing_ids = Array.from(state.selectedMatches);
+		const { showcase_id, public_url } = await api.createShowcase({
+			lead_id: lead.id,
+			agent_id: state.agentId,
+			listing_ids,
+			message: document.getElementById('showcaseMessage').value
+		});
+		const html = renderPublicShowcaseHTML({ showcaseId: showcase_id });
+		await api.sendEmail({ to: lead.email, subject: document.getElementById('showcaseSubject').value, html, showcase_id });
+		toast('ShowCase sent and recorded');
+		closeShowcase();
+		closeMatches();
+		window.prompt('Copy public link:', public_url);
+	}
+
+	function renderPublicShowcaseHTML({ showcaseId }){
+		const sc = state.showcases[showcaseId];
+		const lead = mockLeads.find(l => l.id === sc.lead_id);
+		const agent = mockAgents.find(a => a.id === sc.agent_id);
+		const listings = sc.listing_ids.map(id => mockProperties.find(p => p.id === id));
+		const items = listings.map(item => `
+			<div class="public-card">
+				<div><strong>${item.name}</strong> — ${item.neighborhoods[0] || ''}</div>
+				<div class="subtle">$${item.rent_min} - $${item.rent_max} · ${item.beds_min}-${item.beds_max} bd / ${item.baths_min}-${item.baths_max} ba · ${item.sqft_min}-${item.sqft_max} sqft</div>
+				<div class="subtle">${item.specials_text || ''} ${item.bonus_text ? `· ${item.bonus_text}` : ''}</div>
+				<div><a href="${item.website}" target="_blank" rel="noopener">Website</a> · ${item.address}</div>
+			</div>
+		`).join('');
+		return `
+			<div class="public-wrap">
+				<div class="public-header">
+					<h2>${agent.name} — Top Listings for ${lead.name}</h2>
+					<div class="public-banner">${state.publicBanner}</div>
+				</div>
+				<div class="public-body">
+					${items}
+				</div>
+			</div>
+		`;
+	}
+
+	// ---- Routing ----
+	function setRoleLabel(){
+		const label = document.getElementById('roleLabel');
+		label.textContent = state.role === 'manager' ? 'Viewing as Manager' : 'Viewing as Agent';
+	}
+
+	function route(){
+		const hash = location.hash.slice(1);
+		// public showcase route: #/sc_xxxxxx
+		if (hash.startsWith('/sc_')){
+			// render public showcase view (read-only)
+			document.body.innerHTML = `
+				<link rel="stylesheet" href="styles.html.txt" />
+				<div id="publicMount"></div>
+			`;
+			const mount = document.getElementById('publicMount');
+			// We don't persist by slug in mock; show a generic example
+			mount.innerHTML = `
+				<div class="public-wrap">
+					<div class="public-header">
+						<h2>Agent Name — Top Listings for Lead Name</h2>
+						<div class="public-banner">${state.publicBanner}</div>
+					</div>
+					<div class="public-body">
+						<div class="public-card">Example Listing — replace with real when backend ready.</div>
+					</div>
+				</div>
+			`;
+			return;
+		}
+
+		// default: leads
+		show(document.getElementById('leadsView'));
+		setRoleLabel();
+		renderLeads();
+	}
+
+	// ---- Events ----
+	document.addEventListener('DOMContentLoaded', () => {
+		// role select
+		document.getElementById('roleSelect').addEventListener('change', (e)=>{
+			state.role = e.target.value;
+			state.page = 1;
+			setRoleLabel();
+			renderLeads();
+		});
+
+		// search
+		document.getElementById('leadSearch').addEventListener('input', (e)=>{
+			state.search = e.target.value;
+			state.page = 1;
+			renderLeads();
+		});
+
+		// sort by submitted_at
+		document.querySelector('th[data-sort="submitted_at"]').addEventListener('click', ()=>{
+			state.sort.dir = state.sort.dir === 'desc' ? 'asc' : 'desc';
+			renderLeads();
+		});
+
+		// pagination
+		document.getElementById('prevPage').addEventListener('click', ()=>{ if (state.page>1){ state.page--; renderLeads(); }});
+		document.getElementById('nextPage').addEventListener('click', ()=>{ state.page++; renderLeads(); });
+
+		// table delegation
+		document.getElementById('leadsTable').addEventListener('click', (e)=>{
+			const a = e.target.closest('a.lead-name');
+			if (a){ e.preventDefault(); openDrawer(a.dataset.id); return; }
+			const view = e.target.closest('button[data-view]');
+			if (view){ openDrawer(view.dataset.view); return; }
+			const matches = e.target.closest('button[data-matches]');
+			if (matches){ openMatches(matches.dataset.matches); return; }
+		});
+		// assignment change
+		document.getElementById('leadsTable').addEventListener('change', async (e)=>{
+			const sel = e.target.closest('select[data-assign]');
+			if (sel){
+				const id = sel.dataset.assign;
+				await api.assignLead(id, sel.value || null);
+				toast('Lead assignment updated');
+				renderLeads();
+			}
+		});
+
+		// drawer close
+		document.getElementById('closeDrawer').addEventListener('click', closeDrawer);
+		// drawer internal assignment
+		document.getElementById('leadDrawer').addEventListener('change', async (e)=>{
+			const sel = e.target.closest('select[data-assign]');
+			if (sel){ await api.assignLead(state.selectedLeadId, sel.value || null); toast('Lead assignment updated'); renderLeads(); }
+		});
+
+		// matches modal events
+		document.getElementById('closeMatches').addEventListener('click', closeMatches);
+		document.getElementById('matchesBody').addEventListener('change', (e)=>{
+			const box = e.target.closest('input[type="checkbox"][data-match]');
+			if (box){
+				if (box.checked) state.selectedMatches.add(box.dataset.match);
+				else state.selectedMatches.delete(box.dataset.match);
+				updateCreateShowcaseBtn();
+			}
+		});
+		document.getElementById('selectAllMatches').addEventListener('click', ()=>{
+			state.currentMatches.forEach(m => state.selectedMatches.add(m.id));
+			document.querySelectorAll('#matchesBody input[type="checkbox"]').forEach(cb => cb.checked = true);
+			updateCreateShowcaseBtn();
+		});
+		document.getElementById('clearMatches').addEventListener('click', ()=>{
+			state.selectedMatches.clear();
+			document.querySelectorAll('#matchesBody input[type="checkbox"]').forEach(cb => cb.checked = false);
+			updateCreateShowcaseBtn();
+		});
+		document.getElementById('createShowcase').addEventListener('click', openShowcasePreview);
+
+		// showcase modal
+		document.getElementById('closeShowcase').addEventListener('click', closeShowcase);
+		document.getElementById('sendShowcase').addEventListener('click', sendShowcase);
+		document.getElementById('copyShowcaseLink').addEventListener('click', ()=>{
+			// just re-open prompt with last created showcase if exists
+			const last = Object.values(state.showcases).slice(-1)[0];
+			if (!last) return;
+			const url = `${location.origin}${location.pathname}#/${last.public_slug}`;
+			window.prompt('Copy public link:', url);
+		});
+
+		// initial route
+		if (!location.hash) location.hash = '/leads';
+		route();
+		window.addEventListener('hashchange', route);
+	});
+})();
+

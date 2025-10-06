@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<title>TRE CRM - Phase 1 Wireframe</title>
+	<link rel="stylesheet" href="styles.css" />
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+</head>
+<body>
+	<header class="app-header">
+		<div class="brand">TRE CRM</div>
+		<nav class="main-nav">
+			<a href="#/leads" class="nav-link" data-page="leads">Leads</a>
+			<a href="#/agents" class="nav-link" data-page="agents">Agents</a>
+			<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
+			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
+		</nav>
+		<div class="role-switch">
+			<label for="roleSelect">Role:</label>
+			<select id="roleSelect">
+				<option value="manager">Manager</option>
+				<option value="agent">Agent</option>
+			</select>
+		</div>
+	</header>
+
+	<main id="appRoot">
+		<!-- Route: #/leads -->
+		<section id="leadsView" class="route-view">
+			<div class="view-bar">
+				<h1>Leads</h1>
+				<div id="roleLabel" class="role-label"></div>
+			</div>
+
+			<div class="table-actions">
+				<input id="leadSearch" type="search" placeholder="Search name, email, phone" />
+			</div>
+
+			<!-- Filters -->
+			<div class="filters" id="leadsFilters">
+				<div class="filter-group">
+					<label for="searchInput">Search</label>
+					<input type="text" id="searchInput" placeholder="Name or preferences" class="filter-input">
+				</div>
+				<div class="filter-group">
+					<label for="statusFilter">Status</label>
+					<select id="statusFilter" class="filter-select">
+						<option value="all">All</option>
+						<option value="green">Healthy</option>
+						<option value="yellow">Warm</option>
+						<option value="red">At Risk</option>
+						<option value="closed">Closed</option>
+						<option value="lost">Lost</option>
+					</select>
+				</div>
+				<div class="filter-group">
+					<label for="fromDate">From</label>
+					<input type="date" id="fromDate" class="filter-input">
+				</div>
+				<div class="filter-group">
+					<label for="toDate">To</label>
+					<input type="date" id="toDate" class="filter-input">
+				</div>
+				<div class="filter-spacer"></div>
+				<button id="clearFilters" class="btn btn-secondary">Clear</button>
+			</div>
+
+			<div class="table-wrapper">
+				<table id="leadsTable" class="data-table">
+					<thead>
+						<tr>
+							<th>Lead Name</th>
+							<th>View Details</th>
+							<th>Health</th>
+							<th class="sortable" data-sort="submitted_at">LeadFoundDate</th>
+							<th>Preference Summary</th>
+							<th>Top Listing Options</th>
+							<th>Agent Assigned</th>
+						</tr>
+					</thead>
+					<tbody id="leadsTbody">
+						<!-- rows injected -->
+					</tbody>
+				</table>
+			</div>
+			<div class="pagination">
+				<button id="prevPage">Prev</button>
+				<span id="pageInfo"></span>
+				<button id="nextPage">Next</button>
+			</div>
+		</section>
+
+		<!-- Route: #/agents -->
+		<section id="agentsView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>Agents</h1>
+				<div id="agentsRoleLabel" class="role-label"></div>
+			</div>
+
+			<div class="table-actions">
+				<button id="addAgentBtn" class="primary">+ Add Agent</button>
+			</div>
+
+			<div class="table-wrapper">
+				<table id="agentsTable" class="data-table">
+					<thead>
+						<tr>
+							<th>Agent Name</th>
+							<th>View Details</th>
+							<th>Leads Assigned</th>
+							<th>Leads Closed (90d)</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="agentsTbody">
+						<!-- rows injected -->
+					</tbody>
+				</table>
+			</div>
+		</section>
+
+		<!-- Route: #/listings -->
+		<section id="listingsView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>Listings</h1>
+				<div id="listingsRoleLabel" class="role-label"></div>
+			</div>
+
+			<div class="table-actions">
+				<input id="listingSearch" type="search" placeholder="Search community, neighborhood, amenities" />
+			</div>
+
+			<!-- Listings Filters -->
+			<div class="filters" id="listingsFilters">
+				<div class="filter-group">
+					<label for="listingsSearchInput">Search</label>
+					<input type="text" id="listingsSearchInput" placeholder="Community, neighborhood, amenities" class="filter-input">
+				</div>
+				<div class="filter-group">
+					<label for="marketFilter">Market</label>
+					<select id="marketFilter" class="filter-select">
+						<option value="all">All Markets</option>
+						<option value="Austin">Austin</option>
+						<option value="Dallas">Dallas</option>
+						<option value="Houston">Houston</option>
+					</select>
+				</div>
+				<div class="filter-group">
+					<label for="minPrice">Min Price</label>
+					<input type="number" id="minPrice" placeholder="e.g., 1000" class="filter-input">
+				</div>
+				<div class="filter-group">
+					<label for="maxPrice">Max Price</label>
+					<input type="number" id="maxPrice" placeholder="e.g., 2000" class="filter-input">
+				</div>
+				<div class="filter-group">
+					<label for="bedsFilter">Beds</label>
+					<select id="bedsFilter" class="filter-select">
+						<option value="any">Any</option>
+						<option value="0">Studio</option>
+						<option value="1">1+</option>
+						<option value="2">2+</option>
+						<option value="3">3+</option>
+					</select>
+				</div>
+				<div class="filter-group">
+					<label for="commissionFilter">Min Commission</label>
+					<select id="commissionFilter" class="filter-select">
+						<option value="0">Any</option>
+						<option value="1">1%+</option>
+						<option value="2">2%+</option>
+						<option value="3">3%+</option>
+						<option value="4">4%+</option>
+					</select>
+				</div>
+				<div class="filter-group">
+					<label for="amenitiesFilter">Amenities</label>
+					<select id="amenitiesFilter" class="filter-select">
+						<option value="any">Any</option>
+						<option value="pool">Pool</option>
+						<option value="gym">Gym</option>
+						<option value="pet">Pet Friendly</option>
+						<option value="ev">EV Charging</option>
+					</select>
+				</div>
+				<div class="filter-spacer"></div>
+				<button id="clearListingsFilters" class="btn btn-secondary">Clear</button>
+			</div>
+
+			<div class="listings-layout">
+				<div class="table-wrapper">
+					<table id="listingsTable" class="data-table">
+						<thead>
+							<tr>
+								<th>Community</th>
+								<th>Market</th>
+								<th>Neighborhoods</th>
+								<th>Rent Range</th>
+								<th>Beds/Baths</th>
+								<th>Commission %</th>
+								<th>Last Updated</th>
+							</tr>
+						</thead>
+						<tbody id="listingsTbody">
+							<!-- rows injected -->
+						</tbody>
+					</table>
+				</div>
+				<div class="mapwrap">
+					<div id="listingsMap" aria-label="Map of properties"></div>
+				</div>
+			</div>
+		</section>
+
+		<!-- Route: #/documents -->
+		<section id="documentsView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>Documents</h1>
+				<div id="documentsRoleLabel" class="role-label"></div>
+			</div>
+
+			<div class="table-actions">
+				<button id="historyBtn" class="btn btn-secondary">History</button>
+			</div>
+
+			<div class="table-wrapper">
+				<table id="documentsTable" class="data-table">
+					<thead>
+						<tr>
+							<th>Agent Name</th>
+							<th>Active Leads</th>
+							<th>Document Status</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="documentsTbody">
+						<!-- rows injected -->
+					</tbody>
+				</table>
+			</div>
+		</section>
+	</main>
+
+	<!-- Lead Details Drawer -->
+	<aside id="leadDrawer" class="drawer hidden">
+		<div class="drawer-header">
+			<h2>Lead Details</h2>
+			<button id="closeDrawer" class="icon-btn" aria-label="Close" title="Close">×</button>
+		</div>
+		<div class="drawer-content" id="drawerContent">
+			<!-- details injected -->
+		</div>
+	</aside>
+
+	<!-- Agent Details Drawer -->
+	<aside id="agentDrawer" class="drawer hidden">
+		<div class="drawer-header">
+			<h2>Agent Details</h2>
+			<button id="closeAgentDrawer" class="icon-btn" aria-label="Close">×</button>
+		</div>
+		<div class="drawer-content" id="agentDrawerContent">
+			<!-- details injected -->
+		</div>
+	</aside>
+
+	<!-- Matches Modal -->
+	<div id="matchesModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Top Listing Options — <span id="leadNameTitle2">Lead</span></h3>
+				<button id="closeMatches" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-sticky-header">
+				<button id="sendBtn" class="btn btn-primary" disabled>Send options to Lead: <span id="sendLeadName">Lead</span></button>
+				<div class="selection-count"><span id="selectedCount">0</span> selected</div>
+			</div>
+			<div class="modal-body">
+				<div id="listingsGrid" class="listings-grid">
+					<!-- matches injected -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Showcase Preview Modal -->
+	<div id="showcaseModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Create ShowCase</h3>
+				<button id="closeShowcase" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div class="form-row">
+					<label>To</label>
+					<input id="showcaseTo" type="email" readonly />
+				</div>
+				<div class="form-row">
+					<label>Subject</label>
+					<input id="showcaseSubject" type="text" value="Top options hand picked for you" />
+				</div>
+				<div class="form-row">
+					<label>Optional Message</label>
+					<textarea id="showcaseMessage" rows="4" placeholder="Add a quick note..."></textarea>
+				</div>
+				<div id="showcasePreview" class="showcase-preview"><!-- injected --></div>
+			</div>
+			<div class="modal-footer">
+				<button id="sendShowcase" class="primary">Send Email</button>
+				<button id="copyShowcaseLink">Copy Share Link</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- History Modal -->
+	<div id="historyModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Document History</h3>
+				<button id="closeHistory" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="historyContent">
+					<!-- History content injected -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Document Details Modal -->
+	<div id="documentDetailsModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Document Details - <span id="documentLeadName">Lead Name</span></h3>
+				<button id="closeDocumentDetails" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="documentSteps">
+					<!-- Document steps injected -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Toasts -->
+	<div id="toast" class="toast hidden"></div>
+
+	<!-- Health Status Popover -->
+	<div id="healthPopover" class="popover">
+		<div class="arrow"></div>
+		<h4 id="popTitle">Lead Status</h4>
+		<ul id="popList"></ul>
+		<div class="small">Click anywhere to dismiss</div>
+	</div>
+
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script src="script.js"></script>
+</body>
+</html>
