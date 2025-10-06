@@ -272,8 +272,15 @@
 				<button id="closeMatches" class="icon-btn" aria-label="Close">×</button>
 			</div>
 			<div class="modal-sticky-header">
-				<button id="sendBtn" class="btn btn-primary" disabled>Send options to Lead: <span id="sendLeadName">Lead</span></button>
-				<div class="selection-count"><span id="selectedCount">0</span> selected</div>
+				<button id="sendBtn" class="btn btn-primary showcase-btn" disabled>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+					</svg>
+					Send Showcase to <span id="sendLeadName">Lead</span>
+				</button>
+				<div class="selection-count">
+					<span id="selectedCount">0</span> properties selected
+				</div>
 			</div>
 			<div class="modal-body">
 				<div id="listingsGrid" class="listings-grid">

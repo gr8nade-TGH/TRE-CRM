@@ -455,8 +455,105 @@
 		},
 
 		async getMatches(lead_id, limit=10){
-			// For now, return empty array - we'll implement this later
-			return [];
+			// Return example listings for now
+			return [
+				{
+					id: 'listing-1',
+					name: 'The Residences at Domain',
+					rent_min: 1800,
+					rent_max: 2400,
+					beds_min: 1,
+					beds_max: 2,
+					baths_min: 1,
+					baths_max: 2,
+					sqft_min: 750,
+					sqft_max: 1200,
+					effective_commission_pct: 3.5,
+					specials_text: 'First month free + $500 move-in credit',
+					bonus_text: 'Pet-friendly community with dog park',
+					image_url: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop'
+				},
+				{
+					id: 'listing-2',
+					name: 'Skyline Apartments',
+					rent_min: 2200,
+					rent_max: 3200,
+					beds_min: 2,
+					beds_max: 3,
+					baths_min: 2,
+					baths_max: 3,
+					sqft_min: 1100,
+					sqft_max: 1600,
+					effective_commission_pct: 4.0,
+					specials_text: 'No deposit required for qualified applicants',
+					bonus_text: 'Rooftop pool and fitness center',
+					image_url: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop'
+				},
+				{
+					id: 'listing-3',
+					name: 'Garden District Lofts',
+					rent_min: 1600,
+					rent_max: 2100,
+					beds_min: 1,
+					beds_max: 2,
+					baths_min: 1,
+					baths_max: 2,
+					sqft_min: 650,
+					sqft_max: 950,
+					effective_commission_pct: 3.0,
+					specials_text: 'Utilities included in rent',
+					bonus_text: 'Historic building with modern amenities',
+					image_url: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop'
+				},
+				{
+					id: 'listing-4',
+					name: 'Metro Tower Residences',
+					rent_min: 2500,
+					rent_max: 3800,
+					beds_min: 2,
+					beds_max: 3,
+					baths_min: 2,
+					baths_max: 3,
+					sqft_min: 1200,
+					sqft_max: 1800,
+					effective_commission_pct: 4.5,
+					specials_text: 'Concierge service included',
+					bonus_text: 'Downtown location with city views',
+					image_url: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=400&h=300&fit=crop'
+				},
+				{
+					id: 'listing-5',
+					name: 'Riverside Commons',
+					rent_min: 1400,
+					rent_max: 1900,
+					beds_min: 1,
+					beds_max: 2,
+					baths_min: 1,
+					baths_max: 2,
+					sqft_min: 600,
+					sqft_max: 1000,
+					effective_commission_pct: 2.5,
+					specials_text: 'Free parking space included',
+					bonus_text: 'Walking distance to riverfront park',
+					image_url: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop'
+				},
+				{
+					id: 'listing-6',
+					name: 'Elite Heights',
+					rent_min: 3000,
+					rent_max: 4500,
+					beds_min: 3,
+					beds_max: 4,
+					baths_min: 3,
+					baths_max: 4,
+					sqft_min: 1800,
+					sqft_max: 2500,
+					effective_commission_pct: 5.0,
+					specials_text: 'Premium finishes and appliances',
+					bonus_text: 'Private balcony with city skyline views',
+					image_url: 'https://images.unsplash.com/photo-1600596542815-ffad4c1539a9?w=400&h=300&fit=crop'
+				}
+			].slice(0, limit);
 		},
 
 		async getProperty(id) {
@@ -977,24 +1074,38 @@
 			const card = document.createElement('article');
 			card.className = 'listing-card';
 			card.innerHTML = `
-				<div class="listing-image">Image Placeholder</div>
+				<div class="listing-image">
+					<img src="${item.image_url}" alt="${item.name}" loading="lazy">
+					<div class="listing-badge">${item.effective_commission_pct}% Commission</div>
+				</div>
 				<div class="listing-content">
 					<div class="listing-header">
-						<div class="listing-name">${item.name}</div>
-						<div class="commission-tag" title="Commission Rate">${item.effective_commission_pct}%</div>
+						<h3 class="listing-name">${item.name}</h3>
+						<div class="listing-rating">
+							<span class="stars">★★★★☆</span>
+							<span class="rating-text">4.2</span>
+						</div>
 					</div>
 					<div class="listing-price">
 						<div class="price-amount">$${item.rent_min.toLocaleString()} - $${item.rent_max.toLocaleString()}/mo</div>
-						<div class="listing-specs">${item.beds_min}-${item.beds_max} bd • ${item.baths_min}-${item.baths_max} ba • ${item.sqft_min}-${item.sqft_max} sqft</div>
+						<div class="listing-specs">${item.beds_min}-${item.beds_max} bd • ${item.baths_min}-${item.baths_max} ba • ${item.sqft_min.toLocaleString()}-${item.sqft_max.toLocaleString()} sqft</div>
 					</div>
-					<div class="listing-notes">${item.specials_text || item.bonus_text || 'No special offers available'}</div>
+					<div class="listing-features">
+						<div class="feature-tag">${item.specials_text}</div>
+						<div class="feature-tag secondary">${item.bonus_text}</div>
+					</div>
 					<div class="listing-footer">
 						<label class="listing-checkbox">
 							<input type="checkbox" class="listing-check" data-id="${item.id}">
-							Select
+							<span class="checkmark"></span>
+							<span class="checkbox-text">Select Property</span>
 						</label>
 						<div class="listing-actions">
-							<button class="listing-action-btn" title="View more details">⋯</button>
+							<button class="listing-action-btn" title="View more details">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+								</svg>
+							</button>
 						</div>
 					</div>
 				</div>
