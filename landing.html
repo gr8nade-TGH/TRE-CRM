@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Showcase - TRE CRM</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8fafc;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 40px 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            color: #1e293b;
+            margin-bottom: 16px;
+            font-size: 2.5rem;
+        }
+
+        .header p {
+            color: #64748b;
+            font-size: 1.125rem;
+        }
+
+        .perks-section {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .perks-section h2 {
+            color: #1e293b;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .perks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .perk-card {
+            text-align: center;
+            padding: 24px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            transition: transform 0.2s ease;
+        }
+
+        .perk-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .perk-icon {
+            font-size: 2.5rem;
+            margin-bottom: 16px;
+        }
+
+        .perk-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .perk-description {
+            color: #64748b;
+            font-size: 0.875rem;
+        }
+
+        .properties-section {
+            background: white;
+            padding: 32px;
+            border-radius: 12px;
+            margin-bottom: 32px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .properties-section h2 {
+            color: #1e293b;
+            margin-bottom: 24px;
+            text-align: center;
+        }
+
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+        }
+
+        .property-card {
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            background: white;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .property-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+        }
+
+        .property-image {
+            height: 200px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .property-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .property-card:hover .property-image img {
+            transform: scale(1.05);
+        }
+
+        .property-badge {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .property-content {
+            padding: 20px;
+        }
+
+        .property-name {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 8px;
+        }
+
+        .property-price {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #059669;
+            margin-bottom: 8px;
+        }
+
+        .property-specs {
+            color: #6b7280;
+            font-size: 0.875rem;
+            margin-bottom: 12px;
+        }
+
+        .property-features {
+            margin-bottom: 16px;
+        }
+
+        .feature-tag {
+            background: #f0f9ff;
+            color: #0369a1;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            margin-right: 8px;
+            margin-bottom: 8px;
+            display: inline-block;
+        }
+
+        .property-actions {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: #3b82f6;
+            color: white;
+            flex: 1;
+        }
+
+        .btn-primary:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .cta-section {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 48px 32px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 32px;
+        }
+
+        .cta-section h2 {
+            font-size: 2rem;
+            margin-bottom: 16px;
+        }
+
+        .cta-section p {
+            font-size: 1.125rem;
+            margin-bottom: 32px;
+            opacity: 0.9;
+        }
+
+        .cta-buttons {
+            display: flex;
+            gap: 16px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .btn-white {
+            background: white;
+            color: #3b82f6;
+            font-weight: 600;
+        }
+
+        .btn-white:hover {
+            background: #f8fafc;
+            transform: translateY(-1px);
+        }
+
+        .footer {
+            text-align: center;
+            padding: 32px;
+            color: #64748b;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .cta-buttons {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .btn {
+                width: 100%;
+                max-width: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏠 Your Perfect Home Awaits</h1>
+            <p>Hand-picked properties just for you by our expert team</p>
+        </div>
+
+        <div class="perks-section">
+            <h2>Why Work With Us?</h2>
+            <div class="perks-grid">
+                <div class="perk-card">
+                    <div class="perk-icon">🎯</div>
+                    <div class="perk-title">Exclusive Access</div>
+                    <div class="perk-description">Get first dibs on properties before they hit the market</div>
+                </div>
+                <div class="perk-card">
+                    <div class="perk-icon">💰</div>
+                    <div class="perk-title">Better Pricing</div>
+                    <div class="perk-description">Access to better rates through our direct relationships</div>
+                </div>
+                <div class="perk-card">
+                    <div class="perk-icon">⚡</div>
+                    <div class="perk-title">Priority Scheduling</div>
+                    <div class="perk-description">Skip the wait with priority property tour scheduling</div>
+                </div>
+                <div class="perk-card">
+                    <div class="perk-icon">🛡️</div>
+                    <div class="perk-title">Expert Guidance</div>
+                    <div class="perk-description">Professional support throughout your entire search</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="properties-section">
+            <h2>Your Personalized Property Matches</h2>
+            <div class="properties-grid" id="propertiesGrid">
+                <!-- Properties will be loaded dynamically -->
+            </div>
+        </div>
+
+        <div class="cta-section">
+            <h2>Ready to Find Your Dream Home?</h2>
+            <p>Click on any property below to express interest, and we'll schedule your personalized tour!</p>
+            <div class="cta-buttons">
+                <button class="btn btn-white" onclick="selectAllProperties()">Select All Properties</button>
+                <button class="btn btn-white" onclick="scheduleTour()">Schedule a Tour</button>
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>© 2024 TRE CRM - Your trusted real estate partner</p>
+            <p>Questions? Contact us at <a href="mailto:support@trecrm.com" style="color: #3b82f6;">support@trecrm.com</a></p>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const showcaseId = urlParams.get('showcase');
+        const leadId = urlParams.get('lead');
+        const propertyIds = urlParams.get('properties') ? urlParams.get('properties').split(',') : [];
+
+        // Track page view
+        if (showcaseId && leadId) {
+            trackInteraction('page_view', { showcaseId, leadId, propertyIds });
+        }
+
+        // Sample property data (in real app, this would come from the database)
+        const allProperties = [
+            {
+                id: 'listing-1',
+                name: 'The Residences at Domain',
+                price: '$1,800 - $2,400/mo',
+                specs: '1-2 bd • 1-2 ba • 750-1,200 sqft',
+                image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
+                features: ['First month free', 'Pet-friendly', 'Pool'],
+                commission: '3.5%'
+            },
+            {
+                id: 'listing-2',
+                name: 'Skyline Apartments',
+                price: '$2,200 - $3,200/mo',
+                specs: '2-3 bd • 2-3 ba • 1,100-1,600 sqft',
+                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop',
+                features: ['No deposit required', 'Rooftop pool', 'Fitness center'],
+                commission: '4.0%'
+            },
+            {
+                id: 'listing-3',
+                name: 'Garden District Lofts',
+                price: '$1,600 - $2,100/mo',
+                specs: '1-2 bd • 1-2 ba • 650-950 sqft',
+                image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop',
+                features: ['Utilities included', 'Historic building', 'Modern amenities'],
+                commission: '3.0%'
+            }
+        ];
+
+        // Filter properties based on URL parameters
+        const properties = propertyIds.length > 0 
+            ? allProperties.filter(prop => propertyIds.includes(prop.id))
+            : allProperties;
+
+        let selectedProperties = new Set();
+
+        // Track interaction function
+        function trackInteraction(action, data) {
+            console.log('Tracking:', action, data);
+            // In a real app, this would send data to your analytics/CRM system
+            fetch('/api/track', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action, data, timestamp: new Date().toISOString() })
+            }).catch(err => console.log('Tracking error:', err));
+        }
+
+        function renderProperties() {
+            const grid = document.getElementById('propertiesGrid');
+            grid.innerHTML = '';
+
+            properties.forEach(property => {
+                const card = document.createElement('div');
+                card.className = 'property-card';
+                card.innerHTML = `
+                    <div class="property-image">
+                        <img src="${property.image}" alt="${property.name}" loading="lazy">
+                        <div class="property-badge">${property.commission} Commission</div>
+                    </div>
+                    <div class="property-content">
+                        <div class="property-name">${property.name}</div>
+                        <div class="property-price">${property.price}</div>
+                        <div class="property-specs">${property.specs}</div>
+                        <div class="property-features">
+                            ${property.features.map(feature => `<span class="feature-tag">${feature}</span>`).join('')}
+                        </div>
+                        <div class="property-actions">
+                            <button class="btn btn-primary" onclick="selectProperty('${property.id}')">
+                                ${selectedProperties.has(property.id) ? '✓ Selected' : 'Select Property'}
+                            </button>
+                            <button class="btn btn-secondary" onclick="viewDetails('${property.id}')">Details</button>
+                        </div>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+        }
+
+        function selectProperty(propertyId) {
+            if (selectedProperties.has(propertyId)) {
+                selectedProperties.delete(propertyId);
+                trackInteraction('property_deselected', { showcaseId, leadId, propertyId });
+            } else {
+                selectedProperties.add(propertyId);
+                trackInteraction('property_selected', { showcaseId, leadId, propertyId });
+            }
+            renderProperties();
+        }
+
+        function selectAllProperties() {
+            properties.forEach(property => {
+                selectedProperties.add(property.id);
+            });
+            trackInteraction('select_all', { showcaseId, leadId, propertyIds: Array.from(selectedProperties) });
+            renderProperties();
+        }
+
+        function viewDetails(propertyId) {
+            const property = properties.find(p => p.id === propertyId);
+            trackInteraction('view_details', { showcaseId, leadId, propertyId });
+            alert(`Property Details:\n\n${property.name}\n${property.price}\n${property.specs}\n\nFeatures: ${property.features.join(', ')}`);
+        }
+
+        function scheduleTour() {
+            if (selectedProperties.size === 0) {
+                alert('Please select at least one property to schedule a tour.');
+                return;
+            }
+            
+            const selectedNames = Array.from(selectedProperties).map(id => 
+                properties.find(p => p.id === id).name
+            );
+            
+            // Track the tour scheduling
+            trackInteraction('schedule_tour', { 
+                showcaseId, 
+                leadId, 
+                selectedProperties: Array.from(selectedProperties),
+                selectedNames 
+            });
+            
+            alert(`Great choice! You've selected:\n\n${selectedNames.join('\n')}\n\nWe'll contact you shortly to schedule your personalized tour!`);
+            
+            // In a real app, this would send data to your CRM
+            console.log('Selected properties:', Array.from(selectedProperties));
+        }
+
+        // Initialize the page
+        renderProperties();
+    </script>
+</body>
+</html>

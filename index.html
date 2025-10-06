@@ -276,7 +276,7 @@
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
 						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
 					</svg>
-					Send Showcase to <span id="sendLeadName">Lead</span>
+					Preview & Send Showcase to <span id="sendLeadName">Lead</span>
 				</button>
 				<div class="selection-count">
 					<span id="selectedCount">0</span> properties selected
@@ -344,6 +344,56 @@
 			<div class="modal-body">
 				<div id="documentSteps">
 					<!-- Document steps injected -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Email Preview Modal -->
+	<div id="emailPreviewModal" class="modal hidden">
+		<div class="modal-card email-preview-card">
+			<div class="modal-header">
+				<h3>Email Preview</h3>
+				<button id="closeEmailPreview" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-sticky-header">
+				<button id="sendEmailBtn" class="btn btn-primary showcase-btn">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+					</svg>
+					Send from <span id="agentEmail">agent@company.com</span>
+				</button>
+				<div class="email-info">
+					<span id="emailRecipient">To: lead@example.com</span>
+				</div>
+			</div>
+			<div class="modal-body email-preview-body">
+				<div class="email-preview">
+					<div class="email-header">
+						<div class="email-subject">Top options hand picked for you</div>
+						<div class="email-from">From: <span id="previewAgentEmail">agent@company.com</span></div>
+					</div>
+					<div class="email-content">
+						<div class="email-greeting">Hi <span id="previewLeadName">Lead Name</span>,</div>
+						<div class="email-message">
+							<p>We have some great fits for you! Go through me and you'll get these perks:</p>
+							<ul class="perks-list">
+								<li>🎯 <strong>Exclusive access</strong> to properties before they hit the market</li>
+								<li>💰 <strong>Better pricing</strong> through our direct relationships</li>
+								<li>⚡ <strong>Priority scheduling</strong> for property tours</li>
+								<li>🛡️ <strong>Expert guidance</strong> throughout your search</li>
+							</ul>
+							<p>Here's a list of options based on what you're looking for. Click which ones you're interested in and hit submit, and then we'll schedule you to go take a look at them!</p>
+						</div>
+						<div class="email-properties">
+							<div id="previewProperties" class="preview-properties-grid">
+								<!-- Selected properties will be shown here -->
+							</div>
+						</div>
+						<div class="email-footer">
+							<p>Best regards,<br><span id="previewAgentName">Agent Name</span><br>TRE CRM Team</p>
+						</div>
+					</div>
 				</div>
 			</div>
 		</div>

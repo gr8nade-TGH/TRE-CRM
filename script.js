@@ -561,11 +561,18 @@
 			return handleResponse(response);
 		},
 
-		async createShowcase({ lead_id, agent_id, listing_ids, message }){
+		async createShowcase({ lead_id, agent_id, listing_ids, message, showcase_id, landing_url }){
 			const response = await fetch(`${API_BASE}/showcases`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ lead_id, agent_id, listing_ids, message })
+				body: JSON.stringify({ 
+					lead_id, 
+					agent_id, 
+					listing_ids, 
+					message, 
+					showcase_id, 
+					landing_url 
+				})
 			});
 			return handleResponse(response);
 		},
@@ -1116,6 +1123,122 @@
 		show(document.getElementById('matchesModal'));
 	}
 	function closeMatches(){ hide(document.getElementById('matchesModal')); }
+
+	// ---- Email Preview Modal ----
+	async function openEmailPreview(){
+		const lead = await api.getLead(state.selectedLeadId);
+		const selectedProperties = state.currentMatches.filter(prop => 
+			state.selectedMatches.has(prop.id)
+		);
+		
+		// Update email content
+		document.getElementById('previewLeadName').textContent = lead.name;
+		document.getElementById('previewAgentEmail').textContent = 'agent@trecrm.com';
+		document.getElementById('agentEmail').textContent = 'agent@trecrm.com';
+		document.getElementById('emailRecipient').textContent = `To: ${lead.email}`;
+		document.getElementById('previewAgentName').textContent = 'Your Agent';
+		
+		// Render selected properties
+		const propertiesGrid = document.getElementById('previewProperties');
+		propertiesGrid.innerHTML = '';
+		
+		selectedProperties.forEach(property => {
+			const card = document.createElement('div');
+			card.className = 'preview-property-card';
+			card.innerHTML = `
+				<div class="preview-property-image">
+					<img src="${property.image_url}" alt="${property.name}" loading="lazy">
+				</div>
+				<div class="preview-property-content">
+					<div class="preview-property-name">${property.name}</div>
+					<div class="preview-property-price">$${property.rent_min.toLocaleString()} - $${property.rent_max.toLocaleString()}/mo</div>
+					<div class="preview-property-specs">${property.beds_min}-${property.beds_max} bd • ${property.baths_min}-${property.baths_max} ba</div>
+				</div>
+			`;
+			propertiesGrid.appendChild(card);
+		});
+		
+		// Close matches modal and open email preview
+		closeMatches();
+		show(document.getElementById('emailPreviewModal'));
+	}
+
+	function closeEmailPreview(){ 
+		hide(document.getElementById('emailPreviewModal')); 
+	}
+
+	async function sendShowcaseEmail(){
+		const lead = await api.getLead(state.selectedLeadId);
+		const selectedProperties = state.currentMatches.filter(prop => 
+			state.selectedMatches.has(prop.id)
+		);
+		
+		// Generate unique showcase ID for tracking
+		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+		
+		// Create landing page URL with tracking parameters
+		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
+		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${Array.from(state.selectedMatches).join(',')}`;
+		
+		// Create email content
+		const emailContent = {
+			to: lead.email,
+			subject: 'Top options hand picked for you',
+			html: `
+				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+					<div style="text-align: center; padding: 20px; background: #f8fafc;">
+						<h1 style="color: #1e293b; margin-bottom: 10px;">🏠 Your Perfect Home Awaits</h1>
+						<p style="color: #64748b; font-size: 18px;">Hand-picked properties just for you by our expert team</p>
+					</div>
+					
+					<div style="padding: 30px;">
+						<p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hi ${lead.name},</p>
+						
+						<p style="font-size: 16px; color: #374151; margin-bottom: 20px;">We have some great fits for you! Go through me and you'll get these perks:</p>
+						
+						<ul style="margin: 20px 0; padding-left: 0; list-style: none;">
+							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🎯 <strong>Exclusive access</strong> to properties before they hit the market</li>
+							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">💰 <strong>Better pricing</strong> through our direct relationships</li>
+							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">⚡ <strong>Priority scheduling</strong> for property tours</li>
+							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🛡️ <strong>Expert guidance</strong> throughout your search</li>
+						</ul>
+						
+						<p style="font-size: 16px; color: #374151; margin-bottom: 30px;">Here's a list of options based on what you're looking for. Click which ones you're interested in and hit submit, and then we'll schedule you to go take a look at them!</p>
+						
+						<div style="text-align: center; margin: 30px 0;">
+							<a href="${landingUrl}" style="background: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">View Your Personalized Property Matches</a>
+						</div>
+						
+						<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #4b5563; font-size: 14px;">
+							<p>Best regards,<br>Your Agent<br>TRE CRM Team</p>
+						</div>
+					</div>
+				</div>
+			`
+		};
+		
+		try {
+			// Send email via API
+			await api.sendEmail(emailContent);
+			
+			// Create showcase record in database
+			await api.createShowcase({
+				lead_id: lead.id,
+				agent_id: 'current-agent-id', // In real app, get from current user
+				listing_ids: Array.from(state.selectedMatches),
+				message: `Showcase sent to ${lead.name} with ${selectedProperties.length} properties`,
+				showcase_id: showcaseId,
+				landing_url: landingUrl
+			});
+			
+			toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
+			closeEmailPreview();
+			
+		} catch (error) {
+			console.error('Error sending showcase email:', error);
+			toast('Error sending email. Please try again.');
+		}
+	}
 	
 	function updateSelectionSummary(){
 		const checkboxes = document.querySelectorAll('.listing-check');
@@ -1432,11 +1555,10 @@
 		}
 		const sendBtnEl = document.getElementById('sendBtn');
 		if (sendBtnEl) {
-			sendBtnEl.addEventListener('click', ()=>{
+			sendBtnEl.addEventListener('click', async ()=>{
 				const selected = Array.from(state.selectedMatches);
 				if (selected.length > 0) {
-					toast(`Sent ${selected.length} listing(s) to ${document.getElementById('sendLeadName').textContent}.`);
-					closeMatches();
+					await openEmailPreview();
 				}
 			});
 		}
@@ -1524,6 +1646,21 @@
 		const closeDocumentDetailsEl = document.getElementById('closeDocumentDetails');
 		if (closeDocumentDetailsEl) {
 			closeDocumentDetailsEl.addEventListener('click', closeDocumentDetails);
+		}
+
+		// Email preview modal events
+		const closeEmailPreviewEl = document.getElementById('closeEmailPreview');
+		if (closeEmailPreviewEl) {
+			closeEmailPreviewEl.addEventListener('click', closeEmailPreview);
+		}
+		const sendEmailBtnEl = document.getElementById('sendEmailBtn');
+		if (sendEmailBtnEl) {
+			sendEmailBtnEl.addEventListener('click', async ()=>{
+				const selected = Array.from(state.selectedMatches);
+				if (selected.length > 0) {
+					await sendShowcaseEmail();
+				}
+			});
 		}
 
 		// History content delegation
