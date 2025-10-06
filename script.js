@@ -1768,6 +1768,14 @@
 			closeInterestedLeadsEl.addEventListener('click', closeInterestedLeads);
 		}
 
+		// Close interested leads modal when clicking outside
+		document.addEventListener('click', (e) => {
+			const modal = document.getElementById('interestedLeadsModal');
+			if (modal && !modal.classList.contains('hidden') && e.target === modal) {
+				closeInterestedLeads();
+			}
+		});
+
 		// History content delegation
 		const historyContentEl = document.getElementById('historyContent');
 		if (historyContentEl) {
