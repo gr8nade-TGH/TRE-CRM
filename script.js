@@ -427,7 +427,11 @@
 	const api = {
 		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters = {} }){
 			if (USE_MOCK_DATA) {
-				return mockLeads;
+				console.log('Using mock data for leads, count:', mockLeads.length);
+				return {
+					items: mockLeads,
+					total: mockLeads.length
+				};
 			}
 			
 			const params = new URLSearchParams({
