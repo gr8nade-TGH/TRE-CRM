@@ -255,6 +255,73 @@
 	function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; show(t); setTimeout(()=> hide(t), 2000); }
 	function formatDate(iso){ try { return new Date(iso).toLocaleString(); } catch { return iso; } }
 
+	// ---- Table Sorting ----
+	function sortTable(column, tableId) {
+		const table = document.getElementById(tableId);
+		if (!table) return;
+		
+		const tbody = table.querySelector('tbody');
+		if (!tbody) return;
+		
+		const rows = Array.from(tbody.querySelectorAll('tr'));
+		const isAscending = state.sort.key === column ? !state.sort.dir : true;
+		
+		rows.sort((a, b) => {
+			const aVal = a.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
+			const bVal = b.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
+			
+			// Handle numeric sorting for specific columns
+			if (['rent_min', 'rent_max', 'beds_min', 'baths_min', 'sqft_min', 'commission_pct'].includes(column)) {
+				const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
+				const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
+				return isAscending ? aNum - bNum : bNum - aNum;
+			}
+			
+			// Handle date sorting
+			if (['submitted_at', 'last_updated', 'created_at'].includes(column)) {
+				const aDate = new Date(aVal);
+				const bDate = new Date(bVal);
+				return isAscending ? aDate - bDate : bDate - aDate;
+			}
+			
+			// Default text sorting
+			if (isAscending) {
+				return aVal.localeCompare(bVal, undefined, { numeric: true });
+			} else {
+				return bVal.localeCompare(aVal, undefined, { numeric: true });
+			}
+		});
+		
+		rows.forEach(row => tbody.appendChild(row));
+		
+		state.sort.key = column;
+		state.sort.dir = isAscending ? 'asc' : 'desc';
+		updateSortHeaders(tableId);
+	}
+
+	function updateSortHeaders(tableId) {
+		const table = document.getElementById(tableId);
+		if (!table) return;
+		
+		const headers = table.querySelectorAll('th[data-sort]');
+		headers.forEach(header => {
+			const column = header.dataset.sort;
+			const icon = header.querySelector('.sort-icon');
+			
+			if (column === state.sort.key) {
+				header.classList.add('sorted');
+				if (icon) {
+					icon.textContent = state.sort.dir === 'asc' ? '↑' : '↓';
+				}
+			} else {
+				header.classList.remove('sorted');
+				if (icon) {
+					icon.textContent = '↕';
+				}
+			}
+		});
+	}
+
 	// ---- Health Status ----
 	const STATUS_LABEL = { 
 		green: 'Healthy', 
@@ -657,13 +724,13 @@
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
 				<td><button class="icon-btn" data-view="${lead.id}" title="View">👁️</button></td>
-				<td>${renderHealthStatus(lead.health_status)}</td>
-				<td class="mono">${formatDate(lead.submitted_at)}</td>
+				<td data-sort="health_status">${renderHealthStatus(lead.health_status)}</td>
+				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
 					<span class="badge-dot"><span class="dot"></span>${prefsSummary(lead.prefs)}</span>
 				</td>
 				<td><button class="icon-btn" data-matches="${lead.id}" title="Top Options">📋</button></td>
-				<td>
+				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
 				</td>
 			`;
@@ -1504,11 +1571,32 @@
 
 	// ---- Events ----
 	document.addEventListener('DOMContentLoaded', () => {
+		// Initialize nav visibility based on current role
+		const agentsNavLink = document.getElementById('agentsNavLink');
+		if (agentsNavLink) {
+			if (state.role === 'agent') {
+				agentsNavLink.style.display = 'none';
+			} else {
+				agentsNavLink.style.display = 'block';
+			}
+		}
+		
 		// role select
 		document.getElementById('roleSelect').addEventListener('change', (e)=>{
 			state.role = e.target.value;
 			state.page = 1;
 			setRoleLabel(state.currentPage);
+			
+			// Show/hide Agents nav based on role
+			const agentsNavLink = document.getElementById('agentsNavLink');
+			if (agentsNavLink) {
+				if (state.role === 'agent') {
+					agentsNavLink.style.display = 'none';
+				} else {
+					agentsNavLink.style.display = 'block';
+				}
+			}
+			
 			if (state.currentPage === 'leads') renderLeads();
 			else if (state.currentPage === 'agents') renderAgents();
 			else if (state.currentPage === 'listings') renderListings();
@@ -1569,23 +1657,57 @@
 		// agents table delegation
 		const agentsTableEl = document.getElementById('agentsTable');
 		if (agentsTableEl) {
-			agentsTableEl.addEventListener('click', (e)=>{
-				const view = e.target.closest('button[data-view-agent]');
-				if (view){ openAgentDrawer(view.dataset.viewAgent); return; }
-				const remove = e.target.closest('button[data-remove]');
-				if (remove){ 
-					if (confirm('Are you sure you want to remove this agent?')) {
-						toast('Agent removed (mock action)');
-						renderAgents();
-					}
-					return; 
+		agentsTableEl.addEventListener('click', (e)=>{
+			// Handle sorting
+			const sortableHeader = e.target.closest('th[data-sort]');
+			if (sortableHeader) {
+				const column = sortableHeader.dataset.sort;
+				sortTable(column, 'agentsTable');
+				e.preventDefault();
+				return;
+			}
+			
+			const view = e.target.closest('button[data-view-agent]');
+			if (view){ openAgentDrawer(view.dataset.viewAgent); return; }
+			const remove = e.target.closest('button[data-remove]');
+			if (remove){ 
+				if (confirm('Are you sure you want to remove this agent?')) {
+					toast('Agent removed (mock action)');
+					renderAgents();
 				}
-				const edit = e.target.closest('button[data-edit]');
-				if (edit){ toast('Edit agent info (mock action)'); return; }
-				const assignLeads = e.target.closest('button[data-assign-leads]');
-				if (assignLeads){ toast('Assign leads to agent (mock action)'); return; }
+				return; 
+			}
+			const edit = e.target.closest('button[data-edit]');
+			if (edit){ toast('Edit agent info (mock action)'); return; }
+			const assignLeads = e.target.closest('button[data-assign-leads]');
+			if (assignLeads){ toast('Assign leads to agent (mock action)'); return; }
+		});
+		}
+		
+		// listings table delegation
+		const listingsTableEl = document.getElementById('listingsTable');
+		if (listingsTableEl) {
+			listingsTableEl.addEventListener('click', (e)=>{
+				// Handle sorting
+				const sortableHeader = e.target.closest('th[data-sort]');
+				if (sortableHeader) {
+					const column = sortableHeader.dataset.sort;
+					sortTable(column, 'listingsTable');
+					e.preventDefault();
+					return;
+				}
+				
+				// Handle interested leads clicks
+				const interestedBtn = e.target.closest('.interest-count');
+				if (interestedBtn) {
+					const propertyId = interestedBtn.dataset.propertyId;
+					const propertyName = interestedBtn.dataset.propertyName;
+					openInterestedLeads(propertyId, propertyName);
+					return;
+				}
 			});
 		}
+		
 		// assignment change
 		if (leadsTableEl) {
 			leadsTableEl.addEventListener('change', async (e)=>{
@@ -1969,6 +2091,16 @@
 
 		leadsTable.addEventListener('click', (e)=>{
 			console.log('Click event:', e.target); // Debug
+			
+			// Handle sorting
+			const sortableHeader = e.target.closest('th[data-sort]');
+			if (sortableHeader) {
+				const column = sortableHeader.dataset.sort;
+				sortTable(column, 'leadsTable');
+				e.preventDefault();
+				return;
+			}
+			
 			const btn = e.target.closest('.health-btn');
 			console.log('Health button clicked:', !!btn, btn?.dataset.status); // Debug
 			if (btn) {

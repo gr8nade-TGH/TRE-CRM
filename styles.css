@@ -220,6 +220,13 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 4px 12px rgba(37, 99, 235, 0.15);
 }
+
+/* Sortable headers */
+.data-table th.sortable { cursor: pointer; user-select: none; position: relative; }
+.data-table th.sortable:hover { background: #e2e8f0; }
+.data-table th.sorted { background: #dbeafe; color: #1e40af; }
+.sort-icon { margin-left: 8px; font-size: 12px; color: #64748b; }
+.data-table th.sorted .sort-icon { color: #1e40af; }
 .sortable { 
   cursor: pointer; 
   transition: color 0.2s ease;

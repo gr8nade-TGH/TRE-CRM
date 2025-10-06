@@ -12,7 +12,7 @@
 		<div class="brand">TRE CRM</div>
 		<nav class="main-nav">
 			<a href="#/leads" class="nav-link" data-page="leads">Leads</a>
-			<a href="#/agents" class="nav-link" data-page="agents">Agents</a>
+			<a href="#/agents" class="nav-link" data-page="agents" id="agentsNavLink">Agents</a>
 			<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
 			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
 		</nav>
@@ -70,13 +70,13 @@
 				<table id="leadsTable" class="data-table">
 					<thead>
 						<tr>
-							<th>Lead Name</th>
+							<th data-sort="name" class="sortable">Lead Name <span class="sort-icon">↕</span></th>
 							<th>View Details</th>
-							<th>Health</th>
-							<th class="sortable" data-sort="submitted_at">LeadFoundDate</th>
+							<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span></th>
+							<th class="sortable" data-sort="submitted_at">LeadFoundDate <span class="sort-icon">↕</span></th>
 							<th>Preference Summary</th>
 							<th>Top Listing Options</th>
-							<th>Agent Assigned</th>
+							<th data-sort="assigned_agent_id" class="sortable">Agent Assigned <span class="sort-icon">↕</span></th>
 						</tr>
 					</thead>
 					<tbody id="leadsTbody">
@@ -106,10 +106,10 @@
 				<table id="agentsTable" class="data-table">
 					<thead>
 						<tr>
-							<th>Agent Name</th>
+							<th data-sort="name" class="sortable">Agent Name <span class="sort-icon">↕</span></th>
 							<th>View Details</th>
-							<th>Leads Assigned</th>
-							<th>Leads Closed (90d)</th>
+							<th data-sort="leads_assigned" class="sortable">Leads Assigned <span class="sort-icon">↕</span></th>
+							<th data-sort="leads_closed" class="sortable">Leads Closed (90d) <span class="sort-icon">↕</span></th>
 							<th>Actions</th>
 						</tr>
 					</thead>
@@ -193,14 +193,14 @@
 					<table id="listingsTable" class="data-table">
 						<thead>
 							<tr>
-								<th>Community</th>
-								<th>Market</th>
-								<th>Neighborhoods</th>
-								<th>Rent Range</th>
-								<th>Beds/Baths</th>
-								<th>Commission %</th>
+								<th data-sort="name" class="sortable">Community <span class="sort-icon">↕</span></th>
+								<th data-sort="market" class="sortable">Market <span class="sort-icon">↕</span></th>
+								<th data-sort="neighborhoods" class="sortable">Neighborhoods <span class="sort-icon">↕</span></th>
+								<th data-sort="rent_min" class="sortable">Rent Range <span class="sort-icon">↕</span></th>
+								<th data-sort="beds_min" class="sortable">Beds/Baths <span class="sort-icon">↕</span></th>
+								<th data-sort="commission_pct" class="sortable">Commission % <span class="sort-icon">↕</span></th>
 								<th>Interested Leads</th>
-								<th>Last Updated</th>
+								<th data-sort="last_updated" class="sortable">Last Updated <span class="sort-icon">↕</span></th>
 							</tr>
 						</thead>
 						<tbody id="listingsTbody">
