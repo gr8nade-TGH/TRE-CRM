@@ -1930,80 +1930,113 @@ body {
 	font-weight: 600;
 }
 
-/* Progress Step Popups */
-.progress-step-popup {
-	position: absolute;
-	top: -120px;
-	left: 50%;
-	transform: translateX(-50%);
-	background: white;
-	border: 2px solid var(--brand);
-	border-radius: 8px;
-	padding: 16px;
-	box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+/* Progress Step Modal */
+.progress-modal {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.5);
+	display: flex;
+	align-items: center;
+	justify-content: center;
 	z-index: 10000;
-	min-width: 220px;
-	max-width: 320px;
 	opacity: 0;
 	visibility: hidden;
 	transition: all 0.3s ease;
-	pointer-events: none;
 }
 
-.progress-step-popup.show {
+.progress-modal.show {
 	opacity: 1;
 	visibility: visible;
-	pointer-events: auto;
 }
 
-.progress-step-popup::after {
-	content: '';
+.progress-modal-content {
+	background: white;
+	border: 2px solid var(--brand);
+	border-radius: 12px;
+	padding: 24px;
+	box-shadow: 0 8px 25px rgba(0,0,0,0.25);
+	min-width: 300px;
+	max-width: 500px;
+	position: relative;
+	transform: scale(0.9);
+	transition: transform 0.3s ease;
+}
+
+.progress-modal.show .progress-modal-content {
+	transform: scale(1);
+}
+
+.progress-modal-close {
 	position: absolute;
-	top: 100%;
-	left: 50%;
-	transform: translateX(-50%);
-	width: 0;
-	height: 0;
-	border-left: 10px solid transparent;
-	border-right: 10px solid transparent;
-	border-top: 10px solid var(--brand);
-}
-
-.popup-title {
-	font-size: 14px;
-	font-weight: 600;
-	color: var(--brand);
-	margin: 0 0 8px 0;
-}
-
-.popup-content {
-	font-size: 12px;
-	color: var(--ink);
-	line-height: 1.4;
-}
-
-.popup-link {
-	display: inline-block;
-	margin-top: 8px;
-	padding: 6px 12px;
-	background: var(--accent);
-	color: white;
-	text-decoration: none;
-	border-radius: 4px;
-	font-size: 11px;
-	font-weight: 500;
+	top: 12px;
+	right: 12px;
+	background: none;
+	border: none;
+	font-size: 20px;
+	cursor: pointer;
+	color: var(--muted);
+	width: 30px;
+	height: 30px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
 	transition: background 0.2s ease;
 }
 
-.popup-link:hover {
+.progress-modal-close:hover {
+	background: var(--rule);
+	color: var(--ink);
+}
+
+.modal-title {
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--brand);
+	margin: 0 0 16px 0;
+	text-align: center;
+}
+
+.modal-content {
+	font-size: 14px;
+	color: var(--ink);
+	line-height: 1.5;
+}
+
+.modal-link {
+	display: inline-block;
+	margin-top: 16px;
+	padding: 10px 20px;
+	background: var(--accent);
+	color: white;
+	text-decoration: none;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	transition: background 0.2s ease;
+	text-align: center;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+.modal-link:hover {
 	background: var(--brand);
 	color: white;
 }
 
-.popup-details {
-	margin: 4px 0;
-	font-size: 11px;
-	color: var(--muted);
+.modal-details {
+	margin: 8px 0;
+	font-size: 14px;
+	color: var(--ink);
+	padding: 8px 0;
+	border-bottom: 1px solid var(--rule);
+}
+
+.modal-details:last-child {
+	border-bottom: none;
 }
 
 /* Interactive Progress Bar */

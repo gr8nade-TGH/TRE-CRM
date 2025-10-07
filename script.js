@@ -1225,12 +1225,6 @@ const mockAuditLog = [
 											 data-step="${step.id}">
 											<div class="progress-step-dot ${stepClass}">${step.id}</div>
 											<div class="progress-step-label">${step.label}</div>
-											<div class="progress-step-popup" id="popup-${lead.id}-${step.id}">
-												<div class="popup-title">${step.label}</div>
-												<div class="popup-content">
-													${getStepPopupContent(lead, step)}
-												</div>
-											</div>
 										</div>
 									`;
 								}).join('')}
@@ -1244,90 +1238,106 @@ const mockAuditLog = [
 		return table;
 	}
 
-	function getStepPopupContent(lead, step) {
+	function getStepModalContent(lead, step) {
 		switch(step.id) {
 			case 1: // Showcase Sent
 				return `
-					<div class="popup-details"><strong>Sent to:</strong> ${lead.leadName}</div>
-					<div class="popup-details"><strong>Agent:</strong> ${lead.agentName}</div>
-					<div class="popup-details"><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-					<a href="${lead.showcase.landingPageUrl}" target="_blank" class="popup-link">View Landing Page →</a>
+					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
+					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
+					<div class="modal-details"><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</div>
+					<a href="${lead.showcase.landingPageUrl}" target="_blank" class="modal-link">View Landing Page →</a>
 				`;
 				
 			case 2: // Lead Responded
 				return `
-					<div class="popup-details"><strong>Lead:</strong> ${lead.leadName}</div>
-					<div class="popup-details"><strong>Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
-					<div class="popup-details"><strong>Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
-					<a href="${lead.showcase.landingPageUrl}?filled=true" target="_blank" class="popup-link">View Filled Page →</a>
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
+					<div class="modal-details"><strong>Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
+					<div class="modal-details"><strong>Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
+					<a href="${lead.showcase.landingPageUrl}?filled=true" target="_blank" class="modal-link">View Filled Page →</a>
 				`;
 				
 			case 3: // Guest Card Sent
 				return `
-					<div class="popup-details"><strong>Lead:</strong> ${lead.leadName}</div>
-					<div class="popup-details"><strong>Agent:</strong> ${lead.agentName}</div>
-					<div class="popup-details"><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</div>
-					<a href="${lead.guestCard.url}" target="_blank" class="popup-link">View Guest Card →</a>
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
+					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
+					<div class="modal-details"><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</div>
+					<a href="${lead.guestCard.url}" target="_blank" class="modal-link">View Guest Card →</a>
 				`;
 				
 			case 4: // Property Selected
 				return `
-					<div class="popup-details"><strong>Property:</strong> ${lead.property.name}</div>
-					<div class="popup-details"><strong>Address:</strong> ${lead.property.address}</div>
-					<div class="popup-details"><strong>Rent:</strong> ${lead.property.rent}</div>
-					<div class="popup-details"><strong>Size:</strong> ${lead.property.bedrooms}bd/${lead.property.bathrooms}ba</div>
+					<div class="modal-details"><strong>Property:</strong> ${lead.property.name}</div>
+					<div class="modal-details"><strong>Address:</strong> ${lead.property.address}</div>
+					<div class="modal-details"><strong>Rent:</strong> ${lead.property.rent}</div>
+					<div class="modal-details"><strong>Size:</strong> ${lead.property.bedrooms}bd/${lead.property.bathrooms}ba</div>
 				`;
 				
 			case 5: // Lease Sent
 				return `
-					<div class="popup-details"><strong>Sent to:</strong> ${lead.leadName}</div>
-					<div class="popup-details"><strong>Property:</strong> ${lead.lease.property}</div>
-					<div class="popup-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-					<a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="popup-link">View Lease →</a>
+					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
+					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
+					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
+					<a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="modal-link">View Lease →</a>
 				`;
 				
 			case 6: // Lease Signed
 				return `
-					<div class="popup-details"><strong>Property:</strong> ${lead.lease.property}</div>
-					<div class="popup-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-					<div class="popup-details"><strong>Signed by:</strong> Property Management</div>
-					<a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="popup-link">View Signed Lease →</a>
+					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
+					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
+					<div class="modal-details"><strong>Signed by:</strong> Property Management</div>
+					<a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="modal-link">View Signed Lease →</a>
 				`;
 				
 			case 7: // Lease Finalized
 				return `
-					<div class="popup-details"><strong>Status:</strong> Complete</div>
-					<div class="popup-details"><strong>Property:</strong> ${lead.lease.property}</div>
-					<div class="popup-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-					<div class="popup-details"><strong>Commission:</strong> Ready for processing</div>
+					<div class="modal-details"><strong>Status:</strong> Complete</div>
+					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
+					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
+					<div class="modal-details"><strong>Commission:</strong> Ready for processing</div>
 				`;
 				
 			default:
-				return `<div class="popup-details">No details available</div>`;
+				return `<div class="modal-details">No details available</div>`;
 		}
 	}
 
 	function showStepDetails(lead, step) {
-		// Hide all other popups first
-		document.querySelectorAll('.progress-step-popup').forEach(popup => {
-			popup.classList.remove('show');
-		});
-		
-		// Show the specific popup
-		const popup = document.getElementById(`popup-${lead.id}-${step.id}`);
-		if (popup) {
-			popup.classList.add('show');
+		// Create modal if it doesn't exist
+		let modal = document.getElementById('progressModal');
+		if (!modal) {
+			modal = document.createElement('div');
+			modal.id = 'progressModal';
+			modal.className = 'progress-modal';
+			modal.innerHTML = `
+				<div class="progress-modal-content">
+					<button class="progress-modal-close">&times;</button>
+					<div class="modal-title"></div>
+					<div class="modal-content"></div>
+				</div>
+			`;
+			document.body.appendChild(modal);
 			
-			// Hide popup when clicking outside
-			setTimeout(() => {
-				document.addEventListener('click', function hidePopup(e) {
-					if (!popup.contains(e.target)) {
-						popup.classList.remove('show');
-						document.removeEventListener('click', hidePopup);
-					}
-				});
-			}, 100);
+			// Add close event listeners
+			modal.querySelector('.progress-modal-close').addEventListener('click', () => {
+				modal.classList.remove('show');
+			});
+			
+			modal.addEventListener('click', (e) => {
+				if (e.target === modal) {
+					modal.classList.remove('show');
+				}
+			});
 		}
+		
+		// Update modal content
+		const title = modal.querySelector('.modal-title');
+		const content = modal.querySelector('.modal-content');
+		
+		title.textContent = step.label;
+		content.innerHTML = getStepModalContent(lead, step);
+		
+		// Show modal
+		modal.classList.add('show');
 	}
 
 	function viewLeadDetails(leadId) {
