@@ -1130,7 +1130,16 @@ const mockAuditLog = [
 		const tbody = document.getElementById(tbodyId);
 		if (!tbody) return;
 
-		tbody.innerHTML = leads.map(lead => createProgressTableRow(lead)).join('');
+		// Clear existing content
+		tbody.innerHTML = '';
+		
+		// Create each lead group
+		leads.forEach(lead => {
+			const leadGroup = document.createElement('tbody');
+			leadGroup.className = 'lead-group';
+			leadGroup.innerHTML = createProgressTableRow(lead);
+			tbody.appendChild(leadGroup);
+		});
 		
 		// Add event listeners for progress steps
 		leads.forEach(lead => {
@@ -1151,57 +1160,54 @@ const mockAuditLog = [
 		const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 		
 		return `
-			<!-- Lead Group Container -->
-			<tbody class="lead-group">
-				<!-- Data Row -->
-				<tr class="lead-data-row">
-					<td data-sort="${lead.agentName}">${lead.agentName}</td>
-					<td data-sort="${lead.leadName}">${lead.leadName}</td>
-					<td data-sort="${lead.currentStep}">${currentStepName}</td>
-					<td class="progress-summary">
-						<div class="progress-info">
-							<span class="progress-percentage">${progressPercentage}% complete</span>
-							<span class="progress-status ${lead.status}">${lead.status}</span>
-						</div>
-					</td>
-					<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
-					<td>
-						<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
-							View Details
-						</button>
-					</td>
-				</tr>
-				<!-- Progress Bar Row -->
-				<tr class="progress-bar-row">
-					<td colspan="6" class="progress-bar-cell">
-						<div class="progress-bar-container">
-							<div class="progress-bar">
-								<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
-								<div class="progress-steps">
-									${progressSteps.map(step => {
-										const stepClass = step.id < lead.currentStep ? 'completed' : 
-														 step.id === lead.currentStep ? 'current' : 'pending';
-										return `
-											<div class="progress-step ${stepClass}" 
-												 data-lead-id="${lead.id}" 
-												 data-step="${step.id}">
-												<div class="progress-step-dot ${stepClass}">${step.id}</div>
-												<div class="progress-step-label">${step.label}</div>
-												<div class="progress-step-popup" id="popup-${lead.id}-${step.id}">
-													<div class="popup-title">${step.label}</div>
-													<div class="popup-content">
-														${getStepPopupContent(lead, step)}
-													</div>
+			<!-- Data Row -->
+			<tr class="lead-data-row">
+				<td data-sort="${lead.agentName}">${lead.agentName}</td>
+				<td data-sort="${lead.leadName}">${lead.leadName}</td>
+				<td data-sort="${lead.currentStep}">${currentStepName}</td>
+				<td class="progress-summary">
+					<div class="progress-info">
+						<span class="progress-percentage">${progressPercentage}% complete</span>
+						<span class="progress-status ${lead.status}">${lead.status}</span>
+					</div>
+				</td>
+				<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
+				<td>
+					<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
+						View Details
+					</button>
+				</td>
+			</tr>
+			<!-- Progress Bar Row -->
+			<tr class="progress-bar-row">
+				<td colspan="6" class="progress-bar-cell">
+					<div class="progress-bar-container">
+						<div class="progress-bar">
+							<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
+							<div class="progress-steps">
+								${progressSteps.map(step => {
+									const stepClass = step.id < lead.currentStep ? 'completed' : 
+													 step.id === lead.currentStep ? 'current' : 'pending';
+									return `
+										<div class="progress-step ${stepClass}" 
+											 data-lead-id="${lead.id}" 
+											 data-step="${step.id}">
+											<div class="progress-step-dot ${stepClass}">${step.id}</div>
+											<div class="progress-step-label">${step.label}</div>
+											<div class="progress-step-popup" id="popup-${lead.id}-${step.id}">
+												<div class="popup-title">${step.label}</div>
+												<div class="popup-content">
+													${getStepPopupContent(lead, step)}
 												</div>
 											</div>
-										`;
-									}).join('')}
-								</div>
+										</div>
+									`;
+								}).join('')}
 							</div>
 						</div>
-					</td>
-				</tr>
-			</tbody>
+					</div>
+				</td>
+			</tr>
 		`;
 	}
 
