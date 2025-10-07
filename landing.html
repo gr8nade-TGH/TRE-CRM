@@ -479,6 +479,42 @@
         // Sample property data (in real app, this would come from the database)
         const allProperties = [
             {
+                id: 'the-howard',
+                name: 'The Howard',
+                price: '$1,200 - $1,500/mo',
+                specs: '1 bd • 1 ba • 750 sqft',
+                image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
+                features: ['First month free', 'Pet-friendly', 'Pool'],
+                commission: '3.5%'
+            },
+            {
+                id: 'community-2',
+                name: 'Community 2',
+                price: '$1,400 - $1,800/mo',
+                specs: '2 bd • 2 ba • 1,100 sqft',
+                image: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=400&h=300&fit=crop',
+                features: ['No deposit required', 'Rooftop pool', 'Fitness center'],
+                commission: '4.0%'
+            },
+            {
+                id: 'waterford-park',
+                name: 'Waterford Park',
+                price: '$1,600 - $2,100/mo',
+                specs: '2-3 bd • 2-3 ba • 1,200-1,500 sqft',
+                image: 'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=400&h=300&fit=crop',
+                features: ['Utilities included', 'Historic building', 'Modern amenities'],
+                commission: '3.0%'
+            },
+            {
+                id: 'community-1',
+                name: 'Community 1',
+                price: '$1,100 - $1,400/mo',
+                specs: '1 bd • 1 ba • 650 sqft',
+                image: 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
+                features: ['First month free', 'Pet-friendly', 'Pool'],
+                commission: '3.5%'
+            },
+            {
                 id: 'listing-1',
                 name: 'The Residences at Domain',
                 price: '$1,800 - $2,400/mo',
@@ -512,6 +548,9 @@
             ? allProperties.filter(prop => propertyIds.includes(prop.id))
             : allProperties;
 
+        // If no properties match the IDs, show all properties
+        const displayProperties = properties.length > 0 ? properties : allProperties;
+
         let selectedProperties = new Set();
         let selectedDates = new Set();
         let currentDate = new Date();
@@ -535,7 +574,7 @@
             const grid = document.getElementById('propertiesGrid');
             grid.innerHTML = '';
 
-            properties.forEach(property => {
+            displayProperties.forEach(property => {
                 const card = document.createElement('div');
                 card.className = 'property-card';
                 card.innerHTML = `
@@ -603,7 +642,7 @@
         }
 
         function selectAllProperties() {
-            properties.forEach(property => {
+            displayProperties.forEach(property => {
                 selectedProperties.add(property.id);
             });
             trackInteraction('select_all', { showcaseId, leadId, propertyIds: Array.from(selectedProperties) });
@@ -611,7 +650,7 @@
         }
 
         function viewDetails(propertyId) {
-            const property = properties.find(p => p.id === propertyId);
+            const property = displayProperties.find(p => p.id === propertyId);
             trackInteraction('view_details', { showcaseId, leadId, propertyId });
             alert(`Property Details:\n\n${property.name}\n${property.price}\n${property.specs}\n\nFeatures: ${property.features.join(', ')}`);
         }
@@ -628,7 +667,7 @@
             }
             
             const selectedNames = Array.from(selectedProperties).map(id => 
-                properties.find(p => p.id === id).name
+                displayProperties.find(p => p.id === id).name
             );
             
             const selectedDatesList = Array.from(selectedDates).map(date => 
