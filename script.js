@@ -7,6 +7,16 @@ function formatDate(iso) {
 	} 
 }
 
+function showModal(modalId) {
+	const modal = document.getElementById(modalId);
+	if (modal) modal.classList.remove('hidden');
+}
+
+function hideModal(modalId) {
+	const modal = document.getElementById(modalId);
+	if (modal) modal.classList.add('hidden');
+}
+
 // Mock data - defined globally
 const mockUsers = [
 	{
@@ -1224,11 +1234,50 @@ const mockAuditLog = [
 
 	function initMap() {
 		if (map) return;
-		map = L.map('listingsMap', { zoomControl: true }).setView([29.48, -98.50], 10);
-		L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
+		map = L.map('listingsMap', { 
+			zoomControl: true,
+			preferCanvas: true, // Better performance
+			renderer: L.canvas() // Use canvas for better performance
+		}).setView([29.48, -98.50], 10);
+		
+		// Multiple tile layers for better coverage and fallback
+		const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
 			maxZoom: 19, 
-			attribution: '&copy; OpenStreetMap' 
-		}).addTo(map);
+			attribution: '&copy; OpenStreetMap',
+			subdomains: ['a', 'b', 'c'], // Use multiple subdomains for better loading
+			detectRetina: true
+		});
+		
+		const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+			maxZoom: 20,
+			attribution: '&copy; OpenStreetMap &copy; CARTO',
+			subdomains: 'abcd',
+			detectRetina: true
+		});
+		
+		const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+			maxZoom: 19,
+			attribution: '&copy; Esri',
+			detectRetina: true
+		});
+		
+		// Add base layers
+		const baseLayers = {
+			"Street Map": osmLayer,
+			"CartoDB": cartoLayer,
+			"Satellite": satelliteLayer
+		};
+		
+		// Add default layer
+		osmLayer.addTo(map);
+		
+		// Add layer control
+		L.control.layers(baseLayers).addTo(map);
+		
+		// Handle tile loading errors
+		map.on('tileerror', function(e) {
+			console.log('Tile loading error:', e);
+		});
 	}
 
 	function clearMarkers() {
@@ -1238,18 +1287,32 @@ const mockAuditLog = [
 
 	function addMarker(prop) {
 		const isSelected = selectedProperty && selectedProperty.id === prop.id;
+		
+		// Use canvas marker for better performance with many markers
 		const icon = L.divIcon({ 
 			html: `<div class="price-marker ${isSelected ? 'selected' : ''}">$${prop.rent_min.toLocaleString()}</div>`, 
 			className: '', 
-			iconSize: [0, 0] 
+			iconSize: [0, 0],
+			useCanvas: true // Better performance
 		});
-		const marker = L.marker([prop.lat, prop.lng], { icon }).addTo(map);
+		
+		const marker = L.marker([prop.lat, prop.lng], { 
+			icon,
+			riseOnHover: true // Better UX
+		}).addTo(map);
+		
 		marker.property = prop; // Store property reference
+		
+		// Lazy load popup content
 		marker.bindPopup(`
 			<strong>${prop.name}</strong><br>
 			${prop.address}<br>
 			<span class="subtle">$${prop.rent_min.toLocaleString()} - $${prop.rent_max.toLocaleString()} · ${prop.beds_min}-${prop.beds_max} bd / ${prop.baths_min}-${prop.baths_max} ba</span>
-		`);
+		`, {
+			closeButton: true,
+			autoClose: false,
+			closeOnClick: false
+		});
 		
 		// Add click handler to marker
 		marker.on('click', () => {
@@ -2325,28 +2388,65 @@ const mockAuditLog = [
 				try {
 					const userId = document.getElementById('userModal').getAttribute('data-user-id');
 					
-					if (userId) {
-						// Update existing user
-						await updateUser(userId, {
-							name: userData.name,
-							email: userData.email,
-							role: userData.role,
-							status: userData.sendInvitation ? 'invited' : 'active'
-						});
-						toast('User updated successfully');
+					// Check if we have real API available
+					const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+						? 'http://localhost:3001/api' 
+						: null;
+					
+					if (apiBase) {
+						// Use real API
+						if (userId) {
+							await updateUser(userId, {
+								name: userData.name,
+								email: userData.email,
+								role: userData.role,
+								status: userData.sendInvitation ? 'invited' : 'active'
+							});
+							toast('User updated successfully');
+						} else {
+							await createUser({
+								name: userData.name,
+								email: userData.email,
+								role: userData.role,
+								password: userData.password,
+								sendInvitation: userData.sendInvitation
+							});
+							toast('User created successfully');
+						}
+						await loadAuditLog();
 					} else {
-						// Create new user
-						await createUser({
-							name: userData.name,
-							email: userData.email,
-							role: userData.role,
-							password: userData.password,
-							sendInvitation: userData.sendInvitation
-						});
-						toast('User created successfully');
+						// Use mock data
+						if (userId) {
+							// Update mock user
+							const userIndex = mockUsers.findIndex(u => u.id === userId);
+							if (userIndex !== -1) {
+								mockUsers[userIndex] = {
+									...mockUsers[userIndex],
+									name: userData.name,
+									email: userData.email,
+									role: userData.role,
+									status: userData.sendInvitation ? 'invited' : 'active'
+								};
+							}
+							toast('User updated successfully (mock data)');
+						} else {
+							// Add new mock user
+							const newUser = {
+								id: 'user_' + Date.now(),
+								name: userData.name,
+								email: userData.email,
+								role: userData.role,
+								status: userData.sendInvitation ? 'invited' : 'active',
+								created_at: new Date().toISOString(),
+								created_by: 'system'
+							};
+							mockUsers.unshift(newUser);
+							toast('User created successfully (mock data)');
+						}
+						renderUsersTable();
+						renderAuditLog();
 					}
 					
-					await loadAuditLog(); // Refresh audit log
 					hideModal('userModal');
 					document.getElementById('userModal').removeAttribute('data-user-id');
 					
