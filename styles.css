@@ -2751,12 +2751,20 @@ body {
 	min-height: 80px;
 }
 
-/* CSS Fire Icon with TRE text */
+/* Brand logo styling */
+.brand-logo {
+	height: 40px;
+	width: auto;
+	max-width: 200px;
+	object-fit: contain;
+}
+
+/* CSS Fire Icon with $ symbol */
 .fire-icon {
 	display: inline-block;
 	position: relative;
 	font-weight: bold;
-	font-size: 14px;
+	font-size: 16px;
 	color: #fca5a5;
 	text-shadow: 
 		0 0 5px #f97316,
