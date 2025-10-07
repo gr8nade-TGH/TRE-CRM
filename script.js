@@ -1127,18 +1127,25 @@ const mockAuditLog = [
 	];
 
 	function renderProgressTable(tbodyId, leads) {
-		const tbody = document.getElementById(tbodyId);
-		if (!tbody) return;
+		const container = document.getElementById(tbodyId);
+		if (!container) return;
 
 		// Clear existing content
-		tbody.innerHTML = '';
+		container.innerHTML = '';
 		
-		// Create each lead group
-		leads.forEach(lead => {
-			const leadGroup = document.createElement('tbody');
-			leadGroup.className = 'lead-group';
-			leadGroup.innerHTML = createProgressTableRow(lead);
-			tbody.appendChild(leadGroup);
+		// Create each lead as a separate table
+		leads.forEach((lead, index) => {
+			const leadTable = createLeadTable(lead, index === 0); // First lead expanded by default
+			container.appendChild(leadTable);
+		});
+		
+		// Add event listeners for expand buttons
+		document.querySelectorAll('.expand-btn').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				e.stopPropagation();
+				const leadId = btn.getAttribute('data-lead-id');
+				toggleLeadTable(leadId);
+			});
 		});
 		
 		// Add event listeners for progress steps
@@ -1155,32 +1162,57 @@ const mockAuditLog = [
 		});
 	}
 
-	function createProgressTableRow(lead) {
+	function createLeadTable(lead, isExpanded = false) {
 		const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 		const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 		
-		return `
-			<!-- Data Row -->
-			<tr class="lead-data-row">
-				<td data-sort="${lead.agentName}">${lead.agentName}</td>
-				<td data-sort="${lead.leadName}">${lead.leadName}</td>
-				<td data-sort="${lead.currentStep}">${currentStepName}</td>
-				<td class="progress-summary">
-					<div class="progress-info">
-						<span class="progress-percentage">${progressPercentage}% complete</span>
-						<span class="progress-status ${lead.status}">${lead.status}</span>
-					</div>
-				</td>
-				<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
-				<td>
-					<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
-						View Details
-					</button>
-				</td>
-			</tr>
-			<!-- Progress Bar Row -->
-			<tr class="progress-bar-row">
-				<td colspan="6" class="progress-bar-cell">
+		const table = document.createElement('div');
+		table.className = 'lead-table-container';
+		table.innerHTML = `
+			<div class="lead-table-header">
+				<div class="lead-info">
+					<h4>${lead.agentName} - ${lead.leadName}</h4>
+					<span class="lead-status ${lead.status}">${lead.status}</span>
+				</div>
+				<button class="expand-btn" data-lead-id="${lead.id}">
+					<span class="expand-icon">${isExpanded ? '▼' : '▶'}</span>
+				</button>
+			</div>
+			
+			<div class="lead-table-content ${isExpanded ? 'expanded' : 'collapsed'}">
+				<table class="lead-data-table">
+					<thead>
+						<tr>
+							<th>Agent</th>
+							<th>Lead</th>
+							<th>Current Step</th>
+							<th>Progress</th>
+							<th>Last Updated</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody>
+						<tr>
+							<td>${lead.agentName}</td>
+							<td>${lead.leadName}</td>
+							<td>${currentStepName}</td>
+							<td class="progress-summary">
+								<div class="progress-info">
+									<span class="progress-percentage">${progressPercentage}% complete</span>
+									<span class="progress-status ${lead.status}">${lead.status}</span>
+								</div>
+							</td>
+							<td>${formatDate(lead.lastUpdated)}</td>
+							<td>
+								<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
+									View Details
+								</button>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+				
+				<div class="progress-section">
 					<div class="progress-bar-container">
 						<div class="progress-bar">
 							<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
@@ -1206,9 +1238,11 @@ const mockAuditLog = [
 							</div>
 						</div>
 					</div>
-				</td>
-			</tr>
+				</div>
+			</div>
 		`;
+		
+		return table;
 	}
 
 	function getStepPopupContent(lead, step) {
@@ -1303,6 +1337,25 @@ const mockAuditLog = [
 		
 		const currentStep = progressSteps[lead.currentStep - 1];
 		showStepDetails(lead, currentStep);
+	}
+
+	function toggleLeadTable(leadId) {
+		const btn = document.querySelector(`[data-lead-id="${leadId}"]`);
+		if (!btn) return;
+		
+		const container = btn.closest('.lead-table-container');
+		const content = container.querySelector('.lead-table-content');
+		const expandIcon = container.querySelector('.expand-icon');
+		
+		if (content.classList.contains('expanded')) {
+			content.classList.remove('expanded');
+			content.classList.add('collapsed');
+			expandIcon.textContent = '▶';
+		} else {
+			content.classList.remove('collapsed');
+			content.classList.add('expanded');
+			expandIcon.textContent = '▼';
+		}
 	}
 
 	// ---- Rendering: Documents Table ----
