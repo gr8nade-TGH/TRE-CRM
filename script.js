@@ -2221,20 +2221,27 @@
 
 	// Admin page functions - moved outside DOMContentLoaded for global access
 	function renderAdmin() {
-		const currentRole = state.currentRole;
+		const currentRole = state.role || 'manager';
 		const adminRoleLabel = document.getElementById('adminRoleLabel');
 		
 		if (adminRoleLabel) {
 			adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
 		}
 		
-		renderUsersTable();
-		renderAuditLog();
+		// Ensure we render the data
+		setTimeout(() => {
+			renderUsersTable();
+			renderAuditLog();
+		}, 100);
 	}
 
 	function renderUsersTable() {
+		console.log('renderUsersTable called, mockUsers:', mockUsers.length);
 		const tbody = document.getElementById('usersTbody');
-		if (!tbody) return;
+		if (!tbody) {
+			console.log('usersTbody not found');
+			return;
+		}
 		
 		tbody.innerHTML = mockUsers.map(user => {
 			const createdBy = user.created_by === 'system' ? 'System' : 
@@ -2310,8 +2317,12 @@
 	}
 
 	function editUser(userId) {
+		console.log('editUser called with:', userId);
 		const user = mockUsers.find(u => u.id === userId);
-		if (!user) return;
+		if (!user) {
+			console.log('User not found:', userId);
+			return;
+		}
 		
 		document.getElementById('userModalTitle').textContent = 'Edit User';
 		document.getElementById('userName').value = user.name;
@@ -2326,16 +2337,24 @@
 	}
 
 	function changePassword(userId) {
+		console.log('changePassword called with:', userId);
 		const user = mockUsers.find(u => u.id === userId);
-		if (!user) return;
+		if (!user) {
+			console.log('User not found for password change:', userId);
+			return;
+		}
 		
 		document.getElementById('passwordModal').setAttribute('data-user-id', userId);
 		showModal('passwordModal');
 	}
 
 	function deleteUser(userId) {
+		console.log('deleteUser called with:', userId);
 		const user = mockUsers.find(u => u.id === userId);
-		if (!user) return;
+		if (!user) {
+			console.log('User not found for deletion:', userId);
+			return;
+		}
 		
 		if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
 			// In a real app, this would make an API call
