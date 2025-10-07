@@ -201,6 +201,28 @@ body {
   border-collapse: separate; 
   border-spacing: 0; 
 }
+
+/* Listings table specific styles */
+#listingsTable {
+  min-width: 800px; /* Ensure table has minimum width */
+}
+
+#listingsTable th,
+#listingsTable td {
+  white-space: nowrap; /* Prevent text wrapping */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Optimize column widths for listings table */
+#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 200px; min-width: 180px; } /* Community */
+#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 120px; min-width: 100px; } /* Market */
+#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 150px; min-width: 130px; } /* Neighborhoods */
+#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Rent Range */
+#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 100px; min-width: 80px; } /* Beds/Baths */
+#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 100px; min-width: 80px; } /* Commission */
+#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 120px; min-width: 100px; } /* Interested Leads */
+#listingsTable th:nth-child(8), #listingsTable td:nth-child(8) { width: 140px; min-width: 120px; } /* Last Updated */
 .data-table thead th { 
   background: #f8fbff; 
   text-align: left; 
@@ -1026,6 +1048,37 @@ body {
   gap: 20px; 
   margin: 0 24px 24px;
 }
+
+.listings-table-container {
+  overflow-x: auto;
+  overflow-y: auto;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: white;
+  box-shadow: var(--shadow);
+  min-height: 560px;
+}
+
+/* Custom scrollbar for listings table */
+.listings-table-container::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.listings-table-container::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.listings-table-container::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.listings-table-container::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
 .mapwrap { 
   border: 1px solid var(--rule); 
   border-radius: 16px; 
