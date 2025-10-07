@@ -647,7 +647,10 @@ const mockAuditLog = [
 	}
 
 	// ---- Real API Layer ----
-	const API_BASE = 'http://localhost:3001/api';
+	// Use localhost for local development, or fallback to mock data for production
+	const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+		? 'http://localhost:3001/api' 
+		: null; // Will use mock data when API_BASE is null
 	const USE_MOCK_DATA = true; // Set to false when backend is deployed
 
 	// Helper function to handle API responses
@@ -2723,8 +2726,20 @@ let realAuditLog = [];
 
 // API functions for real data
 async function loadUsers() {
+	// Check if we're running locally or on production
+	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+		? 'http://localhost:3001/api' 
+		: null;
+		
+	if (!apiBase) {
+		console.log('API_BASE not available, using mock data');
+		realUsers = [];
+		renderUsersTable();
+		return;
+	}
+	
 	try {
-		const response = await fetch('http://localhost:3001/api/users');
+		const response = await fetch(`${apiBase}/users`);
 		if (!response.ok) throw new Error('Failed to fetch users');
 		realUsers = await response.json();
 		console.log('Loaded users from API:', realUsers.length);
@@ -2736,8 +2751,20 @@ async function loadUsers() {
 }
 
 async function loadAuditLog() {
+	// Check if we're running locally or on production
+	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+		? 'http://localhost:3001/api' 
+		: null;
+		
+	if (!apiBase) {
+		console.log('API_BASE not available, using mock data');
+		realAuditLog = [];
+		renderAuditLog();
+		return;
+	}
+	
 	try {
-		const response = await fetch('http://localhost:3001/api/audit-log');
+		const response = await fetch(`${apiBase}/audit-log`);
 		if (!response.ok) throw new Error('Failed to fetch audit log');
 		realAuditLog = await response.json();
 		console.log('Loaded audit log from API:', realAuditLog.length);
@@ -2750,7 +2777,12 @@ async function loadAuditLog() {
 
 async function createUser(userData) {
 	try {
-		const response = await fetch('http://localhost:3001/api/users', {
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+			? 'http://localhost:3001/api' 
+			: null;
+		if (!apiBase) throw new Error('API not available in production');
+		
+		const response = await fetch(`${apiBase}/users`, {
 			method: 'POST',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -2771,7 +2803,12 @@ async function createUser(userData) {
 
 async function updateUser(userId, userData) {
 	try {
-		const response = await fetch(`http://localhost:3001/api/users/${userId}`, {
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+			? 'http://localhost:3001/api' 
+			: null;
+		if (!apiBase) throw new Error('API not available in production');
+		
+		const response = await fetch(`${apiBase}/users/${userId}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -2793,7 +2830,12 @@ async function updateUser(userId, userData) {
 
 async function deleteUserFromAPI(userId) {
 	try {
-		const response = await fetch(`http://localhost:3001/api/users/${userId}`, {
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+			? 'http://localhost:3001/api' 
+			: null;
+		if (!apiBase) throw new Error('API not available in production');
+		
+		const response = await fetch(`${apiBase}/users/${userId}`, {
 			method: 'DELETE',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -2812,7 +2854,12 @@ async function deleteUserFromAPI(userId) {
 
 async function changeUserPassword(userId, newPassword) {
 	try {
-		const response = await fetch(`http://localhost:3001/api/users/${userId}/password`, {
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+			? 'http://localhost:3001/api' 
+			: null;
+		if (!apiBase) throw new Error('API not available in production');
+		
+		const response = await fetch(`${apiBase}/users/${userId}/password`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify({
@@ -3019,3 +3066,6 @@ async function deleteUser(userId) {
 window.renderAdmin = renderAdmin;
 window.renderUsersTable = renderUsersTable;
 window.renderAuditLog = renderAuditLog;
+
+// Make utility functions globally accessible
+window.formatDate = formatDate;
