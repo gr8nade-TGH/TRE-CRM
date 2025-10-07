@@ -1,3 +1,12 @@
+// Utility functions - defined globally
+function formatDate(iso) { 
+	try { 
+		return new Date(iso).toLocaleString(); 
+	} catch { 
+		return iso; 
+	} 
+}
+
 // Mock data - defined globally
 const mockUsers = [
 	{
@@ -400,7 +409,7 @@ const mockAuditLog = [
 		if (modal) modal.classList.add('hidden');
 	}
 	function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; show(t); setTimeout(()=> hide(t), 2000); }
-	function formatDate(iso){ try { return new Date(iso).toLocaleString(); } catch { return iso; } }
+	// formatDate function moved to global scope
 
 	// ---- Table Sorting ----
 	function sortTable(column, tableId) {
@@ -3067,5 +3076,4 @@ window.renderAdmin = renderAdmin;
 window.renderUsersTable = renderUsersTable;
 window.renderAuditLog = renderAuditLog;
 
-// Make utility functions globally accessible
-window.formatDate = formatDate;
+// formatDate is already globally accessible
