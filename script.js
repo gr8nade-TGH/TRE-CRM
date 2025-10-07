@@ -1219,14 +1219,7 @@ const mockAuditLog = [
 			container.appendChild(leadTable);
 		});
 		
-		// Add event listeners for expand buttons
-		document.querySelectorAll('.expand-btn').forEach(btn => {
-			btn.addEventListener('click', (e) => {
-				e.stopPropagation();
-				const leadId = btn.getAttribute('data-lead-id');
-				toggleLeadTable(leadId);
-			});
-		});
+		// Event listeners are handled by event delegation in the main event listener setup
 		
 		// Add event listeners for progress steps
 		leads.forEach(lead => {
@@ -3340,6 +3333,16 @@ function createLeadTable(lead, isExpanded = false) {
 			showPopover(testBtn, 'green');
 		}, 100);
 	};
+
+		// Event delegation for expand buttons (works for both manager and agent views)
+		document.addEventListener('click', (e) => {
+			if (e.target.closest('.expand-btn')) {
+				e.stopPropagation();
+				const btn = e.target.closest('.expand-btn');
+				const leadId = btn.getAttribute('data-lead-id');
+				toggleLeadTable(leadId);
+			}
+		});
 
 		// initial route
 		if (!location.hash) location.hash = '/leads';
