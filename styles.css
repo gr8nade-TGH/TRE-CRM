@@ -204,7 +204,7 @@ body {
 
 /* Listings table specific styles */
 #listingsTable {
-  min-width: 800px; /* Ensure table has minimum width */
+  min-width: 700px; /* Ensure table has minimum width */
 }
 
 #listingsTable th,
@@ -215,14 +215,13 @@ body {
 }
 
 /* Optimize column widths for listings table */
-#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 200px; min-width: 180px; } /* Community */
-#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 120px; min-width: 100px; } /* Market */
-#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 150px; min-width: 130px; } /* Neighborhoods */
-#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Rent Range */
-#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 100px; min-width: 80px; } /* Beds/Baths */
-#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 100px; min-width: 80px; } /* Commission */
-#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 120px; min-width: 100px; } /* Interested Leads */
-#listingsTable th:nth-child(8), #listingsTable td:nth-child(8) { width: 140px; min-width: 120px; } /* Last Updated */
+#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 220px; min-width: 200px; } /* Community */
+#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 140px; min-width: 120px; } /* Market */
+#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 140px; min-width: 120px; } /* Rent Range */
+#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Beds/Baths */
+#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 120px; min-width: 100px; } /* Commission */
+#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 140px; min-width: 120px; } /* Interested Leads */
+#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 160px; min-width: 140px; } /* Last Updated */
 .data-table thead th { 
   background: #f8fbff; 
   text-align: left; 

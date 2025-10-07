@@ -1812,7 +1812,6 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="subtle mono">${prop.address}</div>
 				</td>
 				<td class="mono" data-sort="market">${prop.market}</td>
-				<td class="mono" data-sort="neighborhoods">${prop.neighborhoods.join(', ')}</td>
 				<td class="mono" data-sort="rent_min">$${prop.rent_min} - $${prop.rent_max}</td>
 				<td class="mono" data-sort="beds_min">${prop.beds_min}-${prop.beds_max} / ${prop.baths_min}-${prop.baths_max}</td>
 				<td class="mono" data-sort="commission_pct">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
