@@ -1741,6 +1741,18 @@ body {
 	padding: 20px;
 }
 
+/* Form Row Styles */
+.form-row {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.form-row .field {
+	flex: 1;
+	margin-bottom: 0;
+}
+
 /* Responsive design */
 @media (max-width: 768px) {
 	.documents-container {
@@ -1753,6 +1765,11 @@ body {
 	
 	.lead-table-content.expanded {
 		padding: 16px;
+	}
+	
+	.form-row {
+		flex-direction: column;
+		gap: 0;
 	}
 	
 	/* Removed lead-data-table responsive styles */

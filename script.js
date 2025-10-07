@@ -17,6 +17,86 @@ function hideModal(modalId) {
 	if (modal) modal.classList.add('hidden');
 }
 
+// Add Lead functionality
+function saveNewLead() {
+	const name = document.getElementById('leadName').value.trim();
+	const email = document.getElementById('leadEmail').value.trim();
+	const phone = document.getElementById('leadPhone').value.trim();
+	const status = document.getElementById('leadStatus').value;
+	const health = document.getElementById('leadHealth').value;
+	const source = document.getElementById('leadSource').value;
+	const notes = document.getElementById('leadNotes').value.trim();
+	const preferences = document.getElementById('leadPreferences').value.trim();
+
+	// Validation
+	if (!name || !email || !phone) {
+		toast('Please fill in all required fields (Name, Email, Phone)', 'error');
+		return;
+	}
+
+	// Check for duplicates
+	if (checkDuplicateLead(email, phone)) {
+		toast('A lead with this email or phone number already exists', 'error');
+		return;
+	}
+
+	// Create new lead
+	const newLead = {
+		id: 'lead_' + Date.now(),
+		name: name,
+		email: email,
+		phone: phone,
+		status: status,
+		health_status: health,
+		source: source,
+		notes: notes,
+		preferences: preferences,
+		created_at: new Date().toISOString(),
+		updated_at: new Date().toISOString(),
+		agent_id: state.currentAgent || 'agent_1' // Default agent
+	};
+
+	// Add to mock data
+	if (USE_MOCK_DATA) {
+		mockLeads.push(newLead);
+		renderLeads();
+		toast('Lead added successfully!', 'success');
+		hideModal('addLeadModal');
+	} else {
+		// In production, this would call the API
+		createLeadAPI(newLead);
+	}
+}
+
+function checkDuplicateLead(email, phone) {
+	const existingLeads = USE_MOCK_DATA ? mockLeads : state.leads || [];
+	
+	return existingLeads.some(lead => 
+		lead.email.toLowerCase() === email.toLowerCase() || 
+		lead.phone === phone
+	);
+}
+
+async function createLeadAPI(lead) {
+	try {
+		const response = await fetch(`${API_BASE}/leads`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(lead)
+		});
+		
+		if (response.ok) {
+			toast('Lead added successfully!', 'success');
+			hideModal('addLeadModal');
+			renderLeads(); // Refresh the leads list
+		} else {
+			throw new Error('Failed to create lead');
+		}
+	} catch (error) {
+		toast('Error adding lead: ' + error.message, 'error');
+	}
+}
+
 // Mock data - defined globally
 const mockUsers = [
 	{
@@ -2870,6 +2950,42 @@ function createLeadTable(lead, isExpanded = false) {
 				const filter = e.target.value;
 				// In a real app, this would filter the audit log
 				renderAuditLog(); // For now, just re-render
+			});
+		}
+
+		// Add Lead functionality
+		const addLeadBtn = document.getElementById('addLeadBtn');
+		const addLeadModal = document.getElementById('addLeadModal');
+		const closeAddLeadModal = document.getElementById('closeAddLeadModal');
+		const saveAddLeadBtn = document.getElementById('saveAddLeadBtn');
+		const cancelAddLeadBtn = document.getElementById('cancelAddLeadBtn');
+
+		// Add Lead button
+		if (addLeadBtn) {
+			addLeadBtn.addEventListener('click', () => {
+				showModal('addLeadModal');
+				document.getElementById('addLeadForm').reset();
+			});
+		}
+
+		// Close Add Lead modal
+		if (closeAddLeadModal) {
+			closeAddLeadModal.addEventListener('click', () => {
+				hideModal('addLeadModal');
+			});
+		}
+
+		// Cancel Add Lead
+		if (cancelAddLeadBtn) {
+			cancelAddLeadBtn.addEventListener('click', () => {
+				hideModal('addLeadModal');
+			});
+		}
+
+		// Save Add Lead
+		if (saveAddLeadBtn) {
+			saveAddLeadBtn.addEventListener('click', () => {
+				saveNewLead();
 			});
 		}
 
