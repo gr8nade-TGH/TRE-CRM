@@ -2753,10 +2753,10 @@ body {
 
 /* Navigation icon styles */
 .nav-icon {
-	width: 28px;
-	height: 28px;
+	width: 32px;
+	height: 32px;
 	display: inline-block;
-	vertical-align: middle;
+	vertical-align: baseline;
 	transition: transform 0.2s ease;
 }
 
