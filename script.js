@@ -217,6 +217,107 @@
 		}
 	];
 
+	// Mock data for users and audit log
+	const mockUsers = [
+		{
+			id: 'user_1',
+			name: 'John Smith',
+			email: 'john@trecrm.com',
+			role: 'manager',
+			status: 'active',
+			created_at: '2024-01-01T10:00:00Z',
+			created_by: 'system',
+			last_login: '2024-01-15T14:30:00Z'
+		},
+		{
+			id: 'user_2',
+			name: 'Alex Agent',
+			email: 'alex@trecrm.com',
+			role: 'agent',
+			status: 'active',
+			created_at: '2024-01-02T09:15:00Z',
+			created_by: 'user_1',
+			last_login: '2024-01-15T16:45:00Z'
+		},
+		{
+			id: 'user_3',
+			name: 'Bailey Broker',
+			email: 'bailey@trecrm.com',
+			role: 'agent',
+			status: 'active',
+			created_at: '2024-01-03T11:20:00Z',
+			created_by: 'user_1',
+			last_login: '2024-01-14T13:20:00Z'
+		},
+		{
+			id: 'user_4',
+			name: 'Sarah Johnson',
+			email: 'sarah@trecrm.com',
+			role: 'agent',
+			status: 'invited',
+			created_at: '2024-01-10T15:30:00Z',
+			created_by: 'user_1',
+			last_login: null
+		},
+		{
+			id: 'user_5',
+			name: 'Mike Chen',
+			email: 'mike@trecrm.com',
+			role: 'super_user',
+			status: 'active',
+			created_at: '2024-01-05T08:45:00Z',
+			created_by: 'system',
+			last_login: '2024-01-15T12:10:00Z'
+		}
+	];
+
+	const mockAuditLog = [
+		{
+			id: 'audit_1',
+			action: 'user_created',
+			user_id: 'user_4',
+			user_name: 'Sarah Johnson',
+			user_email: 'sarah@trecrm.com',
+			performed_by: 'user_1',
+			performed_by_name: 'John Smith',
+			timestamp: '2024-01-10T15:30:00Z',
+			details: 'User created with Agent role'
+		},
+		{
+			id: 'audit_2',
+			action: 'role_changed',
+			user_id: 'user_2',
+			user_name: 'Alex Agent',
+			user_email: 'alex@trecrm.com',
+			performed_by: 'user_1',
+			performed_by_name: 'John Smith',
+			timestamp: '2024-01-08T14:20:00Z',
+			details: 'Role changed from Agent to Manager'
+		},
+		{
+			id: 'audit_3',
+			action: 'password_changed',
+			user_id: 'user_3',
+			user_name: 'Bailey Broker',
+			user_email: 'bailey@trecrm.com',
+			performed_by: 'user_3',
+			performed_by_name: 'Bailey Broker',
+			timestamp: '2024-01-12T09:15:00Z',
+			details: 'Password updated'
+		},
+		{
+			id: 'audit_4',
+			action: 'user_updated',
+			user_id: 'user_2',
+			user_name: 'Alex Agent',
+			user_email: 'alex@trecrm.com',
+			performed_by: 'user_1',
+			performed_by_name: 'John Smith',
+			timestamp: '2024-01-14T16:30:00Z',
+			details: 'Email updated to alex@trecrm.com'
+		}
+	];
+
 	// Mock data for interested leads
 	const mockInterestedLeads = {
 		'prop_1': [
@@ -1565,8 +1666,10 @@
 		`).join('');
 	}
 
-	// Global function for onclick
-	window.openInterestedLeads = openInterestedLeads;
+	// Global functions for admin page onclick handlers
+	window.editUser = editUser;
+	window.changePassword = changePassword;
+	window.deleteUser = deleteUser;
 
 	async function sendShowcaseEmail(){
 		const lead = await api.getLead(state.selectedLeadId);
@@ -1783,6 +1886,11 @@
 			document.getElementById('managerDocumentsView').classList.remove('hidden');
 			document.getElementById('agentDocumentsView').classList.add('hidden');
 			renderDocuments();
+		} else if (hash === '/admin') {
+			state.currentPage = 'admin';
+			show(document.getElementById('adminView'));
+			setRoleLabel('admin');
+			renderAdmin();
 		} else {
 			// default: leads
 			state.currentPage = 'leads';
@@ -1798,11 +1906,21 @@
 	document.addEventListener('DOMContentLoaded', () => {
 		// Initialize nav visibility based on current role
 		const agentsNavLink = document.getElementById('agentsNavLink');
+		const adminNavLink = document.getElementById('adminNavLink');
+		
 		if (agentsNavLink) {
 			if (state.role === 'agent') {
 				agentsNavLink.style.display = 'none';
 			} else {
 				agentsNavLink.style.display = 'block';
+			}
+		}
+		
+		if (adminNavLink) {
+			if (state.role === 'agent') {
+				adminNavLink.style.display = 'none';
+			} else {
+				adminNavLink.style.display = 'block';
 			}
 		}
 		
@@ -1812,8 +1930,10 @@
 			state.page = 1;
 			setRoleLabel(state.currentPage);
 			
-			// Show/hide Agents nav based on role
+			// Show/hide Agents and Admin nav based on role
 			const agentsNavLink = document.getElementById('agentsNavLink');
+			const adminNavLink = document.getElementById('adminNavLink');
+			
 			if (agentsNavLink) {
 				if (state.role === 'agent') {
 					agentsNavLink.style.display = 'none';
@@ -1822,10 +1942,19 @@
 				}
 			}
 			
+			if (adminNavLink) {
+				if (state.role === 'agent') {
+					adminNavLink.style.display = 'none';
+				} else {
+					adminNavLink.style.display = 'block';
+				}
+			}
+			
 			if (state.currentPage === 'leads') renderLeads();
 			else if (state.currentPage === 'agents') renderAgents();
 			else if (state.currentPage === 'listings') renderListings();
 			else if (state.currentPage === 'documents') renderDocuments();
+			else if (state.currentPage === 'admin') renderAdmin();
 		});
 
 		// search
@@ -1913,6 +2042,7 @@
 		const listingsTableEl = document.getElementById('listingsTable');
 		if (listingsTableEl) {
 			listingsTableEl.addEventListener('click', (e)=>{
+				console.log('Listings table clicked, target:', e.target);
 				// Handle sorting
 				const sortableHeader = e.target.closest('th[data-sort]');
 				if (sortableHeader) {
@@ -2084,6 +2214,150 @@
 			});
 		}
 
+	// Admin page functions
+	function renderAdmin() {
+		const currentRole = state.currentRole;
+		const adminRoleLabel = document.getElementById('adminRoleLabel');
+		
+		if (adminRoleLabel) {
+			adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
+		}
+		
+		renderUsersTable();
+		renderAuditLog();
+	}
+
+	function renderUsersTable() {
+		const tbody = document.getElementById('usersTbody');
+		if (!tbody) return;
+		
+		tbody.innerHTML = mockUsers.map(user => {
+			const createdBy = user.created_by === 'system' ? 'System' : 
+				mockUsers.find(u => u.id === user.created_by)?.name || 'Unknown';
+			
+			return `
+				<tr>
+					<td data-sort="${user.name}">${user.name}</td>
+					<td data-sort="${user.email}">${user.email}</td>
+					<td data-sort="${user.role}">
+						<span class="role-badge role-${user.role}">${user.role.replace('_', ' ')}</span>
+					</td>
+					<td data-sort="${user.status}">
+						<span class="user-status ${user.status}">${user.status}</span>
+					</td>
+					<td data-sort="${user.created_at}">${formatDate(user.created_at)}</td>
+					<td>
+						<div class="user-actions">
+							<button class="btn btn-secondary btn-small" onclick="editUser('${user.id}')">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+								</svg>
+								Edit
+							</button>
+							<button class="btn btn-secondary btn-small" onclick="changePassword('${user.id}')">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+								</svg>
+								Password
+							</button>
+							<button class="btn btn-danger btn-small" onclick="deleteUser('${user.id}')">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+								</svg>
+								Delete
+							</button>
+						</div>
+					</td>
+				</tr>
+			`;
+		}).join('');
+	}
+
+	function renderAuditLog() {
+		const auditLog = document.getElementById('auditLog');
+		if (!auditLog) return;
+		
+		auditLog.innerHTML = mockAuditLog.map(entry => {
+			const actionIcons = {
+				user_created: '👤',
+				user_updated: '✏️',
+				user_deleted: '🗑️',
+				role_changed: '🔄',
+				password_changed: '🔐'
+			};
+			
+			return `
+				<div class="audit-entry">
+					<div class="audit-icon ${entry.action}">
+						${actionIcons[entry.action] || '📝'}
+					</div>
+					<div class="audit-content">
+						<div class="audit-action">${entry.details}</div>
+						<div class="audit-details">
+							User: ${entry.user_name} (${entry.user_email}) | 
+							By: ${entry.performed_by_name}
+						</div>
+					</div>
+					<div class="audit-timestamp">${formatDate(entry.timestamp)}</div>
+				</div>
+			`;
+		}).join('');
+	}
+
+	function editUser(userId) {
+		const user = mockUsers.find(u => u.id === userId);
+		if (!user) return;
+		
+		document.getElementById('userModalTitle').textContent = 'Edit User';
+		document.getElementById('userName').value = user.name;
+		document.getElementById('userEmail').value = user.email;
+		document.getElementById('userRole').value = user.role;
+		document.getElementById('userPassword').value = '';
+		document.getElementById('userConfirmPassword').value = '';
+		document.getElementById('userPassword').required = false;
+		document.getElementById('userConfirmPassword').required = false;
+		
+		showModal('userModal');
+	}
+
+	function changePassword(userId) {
+		const user = mockUsers.find(u => u.id === userId);
+		if (!user) return;
+		
+		document.getElementById('passwordModal').setAttribute('data-user-id', userId);
+		showModal('passwordModal');
+	}
+
+	function deleteUser(userId) {
+		const user = mockUsers.find(u => u.id === userId);
+		if (!user) return;
+		
+		if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
+			// In a real app, this would make an API call
+			const userIndex = mockUsers.findIndex(u => u.id === userId);
+			if (userIndex > -1) {
+				mockUsers.splice(userIndex, 1);
+				
+				// Add to audit log
+				mockAuditLog.unshift({
+					id: `audit_${Date.now()}`,
+					action: 'user_deleted',
+					user_id: userId,
+					user_name: user.name,
+					user_email: user.email,
+					performed_by: 'user_1', // Current user
+					performed_by_name: 'John Smith', // Current user name
+					timestamp: new Date().toISOString(),
+					details: `User ${user.name} deleted`
+				});
+				
+				renderUsersTable();
+				renderAuditLog();
+				toast('User deleted successfully');
+			}
+		}
+	}
+
 		// Documents search functionality
 		const documentsSearch = document.getElementById('documentsSearch');
 		const searchType = document.getElementById('searchType');
@@ -2109,6 +2383,154 @@
 				documentsSearch.value = '';
 				searchType.value = 'both';
 				renderLeadsTable('', 'both');
+			});
+		}
+
+		// Admin page functionality
+		const addUserBtn = document.getElementById('addUserBtn');
+		const userModal = document.getElementById('userModal');
+		const closeUserModal = document.getElementById('closeUserModal');
+		const saveUserBtn = document.getElementById('saveUserBtn');
+		const cancelUserBtn = document.getElementById('cancelUserBtn');
+		const passwordModal = document.getElementById('passwordModal');
+		const closePasswordModal = document.getElementById('closePasswordModal');
+		const savePasswordBtn = document.getElementById('savePasswordBtn');
+		const cancelPasswordBtn = document.getElementById('cancelPasswordBtn');
+		const auditFilter = document.getElementById('auditFilter');
+
+		// Add User button
+		if (addUserBtn) {
+			addUserBtn.addEventListener('click', () => {
+				document.getElementById('userModalTitle').textContent = 'Add User';
+				document.getElementById('userForm').reset();
+				document.getElementById('userPassword').required = true;
+				document.getElementById('userConfirmPassword').required = true;
+				showModal('userModal');
+			});
+		}
+
+		// User modal close buttons
+		if (closeUserModal) {
+			closeUserModal.addEventListener('click', () => hideModal('userModal'));
+		}
+		if (cancelUserBtn) {
+			cancelUserBtn.addEventListener('click', () => hideModal('userModal'));
+		}
+
+		// Save User button
+		if (saveUserBtn) {
+			saveUserBtn.addEventListener('click', () => {
+				const form = document.getElementById('userForm');
+				const formData = new FormData(form);
+				
+				const userData = {
+					name: document.getElementById('userName').value,
+					email: document.getElementById('userEmail').value,
+					role: document.getElementById('userRole').value,
+					password: document.getElementById('userPassword').value,
+					confirmPassword: document.getElementById('userConfirmPassword').value,
+					sendInvitation: document.getElementById('sendInvitation').checked
+				};
+
+				// Basic validation
+				if (!userData.name || !userData.email || !userData.role) {
+					toast('Please fill in all required fields', 'error');
+					return;
+				}
+
+				if (userData.password && userData.password !== userData.confirmPassword) {
+					toast('Passwords do not match', 'error');
+					return;
+				}
+
+				// In a real app, this would make an API call
+				const newUser = {
+					id: `user_${Date.now()}`,
+					name: userData.name,
+					email: userData.email,
+					role: userData.role,
+					status: userData.sendInvitation ? 'invited' : 'active',
+					created_at: new Date().toISOString(),
+					created_by: 'user_1', // Current user
+					last_login: null
+				};
+
+				mockUsers.push(newUser);
+
+				// Add to audit log
+				mockAuditLog.unshift({
+					id: `audit_${Date.now()}`,
+					action: 'user_created',
+					user_id: newUser.id,
+					user_name: newUser.name,
+					user_email: newUser.email,
+					performed_by: 'user_1',
+					performed_by_name: 'John Smith',
+					timestamp: new Date().toISOString(),
+					details: `User created with ${newUser.role} role${userData.sendInvitation ? ' and invitation sent' : ''}`
+				});
+
+				renderUsersTable();
+				renderAuditLog();
+				hideModal('userModal');
+				toast('User created successfully');
+			});
+		}
+
+		// Password modal close buttons
+		if (closePasswordModal) {
+			closePasswordModal.addEventListener('click', () => hideModal('passwordModal'));
+		}
+		if (cancelPasswordBtn) {
+			cancelPasswordBtn.addEventListener('click', () => hideModal('passwordModal'));
+		}
+
+		// Save Password button
+		if (savePasswordBtn) {
+			savePasswordBtn.addEventListener('click', () => {
+				const userId = document.getElementById('passwordModal').getAttribute('data-user-id');
+				const newPassword = document.getElementById('newPassword').value;
+				const confirmPassword = document.getElementById('confirmNewPassword').value;
+
+				if (!newPassword || !confirmPassword) {
+					toast('Please fill in both password fields', 'error');
+					return;
+				}
+
+				if (newPassword !== confirmPassword) {
+					toast('Passwords do not match', 'error');
+					return;
+				}
+
+				// In a real app, this would make an API call
+				const user = mockUsers.find(u => u.id === userId);
+				if (user) {
+					// Add to audit log
+					mockAuditLog.unshift({
+						id: `audit_${Date.now()}`,
+						action: 'password_changed',
+						user_id: userId,
+						user_name: user.name,
+						user_email: user.email,
+						performed_by: 'user_1',
+						performed_by_name: 'John Smith',
+						timestamp: new Date().toISOString(),
+						details: 'Password updated'
+					});
+
+					renderAuditLog();
+					hideModal('passwordModal');
+					toast('Password updated successfully');
+				}
+			});
+		}
+
+		// Audit filter
+		if (auditFilter) {
+			auditFilter.addEventListener('change', (e) => {
+				const filter = e.target.value;
+				// In a real app, this would filter the audit log
+				renderAuditLog(); // For now, just re-render
 			});
 		}
 

@@ -15,6 +15,7 @@
 			<a href="#/agents" class="nav-link" data-page="agents" id="agentsNavLink">Agents</a>
 			<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
 			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
+			<a href="#/admin" class="nav-link" data-page="admin" id="adminNavLink">Admin</a>
 		</nav>
 		<div class="role-switch">
 			<label for="roleSelect">Role:</label>
@@ -277,6 +278,70 @@
 				</div>
 			</div>
 		</section>
+
+		<!-- Route: #/admin -->
+		<section id="adminView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>Admin Panel</h1>
+				<div id="adminRoleLabel" class="role-label"></div>
+			</div>
+
+			<div class="admin-content">
+				<!-- User Management Section -->
+				<div class="admin-section">
+					<div class="section-header">
+						<h2>User Management</h2>
+						<button id="addUserBtn" class="btn btn-primary">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
+							</svg>
+							Add User
+						</button>
+					</div>
+
+					<div class="users-table-wrapper">
+						<table id="usersTable" class="data-table">
+							<thead>
+								<tr>
+									<th data-sort="name" class="sortable">Name <span class="sort-icon">↕</span></th>
+									<th data-sort="email" class="sortable">Email <span class="sort-icon">↕</span></th>
+									<th data-sort="role" class="sortable">Role <span class="sort-icon">↕</span></th>
+									<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span></th>
+									<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="usersTbody">
+								<!-- Users will be populated here -->
+							</tbody>
+						</table>
+					</div>
+				</div>
+
+				<!-- Audit Log Section -->
+				<div class="admin-section">
+					<div class="section-header">
+						<h2>Audit Log</h2>
+						<div class="audit-filters">
+							<select id="auditFilter">
+								<option value="all">All Actions</option>
+								<option value="user_created">User Created</option>
+								<option value="user_updated">User Updated</option>
+								<option value="user_deleted">User Deleted</option>
+								<option value="role_changed">Role Changed</option>
+								<option value="password_changed">Password Changed</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="audit-log-wrapper">
+						<div id="auditLog" class="audit-log">
+							<!-- Audit entries will be populated here -->
+						</div>
+					</div>
+				</div>
+			</div>
+		</section>
 	</main>
 
 	<!-- Lead Details Drawer -->
@@ -450,6 +515,80 @@
 				<div id="interestedLeadsContent">
 					<!-- Interested leads will be loaded here -->
 				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Add/Edit User Modal -->
+	<div id="userModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3 id="userModalTitle">Add User</h3>
+				<button id="closeUserModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="userForm">
+					<div class="field">
+						<label for="userName">Full Name *</label>
+						<input type="text" id="userName" required>
+					</div>
+					<div class="field">
+						<label for="userEmail">Email *</label>
+						<input type="email" id="userEmail" required>
+					</div>
+					<div class="field">
+						<label for="userRole">Role *</label>
+						<select id="userRole" required>
+							<option value="agent">Agent</option>
+							<option value="manager">Manager</option>
+							<option value="super_user">Super User</option>
+						</select>
+					</div>
+					<div class="field">
+						<label for="userPassword">Password *</label>
+						<input type="password" id="userPassword" required>
+					</div>
+					<div class="field">
+						<label for="userConfirmPassword">Confirm Password *</label>
+						<input type="password" id="userConfirmPassword" required>
+					</div>
+					<div class="field">
+						<label>
+							<input type="checkbox" id="sendInvitation">
+							Send invitation email
+						</label>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="saveUserBtn" class="btn btn-primary">Save User</button>
+				<button id="cancelUserBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Change Password Modal -->
+	<div id="passwordModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Change Password</h3>
+				<button id="closePasswordModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="passwordForm">
+					<div class="field">
+						<label for="newPassword">New Password *</label>
+						<input type="password" id="newPassword" required>
+					</div>
+					<div class="field">
+						<label for="confirmNewPassword">Confirm New Password *</label>
+						<input type="password" id="confirmNewPassword" required>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="savePasswordBtn" class="btn btn-primary">Update Password</button>
+				<button id="cancelPasswordBtn" class="btn btn-secondary">Cancel</button>
 			</div>
 		</div>
 	</div>
