@@ -1162,81 +1162,57 @@ const mockAuditLog = [
 		});
 	}
 
-	function createLeadTable(lead, isExpanded = false) {
-		const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
-		const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
-		
-		const table = document.createElement('div');
-		table.className = 'lead-table-container';
-		table.innerHTML = `
-			<div class="lead-table-header">
-				<div class="lead-info">
-					<h4>${lead.agentName} - ${lead.leadName}</h4>
+function createLeadTable(lead, isExpanded = false) {
+	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
+	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
+	
+	const table = document.createElement('div');
+	table.className = 'lead-table-container';
+	table.innerHTML = `
+		<div class="lead-table-header">
+			<div class="lead-info">
+				<div class="lead-icon">⚙️</div>
+				<div class="lead-details">
+					<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
+					<span class="lead-label">Lead:</span> <span class="lead-name">${lead.leadName}</span>
+					<span class="progress-info">${progressPercentage}% Complete - Current Step: ${currentStepName}</span>
 				</div>
+			</div>
+			<div class="lead-actions">
+				<span class="last-updated">Last Update: ${formatDate(lead.lastUpdated)}</span>
 				<button class="expand-btn" data-lead-id="${lead.id}">
 					<span class="expand-icon">${isExpanded ? '▼' : '▶'}</span>
 				</button>
 			</div>
-			
-			<div class="lead-table-content ${isExpanded ? 'expanded' : 'collapsed'}">
-				<table class="lead-data-table">
-					<thead>
-						<tr>
-							<th>Agent</th>
-							<th>Lead</th>
-							<th>Current Step</th>
-							<th>Progress</th>
-							<th>Last Updated</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody>
-						<tr>
-							<td>${lead.agentName}</td>
-							<td>${lead.leadName}</td>
-							<td>${currentStepName}</td>
-							<td class="progress-summary">
-								<div class="progress-info">
-									<span class="progress-percentage">${progressPercentage}% complete</span>
-									<span class="progress-status ${lead.status}">${lead.status}</span>
-								</div>
-							</td>
-							<td>${formatDate(lead.lastUpdated)}</td>
-							<td>
-								<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
-									View Details
-								</button>
-							</td>
-						</tr>
-					</tbody>
-				</table>
-				
-				<div class="progress-section">
-					<div class="progress-bar-container">
-						<div class="progress-bar">
-							<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
-							<div class="progress-steps">
-								${progressSteps.map(step => {
-									const stepClass = step.id < lead.currentStep ? 'completed' : 
-													 step.id === lead.currentStep ? 'current' : 'pending';
-									return `
-										<div class="progress-step ${stepClass}" 
-											 data-lead-id="${lead.id}" 
-											 data-step="${step.id}">
-											<div class="progress-step-dot ${stepClass}">${step.id}</div>
-											<div class="progress-step-label">${step.label}</div>
-										</div>
-									`;
-								}).join('')}
-							</div>
+		</div>
+		
+		<div class="lead-table-content ${isExpanded ? 'expanded' : 'collapsed'}">
+			<div class="progress-section">
+				<div class="progress-bar-container">
+					<div class="progress-bar">
+						<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
+						<div class="progress-steps">
+							${progressSteps.map(step => {
+								const stepClass = step.id < lead.currentStep ? 'completed' : 
+																 step.id === lead.currentStep ? 'current' : 'pending';
+								return `
+									<div class="progress-step ${stepClass}" 
+										 data-lead-id="${lead.id}" 
+										 data-step="${step.id}">
+										<div class="progress-step-dot ${stepClass}">${step.id}</div>
+										<div class="progress-step-label">${step.label}</div>
+									</div>
+								`;
+							}).join('')}
 						</div>
 					</div>
 				</div>
 			</div>
-		`;
-		
-		return table;
-	}
+		</div>
+	`;
+	
+	return table;
+}
 
 	function getStepModalContent(lead, step) {
 		switch(step.id) {

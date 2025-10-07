@@ -1624,15 +1624,49 @@ body {
 
 .lead-info {
 	display: flex;
-	flex-direction: column;
-	gap: 8px;
+	align-items: center;
+	gap: 12px;
 }
 
-.lead-info h4 {
-	margin: 0;
-	font-size: 16px;
+.lead-icon {
+	font-size: 18px;
+	opacity: 0.7;
+}
+
+.lead-details {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.agent-label, .lead-label {
+	font-weight: 600;
+	color: var(--muted);
+	font-size: 14px;
+}
+
+.agent-name, .lead-name {
 	font-weight: 600;
 	color: var(--ink);
+	font-size: 14px;
+}
+
+.progress-info {
+	font-size: 13px;
+	color: var(--accent);
+	font-weight: 500;
+}
+
+.lead-actions {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+}
+
+.last-updated {
+	font-size: 12px;
+	color: var(--muted);
+	font-weight: 500;
 }
 
 .lead-status {
@@ -1705,47 +1739,10 @@ body {
 		padding: 16px;
 	}
 	
-	.lead-data-table {
-		font-size: 14px;
-	}
-	
-	.lead-data-table th,
-	.lead-data-table td {
-		padding: 8px;
-	}
+	/* Removed lead-data-table responsive styles */
 }
 
-.lead-data-table {
-	width: 100%;
-	border-collapse: collapse;
-	margin-bottom: 20px;
-}
-
-.lead-data-table th {
-	background: var(--panel);
-	padding: 12px;
-	text-align: left;
-	font-weight: 600;
-	color: var(--ink);
-	border-bottom: 2px solid var(--rule);
-}
-
-.lead-data-table th:nth-child(4) {
-	text-align: left;
-}
-
-.lead-data-table td {
-	padding: 12px;
-	border-bottom: 1px solid var(--rule);
-}
-
-.lead-data-table td:nth-child(4) {
-	text-align: left;
-}
-
-.lead-data-table tr:hover {
-	background: #f8f9fa;
-}
+/* Removed lead-data-table styles - no longer using tables */
 
 .progress-section {
 	background: #f8f9fa;
