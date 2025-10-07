@@ -1605,16 +1605,24 @@ body {
 
 .progress-bar-row {
 	background: #f8f9fa;
-	border-bottom: 2px solid var(--rule);
+	border-bottom: 3px solid var(--brand);
+	margin-bottom: 8px;
 }
 
 .progress-bar-row:hover {
 	background: #f1f3f4;
 }
 
+/* Clear separation between leads */
+.lead-group {
+	border-bottom: 2px solid var(--brand);
+	margin-bottom: 12px;
+}
+
 .progress-summary {
 	padding: 8px 12px;
 	text-align: center;
+	vertical-align: top;
 }
 
 .progress-info {
@@ -1622,6 +1630,8 @@ body {
 	flex-direction: column;
 	gap: 4px;
 	align-items: center;
+	justify-content: center;
+	height: 100%;
 }
 
 .progress-percentage {
@@ -1775,6 +1785,80 @@ body {
 .progress-step.current .progress-step-label {
 	color: var(--accent);
 	font-weight: 600;
+}
+
+/* Progress Step Popups */
+.progress-step-popup {
+	position: absolute;
+	top: -120px;
+	left: 50%;
+	transform: translateX(-50%);
+	background: white;
+	border: 2px solid var(--brand);
+	border-radius: 8px;
+	padding: 12px;
+	box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+	z-index: 1000;
+	min-width: 200px;
+	max-width: 300px;
+	opacity: 0;
+	visibility: hidden;
+	transition: all 0.2s ease;
+}
+
+.progress-step-popup.show {
+	opacity: 1;
+	visibility: visible;
+}
+
+.progress-step-popup::after {
+	content: '';
+	position: absolute;
+	top: 100%;
+	left: 50%;
+	transform: translateX(-50%);
+	width: 0;
+	height: 0;
+	border-left: 8px solid transparent;
+	border-right: 8px solid transparent;
+	border-top: 8px solid var(--brand);
+}
+
+.popup-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--brand);
+	margin: 0 0 8px 0;
+}
+
+.popup-content {
+	font-size: 12px;
+	color: var(--ink);
+	line-height: 1.4;
+}
+
+.popup-link {
+	display: inline-block;
+	margin-top: 8px;
+	padding: 6px 12px;
+	background: var(--accent);
+	color: white;
+	text-decoration: none;
+	border-radius: 4px;
+	font-size: 11px;
+	font-weight: 500;
+	transition: background 0.2s ease;
+}
+
+.popup-link:hover {
+	background: var(--brand);
+	color: white;
+}
+
+.popup-details {
+	margin: 4px 0;
+	font-size: 11px;
+	color: var(--muted);
 }
 
 /* Interactive Progress Bar */

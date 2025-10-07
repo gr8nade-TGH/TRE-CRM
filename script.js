@@ -1137,7 +1137,10 @@ const mockAuditLog = [
 			progressSteps.forEach(step => {
 				const stepElement = document.querySelector(`[data-lead-id="${lead.id}"][data-step="${step.id}"]`);
 				if (stepElement) {
-					stepElement.addEventListener('click', () => showStepDetails(lead, step));
+					stepElement.addEventListener('click', (e) => {
+						e.stopPropagation();
+						showStepDetails(lead, step);
+					});
 				}
 			});
 		});
@@ -1148,134 +1151,144 @@ const mockAuditLog = [
 		const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 		
 		return `
-			<!-- Data Row -->
-			<tr class="lead-data-row">
-				<td data-sort="${lead.agentName}">${lead.agentName}</td>
-				<td data-sort="${lead.leadName}">${lead.leadName}</td>
-				<td data-sort="${lead.currentStep}">${currentStepName}</td>
-				<td class="progress-summary">
-					<div class="progress-info">
-						<span class="progress-percentage">${progressPercentage}% complete</span>
-						<span class="progress-status ${lead.status}">${lead.status}</span>
-					</div>
-				</td>
-				<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
-				<td>
-					<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
-						View Details
-					</button>
-				</td>
-			</tr>
-			<!-- Progress Bar Row -->
-			<tr class="progress-bar-row">
-				<td colspan="6" class="progress-bar-cell">
-					<div class="progress-bar-container">
-						<div class="progress-bar">
-							<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
-							<div class="progress-steps">
-								${progressSteps.map(step => {
-									const stepClass = step.id < lead.currentStep ? 'completed' : 
-													 step.id === lead.currentStep ? 'current' : 'pending';
-									return `
-										<div class="progress-step ${stepClass}" 
-											 data-lead-id="${lead.id}" 
-											 data-step="${step.id}">
-											<div class="progress-step-dot ${stepClass}">${step.id}</div>
-											<div class="progress-step-label">${step.label}</div>
-										</div>
-									`;
-								}).join('')}
+			<!-- Lead Group Container -->
+			<tbody class="lead-group">
+				<!-- Data Row -->
+				<tr class="lead-data-row">
+					<td data-sort="${lead.agentName}">${lead.agentName}</td>
+					<td data-sort="${lead.leadName}">${lead.leadName}</td>
+					<td data-sort="${lead.currentStep}">${currentStepName}</td>
+					<td class="progress-summary">
+						<div class="progress-info">
+							<span class="progress-percentage">${progressPercentage}% complete</span>
+							<span class="progress-status ${lead.status}">${lead.status}</span>
+						</div>
+					</td>
+					<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
+					<td>
+						<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
+							View Details
+						</button>
+					</td>
+				</tr>
+				<!-- Progress Bar Row -->
+				<tr class="progress-bar-row">
+					<td colspan="6" class="progress-bar-cell">
+						<div class="progress-bar-container">
+							<div class="progress-bar">
+								<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
+								<div class="progress-steps">
+									${progressSteps.map(step => {
+										const stepClass = step.id < lead.currentStep ? 'completed' : 
+														 step.id === lead.currentStep ? 'current' : 'pending';
+										return `
+											<div class="progress-step ${stepClass}" 
+												 data-lead-id="${lead.id}" 
+												 data-step="${step.id}">
+												<div class="progress-step-dot ${stepClass}">${step.id}</div>
+												<div class="progress-step-label">${step.label}</div>
+												<div class="progress-step-popup" id="popup-${lead.id}-${step.id}">
+													<div class="popup-title">${step.label}</div>
+													<div class="popup-content">
+														${getStepPopupContent(lead, step)}
+													</div>
+												</div>
+											</div>
+										`;
+									}).join('')}
+								</div>
 							</div>
 						</div>
-					</div>
-				</td>
-			</tr>
+					</td>
+				</tr>
+			</tbody>
 		`;
 	}
 
-	function showStepDetails(lead, step) {
-		// Generate step-specific content
-		let content = '';
-		
+	function getStepPopupContent(lead, step) {
 		switch(step.id) {
 			case 1: // Showcase Sent
-				content = `
-					<h4>Showcase Sent to Lead</h4>
-					<p><strong>Sent to:</strong> ${lead.leadName}</p>
-					<p><strong>Agent:</strong> ${lead.agentName}</p>
-					<p><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</p>
-					<p><a href="${lead.showcase.landingPageUrl}" target="_blank" class="detail-link">View Landing Page →</a></p>
+				return `
+					<div class="popup-details"><strong>Sent to:</strong> ${lead.leadName}</div>
+					<div class="popup-details"><strong>Agent:</strong> ${lead.agentName}</div>
+					<div class="popup-details"><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</div>
+					<a href="${lead.showcase.landingPageUrl}" target="_blank" class="popup-link">View Landing Page →</a>
 				`;
-				break;
 				
 			case 2: // Lead Responded
-				content = `
-					<h4>Lead Responded to Showcase</h4>
-					<p><strong>Lead:</strong> ${lead.leadName}</p>
-					<p><strong>Selected Properties:</strong> ${lead.showcase.selections.join(', ')}</p>
-					<p><strong>Preferred Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</p>
-					<p><a href="${lead.showcase.landingPageUrl}?filled=true" target="_blank" class="detail-link">View Filled Landing Page →</a></p>
+				return `
+					<div class="popup-details"><strong>Lead:</strong> ${lead.leadName}</div>
+					<div class="popup-details"><strong>Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
+					<div class="popup-details"><strong>Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
+					<a href="${lead.showcase.landingPageUrl}?filled=true" target="_blank" class="popup-link">View Filled Page →</a>
 				`;
-				break;
 				
 			case 3: // Guest Card Sent
-				content = `
-					<h4>Guest Card Sent to Properties</h4>
-					<p><strong>Lead:</strong> ${lead.leadName}</p>
-					<p><strong>Agent:</strong> ${lead.agentName}</p>
-					<p><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</p>
-					<p><a href="${lead.guestCard.url}" target="_blank" class="detail-link">View Guest Card →</a></p>
+				return `
+					<div class="popup-details"><strong>Lead:</strong> ${lead.leadName}</div>
+					<div class="popup-details"><strong>Agent:</strong> ${lead.agentName}</div>
+					<div class="popup-details"><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</div>
+					<a href="${lead.guestCard.url}" target="_blank" class="popup-link">View Guest Card →</a>
 				`;
-				break;
 				
 			case 4: // Property Selected
-				content = `
-					<h4>Lead Selected Property to Book</h4>
-					<div class="property-details">
-						<h5>${lead.property.name}</h5>
-						<p><strong>Address:</strong> ${lead.property.address}</p>
-						<p><strong>Rent:</strong> ${lead.property.rent}</p>
-						<p><strong>Bedrooms:</strong> ${lead.property.bedrooms}</p>
-						<p><strong>Bathrooms:</strong> ${lead.property.bathrooms}</p>
-					</div>
+				return `
+					<div class="popup-details"><strong>Property:</strong> ${lead.property.name}</div>
+					<div class="popup-details"><strong>Address:</strong> ${lead.property.address}</div>
+					<div class="popup-details"><strong>Rent:</strong> ${lead.property.rent}</div>
+					<div class="popup-details"><strong>Size:</strong> ${lead.property.bedrooms}bd/${lead.property.bathrooms}ba</div>
 				`;
-				break;
 				
 			case 5: // Lease Sent
-				content = `
-					<h4>Lease Agreement Sent for E-Signature</h4>
-					<p><strong>Sent to:</strong> ${lead.leadName}</p>
-					<p><strong>Property:</strong> ${lead.lease.property}</p>
-					<p><strong>Apartment:</strong> ${lead.lease.apartment}</p>
-					<p><strong>Agent:</strong> ${lead.agentName}</p>
-					<p><a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="detail-link">View Lease Agreement →</a></p>
+				return `
+					<div class="popup-details"><strong>Sent to:</strong> ${lead.leadName}</div>
+					<div class="popup-details"><strong>Property:</strong> ${lead.lease.property}</div>
+					<div class="popup-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
+					<a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="popup-link">View Lease →</a>
 				`;
-				break;
 				
 			case 6: // Lease Signed
-				content = `
-					<h4>Lease Agreement Signed by Property</h4>
-					<p><strong>Property:</strong> ${lead.lease.property}</p>
-					<p><strong>Apartment:</strong> ${lead.lease.apartment}</p>
-					<p><strong>Signed by:</strong> Property Management</p>
-					<p><a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="detail-link">View Signed Lease →</a></p>
+				return `
+					<div class="popup-details"><strong>Property:</strong> ${lead.lease.property}</div>
+					<div class="popup-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
+					<div class="popup-details"><strong>Signed by:</strong> Property Management</div>
+					<a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="popup-link">View Signed Lease →</a>
 				`;
-				break;
 				
 			case 7: // Lease Finalized
-				content = `
-					<h4>Lease Agreement Finalized</h4>
-					<p><strong>Status:</strong> Complete</p>
-					<p><strong>Property:</strong> ${lead.lease.property}</p>
-					<p><strong>Apartment:</strong> ${lead.lease.apartment}</p>
-					<p><strong>Finalized Date:</strong> ${formatDate(lead.lastUpdated)}</p>
-					<p><strong>Commission:</strong> Ready for processing</p>
+				return `
+					<div class="popup-details"><strong>Status:</strong> Complete</div>
+					<div class="popup-details"><strong>Property:</strong> ${lead.lease.property}</div>
+					<div class="popup-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
+					<div class="popup-details"><strong>Commission:</strong> Ready for processing</div>
 				`;
-				break;
+				
+			default:
+				return `<div class="popup-details">No details available</div>`;
 		}
+	}
+
+	function showStepDetails(lead, step) {
+		// Hide all other popups first
+		document.querySelectorAll('.progress-step-popup').forEach(popup => {
+			popup.classList.remove('show');
+		});
 		
-		// Show in a modal or alert for now
-		alert(`${step.label}\n\n${content.replace(/<[^>]*>/g, '').replace(/\n/g, '\n')}`);
+		// Show the specific popup
+		const popup = document.getElementById(`popup-${lead.id}-${step.id}`);
+		if (popup) {
+			popup.classList.add('show');
+			
+			// Hide popup when clicking outside
+			setTimeout(() => {
+				document.addEventListener('click', function hidePopup(e) {
+					if (!popup.contains(e.target)) {
+						popup.classList.remove('show');
+						document.removeEventListener('click', hidePopup);
+					}
+				});
+			}, 100);
+		}
 	}
 
 	function viewLeadDetails(leadId) {
