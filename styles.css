@@ -2751,15 +2751,3 @@ body {
 	min-height: 80px;
 }
 
-/* Navigation icon styles */
-.nav-icon {
-	width: 32px;
-	height: 32px;
-	display: inline-block;
-	vertical-align: baseline;
-	transition: transform 0.2s ease;
-}
-
-.nav-link:hover .nav-icon {
-	transform: scale(1.1);
-}
