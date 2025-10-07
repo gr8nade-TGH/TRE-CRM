@@ -1408,21 +1408,32 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	function toggleLeadTable(leadId) {
+		console.log('toggleLeadTable called with leadId:', leadId);
 		const btn = document.querySelector(`[data-lead-id="${leadId}"]`);
-		if (!btn) return;
+		console.log('Found button:', btn);
+		if (!btn) {
+			console.log('No button found for leadId:', leadId);
+			return;
+		}
 		
 		const container = btn.closest('.lead-table-container');
+		console.log('Found container:', container);
 		const content = container.querySelector('.lead-table-content');
 		const expandIcon = container.querySelector('.expand-icon');
+		
+		console.log('Content element:', content);
+		console.log('Expand icon:', expandIcon);
 		
 		if (content.classList.contains('expanded')) {
 			content.classList.remove('expanded');
 			content.classList.add('collapsed');
 			expandIcon.textContent = '▶';
+			console.log('Collapsed table');
 		} else {
 			content.classList.remove('collapsed');
 			content.classList.add('expanded');
 			expandIcon.textContent = '▼';
+			console.log('Expanded table');
 		}
 	}
 
@@ -3336,10 +3347,18 @@ function createLeadTable(lead, isExpanded = false) {
 
 		// Event delegation for expand buttons (works for both manager and agent views)
 		document.addEventListener('click', (e) => {
-			if (e.target.closest('.expand-btn')) {
+			console.log('Click detected on:', e.target);
+			console.log('Target classList:', e.target.classList);
+			console.log('Target parent:', e.target.parentElement);
+			
+			// Check if clicked element is expand button or inside expand button
+			const expandBtn = e.target.closest('.expand-btn');
+			if (expandBtn) {
+				console.log('Expand button clicked!');
+				e.preventDefault();
 				e.stopPropagation();
-				const btn = e.target.closest('.expand-btn');
-				const leadId = btn.getAttribute('data-lead-id');
+				const leadId = expandBtn.getAttribute('data-lead-id');
+				console.log('Lead ID:', leadId);
 				toggleLeadTable(leadId);
 			}
 		});
