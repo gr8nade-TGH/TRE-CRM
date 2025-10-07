@@ -1666,10 +1666,7 @@
 		`).join('');
 	}
 
-	// Global functions for admin page onclick handlers
-	window.editUser = editUser;
-	window.changePassword = changePassword;
-	window.deleteUser = deleteUser;
+	// Global functions will be assigned at the end of the file
 
 	async function sendShowcaseEmail(){
 		const lead = await api.getLead(state.selectedLeadId);
@@ -2214,7 +2211,7 @@
 			});
 		}
 
-	// Admin page functions
+	// Admin page functions - moved outside DOMContentLoaded for global access
 	function renderAdmin() {
 		const currentRole = state.currentRole;
 		const adminRoleLabel = document.getElementById('adminRoleLabel');
@@ -2357,6 +2354,8 @@
 			}
 		}
 	}
+
+	// ---- Events ----
 
 		// Documents search functionality
 		const documentsSearch = document.getElementById('documentsSearch');
@@ -2827,4 +2826,9 @@
 		route();
 		window.addEventListener('hashchange', route);
 	});
+
+	// Global functions for admin page onclick handlers
+	window.editUser = editUser;
+	window.changePassword = changePassword;
+	window.deleteUser = deleteUser;
 })();
