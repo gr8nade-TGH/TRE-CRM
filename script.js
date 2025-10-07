@@ -1172,7 +1172,6 @@ const mockAuditLog = [
 			<div class="lead-table-header">
 				<div class="lead-info">
 					<h4>${lead.agentName} - ${lead.leadName}</h4>
-					<span class="lead-status ${lead.status}">${lead.status}</span>
 				</div>
 				<button class="expand-btn" data-lead-id="${lead.id}">
 					<span class="expand-icon">${isExpanded ? '▼' : '▶'}</span>
