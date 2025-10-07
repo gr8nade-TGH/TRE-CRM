@@ -2751,3 +2751,56 @@ body {
 	min-height: 80px;
 }
 
+/* CSS Fire Icon with TRE text */
+.fire-icon {
+	display: inline-block;
+	position: relative;
+	font-weight: bold;
+	font-size: 14px;
+	color: #dc2626;
+	text-shadow: 
+		0 0 5px #f97316,
+		0 0 10px #f97316,
+		0 0 15px #fbbf24,
+		0 0 20px #fbbf24;
+	animation: fire-flicker 2s ease-in-out infinite alternate;
+	vertical-align: baseline;
+}
+
+.fire-icon::before {
+	content: "🔥";
+	position: absolute;
+	left: -8px;
+	top: -2px;
+	font-size: 12px;
+	z-index: -1;
+	animation: fire-flicker 1.5s ease-in-out infinite alternate;
+}
+
+.fire-icon::after {
+	content: "🔥";
+	position: absolute;
+	right: -8px;
+	top: -2px;
+	font-size: 12px;
+	z-index: -1;
+	animation: fire-flicker 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes fire-flicker {
+	0% {
+		text-shadow: 
+			0 0 5px #f97316,
+			0 0 10px #f97316,
+			0 0 15px #fbbf24,
+			0 0 20px #fbbf24;
+	}
+	100% {
+		text-shadow: 
+			0 0 2px #f97316,
+			0 0 5px #f97316,
+			0 0 8px #fbbf24,
+			0 0 12px #fbbf24;
+	}
+}
+
