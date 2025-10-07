@@ -1173,10 +1173,14 @@ function createLeadTable(lead, isExpanded = false) {
 			<div class="lead-info">
 				<div class="lead-icon">⚙️</div>
 				<div class="lead-details">
-					<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
-					<span class="lead-label">Lead:</span> <span class="lead-name">${lead.leadName}</span>
-					<span class="progress-info">${progressPercentage}% Complete - Current Step: ${currentStepName}</span>
+					<div class="lead-names">
+						<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
+						<span class="lead-label">Lead:</span> <span class="lead-name">${lead.leadName}</span>
+					</div>
 				</div>
+			</div>
+			<div class="progress-center">
+				<span class="progress-info">${progressPercentage}% Complete - Current Step: ${currentStepName}</span>
 			</div>
 			<div class="lead-actions">
 				<span class="last-updated">Last Update: ${formatDate(lead.lastUpdated)}</span>
