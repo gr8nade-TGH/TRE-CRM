@@ -1240,11 +1240,14 @@ function createLeadTable(lead, isExpanded = false) {
 				`;
 				
 			case 3: // Guest Card Sent
+				const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName)}&agent=${encodeURIComponent(lead.agentName)}&property=${encodeURIComponent(lead.showcase.selections.join(','))}&date=${encodeURIComponent(formatDate(lead.lastUpdated))}&agentPhone=210-391-4044&phoneNumber=210-579-6189&moveInDate=ASAP&bedrooms=${lead.property.bedrooms}&bathrooms=${lead.property.bathrooms}&priceRange=${lead.property.rent}&agentNotes=Guest card sent for property tour scheduling`;
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
 					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
 					<div class="modal-details"><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</div>
-					<a href="${lead.guestCard.url}" target="_blank" class="modal-link">View Guest Card →</a>
+					<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(lead.lastUpdated)}</div>
+					<div class="modal-details"><strong>Status:</strong> Guest card prepared and sent to properties</div>
+					<a href="${guestCardUrl}" target="_blank" class="modal-link">View Filled Guest Card →</a>
 				`;
 				
 			case 4: // Property Selected
