@@ -2824,10 +2824,70 @@ main#appRoot {
 	margin-top: 0;
 }
 
+/* Mobile content spacing */
+@media (max-width: 768px) {
+	main#appRoot {
+		padding-top: 10px;
+	}
+}
+
 /* ===== MINIMAL MOBILE FIXES ===== */
 
 /* Only essential mobile improvements - no layout changes */
 @media (max-width: 768px) {
+	/* Header mobile layout */
+	.app-header {
+		flex-wrap: wrap;
+		padding: 10px 15px;
+		gap: 10px;
+		min-height: auto;
+	}
+	
+	/* Brand mobile */
+	.brand {
+		flex-shrink: 0;
+	}
+	
+	.brand-logo {
+		height: 28px;
+		max-width: 120px;
+	}
+	
+	/* Navigation mobile - horizontal scroll */
+	.main-nav {
+		overflow-x: auto;
+		overflow-y: hidden;
+		flex-wrap: nowrap;
+		gap: 16px;
+		padding: 0 10px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE/Edge */
+	}
+	
+	.main-nav::-webkit-scrollbar {
+		display: none; /* Chrome/Safari */
+	}
+	
+	.nav-link {
+		flex-shrink: 0;
+		white-space: nowrap;
+		padding: 8px 12px;
+		font-size: 14px;
+	}
+	
+	/* Role switch mobile */
+	.role-switch {
+		flex-shrink: 0;
+		font-size: 12px;
+		padding: 6px 12px;
+	}
+	
+	.role-switch select {
+		font-size: 12px;
+		padding: 4px 8px;
+	}
+	
 	/* Touch-friendly buttons */
 	.btn {
 		min-height: 44px;
