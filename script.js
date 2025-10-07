@@ -1,3 +1,104 @@
+// Mock data - defined globally
+const mockUsers = [
+	{
+		id: 'user_1',
+		name: 'John Smith',
+		email: 'john@trecrm.com',
+		role: 'manager',
+		status: 'active',
+		created_at: '2024-01-01T10:00:00Z',
+		created_by: 'system',
+		last_login: '2024-01-15T14:30:00Z'
+	},
+	{
+		id: 'user_2',
+		name: 'Alex Agent',
+		email: 'alex@trecrm.com',
+		role: 'agent',
+		status: 'active',
+		created_at: '2024-01-02T09:15:00Z',
+		created_by: 'user_1',
+		last_login: '2024-01-15T16:45:00Z'
+	},
+	{
+		id: 'user_3',
+		name: 'Bailey Broker',
+		email: 'bailey@trecrm.com',
+		role: 'agent',
+		status: 'active',
+		created_at: '2024-01-03T11:20:00Z',
+		created_by: 'user_1',
+		last_login: '2024-01-14T13:20:00Z'
+	},
+	{
+		id: 'user_4',
+		name: 'Sarah Johnson',
+		email: 'sarah@trecrm.com',
+		role: 'agent',
+		status: 'invited',
+		created_at: '2024-01-10T15:30:00Z',
+		created_by: 'user_1',
+		last_login: null
+	},
+	{
+		id: 'user_5',
+		name: 'Mike Chen',
+		email: 'mike@trecrm.com',
+		role: 'super_user',
+		status: 'active',
+		created_at: '2024-01-05T08:45:00Z',
+		created_by: 'system',
+		last_login: '2024-01-15T12:10:00Z'
+	}
+];
+
+const mockAuditLog = [
+	{
+		id: 'audit_1',
+		action: 'user_created',
+		user_id: 'user_4',
+		user_name: 'Sarah Johnson',
+		user_email: 'sarah@trecrm.com',
+		performed_by: 'user_1',
+		performed_by_name: 'John Smith',
+		timestamp: '2024-01-10T15:30:00Z',
+		details: 'User created with Agent role'
+	},
+	{
+		id: 'audit_2',
+		action: 'role_changed',
+		user_id: 'user_2',
+		user_name: 'Alex Agent',
+		user_email: 'alex@trecrm.com',
+		performed_by: 'user_1',
+		performed_by_name: 'John Smith',
+		timestamp: '2024-01-08T14:20:00Z',
+		details: 'Role changed from Agent to Manager'
+	},
+	{
+		id: 'audit_3',
+		action: 'password_changed',
+		user_id: 'user_3',
+		user_name: 'Bailey Broker',
+		user_email: 'bailey@trecrm.com',
+		performed_by: 'user_3',
+		performed_by_name: 'Bailey Broker',
+		timestamp: '2024-01-12T09:15:00Z',
+		details: 'Password updated'
+	},
+	{
+		id: 'audit_4',
+		action: 'user_updated',
+		user_id: 'user_2',
+		user_name: 'Alex Agent',
+		user_email: 'alex@trecrm.com',
+		performed_by: 'user_1',
+		performed_by_name: 'John Smith',
+		timestamp: '2024-01-14T16:30:00Z',
+		details: 'Email updated to alex@trecrm.com'
+	}
+];
+
 (function() {
 	// ---- State ----
 	const state = {
@@ -217,106 +318,7 @@
 		}
 	];
 
-	// Mock data for users and audit log
-	const mockUsers = [
-		{
-			id: 'user_1',
-			name: 'John Smith',
-			email: 'john@trecrm.com',
-			role: 'manager',
-			status: 'active',
-			created_at: '2024-01-01T10:00:00Z',
-			created_by: 'system',
-			last_login: '2024-01-15T14:30:00Z'
-		},
-		{
-			id: 'user_2',
-			name: 'Alex Agent',
-			email: 'alex@trecrm.com',
-			role: 'agent',
-			status: 'active',
-			created_at: '2024-01-02T09:15:00Z',
-			created_by: 'user_1',
-			last_login: '2024-01-15T16:45:00Z'
-		},
-		{
-			id: 'user_3',
-			name: 'Bailey Broker',
-			email: 'bailey@trecrm.com',
-			role: 'agent',
-			status: 'active',
-			created_at: '2024-01-03T11:20:00Z',
-			created_by: 'user_1',
-			last_login: '2024-01-14T13:20:00Z'
-		},
-		{
-			id: 'user_4',
-			name: 'Sarah Johnson',
-			email: 'sarah@trecrm.com',
-			role: 'agent',
-			status: 'invited',
-			created_at: '2024-01-10T15:30:00Z',
-			created_by: 'user_1',
-			last_login: null
-		},
-		{
-			id: 'user_5',
-			name: 'Mike Chen',
-			email: 'mike@trecrm.com',
-			role: 'super_user',
-			status: 'active',
-			created_at: '2024-01-05T08:45:00Z',
-			created_by: 'system',
-			last_login: '2024-01-15T12:10:00Z'
-		}
-	];
-
-	const mockAuditLog = [
-		{
-			id: 'audit_1',
-			action: 'user_created',
-			user_id: 'user_4',
-			user_name: 'Sarah Johnson',
-			user_email: 'sarah@trecrm.com',
-			performed_by: 'user_1',
-			performed_by_name: 'John Smith',
-			timestamp: '2024-01-10T15:30:00Z',
-			details: 'User created with Agent role'
-		},
-		{
-			id: 'audit_2',
-			action: 'role_changed',
-			user_id: 'user_2',
-			user_name: 'Alex Agent',
-			user_email: 'alex@trecrm.com',
-			performed_by: 'user_1',
-			performed_by_name: 'John Smith',
-			timestamp: '2024-01-08T14:20:00Z',
-			details: 'Role changed from Agent to Manager'
-		},
-		{
-			id: 'audit_3',
-			action: 'password_changed',
-			user_id: 'user_3',
-			user_name: 'Bailey Broker',
-			user_email: 'bailey@trecrm.com',
-			performed_by: 'user_3',
-			performed_by_name: 'Bailey Broker',
-			timestamp: '2024-01-12T09:15:00Z',
-			details: 'Password updated'
-		},
-		{
-			id: 'audit_4',
-			action: 'user_updated',
-			user_id: 'user_2',
-			user_name: 'Alex Agent',
-			user_email: 'alex@trecrm.com',
-			performed_by: 'user_1',
-			performed_by_name: 'John Smith',
-			timestamp: '2024-01-14T16:30:00Z',
-			details: 'Email updated to alex@trecrm.com'
-		}
-	];
+	// Mock data moved to global scope above
 
 	// Mock data for interested leads
 	const mockInterestedLeads = {
@@ -2716,14 +2718,14 @@ function renderAdmin() {
 }
 
 function renderUsersTable() {
-	console.log('renderUsersTable called, mockUsers:', window.mockUsers?.length || 0);
+	console.log('renderUsersTable called, mockUsers:', mockUsers?.length || 0);
 	const tbody = document.getElementById('usersTbody');
 	if (!tbody) {
 		console.log('usersTbody not found');
 		return;
 	}
 	
-	const users = window.mockUsers || [];
+	const users = mockUsers || [];
 	tbody.innerHTML = users.map(user => {
 		const createdBy = user.created_by === 'system' ? 'System' : 
 			users.find(u => u.id === user.created_by)?.name || 'Unknown';
@@ -2770,7 +2772,7 @@ function renderAuditLog() {
 	const auditLog = document.getElementById('auditLog');
 	if (!auditLog) return;
 	
-	const logs = window.mockAuditLog || [];
+	const logs = mockAuditLog || [];
 	auditLog.innerHTML = logs.map(entry => {
 		const actionIcons = {
 			user_created: '👤',
@@ -2800,7 +2802,7 @@ function renderAuditLog() {
 
 function editUser(userId) {
 	console.log('editUser called with:', userId);
-	const users = window.mockUsers || [];
+	const users = mockUsers || [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found:', userId);
@@ -2821,7 +2823,7 @@ function editUser(userId) {
 
 function changePassword(userId) {
 	console.log('changePassword called with:', userId);
-	const users = window.mockUsers || [];
+	const users = mockUsers || [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found for password change:', userId);
@@ -2834,7 +2836,7 @@ function changePassword(userId) {
 
 function deleteUser(userId) {
 	console.log('deleteUser called with:', userId);
-	const users = window.mockUsers || [];
+	const users = mockUsers || [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found for deletion:', userId);
@@ -2848,7 +2850,7 @@ function deleteUser(userId) {
 			users.splice(userIndex, 1);
 			
 			// Add to audit log
-			const auditLogs = window.mockAuditLog || [];
+			const auditLogs = mockAuditLog || [];
 			auditLogs.unshift({
 				id: `audit_${Date.now()}`,
 				action: 'user_deleted',
@@ -2868,9 +2870,7 @@ function deleteUser(userId) {
 	}
 }
 
-// Make functions and data globally accessible
+// Make functions globally accessible
 window.renderAdmin = renderAdmin;
 window.renderUsersTable = renderUsersTable;
 window.renderAuditLog = renderAuditLog;
-window.mockUsers = mockUsers;
-window.mockAuditLog = mockAuditLog;
