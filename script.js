@@ -1148,11 +1148,27 @@ const mockAuditLog = [
 		const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 		
 		return `
-			<tr>
+			<!-- Data Row -->
+			<tr class="lead-data-row">
 				<td data-sort="${lead.agentName}">${lead.agentName}</td>
 				<td data-sort="${lead.leadName}">${lead.leadName}</td>
 				<td data-sort="${lead.currentStep}">${currentStepName}</td>
-				<td class="progress-bar-cell">
+				<td class="progress-summary">
+					<div class="progress-info">
+						<span class="progress-percentage">${progressPercentage}% complete</span>
+						<span class="progress-status ${lead.status}">${lead.status}</span>
+					</div>
+				</td>
+				<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
+				<td>
+					<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
+						View Details
+					</button>
+				</td>
+			</tr>
+			<!-- Progress Bar Row -->
+			<tr class="progress-bar-row">
+				<td colspan="6" class="progress-bar-cell">
 					<div class="progress-bar-container">
 						<div class="progress-bar">
 							<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
@@ -1172,13 +1188,6 @@ const mockAuditLog = [
 							</div>
 						</div>
 					</div>
-					<div class="progress-percentage">${progressPercentage}% complete</div>
-				</td>
-				<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
-				<td>
-					<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
-						View Details
-					</button>
 				</td>
 			</tr>
 		`;
