@@ -220,12 +220,13 @@
 		<!-- Route: #/documents -->
 		<section id="documentsView" class="route-view hidden">
 			<div class="view-bar">
-				<h1>Documents</h1>
+				<h1>Document Progress Tracker</h1>
 				<div id="documentsRoleLabel" class="role-label"></div>
 			</div>
 
 			<div class="table-actions">
-				<button id="historyBtn" class="btn btn-secondary">History</button>
+				<button id="historyBtn" class="btn btn-secondary">View History</button>
+				<button id="addLeadBtn" class="btn btn-primary">Add New Lead</button>
 			</div>
 
 			<!-- Manager View -->
@@ -249,33 +250,19 @@
 				</div>
 				
 				<div class="leads-details">
-					<h3>Lead Document Status</h3>
-					<div class="table-wrapper">
-						<table id="documentsTable" class="data-table">
-							<thead>
-								<tr>
-									<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
-									<th data-sort="lead_name" class="sortable">Lead <span class="sort-icon">↕</span></th>
-									<th data-sort="current_step" class="sortable">Current Step <span class="sort-icon">↕</span></th>
-									<th data-sort="progress" class="sortable">Progress <span class="sort-icon">↕</span></th>
-									<th data-sort="last_updated" class="sortable">Last Updated <span class="sort-icon">↕</span></th>
-									<th>Actions</th>
-								</tr>
-							</thead>
-							<tbody id="documentsTbody">
-								<!-- rows injected -->
-							</tbody>
-						</table>
+					<h3>Lead Progress Tracking</h3>
+					<div class="progress-leads-container" id="progressLeadsContainer">
+						<!-- Interactive progress cards will be generated here -->
 					</div>
 				</div>
 			</div>
 
 			<!-- Agent View -->
 			<div id="agentDocumentsView" class="documents-agent-view hidden">
-				<div class="agent-leads-list">
-					<h3>My Leads - Document Status</h3>
-					<div id="agentLeadsList">
-						<!-- Agent's leads will be populated here -->
+				<div class="leads-details">
+					<h3>My Lead Progress</h3>
+					<div class="progress-leads-container" id="agentProgressLeadsContainer">
+						<!-- Interactive progress cards will be generated here -->
 					</div>
 				</div>
 			</div>

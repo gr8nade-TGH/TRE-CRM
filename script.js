@@ -1010,6 +1010,277 @@ const mockAuditLog = [
 		`;
 	}
 
+	// ---- Interactive Progress System ----
+	
+	// Mock data for progress tracking
+	const mockProgressLeads = [
+		{
+			id: 'lead_1',
+			leadName: 'Sarah Johnson',
+			agentName: 'Alex Agent',
+			agentEmail: 'alex@trecrm.com',
+			currentStep: 3,
+			lastUpdated: '2024-01-15T10:30:00Z',
+			status: 'current',
+			property: {
+				name: 'The Howard',
+				address: '123 Main St, Austin, TX',
+				rent: '$1,200/month',
+				bedrooms: 1,
+				bathrooms: 1
+			},
+			showcase: {
+				sent: true,
+				landingPageUrl: 'https://tre-crm.vercel.app/showcase/lead_1',
+				selections: ['The Howard', 'Community 2'],
+				calendarDates: ['2024-01-20', '2024-01-22']
+			},
+			guestCard: {
+				sent: true,
+				url: 'https://tre-crm.vercel.app/guest-card/lead_1'
+			},
+			lease: {
+				sent: false,
+				signed: false,
+				finalized: false,
+				property: 'The Howard',
+				apartment: 'Unit 205'
+			}
+		},
+		{
+			id: 'lead_2',
+			leadName: 'Mike Chen',
+			agentName: 'Bailey Broker',
+			agentEmail: 'bailey@trecrm.com',
+			currentStep: 5,
+			lastUpdated: '2024-01-14T15:45:00Z',
+			status: 'current',
+			property: {
+				name: 'Waterford Park',
+				address: '456 Oak Ave, Dallas, TX',
+				rent: '$1,400/month',
+				bedrooms: 2,
+				bathrooms: 2
+			},
+			showcase: {
+				sent: true,
+				landingPageUrl: 'https://tre-crm.vercel.app/showcase/lead_2',
+				selections: ['Waterford Park'],
+				calendarDates: ['2024-01-18']
+			},
+			guestCard: {
+				sent: true,
+				url: 'https://tre-crm.vercel.app/guest-card/lead_2'
+			},
+			lease: {
+				sent: true,
+				signed: false,
+				finalized: false,
+				property: 'Waterford Park',
+				apartment: 'Unit 312'
+			}
+		},
+		{
+			id: 'lead_3',
+			leadName: 'Emily Davis',
+			agentName: 'Alex Agent',
+			agentEmail: 'alex@trecrm.com',
+			currentStep: 7,
+			lastUpdated: '2024-01-13T09:20:00Z',
+			status: 'completed',
+			property: {
+				name: 'Community 1',
+				address: '789 Pine St, Houston, TX',
+				rent: '$1,100/month',
+				bedrooms: 1,
+				bathrooms: 1
+			},
+			showcase: {
+				sent: true,
+				landingPageUrl: 'https://tre-crm.vercel.app/showcase/lead_3',
+				selections: ['Community 1'],
+				calendarDates: ['2024-01-15']
+			},
+			guestCard: {
+				sent: true,
+				url: 'https://tre-crm.vercel.app/guest-card/lead_3'
+			},
+			lease: {
+				sent: true,
+				signed: true,
+				finalized: true,
+				property: 'Community 1',
+				apartment: 'Unit 101'
+			}
+		}
+	];
+
+	// Progress steps configuration
+	const progressSteps = [
+		{ id: 1, label: 'Showcase Sent', key: 'showcaseSent' },
+		{ id: 2, label: 'Lead Responded', key: 'leadResponded' },
+		{ id: 3, label: 'Guest Card Sent', key: 'guestCardSent' },
+		{ id: 4, label: 'Property Selected', key: 'propertySelected' },
+		{ id: 5, label: 'Lease Sent', key: 'leaseSent' },
+		{ id: 6, label: 'Lease Signed', key: 'leaseSigned' },
+		{ id: 7, label: 'Lease Finalized', key: 'leaseFinalized' }
+	];
+
+	async function renderProgressCards(containerId) {
+		const container = document.getElementById(containerId);
+		if (!container) return;
+
+		// Filter leads based on role
+		let leads = mockProgressLeads;
+		if (state.role === 'agent') {
+			leads = mockProgressLeads.filter(lead => lead.agentName === 'Alex Agent');
+		}
+
+		container.innerHTML = leads.map(lead => createProgressCard(lead)).join('');
+		
+		// Add event listeners for progress steps
+		leads.forEach(lead => {
+			progressSteps.forEach(step => {
+				const stepElement = document.querySelector(`[data-lead-id="${lead.id}"][data-step="${step.id}"]`);
+				if (stepElement) {
+					stepElement.addEventListener('click', () => showStepDetails(lead, step));
+				}
+			});
+		});
+	}
+
+	function createProgressCard(lead) {
+		const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
+		
+		return `
+			<div class="progress-card">
+				<div class="progress-card-header">
+					<div>
+						<h3 class="progress-card-title">${lead.leadName}</h3>
+						<p class="progress-card-agent">Agent: ${lead.agentName}</p>
+					</div>
+					<span class="progress-card-status ${lead.status}">${lead.status}</span>
+				</div>
+				
+				<div class="progress-bar-container">
+					<div class="progress-bar">
+						<div class="progress-line"></div>
+						<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
+						${progressSteps.map(step => {
+							const stepClass = step.id < lead.currentStep ? 'completed' : 
+											 step.id === lead.currentStep ? 'current' : 'pending';
+							return `
+								<div class="progress-step ${stepClass}" 
+									 data-lead-id="${lead.id}" 
+									 data-step="${step.id}">
+									<div class="progress-step-dot ${stepClass}">${step.id}</div>
+									<div class="progress-step-label">${step.label}</div>
+								</div>
+							`;
+						}).join('')}
+					</div>
+				</div>
+				
+				<div class="progress-details" id="details-${lead.id}" style="display: none;">
+					<!-- Step details will be populated here -->
+				</div>
+			</div>
+		`;
+	}
+
+	function showStepDetails(lead, step) {
+		const detailsContainer = document.getElementById(`details-${lead.id}`);
+		if (!detailsContainer) return;
+
+		// Toggle details visibility
+		const isVisible = detailsContainer.style.display !== 'none';
+		detailsContainer.style.display = isVisible ? 'none' : 'block';
+		
+		if (isVisible) return;
+
+		// Generate step-specific content
+		let content = '';
+		
+		switch(step.id) {
+			case 1: // Showcase Sent
+				content = `
+					<h4>Showcase Sent to Lead</h4>
+					<p><strong>Sent to:</strong> ${lead.leadName}</p>
+					<p><strong>Agent:</strong> ${lead.agentName}</p>
+					<p><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</p>
+					<p><a href="${lead.showcase.landingPageUrl}" target="_blank" class="detail-link">View Landing Page →</a></p>
+				`;
+				break;
+				
+			case 2: // Lead Responded
+				content = `
+					<h4>Lead Responded to Showcase</h4>
+					<p><strong>Lead:</strong> ${lead.leadName}</p>
+					<p><strong>Selected Properties:</strong> ${lead.showcase.selections.join(', ')}</p>
+					<p><strong>Preferred Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</p>
+					<p><a href="${lead.showcase.landingPageUrl}?filled=true" target="_blank" class="detail-link">View Filled Landing Page →</a></p>
+				`;
+				break;
+				
+			case 3: // Guest Card Sent
+				content = `
+					<h4>Guest Card Sent to Properties</h4>
+					<p><strong>Lead:</strong> ${lead.leadName}</p>
+					<p><strong>Agent:</strong> ${lead.agentName}</p>
+					<p><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</p>
+					<p><a href="${lead.guestCard.url}" target="_blank" class="detail-link">View Guest Card →</a></p>
+				`;
+				break;
+				
+			case 4: // Property Selected
+				content = `
+					<h4>Lead Selected Property to Book</h4>
+					<div class="property-details">
+						<h5>${lead.property.name}</h5>
+						<p><strong>Address:</strong> ${lead.property.address}</p>
+						<p><strong>Rent:</strong> ${lead.property.rent}</p>
+						<p><strong>Bedrooms:</strong> ${lead.property.bedrooms}</p>
+						<p><strong>Bathrooms:</strong> ${lead.property.bathrooms}</p>
+					</div>
+				`;
+				break;
+				
+			case 5: // Lease Sent
+				content = `
+					<h4>Lease Agreement Sent for E-Signature</h4>
+					<p><strong>Sent to:</strong> ${lead.leadName}</p>
+					<p><strong>Property:</strong> ${lead.lease.property}</p>
+					<p><strong>Apartment:</strong> ${lead.lease.apartment}</p>
+					<p><strong>Agent:</strong> ${lead.agentName}</p>
+					<p><a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="detail-link">View Lease Agreement →</a></p>
+				`;
+				break;
+				
+			case 6: // Lease Signed
+				content = `
+					<h4>Lease Agreement Signed by Property</h4>
+					<p><strong>Property:</strong> ${lead.lease.property}</p>
+					<p><strong>Apartment:</strong> ${lead.lease.apartment}</p>
+					<p><strong>Signed by:</strong> Property Management</p>
+					<p><a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="detail-link">View Signed Lease →</a></p>
+				`;
+				break;
+				
+			case 7: // Lease Finalized
+				content = `
+					<h4>Lease Agreement Finalized</h4>
+					<p><strong>Status:</strong> Complete</p>
+					<p><strong>Property:</strong> ${lead.lease.property}</p>
+					<p><strong>Apartment:</strong> ${lead.lease.apartment}</p>
+					<p><strong>Finalized Date:</strong> ${formatDate(lead.lastUpdated)}</p>
+					<p><strong>Commission:</strong> Ready for processing</p>
+				`;
+				break;
+		}
+		
+		detailsContainer.innerHTML = content;
+	}
+
 	// ---- Rendering: Documents Table ----
 	async function renderDocuments(){
 		if (state.role === 'agent') {
@@ -1024,8 +1295,8 @@ const mockAuditLog = [
 		document.getElementById('managerDocumentsView').classList.remove('hidden');
 		document.getElementById('agentDocumentsView').classList.add('hidden');
 
-		// Render leads table
-		renderLeadsTable();
+		// Render interactive progress cards
+		renderProgressCards('progressLeadsContainer');
 	}
 
 	async function renderAgentDocuments(){
@@ -1033,8 +1304,8 @@ const mockAuditLog = [
 		document.getElementById('managerDocumentsView').classList.add('hidden');
 		document.getElementById('agentDocumentsView').classList.remove('hidden');
 
-		// Render agent's leads
-		renderAgentLeadsList();
+		// Render agent's progress cards
+		renderProgressCards('agentProgressLeadsContainer');
 	}
 
 

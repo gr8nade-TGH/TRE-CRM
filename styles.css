@@ -1593,6 +1593,246 @@ body {
 	padding: 20px 0;
 }
 
+/* Interactive Progress System */
+.progress-leads-container {
+	display: grid;
+	gap: 20px;
+	grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+.progress-card {
+	background: var(--panel);
+	border-radius: 12px;
+	padding: 20px;
+	box-shadow: var(--shadow);
+	border: 1px solid var(--rule);
+	transition: all 0.2s ease;
+}
+
+.progress-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 15px 35px rgba(10,10,10,.1);
+}
+
+.progress-card-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 16px;
+}
+
+.progress-card-title {
+	font-size: 18px;
+	font-weight: 600;
+	color: var(--ink);
+	margin: 0;
+}
+
+.progress-card-agent {
+	font-size: 14px;
+	color: var(--muted);
+	margin: 4px 0 0 0;
+}
+
+.progress-card-status {
+	background: var(--success);
+	color: white;
+	padding: 4px 12px;
+	border-radius: 20px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.progress-card-status.pending {
+	background: var(--warning);
+}
+
+.progress-card-status.completed {
+	background: var(--success);
+}
+
+.progress-card-status.current {
+	background: var(--accent);
+}
+
+/* Interactive Progress Bar */
+.progress-bar-container {
+	margin: 20px 0;
+}
+
+.progress-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	position: relative;
+	margin: 20px 0;
+}
+
+.progress-line {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	right: 0;
+	height: 4px;
+	background: var(--rule);
+	transform: translateY(-50%);
+	z-index: 1;
+}
+
+.progress-line-fill {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	height: 4px;
+	background: linear-gradient(90deg, var(--success) 0%, var(--accent) 100%);
+	transform: translateY(-50%);
+	z-index: 2;
+	transition: width 0.3s ease;
+}
+
+.progress-step {
+	position: relative;
+	z-index: 3;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.progress-step:hover {
+	transform: scale(1.1);
+}
+
+.progress-step-dot {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: var(--panel);
+	border: 3px solid var(--rule);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	transition: all 0.2s ease;
+	position: relative;
+}
+
+.progress-step-dot.completed {
+	background: var(--success);
+	border-color: var(--success);
+	color: white;
+}
+
+.progress-step-dot.current {
+	background: var(--accent);
+	border-color: var(--accent);
+	color: white;
+	animation: pulse 2s infinite;
+}
+
+.progress-step-dot.pending {
+	background: var(--panel);
+	border-color: var(--rule);
+	color: var(--muted);
+}
+
+@keyframes pulse {
+	0% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.7); }
+	70% { box-shadow: 0 0 0 10px rgba(37, 99, 235, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+}
+
+.progress-step-label {
+	font-size: 11px;
+	font-weight: 500;
+	color: var(--muted);
+	margin-top: 8px;
+	text-align: center;
+	max-width: 80px;
+	line-height: 1.2;
+}
+
+.progress-step.completed .progress-step-label {
+	color: var(--success);
+	font-weight: 600;
+}
+
+.progress-step.current .progress-step-label {
+	color: var(--accent);
+	font-weight: 600;
+}
+
+/* Progress Details Modal */
+.progress-details {
+	background: var(--panel);
+	border-radius: 8px;
+	padding: 16px;
+	margin-top: 12px;
+	border: 1px solid var(--rule);
+}
+
+.progress-details h4 {
+	margin: 0 0 12px 0;
+	font-size: 16px;
+	color: var(--ink);
+}
+
+.progress-details p {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+	color: var(--muted);
+}
+
+.progress-details .detail-link {
+	color: var(--accent);
+	text-decoration: none;
+	font-weight: 500;
+}
+
+.progress-details .detail-link:hover {
+	text-decoration: underline;
+}
+
+.progress-details .property-details {
+	background: var(--bg);
+	padding: 12px;
+	border-radius: 6px;
+	margin-top: 8px;
+}
+
+.progress-details .property-details h5 {
+	margin: 0 0 8px 0;
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.progress-details .property-details p {
+	margin: 0 0 4px 0;
+	font-size: 13px;
+	color: var(--muted);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.progress-leads-container {
+		grid-template-columns: 1fr;
+	}
+	
+	.progress-card {
+		padding: 16px;
+	}
+	
+	.progress-step-label {
+		font-size: 10px;
+		max-width: 60px;
+	}
+}
+
 /* Admin Page Styles */
 .admin-content {
 	padding: 20px;
