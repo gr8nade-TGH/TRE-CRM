@@ -2812,111 +2812,22 @@ body {
 	}
 }
 
-/* ===== SIMPLE MOBILE RESPONSIVE DESIGN ===== */
+/* ===== MAIN CONTENT SPACING ===== */
 
-/* Mobile hamburger menu */
-.mobile-menu-toggle {
-	display: none;
-	flex-direction: column;
-	justify-content: space-around;
-	width: 30px;
-	height: 30px;
-	background: transparent;
-	border: none;
-	cursor: pointer;
-	padding: 0;
-	z-index: 1001;
+/* Ensure main content doesn't get hidden behind sticky header */
+main#appRoot {
+	padding-top: 20px;
 }
 
-.hamburger-line {
-	width: 25px;
-	height: 3px;
-	background: var(--ink);
-	transition: all 0.3s ease;
-	transform-origin: 1px;
+/* Ensure first view has proper spacing */
+.route-view:first-child {
+	margin-top: 0;
 }
 
-.mobile-menu-toggle.active .hamburger-line:nth-child(1) {
-	transform: rotate(45deg);
-}
+/* ===== MINIMAL MOBILE FIXES ===== */
 
-.mobile-menu-toggle.active .hamburger-line:nth-child(2) {
-	opacity: 0;
-}
-
-.mobile-menu-toggle.active .hamburger-line:nth-child(3) {
-	transform: rotate(-45deg);
-}
-
-/* Simple mobile responsive design */
+/* Only essential mobile improvements - no layout changes */
 @media (max-width: 768px) {
-	/* Header mobile layout */
-	.app-header {
-		flex-wrap: wrap;
-		padding: 10px 15px;
-		gap: 10px;
-	}
-	
-	.brand {
-		order: 1;
-	}
-	
-	.mobile-menu-toggle {
-		display: flex;
-		order: 2;
-	}
-	
-	.role-switch {
-		order: 3;
-		font-size: 14px;
-	}
-	
-	.main-nav {
-		display: none;
-		position: absolute;
-		top: 100%;
-		left: 0;
-		right: 0;
-		background: var(--panel);
-		flex-direction: column;
-		padding: 20px;
-		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-		z-index: 1000;
-	}
-	
-	.main-nav.active {
-		display: flex;
-	}
-	
-	.nav-link {
-		padding: 15px 0;
-		border-bottom: 1px solid var(--rule);
-		text-align: center;
-		font-size: 16px;
-	}
-	
-	.nav-link:last-child {
-		border-bottom: none;
-	}
-	
-	/* Brand logo mobile sizing */
-	.brand-logo {
-		height: 32px;
-		max-width: 150px;
-	}
-	
-	/* Simple table mobile fixes */
-	.data-table {
-		font-size: 14px;
-		overflow-x: auto;
-	}
-	
-	.data-table th,
-	.data-table td {
-		padding: 8px 4px;
-		white-space: nowrap;
-	}
-	
 	/* Touch-friendly buttons */
 	.btn {
 		min-height: 44px;
@@ -2935,16 +2846,10 @@ body {
 		max-height: 90vh;
 		overflow-y: auto;
 	}
-}
-
-/* Large screens (769px+) */
-@media (min-width: 769px) {
-	.mobile-menu-toggle {
-		display: none;
-	}
 	
-	.main-nav {
-		display: flex;
+	/* Table horizontal scroll */
+	.data-table {
+		overflow-x: auto;
 	}
 }
 
