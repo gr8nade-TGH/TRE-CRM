@@ -2812,3 +2812,280 @@ body {
 	}
 }
 
+/* ===== MOBILE RESPONSIVE DESIGN ===== */
+
+/* Mobile hamburger menu */
+.mobile-menu-toggle {
+	display: none;
+	flex-direction: column;
+	justify-content: space-around;
+	width: 30px;
+	height: 30px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	z-index: 1001;
+}
+
+.hamburger-line {
+	width: 25px;
+	height: 3px;
+	background: var(--ink);
+	transition: all 0.3s ease;
+	transform-origin: 1px;
+}
+
+.mobile-menu-toggle.active .hamburger-line:nth-child(1) {
+	transform: rotate(45deg);
+}
+
+.mobile-menu-toggle.active .hamburger-line:nth-child(2) {
+	opacity: 0;
+}
+
+.mobile-menu-toggle.active .hamburger-line:nth-child(3) {
+	transform: rotate(-45deg);
+}
+
+/* Mobile-first responsive design */
+@media (max-width: 768px) {
+	/* Header mobile layout */
+	.app-header {
+		flex-wrap: wrap;
+		padding: 10px 15px;
+		gap: 10px;
+	}
+	
+	.brand {
+		order: 1;
+	}
+	
+	.mobile-menu-toggle {
+		display: flex;
+		order: 2;
+	}
+	
+	.role-switch {
+		order: 3;
+		font-size: 14px;
+	}
+	
+	.main-nav {
+		display: none;
+		position: absolute;
+		top: 100%;
+		left: 0;
+		right: 0;
+		background: var(--panel);
+		flex-direction: column;
+		padding: 20px;
+		box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+		z-index: 1000;
+	}
+	
+	.main-nav.active {
+		display: flex;
+	}
+	
+	.nav-link {
+		padding: 15px 0;
+		border-bottom: 1px solid var(--rule);
+		text-align: center;
+		font-size: 16px;
+	}
+	
+	.nav-link:last-child {
+		border-bottom: none;
+	}
+	
+	/* Brand logo mobile sizing */
+	.brand-logo {
+		height: 32px;
+		max-width: 150px;
+	}
+	
+	/* View bar mobile */
+	.view-bar {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+		padding: 15px;
+	}
+	
+	.view-bar h1 {
+		font-size: 24px;
+		margin: 0;
+	}
+	
+	/* Table actions mobile */
+	.table-actions {
+		flex-direction: column;
+		gap: 10px;
+		padding: 0 15px;
+	}
+	
+	.table-actions input {
+		width: 100%;
+		font-size: 16px; /* Prevents zoom on iOS */
+	}
+	
+	.table-actions .btn {
+		width: 100%;
+		padding: 12px;
+		font-size: 16px;
+		min-height: 44px; /* Touch-friendly */
+	}
+	
+	/* Tables mobile */
+	.data-table {
+		font-size: 14px;
+	}
+	
+	.data-table th,
+	.data-table td {
+		padding: 8px 4px;
+	}
+	
+	/* Hide less important columns on mobile */
+	.data-table th:nth-child(n+5),
+	.data-table td:nth-child(n+5) {
+		display: none;
+	}
+	
+	/* Show essential columns only */
+	.data-table th:nth-child(1),
+	.data-table td:nth-child(1),
+	.data-table th:nth-child(2),
+	.data-table td:nth-child(2),
+	.data-table th:nth-child(3),
+	.data-table td:nth-child(3),
+	.data-table th:nth-child(4),
+	.data-table td:nth-child(4) {
+		display: table-cell;
+	}
+	
+	/* Modals mobile */
+	.modal-card {
+		margin: 20px;
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+	
+	.modal-header h3 {
+		font-size: 20px;
+	}
+	
+	/* Form mobile */
+	.form-row {
+		flex-direction: column;
+		gap: 10px;
+	}
+	
+	.form-row .field {
+		width: 100%;
+	}
+	
+	/* Listings page mobile */
+	.listings-container {
+		flex-direction: column;
+	}
+	
+	.listings-table-container {
+		order: 2;
+		width: 100%;
+	}
+	
+	#listingsMap {
+		order: 1;
+		height: 300px;
+		width: 100%;
+	}
+	
+	/* Documents page mobile */
+	.documents-container {
+		padding: 0 10px;
+	}
+	
+	.lead-table-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 10px;
+		padding: 15px;
+	}
+	
+	.lead-info {
+		width: 100%;
+	}
+	
+	.progress-center {
+		width: 100%;
+		justify-content: flex-start;
+	}
+	
+	.lead-actions {
+		width: 100%;
+		justify-content: space-between;
+	}
+	
+	/* Specials page mobile */
+	.special-description {
+		max-width: 200px;
+		font-size: 12px;
+	}
+	
+	.action-buttons {
+		flex-direction: column;
+		gap: 4px;
+	}
+	
+	.action-buttons .icon-btn {
+		padding: 6px 8px;
+		font-size: 12px;
+	}
+}
+
+/* Tablet responsive (768px - 1024px) */
+@media (min-width: 769px) and (max-width: 1024px) {
+	.app-header {
+		padding: 15px 20px;
+	}
+	
+	.main-nav {
+		gap: 20px;
+	}
+	
+	.nav-link {
+		font-size: 14px;
+	}
+	
+	.brand-logo {
+		height: 36px;
+	}
+	
+	.view-bar {
+		padding: 20px;
+	}
+	
+	.table-actions {
+		padding: 0 20px;
+	}
+	
+	/* Show more columns on tablet */
+	.data-table th:nth-child(n+6),
+	.data-table td:nth-child(n+6) {
+		display: none;
+	}
+}
+
+/* Large screens (1025px+) */
+@media (min-width: 1025px) {
+	.mobile-menu-toggle {
+		display: none;
+	}
+	
+	.main-nav {
+		display: flex;
+	}
+}
+

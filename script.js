@@ -3767,6 +3767,33 @@ function createLeadTable(lead, isExpanded = false) {
 			}
 		});
 
+		// Mobile menu toggle
+		const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+		const mainNav = document.getElementById('mainNav');
+		
+		if (mobileMenuToggle && mainNav) {
+			mobileMenuToggle.addEventListener('click', () => {
+				mobileMenuToggle.classList.toggle('active');
+				mainNav.classList.toggle('active');
+			});
+			
+			// Close mobile menu when clicking on nav links
+			mainNav.addEventListener('click', (e) => {
+				if (e.target.classList.contains('nav-link')) {
+					mobileMenuToggle.classList.remove('active');
+					mainNav.classList.remove('active');
+				}
+			});
+			
+			// Close mobile menu when clicking outside
+			document.addEventListener('click', (e) => {
+				if (!mobileMenuToggle.contains(e.target) && !mainNav.contains(e.target)) {
+					mobileMenuToggle.classList.remove('active');
+					mainNav.classList.remove('active');
+				}
+			});
+		}
+
 		// initial route
 		if (!location.hash) location.hash = '/leads';
 		route();
