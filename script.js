@@ -1702,48 +1702,100 @@ function createLeadTable(lead, isExpanded = false) {
 		map.on('tileerror', function(e) {
 			console.log('Tile loading error:', e);
 		});
+		
+		// Handle zoom changes to toggle between dots and prices
+		map.on('zoomend', function() {
+			const currentZoom = map.getZoom();
+			const showPrices = currentZoom >= 12; // Show prices at zoom level 12 and above
+			
+			markers.forEach(markerGroup => {
+				if (markerGroup.dot && markerGroup.price) {
+					if (showPrices) {
+						// Show prices, hide dots
+						markerGroup.dot.setOpacity(0);
+						markerGroup.price.setOpacity(1);
+					} else {
+						// Show dots, hide prices
+						markerGroup.dot.setOpacity(1);
+						markerGroup.price.setOpacity(0);
+					}
+				}
+			});
+		});
 	}
 
 	function clearMarkers() {
-		markers.forEach(m => m.remove());
+		markers.forEach(markerGroup => {
+			if (markerGroup.dot) markerGroup.dot.remove();
+			if (markerGroup.price) markerGroup.price.remove();
+		});
 		markers = [];
 	}
 
 	function addMarker(prop) {
 		const isSelected = selectedProperty && selectedProperty.id === prop.id;
 		
-		// Use canvas marker for better performance with many markers
-		const icon = L.divIcon({ 
+		// Create dot marker (always visible)
+		const dotMarker = L.circleMarker([prop.lat, prop.lng], {
+			radius: 8,
+			fillColor: isSelected ? '#ef4444' : '#3b82f6',
+			color: isSelected ? '#dc2626' : '#1e40af',
+			weight: 2,
+			opacity: 1,
+			fillOpacity: 0.8
+		}).addTo(map);
+		
+		// Create price marker (only visible at high zoom)
+		const priceIcon = L.divIcon({ 
 			html: `<div class="price-marker ${isSelected ? 'selected' : ''}">$${prop.rent_min.toLocaleString()}</div>`, 
 			className: '', 
 			iconSize: [0, 0],
-			useCanvas: true // Better performance
+			useCanvas: true
 		});
 		
-		const marker = L.marker([prop.lat, prop.lng], { 
-			icon,
-			riseOnHover: true // Better UX
+		const priceMarker = L.marker([prop.lat, prop.lng], { 
+			icon: priceIcon,
+			riseOnHover: true
 		}).addTo(map);
 		
-		marker.property = prop; // Store property reference
+		// Initially hide price marker
+		priceMarker.setOpacity(0);
 		
-		// Lazy load popup content
-		marker.bindPopup(`
+		// Store both markers
+		const markerGroup = {
+			dot: dotMarker,
+			price: priceMarker,
+			property: prop
+		};
+		
+		// Add popup content
+		const popupContent = `
 			<strong>${prop.name}</strong><br>
 			${prop.address}<br>
 			<span class="subtle">$${prop.rent_min.toLocaleString()} - $${prop.rent_max.toLocaleString()} · ${prop.beds_min}-${prop.beds_max} bd / ${prop.baths_min}-${prop.baths_max} ba</span>
-		`, {
+		`;
+		
+		dotMarker.bindPopup(popupContent, {
 			closeButton: true,
 			autoClose: false,
 			closeOnClick: false
 		});
 		
-		// Add click handler to marker
-		marker.on('click', () => {
+		priceMarker.bindPopup(popupContent, {
+			closeButton: true,
+			autoClose: false,
+			closeOnClick: false
+		});
+		
+		// Add click handlers
+		dotMarker.on('click', () => {
+			selectProperty(prop);
+		});
+		priceMarker.on('click', () => {
 			selectProperty(prop);
 		});
 		
-		markers.push(marker);
+		markers.push(markerGroup);
 	}
 
 	function selectProperty(prop) {
@@ -1765,14 +1817,27 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 		
 		// Update map markers
-		markers.forEach(marker => {
-			const isSelected = marker.property.id === prop.id;
-			const newIcon = L.divIcon({ 
-				html: `<div class="price-marker ${isSelected ? 'selected' : ''}">$${marker.property.rent_min.toLocaleString()}</div>`, 
-				className: '', 
-				iconSize: [0, 0] 
-			});
-			marker.setIcon(newIcon);
+		markers.forEach(markerGroup => {
+			const isSelected = markerGroup.property.id === prop.id;
+			
+			// Update dot marker
+			if (markerGroup.dot) {
+				markerGroup.dot.setStyle({
+					fillColor: isSelected ? '#ef4444' : '#3b82f6',
+					color: isSelected ? '#dc2626' : '#1e40af'
+				});
+			}
+			
+			// Update price marker
+			if (markerGroup.price) {
+				const newIcon = L.divIcon({ 
+					html: `<div class="price-marker ${isSelected ? 'selected' : ''}">$${markerGroup.property.rent_min.toLocaleString()}</div>`, 
+					className: '', 
+					iconSize: [0, 0],
+					useCanvas: true
+				});
+				markerGroup.price.setIcon(newIcon);
+			}
 		});
 		
 		// Center map on selected property
