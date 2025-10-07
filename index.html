@@ -16,6 +16,7 @@
 			<a href="#/leads" class="nav-link" data-page="leads">Leads</a>
 			<a href="#/agents" class="nav-link" data-page="agents" id="agentsNavLink">Agents</a>
 			<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
+			<a href="#/specials" class="nav-link" data-page="specials">🔥</a>
 			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
 			<a href="#/admin" class="nav-link" data-page="admin" id="adminNavLink">Admin</a>
 		</nav>
@@ -214,6 +215,38 @@
 				<div class="mapwrap">
 					<div id="listingsMap" aria-label="Map of properties"></div>
 				</div>
+			</div>
+		</section>
+
+		<!-- Route: #/specials -->
+		<section id="specialsView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>🔥 Property Specials</h1>
+				<div id="specialsRoleLabel" class="role-label"></div>
+			</div>
+
+			<div class="table-actions">
+				<input id="specialsSearch" type="search" placeholder="Search property name or special" />
+				<button id="addSpecialBtn" class="btn btn-primary">+ Add Special</button>
+			</div>
+
+			<div class="table-container">
+				<table id="specialsTable" class="data-table">
+					<thead>
+						<tr>
+							<th data-sort="property_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
+							<th data-sort="current_special" class="sortable">Current Special <span class="sort-icon">↕</span></th>
+							<th data-sort="commission_rate" class="sortable">Commission Rate <span class="sort-icon">↕</span></th>
+							<th data-sort="expiration_date" class="sortable">Expiration Date <span class="sort-icon">↕</span></th>
+							<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
+							<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="specialsTbody">
+						<!-- Specials will be populated here -->
+					</tbody>
+				</table>
 			</div>
 		</section>
 
@@ -644,6 +677,42 @@
 			<div class="modal-footer">
 				<button id="saveAddLeadBtn" class="btn btn-primary">Add Lead</button>
 				<button id="cancelAddLeadBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Add Special Modal -->
+	<div id="addSpecialModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>🔥 Add New Special</h3>
+				<button id="closeAddSpecialModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="addSpecialForm">
+					<div class="field">
+						<label for="specialPropertyName">Property Name *</label>
+						<input type="text" id="specialPropertyName" required placeholder="Enter property name">
+					</div>
+					<div class="field">
+						<label for="specialCurrentSpecial">Current Special *</label>
+						<textarea id="specialCurrentSpecial" rows="4" required placeholder="Describe the special offer, discount, or promotion..."></textarea>
+					</div>
+					<div class="form-row">
+						<div class="field">
+							<label for="specialCommissionRate">Commission Rate *</label>
+							<input type="text" id="specialCommissionRate" required placeholder="e.g., 5%, $500, 10%">
+						</div>
+						<div class="field">
+							<label for="specialExpirationDate">Expiration Date *</label>
+							<input type="date" id="specialExpirationDate" required>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="saveAddSpecialBtn" class="btn btn-primary">Add Special</button>
+				<button id="cancelAddSpecialBtn" class="btn btn-secondary">Cancel</button>
 			</div>
 		</div>
 	</div>

@@ -97,6 +97,96 @@ async function createLeadAPI(lead) {
 	}
 }
 
+// Add Special functionality
+function saveNewSpecial() {
+	const propertyName = document.getElementById('specialPropertyName').value.trim();
+	const currentSpecial = document.getElementById('specialCurrentSpecial').value.trim();
+	const commissionRate = document.getElementById('specialCommissionRate').value.trim();
+	const expirationDate = document.getElementById('specialExpirationDate').value;
+
+	// Validation
+	if (!propertyName || !currentSpecial || !commissionRate || !expirationDate) {
+		toast('Please fill in all required fields', 'error');
+		return;
+	}
+
+	// Check if expiration date is in the past
+	if (new Date(expirationDate) < new Date()) {
+		toast('Expiration date cannot be in the past', 'error');
+		return;
+	}
+
+	// Create new special
+	const newSpecial = {
+		property_name: propertyName,
+		current_special: currentSpecial,
+		commission_rate: commissionRate,
+		expiration_date: expirationDate,
+		agent_id: state.currentAgent || 'agent_1', // Default agent
+		agent_name: state.role === 'agent' ? 'Current Agent' : 'Manager' // Will be updated with real name
+	};
+
+	// Add to mock data or call API
+	if (USE_MOCK_DATA) {
+		api.createSpecial(newSpecial);
+		toast('Special added successfully!', 'success');
+		hideModal('addSpecialModal');
+		renderSpecials(); // Refresh the specials list
+	} else {
+		// In production, this would call the API
+		createSpecialAPI(newSpecial);
+	}
+}
+
+async function createSpecialAPI(special) {
+	try {
+		const response = await fetch(`${API_BASE}/specials`, {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify(special)
+		});
+		
+		if (response.ok) {
+			toast('Special added successfully!', 'success');
+			hideModal('addSpecialModal');
+			renderSpecials(); // Refresh the specials list
+		} else {
+			throw new Error('Failed to create special');
+		}
+	} catch (error) {
+		toast('Error adding special: ' + error.message, 'error');
+	}
+}
+
+function deleteSpecial(specialId) {
+	if (confirm('Are you sure you want to delete this special? This action cannot be undone.')) {
+		if (USE_MOCK_DATA) {
+			api.deleteSpecial(specialId);
+			toast('Special deleted successfully!', 'success');
+			renderSpecials(); // Refresh the specials list
+		} else {
+			deleteSpecialAPI(specialId);
+		}
+	}
+}
+
+async function deleteSpecialAPI(specialId) {
+	try {
+		const response = await fetch(`${API_BASE}/specials/${specialId}`, {
+			method: 'DELETE'
+		});
+		
+		if (response.ok) {
+			toast('Special deleted successfully!', 'success');
+			renderSpecials(); // Refresh the specials list
+		} else {
+			throw new Error('Failed to delete special');
+		}
+	} catch (error) {
+		toast('Error deleting special: ' + error.message, 'error');
+	}
+}
+
 // Mock data - defined globally
 const mockUsers = [
 	{
@@ -978,6 +1068,117 @@ const mockAuditLog = [
 				console.error('Error creating lead interest:', error);
 				throw error;
 			}
+		},
+
+		// Specials API functions
+		async getSpecials({ role, agentId, search, sortKey, sortDir, page, pageSize }){
+			if (USE_MOCK_DATA) {
+				console.log('Using mock data for specials, count:', mockSpecials.length);
+				let filteredSpecials = [...mockSpecials];
+				
+				// Filter by agent if role is agent
+				if (role === 'agent' && agentId) {
+					filteredSpecials = filteredSpecials.filter(special => special.agent_id === agentId);
+				}
+				
+				// Apply search filter
+				if (search) {
+					filteredSpecials = filteredSpecials.filter(special => 
+						special.property_name.toLowerCase().includes(search.toLowerCase()) ||
+						special.current_special.toLowerCase().includes(search.toLowerCase())
+					);
+				}
+				
+				// Apply sorting
+				if (sortKey && sortDir) {
+					filteredSpecials.sort((a, b) => {
+						let aVal = a[sortKey];
+						let bVal = b[sortKey];
+						
+						if (sortKey === 'expiration_date' || sortKey === 'created_at') {
+							aVal = new Date(aVal);
+							bVal = new Date(bVal);
+						}
+						
+						if (sortDir === 'asc') {
+							return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
+						} else {
+							return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
+						}
+					});
+				}
+				
+				return {
+					items: filteredSpecials,
+					total: filteredSpecials.length
+				};
+			}
+			
+			const params = new URLSearchParams({
+				role,
+				agentId,
+				search,
+				sortKey,
+				sortDir,
+				page,
+				pageSize
+			});
+
+			const response = await fetch(`${API_BASE}/specials?${params}`);
+			return handleResponse(response);
+		},
+
+		async createSpecial(specialData) {
+			if (USE_MOCK_DATA) {
+				const newSpecial = {
+					id: 'special_' + Date.now(),
+					...specialData,
+					created_at: new Date().toISOString()
+				};
+				mockSpecials.unshift(newSpecial); // Add to beginning for newest first
+				return newSpecial;
+			}
+			
+			const response = await fetch(`${API_BASE}/specials`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(specialData)
+			});
+			return handleResponse(response);
+		},
+
+		async updateSpecial(id, specialData) {
+			if (USE_MOCK_DATA) {
+				const index = mockSpecials.findIndex(s => s.id === id);
+				if (index !== -1) {
+					mockSpecials[index] = { ...mockSpecials[index], ...specialData };
+					return mockSpecials[index];
+				}
+				throw new Error('Special not found');
+			}
+			
+			const response = await fetch(`${API_BASE}/specials/${id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(specialData)
+			});
+			return handleResponse(response);
+		},
+
+		async deleteSpecial(id) {
+			if (USE_MOCK_DATA) {
+				const index = mockSpecials.findIndex(s => s.id === id);
+				if (index !== -1) {
+					mockSpecials.splice(index, 1);
+					return { success: true };
+				}
+				throw new Error('Special not found');
+			}
+			
+			const response = await fetch(`${API_BASE}/specials/${id}`, {
+				method: 'DELETE'
+			});
+			return handleResponse(response);
 		}
 	};
 
@@ -1192,6 +1393,50 @@ const mockAuditLog = [
 				property: 'Community 1',
 				apartment: 'Unit 101'
 			}
+		}
+	];
+
+	// Mock data for specials
+	const mockSpecials = [
+		{
+			id: 'special_1',
+			property_name: 'The Howard',
+			current_special: 'First month free + $500 off security deposit',
+			commission_rate: '8%',
+			expiration_date: '2024-02-15',
+			agent_id: 'agent_1',
+			agent_name: 'Alex Agent',
+			created_at: '2024-01-10T09:00:00Z'
+		},
+		{
+			id: 'special_2',
+			property_name: 'Waterford Park',
+			current_special: 'Move-in special: $200 off first month rent',
+			commission_rate: '6%',
+			expiration_date: '2024-02-28',
+			agent_id: 'agent_2',
+			agent_name: 'Bailey Broker',
+			created_at: '2024-01-12T14:30:00Z'
+		},
+		{
+			id: 'special_3',
+			property_name: 'Community 1',
+			current_special: 'Limited time: Waived application fee + $300 credit',
+			commission_rate: '7%',
+			expiration_date: '2024-01-31',
+			agent_id: 'agent_1',
+			agent_name: 'Alex Agent',
+			created_at: '2024-01-08T11:15:00Z'
+		},
+		{
+			id: 'special_4',
+			property_name: 'The Heights',
+			current_special: 'New Year special: 2 months free parking + gym membership',
+			commission_rate: '5%',
+			expiration_date: '2024-03-01',
+			agent_id: 'agent_3',
+			agent_name: 'Chris Consultant',
+			created_at: '2024-01-05T16:45:00Z'
 		}
 	];
 
@@ -1491,6 +1736,54 @@ function createLeadTable(lead, isExpanded = false) {
 		renderProgressTable('agentDocumentsTbody', agentLeads);
 	}
 
+	// ---- Rendering: Specials Table ----
+	async function renderSpecials(){
+		console.log('renderSpecials called');
+		const tbody = document.getElementById('specialsTbody');
+		if (!tbody) return;
+
+		const { items, total } = await api.getSpecials({
+			role: state.role,
+			agentId: state.agentId,
+			search: state.search,
+			sortKey: state.sort.key,
+			sortDir: state.sort.dir,
+			page: state.page,
+			pageSize: state.pageSize
+		});
+
+		console.log('Specials API returned:', { items, total });
+		tbody.innerHTML = '';
+
+		items.forEach(special => {
+			const tr = document.createElement('tr');
+			const isExpired = new Date(special.expiration_date) < new Date();
+			const expiresSoon = new Date(special.expiration_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
+			
+			tr.innerHTML = `
+				<td data-sort="property_name">
+					<div class="special-property-name">${special.property_name}</div>
+					${isExpired ? '<div class="special-expired">EXPIRED</div>' : ''}
+					${expiresSoon && !isExpired ? '<div class="special-expires-soon">Expires Soon</div>' : ''}
+				</td>
+				<td data-sort="current_special">
+					<div class="special-description">${special.current_special}</div>
+				</td>
+				<td data-sort="commission_rate" class="mono">${special.commission_rate}</td>
+				<td data-sort="expiration_date" class="mono ${isExpired ? 'expired' : ''}">${formatDate(special.expiration_date)}</td>
+				<td data-sort="agent_name" class="mono">${special.agent_name}</td>
+				<td data-sort="created_at" class="mono">${formatDate(special.created_at)}</td>
+				<td>
+					<div class="action-buttons">
+						<button class="icon-btn edit-special" data-id="${special.id}" title="Edit">✏️</button>
+						<button class="icon-btn delete-special" data-id="${special.id}" title="Delete">🗑️</button>
+					</div>
+				</td>
+			`;
+			
+			tbody.appendChild(tr);
+		});
+	}
 
 	function renderLeadsTable(searchTerm = '', searchType = 'both'){
 		const tbody = document.getElementById('documentsTbody');
@@ -2486,6 +2779,11 @@ function createLeadTable(lead, isExpanded = false) {
 			document.getElementById('managerDocumentsView').classList.remove('hidden');
 			document.getElementById('agentDocumentsView').classList.add('hidden');
 			renderDocuments();
+		} else if (hash === '/specials') {
+			state.currentPage = 'specials';
+			show(document.getElementById('specialsView'));
+			setRoleLabel('specials');
+			renderSpecials();
 		} else if (hash === '/admin') {
 			state.currentPage = 'admin';
 			show(document.getElementById('adminView'));
@@ -2553,6 +2851,7 @@ function createLeadTable(lead, isExpanded = false) {
 			if (state.currentPage === 'leads') renderLeads();
 			else if (state.currentPage === 'agents') renderAgents();
 			else if (state.currentPage === 'listings') renderListings();
+			else if (state.currentPage === 'specials') renderSpecials();
 			else if (state.currentPage === 'documents') renderDocuments();
 			else if (state.currentPage === 'admin') renderAdmin();
 		});
@@ -3080,6 +3379,85 @@ function createLeadTable(lead, isExpanded = false) {
 		if (saveAddLeadBtn) {
 			saveAddLeadBtn.addEventListener('click', () => {
 				saveNewLead();
+			});
+		}
+
+		// Specials event listeners
+		const addSpecialBtn = document.getElementById('addSpecialBtn');
+		const closeAddSpecialModal = document.getElementById('closeAddSpecialModal');
+		const saveAddSpecialBtn = document.getElementById('saveAddSpecialBtn');
+		const cancelAddSpecialBtn = document.getElementById('cancelAddSpecialBtn');
+
+		// Add Special button
+		if (addSpecialBtn) {
+			addSpecialBtn.addEventListener('click', () => {
+				showModal('addSpecialModal');
+				document.getElementById('addSpecialForm').reset();
+				// Set default expiration date to 30 days from now
+				const defaultDate = new Date();
+				defaultDate.setDate(defaultDate.getDate() + 30);
+				document.getElementById('specialExpirationDate').value = defaultDate.toISOString().split('T')[0];
+			});
+		}
+
+		// Close Add Special modal
+		if (closeAddSpecialModal) {
+			closeAddSpecialModal.addEventListener('click', () => {
+				hideModal('addSpecialModal');
+			});
+		}
+
+		// Cancel Add Special
+		if (cancelAddSpecialBtn) {
+			cancelAddSpecialBtn.addEventListener('click', () => {
+				hideModal('addSpecialModal');
+			});
+		}
+
+		// Save Add Special
+		if (saveAddSpecialBtn) {
+			saveAddSpecialBtn.addEventListener('click', () => {
+				saveNewSpecial();
+			});
+		}
+
+		// Specials search
+		const specialsSearchEl = document.getElementById('specialsSearch');
+		if (specialsSearchEl) {
+			specialsSearchEl.addEventListener('input', (e) => {
+				state.search = e.target.value;
+				state.page = 1;
+				renderSpecials();
+			});
+		}
+
+		// Specials table delegation
+		const specialsTableEl = document.getElementById('specialsTable');
+		if (specialsTableEl) {
+			specialsTableEl.addEventListener('click', (e) => {
+				// Handle sorting
+				const sortableHeader = e.target.closest('th[data-sort]');
+				if (sortableHeader) {
+					const column = sortableHeader.dataset.sort;
+					sortTable(column, 'specialsTable');
+					e.preventDefault();
+					return;
+				}
+				
+				// Handle edit button
+				const editBtn = e.target.closest('.edit-special');
+				if (editBtn) {
+					// TODO: Implement edit functionality
+					toast('Edit special functionality coming soon!', 'info');
+					return;
+				}
+				
+				// Handle delete button
+				const deleteBtn = e.target.closest('.delete-special');
+				if (deleteBtn) {
+					deleteSpecial(deleteBtn.dataset.id);
+					return;
+				}
 			});
 		}
 
