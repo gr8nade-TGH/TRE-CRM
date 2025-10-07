@@ -2286,7 +2286,7 @@ const mockAuditLog = [
 
 		// Save User button
 		if (saveUserBtn) {
-			saveUserBtn.addEventListener('click', () => {
+			saveUserBtn.addEventListener('click', async () => {
 				const form = document.getElementById('userForm');
 				const formData = new FormData(form);
 				
@@ -2310,37 +2310,38 @@ const mockAuditLog = [
 					return;
 				}
 
-				// In a real app, this would make an API call
-				const newUser = {
-					id: `user_${Date.now()}`,
-					name: userData.name,
-					email: userData.email,
-					role: userData.role,
-					status: userData.sendInvitation ? 'invited' : 'active',
-					created_at: new Date().toISOString(),
-					created_by: 'user_1', // Current user
-					last_login: null
-				};
-
-				mockUsers.push(newUser);
-
-				// Add to audit log
-				mockAuditLog.unshift({
-					id: `audit_${Date.now()}`,
-					action: 'user_created',
-					user_id: newUser.id,
-					user_name: newUser.name,
-					user_email: newUser.email,
-					performed_by: 'user_1',
-					performed_by_name: 'John Smith',
-					timestamp: new Date().toISOString(),
-					details: `User created with ${newUser.role} role${userData.sendInvitation ? ' and invitation sent' : ''}`
-				});
-
-				renderUsersTable();
-				renderAuditLog();
-				hideModal('userModal');
-				toast('User created successfully');
+				try {
+					const userId = document.getElementById('userModal').getAttribute('data-user-id');
+					
+					if (userId) {
+						// Update existing user
+						await updateUser(userId, {
+							name: userData.name,
+							email: userData.email,
+							role: userData.role,
+							status: userData.sendInvitation ? 'invited' : 'active'
+						});
+						toast('User updated successfully');
+					} else {
+						// Create new user
+						await createUser({
+							name: userData.name,
+							email: userData.email,
+							role: userData.role,
+							password: userData.password,
+							sendInvitation: userData.sendInvitation
+						});
+						toast('User created successfully');
+					}
+					
+					await loadAuditLog(); // Refresh audit log
+					hideModal('userModal');
+					document.getElementById('userModal').removeAttribute('data-user-id');
+					
+				} catch (error) {
+					console.error('Error saving user:', error);
+					toast('Error saving user: ' + error.message, 'error');
+				}
 			});
 		}
 
@@ -2354,7 +2355,7 @@ const mockAuditLog = [
 
 		// Save Password button
 		if (savePasswordBtn) {
-			savePasswordBtn.addEventListener('click', () => {
+			savePasswordBtn.addEventListener('click', async () => {
 				const userId = document.getElementById('passwordModal').getAttribute('data-user-id');
 				const newPassword = document.getElementById('newPassword').value;
 				const confirmPassword = document.getElementById('confirmNewPassword').value;
@@ -2369,25 +2370,40 @@ const mockAuditLog = [
 					return;
 				}
 
-				// In a real app, this would make an API call
-				const user = mockUsers.find(u => u.id === userId);
-				if (user) {
-					// Add to audit log
-					mockAuditLog.unshift({
-						id: `audit_${Date.now()}`,
-						action: 'password_changed',
-						user_id: userId,
-						user_name: user.name,
-						user_email: user.email,
-						performed_by: 'user_1',
-						performed_by_name: 'John Smith',
-						timestamp: new Date().toISOString(),
-						details: 'Password updated'
-					});
+				try {
+					if (realUsers.length > 0) {
+						// Use real API
+						await changeUserPassword(userId, newPassword);
+						toast('Password updated successfully');
+					} else {
+						// Fallback to mock data
+						const user = mockUsers.find(u => u.id === userId);
+						if (user) {
+							// Add to audit log
+							mockAuditLog.unshift({
+								id: `audit_${Date.now()}`,
+								action: 'password_changed',
+								user_id: userId,
+								user_name: user.name,
+								user_email: user.email,
+								performed_by: 'user_1',
+								performed_by_name: 'John Smith',
+								timestamp: new Date().toISOString(),
+								details: 'Password updated'
+							});
 
-					renderAuditLog();
+							renderAuditLog();
+							toast('Password updated successfully');
+						}
+					}
+					
 					hideModal('passwordModal');
-					toast('Password updated successfully');
+					document.getElementById('newPassword').value = '';
+					document.getElementById('confirmNewPassword').value = '';
+					
+				} catch (error) {
+					console.error('Error changing password:', error);
+					toast('Error changing password: ' + error.message, 'error');
 				}
 			});
 		}
@@ -2702,7 +2718,117 @@ const mockAuditLog = [
 })();
 
 // Admin page functions - defined in global scope
-function renderAdmin() {
+let realUsers = [];
+let realAuditLog = [];
+
+// API functions for real data
+async function loadUsers() {
+	try {
+		const response = await fetch('http://localhost:3001/api/users');
+		if (!response.ok) throw new Error('Failed to fetch users');
+		realUsers = await response.json();
+		console.log('Loaded users from API:', realUsers.length);
+		renderUsersTable();
+	} catch (error) {
+		console.error('Error loading users:', error);
+		throw error;
+	}
+}
+
+async function loadAuditLog() {
+	try {
+		const response = await fetch('http://localhost:3001/api/audit-log');
+		if (!response.ok) throw new Error('Failed to fetch audit log');
+		realAuditLog = await response.json();
+		console.log('Loaded audit log from API:', realAuditLog.length);
+		renderAuditLog();
+	} catch (error) {
+		console.error('Error loading audit log:', error);
+		throw error;
+	}
+}
+
+async function createUser(userData) {
+	try {
+		const response = await fetch('http://localhost:3001/api/users', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				...userData,
+				createdBy: 'system' // In production, get from auth token
+			})
+		});
+		if (!response.ok) throw new Error('Failed to create user');
+		const newUser = await response.json();
+		realUsers.unshift(newUser);
+		renderUsersTable();
+		return newUser;
+	} catch (error) {
+		console.error('Error creating user:', error);
+		throw error;
+	}
+}
+
+async function updateUser(userId, userData) {
+	try {
+		const response = await fetch(`http://localhost:3001/api/users/${userId}`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				...userData,
+				updatedBy: 'system' // In production, get from auth token
+			})
+		});
+		if (!response.ok) throw new Error('Failed to update user');
+		const updatedUser = await response.json();
+		const index = realUsers.findIndex(u => u.id === userId);
+		if (index !== -1) realUsers[index] = updatedUser;
+		renderUsersTable();
+		return updatedUser;
+	} catch (error) {
+		console.error('Error updating user:', error);
+		throw error;
+	}
+}
+
+async function deleteUserFromAPI(userId) {
+	try {
+		const response = await fetch(`http://localhost:3001/api/users/${userId}`, {
+			method: 'DELETE',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				deletedBy: 'system' // In production, get from auth token
+			})
+		});
+		if (!response.ok) throw new Error('Failed to delete user');
+		realUsers = realUsers.filter(u => u.id !== userId);
+		renderUsersTable();
+		await loadAuditLog(); // Refresh audit log
+	} catch (error) {
+		console.error('Error deleting user:', error);
+		throw error;
+	}
+}
+
+async function changeUserPassword(userId, newPassword) {
+	try {
+		const response = await fetch(`http://localhost:3001/api/users/${userId}/password`, {
+			method: 'PUT',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				newPassword,
+				updatedBy: 'system' // In production, get from auth token
+			})
+		});
+		if (!response.ok) throw new Error('Failed to change password');
+		await loadAuditLog(); // Refresh audit log
+	} catch (error) {
+		console.error('Error changing password:', error);
+		throw error;
+	}
+}
+
+async function renderAdmin() {
 	const currentRole = window.state?.role || 'manager';
 	const adminRoleLabel = document.getElementById('adminRoleLabel');
 	
@@ -2710,22 +2836,27 @@ function renderAdmin() {
 		adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
 	}
 	
-	// Ensure we render the data
-	setTimeout(() => {
+	// Load real data from API
+	try {
+		await loadUsers();
+		await loadAuditLog();
+	} catch (error) {
+		console.error('Error loading admin data:', error);
+		// Fallback to mock data for demo
 		renderUsersTable();
 		renderAuditLog();
-	}, 100);
+	}
 }
 
 function renderUsersTable() {
-	console.log('renderUsersTable called, mockUsers:', mockUsers?.length || 0);
+	console.log('renderUsersTable called, realUsers:', realUsers?.length || 0);
 	const tbody = document.getElementById('usersTbody');
 	if (!tbody) {
 		console.log('usersTbody not found');
 		return;
 	}
 	
-	const users = mockUsers || [];
+	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
 	tbody.innerHTML = users.map(user => {
 		const createdBy = user.created_by === 'system' ? 'System' : 
 			users.find(u => u.id === user.created_by)?.name || 'Unknown';
@@ -2772,7 +2903,7 @@ function renderAuditLog() {
 	const auditLog = document.getElementById('auditLog');
 	if (!auditLog) return;
 	
-	const logs = mockAuditLog || [];
+	const logs = realAuditLog.length > 0 ? realAuditLog : mockAuditLog || [];
 	auditLog.innerHTML = logs.map(entry => {
 		const actionIcons = {
 			user_created: '👤',
@@ -2802,7 +2933,7 @@ function renderAuditLog() {
 
 function editUser(userId) {
 	console.log('editUser called with:', userId);
-	const users = mockUsers || [];
+	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found:', userId);
@@ -2812,18 +2943,21 @@ function editUser(userId) {
 	document.getElementById('userModalTitle').textContent = 'Edit User';
 	document.getElementById('userName').value = user.name;
 	document.getElementById('userEmail').value = user.email;
-	document.getElementById('userRole').value = user.role;
+	document.getElementById('userRole').value = user.role.toLowerCase();
 	document.getElementById('userPassword').value = '';
 	document.getElementById('userConfirmPassword').value = '';
 	document.getElementById('userPassword').required = false;
 	document.getElementById('userConfirmPassword').required = false;
+	
+	// Store user ID for update
+	document.getElementById('userModal').setAttribute('data-user-id', userId);
 	
 	showModal('userModal');
 }
 
 function changePassword(userId) {
 	console.log('changePassword called with:', userId);
-	const users = mockUsers || [];
+	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found for password change:', userId);
@@ -2834,9 +2968,9 @@ function changePassword(userId) {
 	showModal('passwordModal');
 }
 
-function deleteUser(userId) {
+async function deleteUser(userId) {
 	console.log('deleteUser called with:', userId);
-	const users = mockUsers || [];
+	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found for deletion:', userId);
@@ -2844,28 +2978,39 @@ function deleteUser(userId) {
 	}
 	
 	if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
-		// In a real app, this would make an API call
-		const userIndex = users.findIndex(u => u.id === userId);
-		if (userIndex > -1) {
-			users.splice(userIndex, 1);
-			
-			// Add to audit log
-			const auditLogs = mockAuditLog || [];
-			auditLogs.unshift({
-				id: `audit_${Date.now()}`,
-				action: 'user_deleted',
-				user_id: userId,
-				user_name: user.name,
-				user_email: user.email,
-				performed_by: 'user_1', // Current user
-				performed_by_name: 'John Smith', // Current user name
-				timestamp: new Date().toISOString(),
-				details: `User ${user.name} deleted`
-			});
-			
-			renderUsersTable();
-			renderAuditLog();
-			toast('User deleted successfully');
+		try {
+			if (realUsers.length > 0) {
+				// Use real API
+				await deleteUserFromAPI(userId);
+				toast('User deleted successfully');
+			} else {
+				// Fallback to mock data
+				const userIndex = users.findIndex(u => u.id === userId);
+				if (userIndex > -1) {
+					users.splice(userIndex, 1);
+					
+					// Add to audit log
+					const auditLogs = mockAuditLog || [];
+					auditLogs.unshift({
+						id: `audit_${Date.now()}`,
+						action: 'user_deleted',
+						user_id: userId,
+						user_name: user.name,
+						user_email: user.email,
+						performed_by: 'user_1', // Current user
+						performed_by_name: 'John Smith', // Current user name
+						timestamp: new Date().toISOString(),
+						details: `User ${user.name} deleted`
+					});
+					
+					renderUsersTable();
+					renderAuditLog();
+					toast('User deleted successfully');
+				}
+			}
+		} catch (error) {
+			console.error('Error deleting user:', error);
+			toast('Error deleting user', 'error');
 		}
 	}
 }
