@@ -1126,17 +1126,11 @@ const mockAuditLog = [
 		{ id: 7, label: 'Lease Finalized', key: 'leaseFinalized' }
 	];
 
-	async function renderProgressCards(containerId) {
-		const container = document.getElementById(containerId);
-		if (!container) return;
+	function renderProgressTable(tbodyId, leads) {
+		const tbody = document.getElementById(tbodyId);
+		if (!tbody) return;
 
-		// Filter leads based on role
-		let leads = mockProgressLeads;
-		if (state.role === 'agent') {
-			leads = mockProgressLeads.filter(lead => lead.agentName === 'Alex Agent');
-		}
-
-		container.innerHTML = leads.map(lead => createProgressCard(lead)).join('');
+		tbody.innerHTML = leads.map(lead => createProgressTableRow(lead)).join('');
 		
 		// Add event listeners for progress steps
 		leads.forEach(lead => {
@@ -1149,55 +1143,48 @@ const mockAuditLog = [
 		});
 	}
 
-	function createProgressCard(lead) {
+	function createProgressTableRow(lead) {
 		const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
+		const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 		
 		return `
-			<div class="progress-card">
-				<div class="progress-card-header">
-					<div>
-						<h3 class="progress-card-title">${lead.leadName}</h3>
-						<p class="progress-card-agent">Agent: ${lead.agentName}</p>
+			<tr>
+				<td data-sort="${lead.agentName}">${lead.agentName}</td>
+				<td data-sort="${lead.leadName}">${lead.leadName}</td>
+				<td data-sort="${lead.currentStep}">${currentStepName}</td>
+				<td class="progress-bar-cell">
+					<div class="progress-bar-container">
+						<div class="progress-bar">
+							<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
+							<div class="progress-steps">
+								${progressSteps.map(step => {
+									const stepClass = step.id < lead.currentStep ? 'completed' : 
+													 step.id === lead.currentStep ? 'current' : 'pending';
+									return `
+										<div class="progress-step ${stepClass}" 
+											 data-lead-id="${lead.id}" 
+											 data-step="${step.id}">
+											<div class="progress-step-dot ${stepClass}">${step.id}</div>
+											<div class="progress-step-label">${step.label}</div>
+										</div>
+									`;
+								}).join('')}
+							</div>
+						</div>
 					</div>
-					<span class="progress-card-status ${lead.status}">${lead.status}</span>
-				</div>
-				
-				<div class="progress-bar-container">
-					<div class="progress-bar">
-						<div class="progress-line"></div>
-						<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
-						${progressSteps.map(step => {
-							const stepClass = step.id < lead.currentStep ? 'completed' : 
-											 step.id === lead.currentStep ? 'current' : 'pending';
-							return `
-								<div class="progress-step ${stepClass}" 
-									 data-lead-id="${lead.id}" 
-									 data-step="${step.id}">
-									<div class="progress-step-dot ${stepClass}">${step.id}</div>
-									<div class="progress-step-label">${step.label}</div>
-								</div>
-							`;
-						}).join('')}
-					</div>
-				</div>
-				
-				<div class="progress-details" id="details-${lead.id}" style="display: none;">
-					<!-- Step details will be populated here -->
-				</div>
-			</div>
+					<div class="progress-percentage">${progressPercentage}% complete</div>
+				</td>
+				<td data-sort="${lead.lastUpdated}">${formatDate(lead.lastUpdated)}</td>
+				<td>
+					<button class="btn btn-secondary btn-small" onclick="viewLeadDetails('${lead.id}')">
+						View Details
+					</button>
+				</td>
+			</tr>
 		`;
 	}
 
 	function showStepDetails(lead, step) {
-		const detailsContainer = document.getElementById(`details-${lead.id}`);
-		if (!detailsContainer) return;
-
-		// Toggle details visibility
-		const isVisible = detailsContainer.style.display !== 'none';
-		detailsContainer.style.display = isVisible ? 'none' : 'block';
-		
-		if (isVisible) return;
-
 		// Generate step-specific content
 		let content = '';
 		
@@ -1278,7 +1265,16 @@ const mockAuditLog = [
 				break;
 		}
 		
-		detailsContainer.innerHTML = content;
+		// Show in a modal or alert for now
+		alert(`${step.label}\n\n${content.replace(/<[^>]*>/g, '').replace(/\n/g, '\n')}`);
+	}
+
+	function viewLeadDetails(leadId) {
+		const lead = mockProgressLeads.find(l => l.id === leadId);
+		if (!lead) return;
+		
+		const currentStep = progressSteps[lead.currentStep - 1];
+		showStepDetails(lead, currentStep);
 	}
 
 	// ---- Rendering: Documents Table ----
@@ -1295,8 +1291,8 @@ const mockAuditLog = [
 		document.getElementById('managerDocumentsView').classList.remove('hidden');
 		document.getElementById('agentDocumentsView').classList.add('hidden');
 
-		// Render interactive progress cards
-		renderProgressCards('progressLeadsContainer');
+		// Render progress table
+		renderProgressTable('documentsTbody', mockProgressLeads);
 	}
 
 	async function renderAgentDocuments(){
@@ -1304,8 +1300,9 @@ const mockAuditLog = [
 		document.getElementById('managerDocumentsView').classList.add('hidden');
 		document.getElementById('agentDocumentsView').classList.remove('hidden');
 
-		// Render agent's progress cards
-		renderProgressCards('agentProgressLeadsContainer');
+		// Filter leads for agent view
+		const agentLeads = mockProgressLeads.filter(lead => lead.agentName === 'Alex Agent');
+		renderProgressTable('agentDocumentsTbody', agentLeads);
 	}
 
 

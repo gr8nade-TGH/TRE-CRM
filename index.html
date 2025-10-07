@@ -251,8 +251,22 @@
 				
 				<div class="leads-details">
 					<h3>Lead Progress Tracking</h3>
-					<div class="progress-leads-container" id="progressLeadsContainer">
-						<!-- Interactive progress cards will be generated here -->
+					<div class="table-wrapper">
+						<table id="documentsTable" class="data-table">
+							<thead>
+								<tr>
+									<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
+									<th data-sort="lead_name" class="sortable">Lead <span class="sort-icon">↕</span></th>
+									<th data-sort="current_step" class="sortable">Current Step <span class="sort-icon">↕</span></th>
+									<th>Progress</th>
+									<th data-sort="last_updated" class="sortable">Last Updated <span class="sort-icon">↕</span></th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="documentsTbody">
+								<!-- Progress rows will be generated here -->
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
@@ -261,8 +275,21 @@
 			<div id="agentDocumentsView" class="documents-agent-view hidden">
 				<div class="leads-details">
 					<h3>My Lead Progress</h3>
-					<div class="progress-leads-container" id="agentProgressLeadsContainer">
-						<!-- Interactive progress cards will be generated here -->
+					<div class="table-wrapper">
+						<table id="agentDocumentsTable" class="data-table">
+							<thead>
+								<tr>
+									<th data-sort="lead_name" class="sortable">Lead <span class="sort-icon">↕</span></th>
+									<th data-sort="current_step" class="sortable">Current Step <span class="sort-icon">↕</span></th>
+									<th>Progress</th>
+									<th data-sort="last_updated" class="sortable">Last Updated <span class="sort-icon">↕</span></th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="agentDocumentsTbody">
+								<!-- Progress rows will be generated here -->
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</div>
