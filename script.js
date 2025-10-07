@@ -2219,168 +2219,7 @@
 			});
 		}
 
-	// Admin page functions - moved outside DOMContentLoaded for global access
-	function renderAdmin() {
-		const currentRole = state.role || 'manager';
-		const adminRoleLabel = document.getElementById('adminRoleLabel');
-		
-		if (adminRoleLabel) {
-			adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
-		}
-		
-		// Ensure we render the data
-		setTimeout(() => {
-			renderUsersTable();
-			renderAuditLog();
-		}, 100);
-	}
-
-	function renderUsersTable() {
-		console.log('renderUsersTable called, mockUsers:', mockUsers.length);
-		const tbody = document.getElementById('usersTbody');
-		if (!tbody) {
-			console.log('usersTbody not found');
-			return;
-		}
-		
-		tbody.innerHTML = mockUsers.map(user => {
-			const createdBy = user.created_by === 'system' ? 'System' : 
-				mockUsers.find(u => u.id === user.created_by)?.name || 'Unknown';
-			
-			return `
-				<tr>
-					<td data-sort="${user.name}">${user.name}</td>
-					<td data-sort="${user.email}">${user.email}</td>
-					<td data-sort="${user.role}">
-						<span class="role-badge role-${user.role}">${user.role.replace('_', ' ')}</span>
-					</td>
-					<td data-sort="${user.status}">
-						<span class="user-status ${user.status}">${user.status}</span>
-					</td>
-					<td data-sort="${user.created_at}">${formatDate(user.created_at)}</td>
-					<td>
-						<div class="user-actions">
-							<button class="btn btn-secondary btn-small" onclick="editUser('${user.id}')">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-								</svg>
-								Edit
-							</button>
-							<button class="btn btn-secondary btn-small" onclick="changePassword('${user.id}')">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-								</svg>
-								Password
-							</button>
-							<button class="btn btn-danger btn-small" onclick="deleteUser('${user.id}')">
-								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-								</svg>
-								Delete
-							</button>
-						</div>
-					</td>
-				</tr>
-			`;
-		}).join('');
-	}
-
-	function renderAuditLog() {
-		const auditLog = document.getElementById('auditLog');
-		if (!auditLog) return;
-		
-		auditLog.innerHTML = mockAuditLog.map(entry => {
-			const actionIcons = {
-				user_created: '👤',
-				user_updated: '✏️',
-				user_deleted: '🗑️',
-				role_changed: '🔄',
-				password_changed: '🔐'
-			};
-			
-			return `
-				<div class="audit-entry">
-					<div class="audit-icon ${entry.action}">
-						${actionIcons[entry.action] || '📝'}
-					</div>
-					<div class="audit-content">
-						<div class="audit-action">${entry.details}</div>
-						<div class="audit-details">
-							User: ${entry.user_name} (${entry.user_email}) | 
-							By: ${entry.performed_by_name}
-						</div>
-					</div>
-					<div class="audit-timestamp">${formatDate(entry.timestamp)}</div>
-				</div>
-			`;
-		}).join('');
-	}
-
-	function editUser(userId) {
-		console.log('editUser called with:', userId);
-		const user = mockUsers.find(u => u.id === userId);
-		if (!user) {
-			console.log('User not found:', userId);
-			return;
-		}
-		
-		document.getElementById('userModalTitle').textContent = 'Edit User';
-		document.getElementById('userName').value = user.name;
-		document.getElementById('userEmail').value = user.email;
-		document.getElementById('userRole').value = user.role;
-		document.getElementById('userPassword').value = '';
-		document.getElementById('userConfirmPassword').value = '';
-		document.getElementById('userPassword').required = false;
-		document.getElementById('userConfirmPassword').required = false;
-		
-		showModal('userModal');
-	}
-
-	function changePassword(userId) {
-		console.log('changePassword called with:', userId);
-		const user = mockUsers.find(u => u.id === userId);
-		if (!user) {
-			console.log('User not found for password change:', userId);
-			return;
-		}
-		
-		document.getElementById('passwordModal').setAttribute('data-user-id', userId);
-		showModal('passwordModal');
-	}
-
-	function deleteUser(userId) {
-		console.log('deleteUser called with:', userId);
-		const user = mockUsers.find(u => u.id === userId);
-		if (!user) {
-			console.log('User not found for deletion:', userId);
-			return;
-		}
-		
-		if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
-			// In a real app, this would make an API call
-			const userIndex = mockUsers.findIndex(u => u.id === userId);
-			if (userIndex > -1) {
-				mockUsers.splice(userIndex, 1);
-				
-				// Add to audit log
-				mockAuditLog.unshift({
-					id: `audit_${Date.now()}`,
-					action: 'user_deleted',
-					user_id: userId,
-					user_name: user.name,
-					user_email: user.email,
-					performed_by: 'user_1', // Current user
-					performed_by_name: 'John Smith', // Current user name
-					timestamp: new Date().toISOString(),
-					details: `User ${user.name} deleted`
-				});
-				
-				renderUsersTable();
-				renderAuditLog();
-				toast('User deleted successfully');
-			}
-		}
-	}
+	// Admin page functions will be moved outside IIFE
 
 	// ---- Events ----
 
@@ -2859,3 +2698,179 @@
 	window.changePassword = changePassword;
 	window.deleteUser = deleteUser;
 })();
+
+// Admin page functions - defined in global scope
+function renderAdmin() {
+	const currentRole = window.state?.role || 'manager';
+	const adminRoleLabel = document.getElementById('adminRoleLabel');
+	
+	if (adminRoleLabel) {
+		adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
+	}
+	
+	// Ensure we render the data
+	setTimeout(() => {
+		renderUsersTable();
+		renderAuditLog();
+	}, 100);
+}
+
+function renderUsersTable() {
+	console.log('renderUsersTable called, mockUsers:', window.mockUsers?.length || 0);
+	const tbody = document.getElementById('usersTbody');
+	if (!tbody) {
+		console.log('usersTbody not found');
+		return;
+	}
+	
+	const users = window.mockUsers || [];
+	tbody.innerHTML = users.map(user => {
+		const createdBy = user.created_by === 'system' ? 'System' : 
+			users.find(u => u.id === user.created_by)?.name || 'Unknown';
+		
+		return `
+			<tr>
+				<td data-sort="${user.name}">${user.name}</td>
+				<td data-sort="${user.email}">${user.email}</td>
+				<td data-sort="${user.role}">
+					<span class="role-badge role-${user.role}">${user.role.replace('_', ' ')}</span>
+				</td>
+				<td data-sort="${user.status}">
+					<span class="user-status ${user.status}">${user.status}</span>
+				</td>
+				<td data-sort="${user.created_at}">${formatDate(user.created_at)}</td>
+				<td>
+					<div class="user-actions">
+						<button class="btn btn-secondary btn-small" onclick="editUser('${user.id}')">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+							</svg>
+							Edit
+						</button>
+						<button class="btn btn-secondary btn-small" onclick="changePassword('${user.id}')">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
+							</svg>
+							Password
+						</button>
+						<button class="btn btn-danger btn-small" onclick="deleteUser('${user.id}')">
+							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+							</svg>
+							Delete
+						</button>
+					</div>
+				</td>
+			</tr>
+		`;
+	}).join('');
+}
+
+function renderAuditLog() {
+	const auditLog = document.getElementById('auditLog');
+	if (!auditLog) return;
+	
+	const logs = window.mockAuditLog || [];
+	auditLog.innerHTML = logs.map(entry => {
+		const actionIcons = {
+			user_created: '👤',
+			user_updated: '✏️',
+			user_deleted: '🗑️',
+			role_changed: '🔄',
+			password_changed: '🔐'
+		};
+		
+		return `
+			<div class="audit-entry">
+				<div class="audit-icon ${entry.action}">
+					${actionIcons[entry.action] || '📝'}
+				</div>
+				<div class="audit-content">
+					<div class="audit-action">${entry.details}</div>
+					<div class="audit-details">
+						User: ${entry.user_name} (${entry.user_email}) | 
+						By: ${entry.performed_by_name}
+					</div>
+				</div>
+				<div class="audit-timestamp">${formatDate(entry.timestamp)}</div>
+			</div>
+		`;
+	}).join('');
+}
+
+function editUser(userId) {
+	console.log('editUser called with:', userId);
+	const users = window.mockUsers || [];
+	const user = users.find(u => u.id === userId);
+	if (!user) {
+		console.log('User not found:', userId);
+		return;
+	}
+	
+	document.getElementById('userModalTitle').textContent = 'Edit User';
+	document.getElementById('userName').value = user.name;
+	document.getElementById('userEmail').value = user.email;
+	document.getElementById('userRole').value = user.role;
+	document.getElementById('userPassword').value = '';
+	document.getElementById('userConfirmPassword').value = '';
+	document.getElementById('userPassword').required = false;
+	document.getElementById('userConfirmPassword').required = false;
+	
+	showModal('userModal');
+}
+
+function changePassword(userId) {
+	console.log('changePassword called with:', userId);
+	const users = window.mockUsers || [];
+	const user = users.find(u => u.id === userId);
+	if (!user) {
+		console.log('User not found for password change:', userId);
+		return;
+	}
+	
+	document.getElementById('passwordModal').setAttribute('data-user-id', userId);
+	showModal('passwordModal');
+}
+
+function deleteUser(userId) {
+	console.log('deleteUser called with:', userId);
+	const users = window.mockUsers || [];
+	const user = users.find(u => u.id === userId);
+	if (!user) {
+		console.log('User not found for deletion:', userId);
+		return;
+	}
+	
+	if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
+		// In a real app, this would make an API call
+		const userIndex = users.findIndex(u => u.id === userId);
+		if (userIndex > -1) {
+			users.splice(userIndex, 1);
+			
+			// Add to audit log
+			const auditLogs = window.mockAuditLog || [];
+			auditLogs.unshift({
+				id: `audit_${Date.now()}`,
+				action: 'user_deleted',
+				user_id: userId,
+				user_name: user.name,
+				user_email: user.email,
+				performed_by: 'user_1', // Current user
+				performed_by_name: 'John Smith', // Current user name
+				timestamp: new Date().toISOString(),
+				details: `User ${user.name} deleted`
+			});
+			
+			renderUsersTable();
+			renderAuditLog();
+			toast('User deleted successfully');
+		}
+	}
+}
+
+// Make functions and data globally accessible
+window.renderAdmin = renderAdmin;
+window.renderUsersTable = renderUsersTable;
+window.renderAuditLog = renderAuditLog;
+window.mockUsers = mockUsers;
+window.mockAuditLog = mockAuditLog;
