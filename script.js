@@ -1409,15 +1409,33 @@ function createLeadTable(lead, isExpanded = false) {
 
 	function toggleLeadTable(leadId) {
 		console.log('toggleLeadTable called with leadId:', leadId);
-		const btn = document.querySelector(`[data-lead-id="${leadId}"]`);
+		
+		// Find the button in the currently visible view only
+		const managerView = document.getElementById('managerDocumentsView');
+		const agentView = document.getElementById('agentDocumentsView');
+		
+		let btn = null;
+		let container = null;
+		
+		// Check which view is visible and search within that view only
+		if (managerView && !managerView.classList.contains('hidden')) {
+			container = managerView.querySelector(`[data-lead-id="${leadId}"]`)?.closest('.lead-table-container');
+			btn = container?.querySelector('.expand-btn');
+			console.log('Searching in Manager view');
+		} else if (agentView && !agentView.classList.contains('hidden')) {
+			container = agentView.querySelector(`[data-lead-id="${leadId}"]`)?.closest('.lead-table-container');
+			btn = container?.querySelector('.expand-btn');
+			console.log('Searching in Agent view');
+		}
+		
 		console.log('Found button:', btn);
-		if (!btn) {
-			console.log('No button found for leadId:', leadId);
+		console.log('Found container:', container);
+		
+		if (!btn || !container) {
+			console.log('No button or container found for leadId:', leadId);
 			return;
 		}
 		
-		const container = btn.closest('.lead-table-container');
-		console.log('Found container:', container);
 		const content = container.querySelector('.lead-table-content');
 		const expandIcon = container.querySelector('.expand-icon');
 		
