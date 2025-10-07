@@ -1731,7 +1731,7 @@ body {
 }
 
 .lead-data-table th:nth-child(4) {
-	text-align: center;
+	text-align: left;
 }
 
 .lead-data-table td {
@@ -1740,7 +1740,7 @@ body {
 }
 
 .lead-data-table td:nth-child(4) {
-	text-align: center;
+	text-align: left;
 }
 
 .lead-data-table tr:hover {
@@ -1765,20 +1765,18 @@ body {
 	display: flex;
 	flex-direction: column;
 	gap: 4px;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: center;
 	height: 100%;
 	min-height: 60px;
-	text-align: center;
-	margin: 0 auto;
+	text-align: left;
 }
 
 .progress-percentage {
 	font-size: 12px;
 	font-weight: 600;
 	color: var(--accent);
-	text-align: center;
-	width: 100%;
+	text-align: left;
 }
 
 .progress-status {
@@ -1789,7 +1787,7 @@ body {
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
 	display: inline-block;
-	text-align: center;
+	text-align: left;
 }
 
 
@@ -1934,10 +1932,10 @@ body {
 
 /* Progress Step Popups */
 .progress-step-popup {
-	position: fixed;
-	top: 50%;
+	position: absolute;
+	top: -120px;
 	left: 50%;
-	transform: translate(-50%, -50%);
+	transform: translateX(-50%);
 	background: white;
 	border: 2px solid var(--brand);
 	border-radius: 8px;

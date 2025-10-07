@@ -228,9 +228,18 @@
 			<button id="historyBtn" class="btn btn-secondary">View History</button>
 		</div>
 
-			<!-- Manager View -->
-			<div id="managerDocumentsView" class="documents-manager-view">
-				
+		<!-- Manager View -->
+		<div id="managerDocumentsView" class="documents-manager-view">
+			<div class="documents-search">
+				<div class="search-controls">
+					<div class="search-field">
+						<label for="documentsSearch">Search:</label>
+						<input type="text" id="documentsSearch" placeholder="Search by agent name or lead name..." />
+					</div>
+					<button id="clearDocumentsSearch" class="btn btn-secondary">Clear</button>
+				</div>
+			</div>
+			
 		<div class="leads-details">
 			<h3>Lead Progress Tracking</h3>
 			<div id="documentsTbody" class="documents-container">
