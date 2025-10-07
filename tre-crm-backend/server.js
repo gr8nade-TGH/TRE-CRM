@@ -454,7 +454,335 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
-// Start server
+// ===== USER MANAGEMENT API =====
+
+// Get all users
+app.get('/api/users', async (req, res) => {
+  try {
+    const users = await prisma.user.findMany({
+      include: {
+        creator: {
+          select: { name: true }
+        },
+        suspender: {
+          select: { name: true }
+        }
+      },
+      orderBy: { created_at: 'desc' }
+    });
+
+    res.json(users);
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
+});
+
+// Get single user
+app.get('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        creator: {
+          select: { name: true }
+        },
+        suspender: {
+          select: { name: true }
+        }
+      }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    res.json(user);
+  } catch (error) {
+    console.error('Error fetching user:', error);
+    res.status(500).json({ error: 'Failed to fetch user' });
+  }
+});
+
+// Create new user
+app.post('/api/users', async (req, res) => {
+  try {
+    const { name, email, role, password, sendInvitation, createdBy } = req.body;
+
+    // Basic validation
+    if (!name || !email || !role) {
+      return res.status(400).json({ error: 'Name, email, and role are required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (existingUser) {
+      return res.status(400).json({ error: 'User with this email already exists' });
+    }
+
+    // Hash password (in production, use bcrypt)
+    const passwordHash = password ? `hashed_${password}` : null;
+
+    // Create user
+    const newUser = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role: role.toUpperCase(),
+        password_hash: passwordHash,
+        status: sendInvitation ? 'INVITED' : 'ACTIVE',
+        created_by: createdBy,
+        invited_at: sendInvitation ? new Date() : null,
+        active: true
+      },
+      include: {
+        creator: {
+          select: { name: true }
+        }
+      }
+    });
+
+    // Create audit log entry
+    await prisma.auditLog.create({
+      data: {
+        action: 'user_created',
+        user_id: newUser.id,
+        user_name: newUser.name,
+        user_email: newUser.email,
+        performed_by: createdBy || 'system',
+        performed_by_name: 'System', // In production, get from JWT token
+        details: `User created with ${role} role${sendInvitation ? ' and invitation sent' : ''}`
+      }
+    });
+
+    res.status(201).json(newUser);
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Update user
+app.put('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, role, status, updatedBy } = req.body;
+
+    const existingUser = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if email is being changed and if it's already taken
+    if (email && email !== existingUser.email) {
+      const emailExists = await prisma.user.findUnique({
+        where: { email }
+      });
+      if (emailExists) {
+        return res.status(400).json({ error: 'Email already in use' });
+      }
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        ...(name && { name }),
+        ...(email && { email }),
+        ...(role && { role: role.toUpperCase() }),
+        ...(status && { status: status.toUpperCase() }),
+        updated_at: new Date()
+      },
+      include: {
+        creator: {
+          select: { name: true }
+        },
+        suspender: {
+          select: { name: true }
+        }
+      }
+    });
+
+    // Create audit log entry
+    await prisma.auditLog.create({
+      data: {
+        action: 'user_updated',
+        user_id: id,
+        user_name: updatedUser.name,
+        user_email: updatedUser.email,
+        performed_by: updatedBy || 'system',
+        performed_by_name: 'System', // In production, get from JWT token
+        details: `User updated: ${name ? 'name changed' : ''} ${email ? 'email changed' : ''} ${role ? 'role changed' : ''} ${status ? 'status changed' : ''}`
+      }
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Delete user
+app.delete('/api/users/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { deletedBy } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Create audit log entry before deletion
+    await prisma.auditLog.create({
+      data: {
+        action: 'user_deleted',
+        user_id: id,
+        user_name: user.name,
+        user_email: user.email,
+        performed_by: deletedBy || 'system',
+        performed_by_name: 'System', // In production, get from JWT token
+        details: `User ${user.name} deleted`
+      }
+    });
+
+    // Delete user
+    await prisma.user.delete({
+      where: { id }
+    });
+
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// Change user password
+app.put('/api/users/:id/password', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { newPassword, updatedBy } = req.body;
+
+    if (!newPassword) {
+      return res.status(400).json({ error: 'New password is required' });
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Hash password (in production, use bcrypt)
+    const passwordHash = `hashed_${newPassword}`;
+
+    await prisma.user.update({
+      where: { id },
+      data: {
+        password_hash: passwordHash,
+        updated_at: new Date()
+      }
+    });
+
+    // Create audit log entry
+    await prisma.auditLog.create({
+      data: {
+        action: 'password_changed',
+        user_id: id,
+        user_name: user.name,
+        user_email: user.email,
+        performed_by: updatedBy || 'system',
+        performed_by_name: 'System', // In production, get from JWT token
+        details: 'Password updated'
+      }
+    });
+
+    res.json({ message: 'Password updated successfully' });
+  } catch (error) {
+    console.error('Error updating password:', error);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
+
+// Suspend user
+app.put('/api/users/:id/suspend', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { reason, suspendedBy } = req.body;
+
+    const user = await prisma.user.findUnique({
+      where: { id }
+    });
+
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    const updatedUser = await prisma.user.update({
+      where: { id },
+      data: {
+        status: 'SUSPENDED',
+        suspended_at: new Date(),
+        suspended_by: suspendedBy,
+        suspension_reason: reason,
+        access_revoked: true,
+        updated_at: new Date()
+      }
+    });
+
+    // Create audit log entry
+    await prisma.auditLog.create({
+      data: {
+        action: 'user_suspended',
+        user_id: id,
+        user_name: user.name,
+        user_email: user.email,
+        performed_by: suspendedBy || 'system',
+        performed_by_name: 'System', // In production, get from JWT token
+        details: `User suspended${reason ? `: ${reason}` : ''}`
+      }
+    });
+
+    res.json(updatedUser);
+  } catch (error) {
+    console.error('Error suspending user:', error);
+    res.status(500).json({ error: 'Failed to suspend user' });
+  }
+});
+
+// Get audit log
+app.get('/api/audit-log', async (req, res) => {
+  try {
+    const { action, limit = 50 } = req.query;
+    
+    const where = action && action !== 'all' ? { action } : {};
+    
+    const auditLogs = await prisma.auditLog.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      take: parseInt(limit)
+    });
+
+    res.json(auditLogs);
+  } catch (error) {
+    console.error('Error fetching audit log:', error);
+    res.status(500).json({ error: 'Failed to fetch audit log' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);

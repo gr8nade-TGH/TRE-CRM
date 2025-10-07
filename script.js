@@ -1429,12 +1429,20 @@ function createLeadTable(lead, isExpanded = false) {
 			content.classList.add('collapsed');
 			expandIcon.textContent = '▶';
 			console.log('Collapsed table');
+			console.log('Content classes after collapse:', content.classList.toString());
 		} else {
 			content.classList.remove('collapsed');
 			content.classList.add('expanded');
 			expandIcon.textContent = '▼';
 			console.log('Expanded table');
+			console.log('Content classes after expand:', content.classList.toString());
 		}
+		
+		// Check computed styles
+		const computedStyle = window.getComputedStyle(content);
+		console.log('Computed max-height:', computedStyle.maxHeight);
+		console.log('Computed height:', computedStyle.height);
+		console.log('Computed padding:', computedStyle.padding);
 	}
 
 	// ---- Rendering: Documents Table ----
