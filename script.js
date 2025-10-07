@@ -1029,12 +1029,12 @@ const mockAuditLog = [
 				bedrooms: 1,
 				bathrooms: 1
 			},
-			showcase: {
-				sent: true,
-				landingPageUrl: 'https://tre-crm.vercel.app/showcase/lead_1',
-				selections: ['The Howard', 'Community 2'],
-				calendarDates: ['2024-01-20', '2024-01-22']
-			},
+		showcase: {
+			sent: true,
+			landingPageUrl: 'https://tre-crm.vercel.app/landing.html?showcase=lead_1&lead=Sarah%20Johnson&agent=Alex%20Agent&properties=the-howard,community-2',
+			selections: ['The Howard', 'Community 2'],
+			calendarDates: ['2024-01-20', '2024-01-22']
+		},
 			guestCard: {
 				sent: true,
 				url: 'https://tre-crm.vercel.app/guest-card/lead_1'
@@ -1062,12 +1062,12 @@ const mockAuditLog = [
 				bedrooms: 2,
 				bathrooms: 2
 			},
-			showcase: {
-				sent: true,
-				landingPageUrl: 'https://tre-crm.vercel.app/showcase/lead_2',
-				selections: ['Waterford Park'],
-				calendarDates: ['2024-01-18']
-			},
+		showcase: {
+			sent: true,
+			landingPageUrl: 'https://tre-crm.vercel.app/landing.html?showcase=lead_2&lead=Mike%20Chen&agent=Bailey%20Broker&properties=waterford-park',
+			selections: ['Waterford Park'],
+			calendarDates: ['2024-01-18']
+		},
 			guestCard: {
 				sent: true,
 				url: 'https://tre-crm.vercel.app/guest-card/lead_2'
@@ -1095,12 +1095,12 @@ const mockAuditLog = [
 				bedrooms: 1,
 				bathrooms: 1
 			},
-			showcase: {
-				sent: true,
-				landingPageUrl: 'https://tre-crm.vercel.app/showcase/lead_3',
-				selections: ['Community 1'],
-				calendarDates: ['2024-01-15']
-			},
+		showcase: {
+			sent: true,
+			landingPageUrl: 'https://tre-crm.vercel.app/landing.html?showcase=lead_3&lead=Emily%20Davis&agent=Alex%20Agent&properties=community-1',
+			selections: ['Community 1'],
+			calendarDates: ['2024-01-15']
+		},
 			guestCard: {
 				sent: true,
 				url: 'https://tre-crm.vercel.app/guest-card/lead_3'
@@ -1251,9 +1251,12 @@ const mockAuditLog = [
 			case 2: // Lead Responded
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
-					<div class="modal-details"><strong>Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
-					<div class="modal-details"><strong>Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
-					<a href="${lead.showcase.landingPageUrl}?filled=true" target="_blank" class="modal-link">View Filled Page →</a>
+					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
+					<div class="modal-details"><strong>Properties Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
+					<div class="modal-details"><strong>Preferred Tour Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
+					<div class="modal-details"><strong>Response Date:</strong> ${formatDate(lead.lastUpdated)}</div>
+					<div class="modal-details"><strong>Status:</strong> Lead has shown interest and selected properties</div>
+					<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
 				`;
 				
 			case 3: // Guest Card Sent
