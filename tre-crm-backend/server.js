@@ -783,6 +783,261 @@ app.get('/api/audit-log', async (req, res) => {
   }
 });
 
+// ===== BUG TRACKER API ROUTES =====
+
+// Get all bugs with filters
+app.get('/api/bugs', async (req, res) => {
+  try {
+    const { 
+      status, 
+      priority, 
+      page = 1, 
+      pageSize = 10,
+      search 
+    } = req.query;
+
+    const skip = (parseInt(page) - 1) * parseInt(pageSize);
+    const take = parseInt(pageSize);
+
+    // Build where clause
+    const where = {};
+    if (status) where.status = status.toUpperCase();
+    if (priority) where.priority = priority.toUpperCase();
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+        { reported_by_name: { contains: search, mode: 'insensitive' } }
+      ];
+    }
+
+    const [bugs, total] = await Promise.all([
+      prisma.bug.findMany({
+        where,
+        skip,
+        take,
+        orderBy: { created_at: 'desc' },
+        include: {
+          reporter: {
+            select: { id: true, name: true, email: true }
+          },
+          assignee: {
+            select: { id: true, name: true, email: true }
+          }
+        }
+      }),
+      prisma.bug.count({ where })
+    ]);
+
+    res.json({ items: bugs, total });
+  } catch (error) {
+    console.error('Error fetching bugs:', error);
+    res.status(500).json({ error: 'Failed to fetch bugs' });
+  }
+});
+
+// Get single bug by ID
+app.get('/api/bugs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const bug = await prisma.bug.findUnique({
+      where: { id },
+      include: {
+        reporter: {
+          select: { id: true, name: true, email: true }
+        },
+        assignee: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    });
+
+    if (!bug) {
+      return res.status(404).json({ error: 'Bug not found' });
+    }
+
+    res.json(bug);
+  } catch (error) {
+    console.error('Error fetching bug:', error);
+    res.status(500).json({ error: 'Failed to fetch bug' });
+  }
+});
+
+// Create new bug report
+app.post('/api/bugs', upload.single('screenshot'), async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      expected,
+      steps,
+      priority = 'MEDIUM',
+      category = 'OTHER',
+      page,
+      page_url,
+      reported_by,
+      reported_by_name,
+      technical_context
+    } = req.body;
+
+    // Handle screenshot upload
+    let screenshot_url = null;
+    if (req.file) {
+      screenshot_url = `/uploads/${req.file.filename}`;
+    }
+
+    // Parse technical context if it's a string
+    let parsedTechnicalContext = technical_context;
+    if (typeof technical_context === 'string') {
+      try {
+        parsedTechnicalContext = JSON.parse(technical_context);
+      } catch (e) {
+        parsedTechnicalContext = { raw: technical_context };
+      }
+    }
+
+    const bug = await prisma.bug.create({
+      data: {
+        title,
+        description,
+        expected: expected || null,
+        steps: steps || null,
+        priority: priority.toUpperCase(),
+        category: category.toUpperCase(),
+        page,
+        page_url,
+        reported_by,
+        reported_by_name,
+        screenshot_url,
+        technical_context: parsedTechnicalContext
+      },
+      include: {
+        reporter: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    });
+
+    res.status(201).json(bug);
+  } catch (error) {
+    console.error('Error creating bug:', error);
+    res.status(500).json({ error: 'Failed to create bug' });
+  }
+});
+
+// Update bug
+app.put('/api/bugs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      status,
+      priority,
+      assigned_to,
+      assigned_to_name,
+      resolution_notes
+    } = req.body;
+
+    const updateData = {};
+    if (status) updateData.status = status.toUpperCase();
+    if (priority) updateData.priority = priority.toUpperCase();
+    if (assigned_to !== undefined) updateData.assigned_to = assigned_to;
+    if (assigned_to_name !== undefined) updateData.assigned_to_name = assigned_to_name;
+    if (resolution_notes !== undefined) updateData.resolution_notes = resolution_notes;
+
+    const bug = await prisma.bug.update({
+      where: { id },
+      data: updateData,
+      include: {
+        reporter: {
+          select: { id: true, name: true, email: true }
+        },
+        assignee: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    });
+
+    res.json(bug);
+  } catch (error) {
+    console.error('Error updating bug:', error);
+    res.status(500).json({ error: 'Failed to update bug' });
+  }
+});
+
+// Delete bug
+app.delete('/api/bugs/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // Delete associated screenshot file if it exists
+    const bug = await prisma.bug.findUnique({
+      where: { id },
+      select: { screenshot_url: true }
+    });
+
+    if (bug && bug.screenshot_url) {
+      const filePath = path.join(__dirname, bug.screenshot_url);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+
+    await prisma.bug.delete({
+      where: { id }
+    });
+
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error deleting bug:', error);
+    res.status(500).json({ error: 'Failed to delete bug' });
+  }
+});
+
+// Upload screenshot for existing bug
+app.post('/api/bugs/:id/screenshot', upload.single('screenshot'), async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    if (!req.file) {
+      return res.status(400).json({ error: 'No screenshot file provided' });
+    }
+
+    // Delete old screenshot if it exists
+    const existingBug = await prisma.bug.findUnique({
+      where: { id },
+      select: { screenshot_url: true }
+    });
+
+    if (existingBug && existingBug.screenshot_url) {
+      const oldFilePath = path.join(__dirname, existingBug.screenshot_url);
+      if (fs.existsSync(oldFilePath)) {
+        fs.unlinkSync(oldFilePath);
+      }
+    }
+
+    // Update bug with new screenshot URL
+    const screenshot_url = `/uploads/${req.file.filename}`;
+    const bug = await prisma.bug.update({
+      where: { id },
+      data: { screenshot_url },
+      include: {
+        reporter: {
+          select: { id: true, name: true, email: true }
+        },
+        assignee: {
+          select: { id: true, name: true, email: true }
+        }
+      }
+    });
+
+    res.json(bug);
+  } catch (error) {
+    console.error('Error uploading screenshot:', error);
+    res.status(500).json({ error: 'Failed to upload screenshot' });
+  }
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
   console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);

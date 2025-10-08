@@ -46,6 +46,8 @@ model User {
   suspender       User?  @relation("UserSuspender", fields: [suspended_by], references: [id])
   audit_logs      AuditLog[]
   performed_audits AuditLog[] @relation("AuditPerformer")
+  reported_bugs   Bug[] @relation("BugReporter")
+  assigned_bugs   Bug[] @relation("BugAssignee")
 
   @@map("users")
 }
@@ -249,6 +251,34 @@ model AuditLog {
   @@map("audit_logs")
 }
 
+model Bug {
+  id                String      @id @default(cuid())
+  title             String
+  description       String
+  expected          String?
+  steps             String?
+  status            BugStatus   @default(PENDING)
+  priority          BugPriority @default(MEDIUM)
+  category          BugCategory @default(OTHER)
+  page              String      // Which page the bug was reported from
+  page_url          String      // Full URL where bug was reported
+  reported_by       String      // User ID who reported the bug
+  reported_by_name  String      // Name of user who reported the bug
+  assigned_to       String?     // User ID assigned to fix the bug
+  assigned_to_name  String?     // Name of user assigned to fix the bug
+  resolution_notes  String?     // Notes about how the bug was resolved
+  screenshot_url    String?     // URL to screenshot in Supabase Storage
+  technical_context Json        // Browser info, screen resolution, etc.
+  created_at        DateTime    @default(now())
+  updated_at        DateTime    @updatedAt
+
+  // Relations
+  reporter          User        @relation("BugReporter", fields: [reported_by], references: [id])
+  assignee          User?       @relation("BugAssignee", fields: [assigned_to], references: [id])
+
+  @@map("bugs")
+}
+
 // Enums
 enum UserRole {
   MANAGER
@@ -276,4 +306,27 @@ enum StepStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+}
+
+enum BugStatus {
+  PENDING
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum BugPriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum BugCategory {
+  UI
+  FUNCTIONALITY
+  PERFORMANCE
+  DATA
+  NAVIGATION
+  OTHER
 }
