@@ -1222,10 +1222,25 @@ const mockAuditLog = [
 				return newBug;
 			}
 			
+			// Create FormData for file upload
+			const formData = new FormData();
+			
+			// Add all bug data fields
+			Object.keys(bugData).forEach(key => {
+				if (key === 'screenshot' && bugData[key]) {
+					// Handle file upload
+					formData.append('screenshot', bugData[key]);
+				} else if (key === 'technical_context') {
+					// Stringify JSON fields
+					formData.append(key, JSON.stringify(bugData[key]));
+				} else if (bugData[key] !== null && bugData[key] !== undefined) {
+					formData.append(key, bugData[key]);
+				}
+			});
+			
 			const response = await fetch(`${API_BASE}/bugs`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(bugData)
+				body: formData
 			});
 			return handleResponse(response);
 		},
@@ -2045,15 +2060,9 @@ function createLeadTable(lead, isExpanded = false) {
 			return;
 		}
 
-		let screenshotUrl = null;
-		if (screenshotFile) {
-			// Convert file to base64 for storage in mock data
-			screenshotUrl = await new Promise((resolve) => {
-				const reader = new FileReader();
-				reader.onload = (e) => resolve(e.target.result);
-				reader.readAsDataURL(screenshotFile);
-			});
-		}
+		// Get current user context
+		const currentUser = getCurrentUser();
+		const currentPage = getCurrentPageName();
 
 		const bugData = {
 			title,
@@ -2063,8 +2072,20 @@ function createLeadTable(lead, isExpanded = false) {
 			priority,
 			category,
 			status: 'pending',
-			screenshot: screenshotUrl,
-			...window.currentBugContext
+			page: currentPage,
+			page_url: window.location.href,
+			reported_by: currentUser?.id || 'unknown',
+			reported_by_name: currentUser?.name || 'Unknown User',
+			technical_context: {
+				userAgent: navigator.userAgent,
+				screenResolution: `${screen.width}x${screen.height}`,
+				viewport: `${window.innerWidth}x${window.innerHeight}`,
+				url: window.location.href,
+				timestamp: new Date().toISOString(),
+				browser: getBrowserInfo(),
+				os: getOSInfo()
+			},
+			screenshot: screenshotFile // Pass file directly for real API
 		};
 
 		try {
@@ -2080,6 +2101,39 @@ function createLeadTable(lead, isExpanded = false) {
 		} catch (error) {
 			toast('Error submitting bug report: ' + error.message, 'error');
 		}
+	}
+	
+	// Helper function to get current page name
+	function getCurrentPageName() {
+		const hash = window.location.hash;
+		if (hash.includes('#/leads')) return 'Leads';
+		if (hash.includes('#/listings')) return 'Listings';
+		if (hash.includes('#/documents')) return 'Documents';
+		if (hash.includes('#/admin')) return 'Admin';
+		if (hash.includes('#/specials')) return 'Specials';
+		if (hash.includes('#/bugs')) return 'Bugs';
+		return 'Home';
+	}
+	
+	// Helper function to get browser info
+	function getBrowserInfo() {
+		const ua = navigator.userAgent;
+		if (ua.includes('Chrome')) return 'Chrome';
+		if (ua.includes('Firefox')) return 'Firefox';
+		if (ua.includes('Safari')) return 'Safari';
+		if (ua.includes('Edge')) return 'Edge';
+		return 'Unknown';
+	}
+	
+	// Helper function to get OS info
+	function getOSInfo() {
+		const ua = navigator.userAgent;
+		if (ua.includes('Windows')) return 'Windows';
+		if (ua.includes('Mac')) return 'macOS';
+		if (ua.includes('Linux')) return 'Linux';
+		if (ua.includes('Android')) return 'Android';
+		if (ua.includes('iOS')) return 'iOS';
+		return 'Unknown';
 	}
 
 	function addBugFlags() {
@@ -4299,6 +4353,22 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					}
 					return;
 				}
+			});
+		}
+
+		// Bug Details Modal close functionality
+		const closeBugDetailsModal = document.getElementById('closeBugDetailsModal');
+		const closeBugDetailsModalBtn = document.getElementById('closeBugDetailsModalBtn');
+		
+		if (closeBugDetailsModal) {
+			closeBugDetailsModal.addEventListener('click', () => {
+				hideModal('bugDetailsModal');
+			});
+		}
+		
+		if (closeBugDetailsModalBtn) {
+			closeBugDetailsModalBtn.addEventListener('click', () => {
+				hideModal('bugDetailsModal');
 			});
 		}
 
