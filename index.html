@@ -20,6 +20,7 @@
 			<a href="#/specials" class="nav-link" data-page="specials">🔥</a>
 			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
 			<a href="#/admin" class="nav-link" data-page="admin" id="adminNavLink">Admin</a>
+			<a href="#/bugs" class="nav-link" data-page="bugs" id="bugsNavLink">🐛</a>
 		</nav>
 		
 		<div class="role-switch">
@@ -291,6 +292,58 @@
 				<!-- Lead tables will be generated here -->
 			</div>
 		</div>
+			</div>
+		</section>
+
+		<!-- Route: #/bugs -->
+		<section id="bugsView" class="route-view hidden">
+			<div class="view-bar">
+				<h1>🐛 Bug Tracker</h1>
+				<div id="bugsRoleLabel" class="role-label"></div>
+			</div>
+
+			<div class="admin-content">
+				<div class="admin-section">
+					<div class="section-header">
+						<h2>Bug Reports</h2>
+						<div class="bug-filters">
+							<select id="bugStatusFilter">
+								<option value="">All Status</option>
+								<option value="pending">Pending</option>
+								<option value="in_progress">In Progress</option>
+								<option value="resolved">Resolved</option>
+								<option value="closed">Closed</option>
+							</select>
+							<select id="bugPriorityFilter">
+								<option value="">All Priority</option>
+								<option value="low">Low</option>
+								<option value="medium">Medium</option>
+								<option value="high">High</option>
+								<option value="critical">Critical</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="bugs-table-wrapper">
+						<table id="bugsTable" class="data-table">
+							<thead>
+								<tr>
+									<th data-sort="id" class="sortable">ID <span class="sort-icon">↕</span></th>
+									<th data-sort="title" class="sortable">Title <span class="sort-icon">↕</span></th>
+									<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span></th>
+									<th data-sort="priority" class="sortable">Priority <span class="sort-icon">↕</span></th>
+									<th data-sort="page" class="sortable">Page <span class="sort-icon">↕</span></th>
+									<th data-sort="reported_by" class="sortable">Reported By <span class="sort-icon">↕</span></th>
+									<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="bugsTbody">
+								<!-- Bugs will be populated here -->
+							</tbody>
+						</table>
+					</div>
+				</div>
 			</div>
 		</section>
 
@@ -728,6 +781,85 @@
 		<h4 id="popTitle">Lead Status</h4>
 		<ul id="popList"></ul>
 		<div class="small">Click anywhere to dismiss</div>
+	</div>
+
+	<!-- Bug Report Modal -->
+	<div id="bugReportModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>🐛 Report Bug</h3>
+				<button id="closeBugReportModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="bugReportForm">
+					<div class="field">
+						<label for="bugTitle">What's not working? *</label>
+						<input type="text" id="bugTitle" required placeholder="Brief description of the issue">
+					</div>
+					<div class="form-row">
+						<div class="field">
+							<label for="bugPriority">Priority</label>
+							<select id="bugPriority">
+								<option value="low">Low - Minor issue</option>
+								<option value="medium" selected>Medium - Affects functionality</option>
+								<option value="high">High - Major issue</option>
+								<option value="critical">Critical - System broken</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="bugCategory">Category</label>
+							<select id="bugCategory">
+								<option value="ui">UI/Display Issue</option>
+								<option value="functionality">Functionality Issue</option>
+								<option value="performance">Performance Issue</option>
+								<option value="data">Data Issue</option>
+								<option value="navigation">Navigation Issue</option>
+								<option value="other">Other</option>
+							</select>
+						</div>
+					</div>
+					<div class="field">
+						<label for="bugDescription">What happened? *</label>
+						<textarea id="bugDescription" rows="4" required placeholder="Describe what you were trying to do and what went wrong..."></textarea>
+					</div>
+					<div class="field">
+						<label for="bugExpected">What did you expect to happen?</label>
+						<textarea id="bugExpected" rows="2" placeholder="What should have happened instead?"></textarea>
+					</div>
+					<div class="field">
+						<label for="bugSteps">Steps to reproduce (if known)</label>
+						<textarea id="bugSteps" rows="3" placeholder="1. Go to...&#10;2. Click on...&#10;3. See error..."></textarea>
+					</div>
+					<div class="field">
+						<label for="bugScreenshot">Screenshot (optional)</label>
+						<input type="file" id="bugScreenshot" accept="image/*" placeholder="Upload a screenshot">
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="saveBugReportBtn" class="btn btn-primary">Submit Bug Report</button>
+				<button id="cancelBugReportBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Bug Details Modal -->
+	<div id="bugDetailsModal" class="modal hidden">
+		<div class="modal-card large">
+			<div class="modal-header">
+				<h3>🐛 Bug Details</h3>
+				<button id="closeBugDetailsModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="bugDetailsContent">
+					<!-- Bug details will be populated here -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="updateBugStatusBtn" class="btn btn-primary">Update Status</button>
+				<button id="closeBugDetailsModalBtn" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
 	</div>
 
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

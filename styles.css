@@ -2778,6 +2778,163 @@ main#appRoot {
 	}
 }
 
+/* ===== BUG TRACKER STYLES ===== */
+
+/* Bug flag icons */
+.bug-flag {
+	position: fixed;
+	top: 50%;
+	right: 20px;
+	transform: translateY(-50%);
+	z-index: 1000;
+	background: #dc2626;
+	color: white;
+	border: none;
+	border-radius: 50%;
+	width: 50px;
+	height: 50px;
+	font-size: 20px;
+	cursor: pointer;
+	box-shadow: 0 4px 12px rgba(220, 38, 38, 0.3);
+	transition: all 0.3s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.bug-flag:hover {
+	background: #b91c1c;
+	transform: translateY(-50%) scale(1.1);
+	box-shadow: 0 6px 16px rgba(220, 38, 38, 0.4);
+}
+
+.bug-flag:active {
+	transform: translateY(-50%) scale(0.95);
+}
+
+/* Bug tracker page */
+.bug-filters {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+.bug-filters select {
+	padding: 6px 12px;
+	border: 1px solid var(--rule);
+	border-radius: 6px;
+	background: var(--panel);
+	color: var(--ink);
+}
+
+.bugs-table-wrapper {
+	overflow-x: auto;
+}
+
+/* Bug status badges */
+.bug-status {
+	padding: 4px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.bug-status.pending {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.bug-status.in_progress {
+	background: #dbeafe;
+	color: #1e40af;
+}
+
+.bug-status.resolved {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.bug-status.closed {
+	background: #f3f4f6;
+	color: #374151;
+}
+
+/* Bug priority badges */
+.bug-priority {
+	padding: 4px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.bug-priority.low {
+	background: #f0f9ff;
+	color: #0369a1;
+}
+
+.bug-priority.medium {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.bug-priority.high {
+	background: #fed7aa;
+	color: #c2410c;
+}
+
+.bug-priority.critical {
+	background: #fecaca;
+	color: #dc2626;
+}
+
+/* Bug details modal */
+.modal-card.large {
+	max-width: 800px;
+	width: 90vw;
+}
+
+.bug-details-section {
+	margin-bottom: 20px;
+	padding: 15px;
+	background: var(--panel);
+	border-radius: 8px;
+	border-left: 4px solid var(--brand);
+}
+
+.bug-details-section h4 {
+	margin: 0 0 10px 0;
+	color: var(--ink);
+	font-size: 16px;
+}
+
+.bug-details-section p {
+	margin: 0;
+	color: var(--muted);
+	line-height: 1.5;
+}
+
+.bug-context {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	padding: 10px;
+	font-family: monospace;
+	font-size: 12px;
+	color: #475569;
+}
+
+/* Mobile bug flag */
+@media (max-width: 768px) {
+	.bug-flag {
+		width: 45px;
+		height: 45px;
+		font-size: 18px;
+		right: 15px;
+	}
+}
+
 /* ===== MINIMAL MOBILE FIXES ===== */
 
 /* Only essential mobile improvements - no layout changes */

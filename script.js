@@ -1179,6 +1179,89 @@ const mockAuditLog = [
 				method: 'DELETE'
 			});
 			return handleResponse(response);
+		},
+
+		// Bug API functions
+		async getBugs({ status, priority, page, pageSize } = {}) {
+			if (USE_MOCK_DATA) {
+				console.log('Using mock data for bugs, count:', mockBugs.length);
+				let filteredBugs = [...mockBugs];
+				
+				// Filter by status
+				if (status) {
+					filteredBugs = filteredBugs.filter(bug => bug.status === status);
+				}
+				
+				// Filter by priority
+				if (priority) {
+					filteredBugs = filteredBugs.filter(bug => bug.priority === priority);
+				}
+				
+				// Sort by created date (newest first)
+				filteredBugs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+				
+				return {
+					items: filteredBugs,
+					total: filteredBugs.length
+				};
+			}
+			
+			const response = await fetch(`${API_BASE}/bugs?${new URLSearchParams({ status, priority, page, pageSize })}`);
+			return handleResponse(response);
+		},
+
+		async createBug(bugData) {
+			if (USE_MOCK_DATA) {
+				const newBug = {
+					id: `bug_${Date.now()}`,
+					...bugData,
+					created_at: new Date().toISOString(),
+					updated_at: new Date().toISOString()
+				};
+				mockBugs.unshift(newBug);
+				return newBug;
+			}
+			
+			const response = await fetch(`${API_BASE}/bugs`, {
+				method: 'POST',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(bugData)
+			});
+			return handleResponse(response);
+		},
+
+		async updateBug(id, bugData) {
+			if (USE_MOCK_DATA) {
+				const index = mockBugs.findIndex(b => b.id === id);
+				if (index !== -1) {
+					mockBugs[index] = { ...mockBugs[index], ...bugData, updated_at: new Date().toISOString() };
+					return mockBugs[index];
+				}
+				throw new Error('Bug not found');
+			}
+			
+			const response = await fetch(`${API_BASE}/bugs/${id}`, {
+				method: 'PUT',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify(bugData)
+			});
+			return handleResponse(response);
+		},
+
+		async deleteBug(id) {
+			if (USE_MOCK_DATA) {
+				const index = mockBugs.findIndex(b => b.id === id);
+				if (index !== -1) {
+					mockBugs.splice(index, 1);
+					return { success: true };
+				}
+				throw new Error('Bug not found');
+			}
+			
+			const response = await fetch(`${API_BASE}/bugs/${id}`, {
+				method: 'DELETE'
+			});
+			return handleResponse(response);
 		}
 	};
 
@@ -1437,6 +1520,62 @@ const mockAuditLog = [
 			agent_id: 'agent_3',
 			agent_name: 'Chris Consultant',
 			created_at: '2024-01-05T16:45:00Z'
+		}
+	];
+
+	// Mock data for bugs
+	const mockBugs = [
+		{
+			id: 'bug_1',
+			title: 'Table sorting not working on Listings page',
+			description: 'When I click on column headers in the Listings table, the rows don\'t reorder properly.',
+			expected: 'Rows should sort by the selected column (ascending/descending)',
+			steps: '1. Go to Listings page\n2. Click on "Rent Range" column header\n3. Notice rows don\'t sort',
+			status: 'pending',
+			priority: 'high',
+			category: 'functionality',
+			page: 'listings',
+			page_url: '#/listings',
+			reported_by: 'Sarah Johnson',
+			reported_by_id: 'agent_1',
+			created_at: '2024-01-25T10:30:00Z',
+			updated_at: '2024-01-25T10:30:00Z',
+			assigned_to: null,
+			resolution_notes: null,
+			technical_context: {
+				browser: 'Chrome 120.0.6099.109',
+				user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+				screen_resolution: '1920x1080',
+				viewport: '1920x937',
+				role: 'manager',
+				agent_id: 'agent_1'
+			}
+		},
+		{
+			id: 'bug_2',
+			title: 'Mobile navigation cuts off on small screens',
+			description: 'On mobile devices, the right side of the navigation bar gets cut off and I can\'t see "Admin" or the role dropdown.',
+			expected: 'All navigation items should be visible and accessible on mobile',
+			steps: '1. Open app on mobile device\n2. Look at navigation bar\n3. Notice "Admin" and role dropdown are cut off',
+			status: 'resolved',
+			priority: 'medium',
+			category: 'ui',
+			page: 'global',
+			page_url: 'all pages',
+			reported_by: 'Mike Chen',
+			reported_by_id: 'agent_2',
+			created_at: '2024-01-24T15:45:00Z',
+			updated_at: '2024-01-25T09:15:00Z',
+			assigned_to: 'Developer',
+			resolution_notes: 'Added horizontal scroll to navigation on mobile devices',
+			technical_context: {
+				browser: 'Safari Mobile 17.2',
+				user_agent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X)',
+				screen_resolution: '375x812',
+				viewport: '375x667',
+				role: 'agent',
+				agent_id: 'agent_2'
+			}
 		}
 	];
 
@@ -1783,6 +1922,160 @@ function createLeadTable(lead, isExpanded = false) {
 			
 			tbody.appendChild(tr);
 		});
+	}
+
+	// ---- Bug Tracker Functions ----
+	async function renderBugs() {
+		console.log('renderBugs called');
+		const tbody = document.getElementById('bugsTbody');
+		if (!tbody) return;
+
+		const statusFilter = document.getElementById('bugStatusFilter')?.value || '';
+		const priorityFilter = document.getElementById('bugPriorityFilter')?.value || '';
+
+		const { items, total } = await api.getBugs({
+			status: statusFilter,
+			priority: priorityFilter
+		});
+
+		console.log('Bugs API returned:', { items, total });
+		tbody.innerHTML = '';
+
+		items.forEach(bug => {
+			const tr = document.createElement('tr');
+			tr.innerHTML = `
+				<td data-sort="id" class="mono">${bug.id}</td>
+				<td data-sort="title">
+					<div style="font-weight: 600; margin-bottom: 4px;">${bug.title}</div>
+					<div style="font-size: 12px; color: var(--muted);">${bug.category}</div>
+				</td>
+				<td data-sort="status">
+					<span class="bug-status ${bug.status}">${bug.status.replace('_', ' ')}</span>
+				</td>
+				<td data-sort="priority">
+					<span class="bug-priority ${bug.priority}">${bug.priority}</span>
+				</td>
+				<td data-sort="page" class="mono">${bug.page}</td>
+				<td data-sort="reported_by" class="mono">${bug.reported_by}</td>
+				<td data-sort="created_at" class="mono">${formatDate(bug.created_at)}</td>
+				<td>
+					<div class="action-buttons">
+						<button class="icon-btn view-bug" data-id="${bug.id}" title="View Details">👁️</button>
+						<button class="icon-btn edit-bug" data-id="${bug.id}" title="Edit">✏️</button>
+						<button class="icon-btn delete-bug" data-id="${bug.id}" title="Delete">🗑️</button>
+					</div>
+				</td>
+			`;
+			tbody.appendChild(tr);
+		});
+	}
+
+	function showBugReportModal(context = {}) {
+		// Pre-fill context data
+		document.getElementById('bugTitle').value = context.title || '';
+		document.getElementById('bugDescription').value = context.description || '';
+		document.getElementById('bugSteps').value = context.steps || '';
+		
+		// Store context for submission
+		window.currentBugContext = {
+			page: context.page || state.currentPage,
+			page_url: context.page_url || location.hash,
+			reported_by: state.role === 'agent' ? 'Current Agent' : 'Manager',
+			reported_by_id: state.agentId || 'unknown',
+			technical_context: {
+				browser: navigator.userAgent,
+				screen_resolution: `${screen.width}x${screen.height}`,
+				viewport: `${window.innerWidth}x${window.innerHeight}`,
+				role: state.role,
+				agent_id: state.agentId
+			}
+		};
+		
+		showModal('bugReportModal');
+	}
+
+	async function submitBugReport() {
+		const title = document.getElementById('bugTitle').value.trim();
+		const description = document.getElementById('bugDescription').value.trim();
+		const expected = document.getElementById('bugExpected').value.trim();
+		const steps = document.getElementById('bugSteps').value.trim();
+		const priority = document.getElementById('bugPriority').value;
+		const category = document.getElementById('bugCategory').value;
+
+		if (!title || !description) {
+			toast('Please fill in the required fields', 'error');
+			return;
+		}
+
+		const bugData = {
+			title,
+			description,
+			expected: expected || null,
+			steps: steps || null,
+			priority,
+			category,
+			status: 'pending',
+			...window.currentBugContext
+		};
+
+		try {
+			await api.createBug(bugData);
+			toast('Bug report submitted successfully!', 'success');
+			hideModal('bugReportModal');
+			document.getElementById('bugReportForm').reset();
+			
+			// Refresh bugs table if we're on the bugs page
+			if (state.currentPage === 'bugs') {
+				renderBugs();
+			}
+		} catch (error) {
+			toast('Error submitting bug report: ' + error.message, 'error');
+		}
+	}
+
+	function addBugFlags() {
+		// Remove existing flags
+		document.querySelectorAll('.bug-flag').forEach(flag => flag.remove());
+
+		// Add flag to each page
+		const pages = ['leads', 'agents', 'listings', 'specials', 'documents', 'admin'];
+		
+		pages.forEach(page => {
+			const flag = document.createElement('button');
+			flag.className = 'bug-flag';
+			flag.innerHTML = '🚩';
+			flag.title = 'Report Bug';
+			flag.style.display = 'none'; // Hidden by default
+			
+			flag.addEventListener('click', () => {
+				showBugReportModal({
+					page: page,
+					page_url: `#/${page}`,
+					title: `Issue on ${page.charAt(0).toUpperCase() + page.slice(1)} page`
+				});
+			});
+			
+			document.body.appendChild(flag);
+		});
+
+		// Show flag for current page
+		updateBugFlagVisibility();
+	}
+
+	function updateBugFlagVisibility() {
+		const flags = document.querySelectorAll('.bug-flag');
+		flags.forEach(flag => {
+			flag.style.display = 'none';
+		});
+		
+		// Show flag for current page
+		const currentPage = state.currentPage;
+		if (currentPage && currentPage !== 'bugs') {
+			const flag = document.querySelector('.bug-flag');
+			if (flag) {
+				flag.style.display = 'flex';
+			}
+		}
 	}
 
 	function renderLeadsTable(searchTerm = '', searchType = 'both'){
@@ -2789,6 +3082,11 @@ function createLeadTable(lead, isExpanded = false) {
 			show(document.getElementById('adminView'));
 			setRoleLabel('admin');
 			renderAdmin();
+		} else if (hash === '/bugs') {
+			state.currentPage = 'bugs';
+			show(document.getElementById('bugsView'));
+			setRoleLabel('bugs');
+			renderBugs();
 		} else {
 			// default: leads
 			state.currentPage = 'leads';
@@ -2798,6 +3096,7 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 
 		updateNavigation(state.currentPage);
+		updateBugFlagVisibility();
 	}
 
 	// ---- Events ----
@@ -2854,6 +3153,7 @@ function createLeadTable(lead, isExpanded = false) {
 			else if (state.currentPage === 'specials') renderSpecials();
 			else if (state.currentPage === 'documents') renderDocuments();
 			else if (state.currentPage === 'admin') renderAdmin();
+			else if (state.currentPage === 'bugs') renderBugs();
 		});
 
 		// search
@@ -3767,6 +4067,99 @@ function createLeadTable(lead, isExpanded = false) {
 			}
 		});
 
+
+		// Bug tracker event listeners
+		const bugsNavLink = document.getElementById('bugsNavLink');
+		if (bugsNavLink) {
+			if (state.role === 'agent') {
+				bugsNavLink.style.display = 'none';
+			} else {
+				bugsNavLink.style.display = 'block';
+			}
+		}
+
+		// Bug report modal events
+		const closeBugReportModal = document.getElementById('closeBugReportModal');
+		const saveBugReportBtn = document.getElementById('saveBugReportBtn');
+		const cancelBugReportBtn = document.getElementById('cancelBugReportBtn');
+
+		if (closeBugReportModal) {
+			closeBugReportModal.addEventListener('click', () => hideModal('bugReportModal'));
+		}
+		if (cancelBugReportBtn) {
+			cancelBugReportBtn.addEventListener('click', () => hideModal('bugReportModal'));
+		}
+		if (saveBugReportBtn) {
+			saveBugReportBtn.addEventListener('click', submitBugReport);
+		}
+
+		// Bug filters
+		const bugStatusFilter = document.getElementById('bugStatusFilter');
+		const bugPriorityFilter = document.getElementById('bugPriorityFilter');
+		
+		if (bugStatusFilter) {
+			bugStatusFilter.addEventListener('change', renderBugs);
+		}
+		if (bugPriorityFilter) {
+			bugPriorityFilter.addEventListener('change', renderBugs);
+		}
+
+		// Bug table delegation
+		const bugsTableEl = document.getElementById('bugsTable');
+		if (bugsTableEl) {
+			bugsTableEl.addEventListener('click', (e) => {
+				// Handle sorting
+				const sortableHeader = e.target.closest('th[data-sort]');
+				if (sortableHeader) {
+					const column = sortableHeader.dataset.sort;
+					sortTable(column, 'bugsTable');
+					e.preventDefault();
+					return;
+				}
+				
+				// Handle view button
+				const viewBtn = e.target.closest('.view-bug');
+				if (viewBtn) {
+					// TODO: Implement view bug details
+					toast('View bug details coming soon!', 'info');
+					return;
+				}
+				
+				// Handle edit button
+				const editBtn = e.target.closest('.edit-bug');
+				if (editBtn) {
+					// TODO: Implement edit bug
+					toast('Edit bug functionality coming soon!', 'info');
+					return;
+				}
+				
+				// Handle delete button
+				const deleteBtn = e.target.closest('.delete-bug');
+				if (deleteBtn) {
+					if (confirm('Are you sure you want to delete this bug report?')) {
+						api.deleteBug(deleteBtn.dataset.id);
+						toast('Bug report deleted', 'success');
+						renderBugs();
+					}
+					return;
+				}
+			});
+		}
+
+		// Initialize bug flags
+		addBugFlags();
+
+		// Update role visibility for bugs nav
+		document.getElementById('roleSelect').addEventListener('change', (e) => {
+			const bugsNavLink = document.getElementById('bugsNavLink');
+			if (bugsNavLink) {
+				if (e.target.value === 'agent') {
+					bugsNavLink.style.display = 'none';
+				} else {
+					bugsNavLink.style.display = 'block';
+				}
+			}
+		});
 
 		// initial route
 		if (!location.hash) location.hash = '/leads';
