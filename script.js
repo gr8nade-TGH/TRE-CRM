@@ -2086,44 +2086,42 @@ function createLeadTable(lead, isExpanded = false) {
 		// Remove existing flags
 		document.querySelectorAll('.bug-flag').forEach(flag => flag.remove());
 
-		// Add flag to each page
-		const pages = ['leads', 'agents', 'listings', 'specials', 'documents', 'admin'];
+		// Add single flag that adapts to current page
+		const flag = document.createElement('button');
+		flag.className = 'bug-flag';
+		flag.innerHTML = '🐛';
+		flag.title = 'Report Bug';
+		flag.style.display = 'none'; // Hidden by default
 		
-		pages.forEach(page => {
-			const flag = document.createElement('button');
-			flag.className = 'bug-flag';
-			flag.innerHTML = '🚩';
-			flag.title = 'Report Bug';
-			flag.style.display = 'none'; // Hidden by default
+		flag.addEventListener('click', () => {
+			const currentPage = state.currentPage || 'leads';
+			const pageName = currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
 			
-			flag.addEventListener('click', () => {
-				showBugReportModal({
-					page: page,
-					page_url: `#/${page}`,
-					title: `Issue on ${page.charAt(0).toUpperCase() + page.slice(1)} page`
-				});
+			console.log('Bug flag clicked on page:', currentPage); // Debug log
+			
+			showBugReportModal({
+				page: currentPage,
+				page_url: `#/${currentPage}`,
+				title: `Issue on ${pageName} page`
 			});
-			
-			document.body.appendChild(flag);
 		});
+		
+		document.body.appendChild(flag);
 
 		// Show flag for current page
 		updateBugFlagVisibility();
 	}
 
 	function updateBugFlagVisibility() {
-		const flags = document.querySelectorAll('.bug-flag');
-		flags.forEach(flag => {
-			flag.style.display = 'none';
-		});
+		const flag = document.querySelector('.bug-flag');
+		if (!flag) return;
 		
-		// Show flag for current page
+		// Hide flag on bugs page, show on all other pages
 		const currentPage = state.currentPage;
-		if (currentPage && currentPage !== 'bugs') {
-			const flag = document.querySelector('.bug-flag');
-			if (flag) {
-				flag.style.display = 'flex';
-			}
+		if (currentPage === 'bugs') {
+			flag.style.display = 'none';
+		} else {
+			flag.style.display = 'flex';
 		}
 	}
 
