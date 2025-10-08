@@ -1576,6 +1576,33 @@ const mockAuditLog = [
 				role: 'agent',
 				agent_id: 'agent_2'
 			}
+		},
+		{
+			id: 'bug_3',
+			title: 'Test bug with screenshot attachment',
+			description: 'This is a test bug report to demonstrate the screenshot functionality. The image should be visible when viewing bug details.',
+			expected: 'Screenshot should display properly in the bug details view',
+			steps: '1. Submit a bug report with screenshot\n2. View bug details\n3. Screenshot should be visible',
+			status: 'pending',
+			priority: 'low',
+			category: 'ui',
+			page: 'bugs',
+			page_url: '#/bugs',
+			reported_by: 'Test User',
+			reported_by_id: 'test_user',
+			created_at: '2024-01-26T10:00:00Z',
+			updated_at: '2024-01-26T10:00:00Z',
+			assigned_to: null,
+			resolution_notes: null,
+			screenshot: 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAwIiBoZWlnaHQ9IjMwMCIgdmlld0JveD0iMCAwIDQwMCAzMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxyZWN0IHdpZHRoPSI0MDAiIGhlaWdodD0iMzAwIiBmaWxsPSIjRjNGNEY2Ii8+CjxyZWN0IHg9IjUwIiB5PSI1MCIgd2lkdGg9IjMwMCIgaGVpZ2h0PSIyMDAiIGZpbGw9IiNFNUU3RUIiLz4KPHRleHQgeD0iMjAwIiB5PSIxNjAiIGZvbnQtZmFtaWx5PSJBcmlhbCwgc2Fucy1zZXJpZiIgZm9udC1zaXplPSIxNiIgZmlsbD0iIzM3NDE1MSIgdGV4dC1hbmNob3I9Im1pZGRsZSI+U2NyZWVuc2hvdCBFeGFtcGxlPC90ZXh0Pgo8L3N2Zz4K',
+			technical_context: {
+				browser: 'Chrome 120.0.6099.109',
+				user_agent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+				screen_resolution: '1920x1080',
+				viewport: '1920x937',
+				role: 'manager',
+				agent_id: 'test_user'
+			}
 		}
 	];
 
@@ -1950,10 +1977,20 @@ function createLeadTable(lead, isExpanded = false) {
 					<div style="font-size: 12px; color: var(--muted);">${bug.category}</div>
 				</td>
 				<td data-sort="status">
-					<span class="bug-status ${bug.status}">${bug.status.replace('_', ' ')}</span>
+					<select class="bug-status-select" data-bug-id="${bug.id}" data-field="status">
+						<option value="pending" ${bug.status === 'pending' ? 'selected' : ''}>Pending</option>
+						<option value="in_progress" ${bug.status === 'in_progress' ? 'selected' : ''}>In Progress</option>
+						<option value="resolved" ${bug.status === 'resolved' ? 'selected' : ''}>Resolved</option>
+						<option value="closed" ${bug.status === 'closed' ? 'selected' : ''}>Closed</option>
+					</select>
 				</td>
 				<td data-sort="priority">
-					<span class="bug-priority ${bug.priority}">${bug.priority}</span>
+					<select class="bug-priority-select" data-bug-id="${bug.id}" data-field="priority">
+						<option value="low" ${bug.priority === 'low' ? 'selected' : ''}>Low</option>
+						<option value="medium" ${bug.priority === 'medium' ? 'selected' : ''}>Medium</option>
+						<option value="high" ${bug.priority === 'high' ? 'selected' : ''}>High</option>
+						<option value="critical" ${bug.priority === 'critical' ? 'selected' : ''}>Critical</option>
+					</select>
 				</td>
 				<td data-sort="page" class="mono">${bug.page}</td>
 				<td data-sort="reported_by" class="mono">${bug.reported_by}</td>
@@ -1961,7 +1998,7 @@ function createLeadTable(lead, isExpanded = false) {
 				<td>
 					<div class="action-buttons">
 						<button class="icon-btn view-bug" data-id="${bug.id}" title="View Details">👁️</button>
-						<button class="icon-btn edit-bug" data-id="${bug.id}" title="Edit">✏️</button>
+						<button class="icon-btn save-bug" data-id="${bug.id}" title="Save Changes" style="display: none;">💾</button>
 						<button class="icon-btn delete-bug" data-id="${bug.id}" title="Delete">🗑️</button>
 					</div>
 				</td>
@@ -2001,10 +2038,21 @@ function createLeadTable(lead, isExpanded = false) {
 		const steps = document.getElementById('bugSteps').value.trim();
 		const priority = document.getElementById('bugPriority').value;
 		const category = document.getElementById('bugCategory').value;
+		const screenshotFile = document.getElementById('bugScreenshot').files[0];
 
 		if (!title || !description) {
 			toast('Please fill in the required fields', 'error');
 			return;
+		}
+
+		let screenshotUrl = null;
+		if (screenshotFile) {
+			// Convert file to base64 for storage in mock data
+			screenshotUrl = await new Promise((resolve) => {
+				const reader = new FileReader();
+				reader.onload = (e) => resolve(e.target.result);
+				reader.readAsDataURL(screenshotFile);
+			});
 		}
 
 		const bugData = {
@@ -2015,6 +2063,7 @@ function createLeadTable(lead, isExpanded = false) {
 			priority,
 			category,
 			status: 'pending',
+			screenshot: screenshotUrl,
 			...window.currentBugContext
 		};
 
@@ -2075,6 +2124,117 @@ function createLeadTable(lead, isExpanded = false) {
 			if (flag) {
 				flag.style.display = 'flex';
 			}
+		}
+	}
+
+	async function showBugDetails(bugId) {
+		try {
+			// Find bug in mock data
+			const bug = mockBugs.find(b => b.id === bugId);
+			if (!bug) {
+				toast('Bug not found', 'error');
+				return;
+			}
+
+			const content = document.getElementById('bugDetailsContent');
+			content.innerHTML = `
+				<div class="bug-details-section">
+					<h4>🐛 ${bug.title}</h4>
+					<p><strong>Status:</strong> <span class="bug-status ${bug.status}">${bug.status.replace('_', ' ')}</span></p>
+					<p><strong>Priority:</strong> <span class="bug-priority ${bug.priority}">${bug.priority}</span></p>
+					<p><strong>Category:</strong> ${bug.category}</p>
+					<p><strong>Page:</strong> ${bug.page}</p>
+					<p><strong>Reported by:</strong> ${bug.reported_by}</p>
+					<p><strong>Created:</strong> ${formatDate(bug.created_at)}</p>
+					<p><strong>Last updated:</strong> ${formatDate(bug.updated_at)}</p>
+				</div>
+
+				<div class="bug-details-section">
+					<h4>Description</h4>
+					<p>${bug.description}</p>
+				</div>
+
+				${bug.expected ? `
+				<div class="bug-details-section">
+					<h4>Expected Behavior</h4>
+					<p>${bug.expected}</p>
+				</div>
+				` : ''}
+
+				${bug.steps ? `
+				<div class="bug-details-section">
+					<h4>Steps to Reproduce</h4>
+					<pre class="bug-context">${bug.steps}</pre>
+				</div>
+				` : ''}
+
+				${bug.screenshot ? `
+				<div class="bug-details-section">
+					<h4>Screenshot</h4>
+					<img src="${bug.screenshot}" alt="Bug screenshot" style="max-width: 100%; border: 1px solid var(--rule); border-radius: 6px;">
+				</div>
+				` : ''}
+
+				<div class="bug-details-section">
+					<h4>Technical Context</h4>
+					<pre class="bug-context">Browser: ${bug.technical_context.browser}
+Screen: ${bug.technical_context.screen_resolution}
+Viewport: ${bug.technical_context.viewport}
+Role: ${bug.technical_context.role}
+Agent ID: ${bug.technical_context.agent_id}</pre>
+				</div>
+
+				${bug.resolution_notes ? `
+				<div class="bug-details-section">
+					<h4>Resolution Notes</h4>
+					<p>${bug.resolution_notes}</p>
+				</div>
+				` : ''}
+			`;
+
+			showModal('bugDetailsModal');
+		} catch (error) {
+			toast('Error loading bug details: ' + error.message, 'error');
+		}
+	}
+
+	async function saveBugChanges(bugId) {
+		try {
+			const statusSelect = document.querySelector(`.bug-status-select[data-bug-id="${bugId}"]`);
+			const prioritySelect = document.querySelector(`.bug-priority-select[data-bug-id="${bugId}"]`);
+			
+			if (!statusSelect || !prioritySelect) {
+				toast('Could not find bug fields to update', 'error');
+				return;
+			}
+
+			const updates = {
+				status: statusSelect.value,
+				priority: prioritySelect.value,
+				updated_at: new Date().toISOString()
+			};
+
+			await api.updateBug(bugId, updates);
+			toast('Bug updated successfully!', 'success');
+			
+			// Hide save button
+			const saveBtn = document.querySelector(`.save-bug[data-id="${bugId}"]`);
+			if (saveBtn) {
+				saveBtn.style.display = 'none';
+			}
+			
+			// Refresh the bugs table
+			renderBugs();
+		} catch (error) {
+			toast('Error updating bug: ' + error.message, 'error');
+		}
+	}
+
+	function handleBugFieldChange(bugId) {
+		// Show save button when fields change
+		const saveBtn = document.querySelector(`.save-bug[data-id="${bugId}"]`);
+		if (saveBtn) {
+			saveBtn.style.display = 'inline-block';
 		}
 	}
 
@@ -4120,16 +4280,14 @@ function createLeadTable(lead, isExpanded = false) {
 				// Handle view button
 				const viewBtn = e.target.closest('.view-bug');
 				if (viewBtn) {
-					// TODO: Implement view bug details
-					toast('View bug details coming soon!', 'info');
+					showBugDetails(viewBtn.dataset.id);
 					return;
 				}
 				
-				// Handle edit button
-				const editBtn = e.target.closest('.edit-bug');
-				if (editBtn) {
-					// TODO: Implement edit bug
-					toast('Edit bug functionality coming soon!', 'info');
+				// Handle save button
+				const saveBtn = e.target.closest('.save-bug');
+				if (saveBtn) {
+					saveBugChanges(saveBtn.dataset.id);
 					return;
 				}
 				
@@ -4148,6 +4306,14 @@ function createLeadTable(lead, isExpanded = false) {
 
 		// Initialize bug flags
 		addBugFlags();
+
+		// Add event listeners for bug field changes
+		document.addEventListener('change', (e) => {
+			if (e.target.classList.contains('bug-status-select') || e.target.classList.contains('bug-priority-select')) {
+				const bugId = e.target.dataset.bugId;
+				handleBugFieldChange(bugId);
+			}
+		});
 
 		// Update role visibility for bugs nav
 		document.getElementById('roleSelect').addEventListener('change', (e) => {

@@ -2895,6 +2895,35 @@ main#appRoot {
 	width: 90vw;
 }
 
+/* Bug table dropdowns */
+.bug-status-select,
+.bug-priority-select {
+	padding: 4px 8px;
+	border: 1px solid var(--rule);
+	border-radius: 4px;
+	background: var(--panel);
+	color: var(--ink);
+	font-size: 12px;
+	min-width: 100px;
+}
+
+.bug-status-select:focus,
+.bug-priority-select:focus {
+	outline: none;
+	border-color: var(--brand);
+	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+/* Save button styling */
+.save-bug {
+	background: #10b981 !important;
+	color: white !important;
+}
+
+.save-bug:hover {
+	background: #059669 !important;
+}
+
 .bug-details-section {
 	margin-bottom: 20px;
 	padding: 15px;
