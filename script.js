@@ -5600,10 +5600,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			}
 		});
 
-		// initial route
-		if (!location.hash) location.hash = '/leads';
-		route();
-		window.addEventListener('hashchange', route);
+		// initial route - only if logged in
+		if (document.body.classList.contains('logged-in')) {
+			if (!location.hash) location.hash = '/leads';
+			route();
+			window.addEventListener('hashchange', route);
+		}
 	});
 
 	// ---- Listing Edit Modal ----
@@ -5699,6 +5701,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	window.editUser = editUser;
 	window.changePassword = changePassword;
 	window.deleteUser = deleteUser;
+	
+	// Expose routing function to global scope
+	window.route = route;
 	
 	// Expose state to global scope
 	window.state = state;

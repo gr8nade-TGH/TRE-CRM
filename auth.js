@@ -165,6 +165,25 @@ function showMainApp(user) {
 	
 	// Update role-based UI
 	updateRoleBasedUI(role);
+	
+	// Initialize routing after showing main app
+	setTimeout(() => {
+		if (window.route) {
+			// Set up hashchange listener if not already set up
+			if (!window.hashChangeListenerAdded) {
+				window.addEventListener('hashchange', window.route);
+				window.hashChangeListenerAdded = true;
+			}
+			
+			// Set initial route if no hash
+			if (!location.hash) {
+				location.hash = '/leads';
+			}
+			
+			// Run the route function
+			window.route();
+		}
+	}, 100);
 }
 
 // Add event listener for login portal button
