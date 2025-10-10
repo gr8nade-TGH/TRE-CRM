@@ -2497,6 +2497,113 @@ body {
 		max-width: 60px;
 	}
 	
+	/* Admin responsive */
+	.admin-content {
+		padding: 16px;
+	}
+	
+	.section-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 16px;
+	}
+	
+	.audit-entry {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+	
+	.audit-timestamp {
+		margin-left: 0;
+	}
+	
+	/* Main content spacing */
+	main#appRoot {
+		padding-top: 10px;
+	}
+	
+	/* Bug flag mobile */
+	.bug-flag {
+		width: 45px;
+		height: 45px;
+		font-size: 20px;
+		right: 15px;
+	}
+	
+	/* Header mobile layout */
+	.app-header {
+		flex-wrap: wrap;
+		padding: 10px 15px;
+		gap: 10px;
+		min-height: auto;
+	}
+	
+	/* Brand mobile */
+	.brand {
+		flex-shrink: 0;
+	}
+	
+	.brand-logo {
+		height: 28px;
+		max-width: 120px;
+	}
+	
+	/* Navigation mobile - horizontal scroll */
+	.main-nav {
+		overflow-x: auto;
+		overflow-y: hidden;
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE/Edge */
+		flex-wrap: nowrap;
+		gap: 16px;
+		padding: 0 8px;
+	}
+	
+	.main-nav::-webkit-scrollbar {
+		display: none; /* Chrome/Safari */
+	}
+	
+	.nav-link {
+		flex-shrink: 0;
+		white-space: nowrap;
+		padding: 8px 12px;
+		font-size: 14px;
+	}
+	
+	/* Role switch mobile */
+	.role-switch {
+		flex-shrink: 0;
+	}
+	
+	.role-switch select {
+		font-size: 12px;
+		padding: 4px 8px;
+	}
+	
+	/* Touch-friendly buttons */
+	.btn {
+		min-height: 44px;
+		padding: 12px 16px;
+		font-size: 16px;
+	}
+	
+	/* Modal mobile */
+	.modal-card {
+		margin: 20px;
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+	
+	/* Table horizontal scroll */
+	.data-table {
+		overflow-x: auto;
+	}
+	
+	input, select, textarea {
+		font-size: 16px; /* Prevents zoom on iOS */
+	}
+	
 	/* Removed lead-data-table responsive styles */
 }
 
@@ -3170,28 +3277,7 @@ body {
 	margin-right: 8px;
 }
 
-/* Responsive Admin */
-@media (max-width: 768px) {
-	.admin-content {
-		padding: 16px;
-	}
-	
-	.section-header {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 16px;
-	}
-	
-	.audit-entry {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 8px;
-	}
-	
-	.audit-timestamp {
-		margin-left: 0;
-	}
-}
+/* Removed duplicate responsive admin - consolidated above */
 
 /* Desktop responsive scaling for Admin page */
 @media (min-width: 769px) {
@@ -3470,12 +3556,7 @@ main#appRoot {
 	margin-top: 0;
 }
 
-/* Mobile content spacing */
-@media (max-width: 768px) {
-	main#appRoot {
-		padding-top: 10px;
-	}
-}
+/* Removed duplicate mobile content spacing - consolidated above */
 
 /* ===== BUG TRACKER STYLES ===== */
 
@@ -3653,95 +3734,9 @@ main#appRoot {
 	color: #475569;
 }
 
-/* Mobile bug flag */
-@media (max-width: 768px) {
-	.bug-flag {
-		width: 45px;
-		height: 45px;
-		font-size: 20px;
-		right: 15px;
-	}
-}
+/* Removed duplicate mobile bug flag - consolidated above */
 
 /* ===== MINIMAL MOBILE FIXES ===== */
 
-/* Only essential mobile improvements - no layout changes */
-@media (max-width: 768px) {
-	/* Header mobile layout */
-	.app-header {
-		flex-wrap: wrap;
-		padding: 10px 15px;
-		gap: 10px;
-		min-height: auto;
-	}
-	
-	/* Brand mobile */
-	.brand {
-		flex-shrink: 0;
-	}
-	
-	.brand-logo {
-		height: 28px;
-		max-width: 120px;
-	}
-	
-	/* Navigation mobile - horizontal scroll */
-	.main-nav {
-		overflow-x: auto;
-		overflow-y: hidden;
-		flex-wrap: nowrap;
-		gap: 16px;
-		padding: 0 10px;
-		-webkit-overflow-scrolling: touch;
-		scrollbar-width: none; /* Firefox */
-		-ms-overflow-style: none; /* IE/Edge */
-	}
-	
-	.main-nav::-webkit-scrollbar {
-		display: none; /* Chrome/Safari */
-	}
-	
-	.nav-link {
-		flex-shrink: 0;
-		white-space: nowrap;
-		padding: 8px 12px;
-		font-size: 14px;
-	}
-	
-	/* Role switch mobile */
-	.role-switch {
-		flex-shrink: 0;
-		font-size: 12px;
-		padding: 6px 12px;
-	}
-	
-	.role-switch select {
-		font-size: 12px;
-		padding: 4px 8px;
-	}
-	
-	/* Touch-friendly buttons */
-	.btn {
-		min-height: 44px;
-		padding: 12px 16px;
-		font-size: 16px;
-	}
-	
-	/* Form inputs mobile */
-	input, select, textarea {
-		font-size: 16px; /* Prevents zoom on iOS */
-	}
-	
-	/* Modal mobile */
-	.modal-card {
-		margin: 20px;
-		max-height: 90vh;
-		overflow-y: auto;
-	}
-	
-	/* Table horizontal scroll */
-	.data-table {
-		overflow-x: auto;
-	}
-}
+/* Removed duplicate minimal mobile fixes - consolidated above */
 
