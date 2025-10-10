@@ -98,6 +98,24 @@
 			<button id="logoutBtn" class="btn secondary small">Logout</button>
 		</div>
 	</div>
+
+	<!-- Branded Login Portal (shown when not logged in) -->
+	<div id="loginPortal" class="login-portal">
+		<div class="login-portal-content">
+			<div class="login-brand">
+				<h1 class="brand-title">TRE CRM</h1>
+				<p class="brand-subtitle">Texas Relocation Experts</p>
+				<p class="brand-description">Professional Property Management & Lead Tracking</p>
+			</div>
+			<div class="login-actions">
+				<button id="openLoginBtn" class="btn primary large">Login to TRE CRM</button>
+				<p class="login-help">Need access? Contact your administrator</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- Main App Content (hidden when not logged in) -->
+	<div id="mainAppContent" style="display: none;">
 	<header class="app-header">
 		<div class="brand">
 			<span class="brand-text">TRE CRM</span>
@@ -1166,5 +1184,6 @@
 		mapboxgl.accessToken = 'pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg';
 	</script>
 	<script src="script.js"></script>
+	</div> <!-- End mainAppContent -->
 </body>
 </html>

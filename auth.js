@@ -9,27 +9,11 @@ document.addEventListener('DOMContentLoaded', async function() {
 			const session = await window.getCurrentSession();
 			if (session && session.user) {
 				console.log('✅ User already logged in:', session.user.email);
-				// Hide auth modals, show main app
-				document.getElementById('loginModal').style.display = 'none';
-				document.getElementById('registerModal').style.display = 'none';
-				
-				// Show user info bar
-				const userInfoBar = document.getElementById('userInfoBar');
-				const userName = document.getElementById('userName');
-				const userRole = document.getElementById('userRole');
-				
-				const userData = session.user.user_metadata || {};
-				const role = userData.role || 'user';
-				
-				userName.textContent = `Welcome, ${userData.name || session.user.email}`;
-				userRole.textContent = role.replace('_', ' ');
-				userInfoBar.style.display = 'block';
-				
-				// Update role-based UI
-				updateRoleBasedUI(role);
+				// User is logged in - show main app
+				showMainApp(session.user);
 			} else {
-				console.log('❌ No active session, showing login');
-				document.getElementById('loginModal').style.display = 'flex';
+				console.log('❌ No active session, showing branded portal');
+				showLoginPortal();
 			}
 			
 			// Add event listeners for auth forms
@@ -45,7 +29,12 @@ document.addEventListener('DOMContentLoaded', async function() {
 					button.textContent = 'Logging in...';
 					
 					await window.signIn(email, password);
-					location.reload(); // Simple refresh after login
+					// Get the user after successful login
+					const session = await window.getCurrentSession();
+					if (session && session.user) {
+						showMainApp(session.user);
+						document.getElementById('loginModal').style.display = 'none';
+					}
 					
 				} catch (error) {
 					console.error('Login error:', error);
@@ -88,7 +77,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 			document.getElementById('logoutBtn').addEventListener('click', async () => {
 				try {
 					await window.signOut();
-					location.reload(); // Simple refresh after logout
+					showLoginPortal();
+					document.getElementById('userInfoBar').style.display = 'none';
 				} catch (error) {
 					console.error('Logout error:', error);
 					alert('Logout failed: ' + error.message);
@@ -145,3 +135,44 @@ window.closeLoginModal = function() {
 window.closeRegisterModal = function() {
 	document.getElementById('registerModal').style.display = 'none';
 };
+
+// Show branded login portal
+function showLoginPortal() {
+	document.body.classList.remove('logged-in');
+	document.body.classList.add('not-logged-in');
+	document.getElementById('loginPortal').style.display = 'flex';
+	document.getElementById('mainAppContent').style.display = 'none';
+}
+
+// Show main app when logged in
+function showMainApp(user) {
+	document.body.classList.remove('not-logged-in');
+	document.body.classList.add('logged-in');
+	document.getElementById('loginPortal').style.display = 'none';
+	document.getElementById('mainAppContent').style.display = 'block';
+	
+	// Show user info bar
+	const userInfoBar = document.getElementById('userInfoBar');
+	const userName = document.getElementById('userName');
+	const userRole = document.getElementById('userRole');
+	
+	const userData = user.user_metadata || {};
+	const role = userData.role || 'user';
+	
+	userName.textContent = `Welcome, ${userData.name || user.email}`;
+	userRole.textContent = role.replace('_', ' ');
+	userInfoBar.style.display = 'block';
+	
+	// Update role-based UI
+	updateRoleBasedUI(role);
+}
+
+// Add event listener for login portal button
+document.addEventListener('DOMContentLoaded', function() {
+	const openLoginBtn = document.getElementById('openLoginBtn');
+	if (openLoginBtn) {
+		openLoginBtn.addEventListener('click', function() {
+			document.getElementById('loginModal').style.display = 'flex';
+		});
+	}
+});
