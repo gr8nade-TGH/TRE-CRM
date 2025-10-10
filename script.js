@@ -321,6 +321,11 @@ const mockAuditLog = [
 		}
 	};
 
+	// ---- Global Variables ----
+	let map;
+	let markers = [];
+	let selectedProperty = null;
+
 	// ---- Mock Data ----
 	const mockAgents = [
 		{ 
@@ -396,17 +401,40 @@ const mockAuditLog = [
 		const id = `lead_${i+1}`;
 		const assigned = i % 2 === 0 ? 'agent_1' : (i % 3 === 0 ? 'agent_2' : null);
 		const foundBy = i % 4 === 0 ? 'agent_2' : 'agent_3';
-		const healthStatuses = ['green', 'yellow', 'red', 'closed', 'lost'];
-		const healthStatus = healthStatuses[i % healthStatuses.length];
+		const submittedAt = randomDate(45);
+		const submittedDate = new Date(submittedAt);
+		
+		// Generate realistic health tracking data
+		const showcaseSent = i % 3 !== 0; // 2/3 of leads have showcase sent
+		const showcaseResponse = i % 4 !== 0; // 3/4 of those respond
+		const leaseSent = i % 5 === 0; // 1/5 have lease sent
+		const leaseSigned = i % 10 === 0; // 1/10 have lease signed
+		
 		return {
 			id,
 			name: `Lead ${i+1}`,
 			email: `lead${i+1}@example.com`,
 			phone: `555-000-${String(1000 + i)}`,
-			submitted_at: randomDate(45),
+			submitted_at: submittedAt,
 			found_by_agent_id: foundBy,
 			assigned_agent_id: assigned,
-			health_status: healthStatus,
+			health_status: 'green', // Will be calculated dynamically
+			health_score: 100,
+			health_updated_at: new Date().toISOString(),
+			
+			// Health tracking timestamps
+			showcase_sent_at: showcaseSent ? new Date(submittedDate.getTime() + (i % 3) * 24 * 60 * 60 * 1000).toISOString() : null,
+			showcase_response_at: showcaseResponse && showcaseSent ? new Date(submittedDate.getTime() + (i % 2 + 1) * 24 * 60 * 60 * 1000).toISOString() : null,
+			last_activity_at: new Date(submittedDate.getTime() + (i % 7) * 24 * 60 * 60 * 1000).toISOString(),
+			last_contact_at: new Date(submittedDate.getTime() + (i % 5) * 24 * 60 * 60 * 1000).toISOString(),
+			lease_sent_at: leaseSent ? new Date(submittedDate.getTime() + (i % 10 + 5) * 24 * 60 * 60 * 1000).toISOString() : null,
+			lease_signed_at: leaseSigned ? new Date(submittedDate.getTime() + (i % 15 + 10) * 24 * 60 * 60 * 1000).toISOString() : null,
+			tour_scheduled_at: i % 6 === 0 ? new Date(submittedDate.getTime() + (i % 4 + 2) * 24 * 60 * 60 * 1000).toISOString() : null,
+			tour_completed_at: i % 8 === 0 ? new Date(submittedDate.getTime() + (i % 6 + 3) * 24 * 60 * 60 * 1000).toISOString() : null,
+			
+			// Events array for tracking interactions
+			events: [],
+			
 			prefs: {
 				market: ['Austin','Dallas','Houston'][i%3],
 				neighborhoods: ['Downtown','Uptown','Midtown'].slice(0, (i%3)+1),
@@ -545,7 +573,7 @@ const mockAuditLog = [
 		]
 	};
 
-	const mockProperties = Array.from({ length: 30 }).map((_, i) => {
+	const mockProperties = Array.from({ length: 50 }).map((_, i) => {
 		const id = `prop_${i+1}`;
 		const market = ['Austin','Dallas','Houston'][i%3];
 		const rentMin = 1000 + (i%6)*150;
@@ -572,7 +600,9 @@ const mockAuditLog = [
 			address: `${100+i} Example St`,
 			phone: '555-111-2222',
 			pricing_last_updated: randomDate(15),
-			lat, lng
+			lat, lng,
+			isPUMI: i % 7 === 0, // Mark every 7th property as PUMI for demo
+			markForReview: i % 11 === 0 // Mark every 11th property for review for demo
 		};
 	});
 
@@ -593,14 +623,65 @@ const mockAuditLog = [
 
 	// ---- Table Sorting ----
 	function sortTable(column, tableId) {
+		console.log('sortTable called with column:', column, 'tableId:', tableId);
 		const table = document.getElementById(tableId);
-		if (!table) return;
+		if (!table) {
+			console.log('Table not found:', tableId);
+			return;
+		}
 		
 		const tbody = table.querySelector('tbody');
-		if (!tbody) return;
+		if (!tbody) {
+			console.log('Tbody not found in table:', tableId);
+			return;
+		}
 		
+		// Three-state cycle: ascending → descending → no sort (original order)
+		let newSortState;
+		if (state.sort.key === column) {
+			if (state.sort.dir === 'asc') {
+				newSortState = 'desc';
+			} else if (state.sort.dir === 'desc') {
+				newSortState = 'none';
+			} else {
+				newSortState = 'asc';
+			}
+		} else {
+			newSortState = 'asc';
+		}
+		
+		// Update sort state
+		state.sort.key = column;
+		state.sort.dir = newSortState;
+		
+		// For tables with proper render functions, use those instead of DOM manipulation
+		if (tableId === 'leadsTable') {
+			renderLeads();
+			return;
+		} else if (tableId === 'agentsTable') {
+			renderAgents();
+			return;
+		} else if (tableId === 'listingsTable') {
+			renderListings();
+			return;
+		} else if (tableId === 'specialsTable') {
+			renderSpecials();
+			return;
+		} else if (tableId === 'documentsTable') {
+			renderDocuments();
+			return;
+		} else if (tableId === 'bugsTable') {
+			renderBugs();
+			return;
+		} else if (tableId === 'usersTable') {
+			console.log('Calling renderUsersTable for sorting');
+			renderUsersTable();
+			return;
+		}
+		
+		// For tables without render functions, use DOM manipulation
 		const rows = Array.from(tbody.querySelectorAll('tr'));
-		const isAscending = state.sort.key === column ? !state.sort.dir : true;
+		const isAscending = newSortState === 'asc';
 		
 		rows.sort((a, b) => {
 			const aVal = a.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
@@ -650,34 +731,9 @@ const mockAuditLog = [
 		});
 		
 		rows.forEach(row => tbody.appendChild(row));
-		
-		state.sort.key = column;
-		state.sort.dir = isAscending ? 'asc' : 'desc';
 		updateSortHeaders(tableId);
 	}
 
-	function updateSortHeaders(tableId) {
-		const table = document.getElementById(tableId);
-		if (!table) return;
-		
-		const headers = table.querySelectorAll('th[data-sort]');
-		headers.forEach(header => {
-			const column = header.dataset.sort;
-			const icon = header.querySelector('.sort-icon');
-			
-			if (column === state.sort.key) {
-				header.classList.add('sorted');
-				if (icon) {
-					icon.textContent = state.sort.dir === 'asc' ? '↑' : '↓';
-				}
-			} else {
-				header.classList.remove('sorted');
-				if (icon) {
-					icon.textContent = '↕';
-				}
-			}
-		});
-	}
 
 	// ---- Health Status ----
 	const STATUS_LABEL = { 
@@ -688,6 +744,353 @@ const mockAuditLog = [
 		lost: 'Lost' 
 	};
 
+	// ---- Health Status System ----
+	
+	// Health calculation function
+	function calculateHealthStatus(lead) {
+		const now = new Date();
+		const leadAge = now - new Date(lead.submitted_at);
+		let healthScore = 100; // Start with perfect health
+		
+		// Get proper current step info
+		const currentStep = getProperCurrentStep(lead);
+		const stepHours = getStepHours(lead, currentStep);
+		
+		// Time-based deductions
+		if (leadAge > 24 * 60 * 60 * 1000 && !lead.showcase_sent_at) {
+			healthScore -= 20; // No showcase sent in 24h
+		}
+		
+		if (lead.showcase_sent_at && leadAge > 72 * 60 * 60 * 1000 && !lead.showcase_response_at) {
+			healthScore -= 30; // No response to showcase in 72h
+		}
+		
+		if (lead.lease_sent_at && leadAge > 48 * 60 * 60 * 1000 && !lead.lease_signed_at) {
+			healthScore -= 40; // Lease pending signature for 48h
+		}
+		
+		if (leadAge > 120 * 60 * 60 * 1000 && !lead.tour_scheduled_at) {
+			healthScore -= 25; // No tour scheduled in 5 days
+		}
+		
+		if (leadAge > 168 * 60 * 60 * 1000 && !lead.last_activity_at) {
+			healthScore -= 50; // No activity for 7 days
+		}
+		
+		// Document step timing deductions (3-day rule)
+		if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
+			if (stepHours > 72) { // 3 days
+				healthScore -= 25; // Major deduction for being stuck on step
+			} else if (stepHours > 48) { // 2 days
+				healthScore -= 15; // Moderate deduction
+			} else if (stepHours > 24) { // 1 day
+				healthScore -= 5; // Minor deduction
+			}
+		}
+		
+		// Event-based adjustments
+		lead.events?.forEach(event => {
+			const eventImpacts = {
+				'SHOWCASE_OPENED': 1,
+				'SHOWCASE_CLICKED': 2,
+				'TOUR_SCHEDULED': 3,
+				'LEASE_SIGNED': 5,
+				'PAYMENT_RECEIVED': 10,
+				'EMAIL_BOUNCED': -2,
+				'NO_SHOW_TOUR': -3,
+				'LEASE_DECLINED': -5,
+				'COMPETITOR_CHOSEN': -8
+			};
+			
+			if (eventImpacts[event.type]) {
+				healthScore += eventImpacts[event.type];
+			}
+		});
+		
+		// Document progress bonus
+		const docProgress = getDocumentProgress(lead.id);
+		healthScore += (docProgress * 0.2); // Up to 20 points for full progress
+		
+		// Ensure score stays within bounds
+		healthScore = Math.max(0, Math.min(100, healthScore));
+		
+		// Determine final status
+		if (healthScore >= 80) return 'green';
+		if (healthScore >= 50) return 'yellow';
+		if (healthScore >= 20) return 'red';
+		return 'lost';
+	}
+	
+	// Get proper current step based on document progress
+	function getProperCurrentStep(lead) {
+		const docStatus = mockDocumentStatuses[lead.id];
+		if (!docStatus) return 'New Lead';
+		
+		// Find the current step (in_progress or first pending)
+		const currentStep = docStatus.steps.find(step => step.status === 'in_progress');
+		if (currentStep) {
+			return currentStep.name;
+		}
+		
+		// If no in_progress step, find first pending
+		const firstPending = docStatus.steps.find(step => step.status === 'pending');
+		if (firstPending) {
+			return firstPending.name;
+		}
+		
+		// If all steps completed
+		const allCompleted = docStatus.steps.every(step => step.status === 'completed');
+		if (allCompleted) {
+			return 'Completed';
+		}
+		
+		return 'New Lead';
+	}
+	
+	// Get time on current step
+	function getTimeOnCurrentStep(lead) {
+		const docStatus = mockDocumentStatuses[lead.id];
+		if (!docStatus) return 'Never';
+		
+		// Find the current step
+		const currentStep = docStatus.steps.find(step => step.status === 'in_progress');
+		if (currentStep && currentStep.updated_at) {
+			return formatTimeAgo(currentStep.updated_at);
+		}
+		
+		// If no in_progress step, use last completed step
+		const lastCompleted = docStatus.steps
+			.filter(step => step.status === 'completed')
+			.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
+		
+		if (lastCompleted && lastCompleted.updated_at) {
+			return formatTimeAgo(lastCompleted.updated_at);
+		}
+		
+		return 'Never';
+	}
+	
+	// Dynamic health messages based on lead state
+	function getHealthMessages(lead) {
+		const now = new Date();
+		const leadAge = now - new Date(lead.submitted_at);
+		const hoursAgo = Math.floor(leadAge / (60 * 60 * 1000));
+		
+		// Get proper current step and timing
+		const currentStep = getProperCurrentStep(lead);
+		const timeOnCurrentStep = getTimeOnCurrentStep(lead);
+		
+		if (lead.health_status === 'green') {
+			return [
+				`✅ Lead is actively engaged`,
+				`📄 Current step: ${currentStep}`,
+				`⏰ Time on current step: ${timeOnCurrentStep}`,
+				`📅 Last activity: ${formatTimeAgo(lead.last_activity_at)}`
+			];
+		}
+		
+		if (lead.health_status === 'yellow') {
+			const messages = [`⚠️ Needs attention`];
+			
+			messages.push(`📄 Current step: ${currentStep}`);
+			messages.push(`⏰ Time on current step: ${timeOnCurrentStep}`);
+			
+			// Add step-specific warnings
+			if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
+				const stepHours = getStepHours(lead, currentStep);
+				if (stepHours > 72) { // 3 days
+					messages.push(`⏰ On ${currentStep} for ${Math.floor(stepHours/24)}d ${stepHours%24}h - needs action`);
+				}
+			}
+			
+			if (!lead.showcase_sent_at && hoursAgo > 24) {
+				messages.push(`📧 No showcase sent in ${hoursAgo}h - send immediately`);
+			}
+			
+			if (lead.showcase_sent_at && !lead.showcase_response_at && hoursAgo > 72) {
+				messages.push(`📞 No response to showcase in ${hoursAgo}h - follow up needed`);
+			}
+			
+			if (!lead.tour_scheduled_at && hoursAgo > 120) {
+				messages.push(`📅 No tour scheduled in ${hoursAgo}h - schedule tour`);
+			}
+			
+			messages.push(`🎯 Recommended action: ${getRecommendedAction(lead)}`);
+			return messages;
+		}
+		
+		if (lead.health_status === 'red') {
+			const messages = [`🚨 Urgent action required`];
+			
+			messages.push(`📄 Current step: ${currentStep}`);
+			messages.push(`⏰ Time on current step: ${timeOnCurrentStep}`);
+			
+			// Add urgent step warnings
+			if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
+				const stepHours = getStepHours(lead, currentStep);
+				if (stepHours > 72) { // 3 days
+					messages.push(`🚨 On ${currentStep} for ${Math.floor(stepHours/24)}d ${stepHours%24}h - URGENT`);
+				}
+			}
+			
+			if (lead.lease_sent_at && !lead.lease_signed_at) {
+				const leaseHours = Math.floor((now - new Date(lead.lease_sent_at)) / (60 * 60 * 1000));
+				messages.push(`⏰ Lease pending signature for ${leaseHours}h`);
+			}
+			
+			if (lead.showcase_sent_at && !lead.showcase_response_at) {
+				const showcaseHours = Math.floor((now - new Date(lead.showcase_sent_at)) / (60 * 60 * 1000));
+				messages.push(`📧 No response to showcase for ${showcaseHours}h`);
+			}
+			
+			messages.push(`🔥 Immediate action: ${getUrgentAction(lead)}`);
+			return messages;
+		}
+		
+		if (lead.health_status === 'closed') {
+			return [
+				`🎉 Lead successfully closed!`,
+				`📄 Final step: ${currentStep}`,
+				`📅 Closed on: ${formatDate(lead.closed_at || lead.last_activity_at)}`,
+				`⭐ Final health score: ${lead.health_score}/100`
+			];
+		}
+		
+		return [
+			`❌ Lead lost`,
+			`📄 Last step: ${currentStep}`,
+			`📅 Lost on: ${formatDate(lead.lost_at || lead.last_activity_at)}`,
+			`💭 Reason: ${lead.loss_reason || 'No reason provided'}`
+		];
+	}
+	
+	// Helper function to get hours on current step
+	function getStepHours(lead, stepName) {
+		const docStatus = mockDocumentStatuses[lead.id];
+		if (!docStatus) return 0;
+		
+		const step = docStatus.steps.find(s => s.name === stepName);
+		if (!step || !step.updated_at) return 0;
+		
+		const now = new Date();
+		const stepTime = new Date(step.updated_at);
+		return Math.floor((now - stepTime) / (60 * 60 * 1000));
+	}
+	
+	// Action recommendation functions
+	function getRecommendedAction(lead) {
+		const now = new Date();
+		const leadAge = now - new Date(lead.submitted_at);
+		const hoursAgo = Math.floor(leadAge / (60 * 60 * 1000));
+		const currentStep = getProperCurrentStep(lead);
+		
+		// Step-specific recommendations based on actual document steps
+		if (currentStep === 'New Lead') {
+			if (!lead.showcase_sent_at && hoursAgo > 24) {
+				return "Send showcase immediately";
+			}
+			return "Send initial showcase";
+		}
+		
+		if (currentStep === 'Lease Agreement Sent') {
+			if (lead.lease_sent_at && !lead.lease_signed_at && hoursAgo > 48) {
+				return "Send lease reminder";
+			}
+			return "Follow up on lease agreement";
+		}
+		
+		if (currentStep === 'Signed By Lead') {
+			return "Send to property owner for signature";
+		}
+		
+		if (currentStep === 'Signed By Property Owner') {
+			return "Finalize lease agreement";
+		}
+		
+		if (currentStep === 'Finalized by Agent') {
+			return "Process payment step";
+		}
+		
+		if (currentStep === 'Payment Step') {
+			return "Complete payment processing";
+		}
+		
+		if (currentStep === 'Completed') {
+			return "Lead successfully closed";
+		}
+		
+		// General recommendations based on time
+		if (!lead.showcase_sent_at && hoursAgo > 24) {
+			return "Send showcase immediately";
+		}
+		
+		if (lead.showcase_sent_at && !lead.showcase_response_at && hoursAgo > 72) {
+			return "Follow up with phone call";
+		}
+		
+		if (lead.tour_scheduled_at && !lead.tour_completed_at && hoursAgo > 120) {
+			return "Reschedule tour";
+		}
+		
+		return "Continue normal follow-up";
+	}
+	
+	function getUrgentAction(lead) {
+		const now = new Date();
+		const currentStep = getProperCurrentStep(lead);
+		
+		// Step-specific urgent actions
+		if (currentStep === 'Lease Agreement Sent') {
+			if (lead.lease_sent_at && !lead.lease_signed_at) {
+				const leaseHours = Math.floor((now - new Date(lead.lease_sent_at)) / (60 * 60 * 1000));
+				if (leaseHours > 48) {
+					return "Call lead immediately about lease";
+				}
+			}
+		}
+		
+		if (currentStep === 'Signed By Lead') {
+			return "Urgent: Send to property owner now";
+		}
+		
+		if (currentStep === 'Signed By Property Owner') {
+			return "Urgent: Finalize lease immediately";
+		}
+		
+		if (currentStep === 'Finalized by Agent') {
+			return "Urgent: Process payment now";
+		}
+		
+		// General urgent actions
+		if (lead.last_activity_at) {
+			const activityHours = Math.floor((now - new Date(lead.last_activity_at)) / (60 * 60 * 1000));
+			if (activityHours > 168) {
+				return "Send re-engagement campaign";
+			}
+		}
+		
+		return "Schedule immediate follow-up call";
+	}
+	
+	// Helper function to format time ago
+	function formatTimeAgo(timestamp) {
+		if (!timestamp) return 'Never';
+		const now = new Date();
+		const time = new Date(timestamp);
+		const diffMs = now - time;
+		const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
+		const diffDays = Math.floor(diffHours / 24);
+		
+		if (diffDays > 0) {
+			return `${diffDays}d ${diffHours % 24}h ago`;
+		} else if (diffHours > 0) {
+			return `${diffHours}h ago`;
+		} else {
+			return 'Just now';
+		}
+	}
+	
+	// Legacy health messages for backward compatibility
 	const healthMessages = {
 		red: ['- Lead has not been provided listing options.', '- Lease Agreement has been pending e-signature for 2d 4h.'],
 		yellow: ['- Lead has not responded in 3d 10h.', '- Lead is not scheduled to visit any properties yet.'],
@@ -696,20 +1099,30 @@ const mockAuditLog = [
 		lost: ['Lead Lost.']
 	};
 
-	function renderHealthStatus(status) {
-		if (status === 'green') {
-			return `<button class="health-btn" data-status="green" aria-label="Healthy"><span class="health-dot health-green"></span></button>`;
+	function renderHealthStatus(status, lead = null) {
+		// Calculate health status if lead is provided
+		if (lead) {
+			const calculatedStatus = calculateHealthStatus(lead);
+			lead.health_status = calculatedStatus;
+			lead.health_score = Math.max(0, Math.min(100, lead.health_score || 100));
+			lead.health_updated_at = new Date().toISOString();
 		}
-		if (status === 'yellow') {
-			return `<button class="health-btn" data-status="yellow" aria-label="Warm"><span class="health-dot health-yellow"></span></button>`;
+		
+		const finalStatus = lead ? lead.health_status : status;
+		
+		if (finalStatus === 'green') {
+			return `<button class="health-btn" data-status="green" aria-label="Healthy" data-lead-id="${lead?.id || ''}"><span class="health-dot health-green"></span></button>`;
 		}
-		if (status === 'red') {
-			return `<button class="health-btn" data-status="red" aria-label="At Risk"><span class="health-dot health-red"></span></button>`;
+		if (finalStatus === 'yellow') {
+			return `<button class="health-btn" data-status="yellow" aria-label="Warm" data-lead-id="${lead?.id || ''}"><span class="health-dot health-yellow"></span></button>`;
 		}
-		if (status === 'closed') {
-			return `<button class="health-btn" data-status="closed" aria-label="Closed"><span class="health-icon health-check"><svg viewBox="0 0 24 24"><path d="M5 13l4 4 10-10"/></svg></span></button>`;
+		if (finalStatus === 'red') {
+			return `<button class="health-btn" data-status="red" aria-label="At Risk" data-lead-id="${lead?.id || ''}"><span class="health-dot health-red"></span></button>`;
 		}
-		return `<button class="health-btn" data-status="lost" aria-label="Lost"><span class="health-icon health-lost"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>`;
+		if (finalStatus === 'closed') {
+			return `<button class="health-btn" data-status="closed" aria-label="Closed" data-lead-id="${lead?.id || ''}"><span class="health-icon health-check"><svg viewBox="0 0 24 24"><path d="M5 13l4 4 10-10"/></svg></span></button>`;
+		}
+		return `<button class="health-btn" data-status="lost" aria-label="Lost" data-lead-id="${lead?.id || ''}"><span class="health-icon health-lost"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></span></button>`;
 	}
 
 	// ---- Filter Functions ----
@@ -776,6 +1189,11 @@ const mockAuditLog = [
 			}
 		}
 
+		// PUMI filter
+		if (filters.pumiOnly && !property.isPUMI) {
+			return false;
+		}
+
 		return true;
 	}
 
@@ -799,9 +1217,23 @@ const mockAuditLog = [
 			return;
 		}
 		
-		console.log('Showing popover for status:', status); // Debug
+		// Get lead ID from the button
+		const leadId = anchor.getAttribute('data-lead-id');
+		const lead = leadId ? mockLeads.find(l => l.id === leadId) : null;
+		
+		console.log('Showing popover for status:', status, 'lead:', lead?.name); // Debug
+		
+		if (lead) {
+			// Use dynamic messages
+			const messages = getHealthMessages(lead);
+			popTitle.textContent = `Status — ${STATUS_LABEL[status] || status} (${lead.health_score}/100)`;
+			popList.innerHTML = messages.map(s => `<li>${s}</li>`).join('');
+		} else {
+			// Fallback to legacy messages
 		popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
 		popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+		}
+		
 		const r = anchor.getBoundingClientRect();
 		let top = r.bottom + 10; 
 		let left = r.left - 12;
@@ -855,9 +1287,77 @@ const mockAuditLog = [
 		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters = {} }){
 			if (USE_MOCK_DATA) {
 				console.log('Using mock data for leads, count:', mockLeads.length);
+				
+				// Apply filters to mock data
+				let filteredLeads = [...mockLeads];
+				
+				// Apply status filter
+				if (filters.status && filters.status !== 'all') {
+					filteredLeads = filteredLeads.filter(lead => lead.health_status === filters.status);
+				}
+				
+				// Apply date filters
+				if (filters.fromDate) {
+					const fromDate = new Date(filters.fromDate);
+					filteredLeads = filteredLeads.filter(lead => new Date(lead.submitted_at) >= fromDate);
+				}
+				
+				if (filters.toDate) {
+					const toDate = new Date(filters.toDate);
+					toDate.setHours(23, 59, 59, 999); // End of day
+					filteredLeads = filteredLeads.filter(lead => new Date(lead.submitted_at) <= toDate);
+				}
+				
+				// Apply search filter
+				if (search) {
+					const searchLower = search.toLowerCase();
+					filteredLeads = filteredLeads.filter(lead => 
+						lead.name.toLowerCase().includes(searchLower) ||
+						lead.email.toLowerCase().includes(searchLower) ||
+						lead.phone.includes(search)
+					);
+				}
+				
+				// Apply sorting
+				if (sortKey && sortDir && sortDir !== 'none') {
+					filteredLeads.sort((a, b) => {
+						let aVal, bVal;
+						
+						if (sortKey === 'name') {
+							aVal = a.name.toLowerCase();
+							bVal = b.name.toLowerCase();
+						} else if (sortKey === 'health_status') {
+							aVal = a.health_status;
+							bVal = b.health_status;
+						} else if (sortKey === 'submitted_at') {
+							aVal = new Date(a.submitted_at);
+							bVal = new Date(b.submitted_at);
+						} else if (sortKey === 'assigned_agent_id') {
+							const agentA = mockAgents.find(agent => agent.id === a.assigned_agent_id);
+							const agentB = mockAgents.find(agent => agent.id === b.assigned_agent_id);
+							aVal = agentA ? agentA.name : 'Unassigned';
+							bVal = agentB ? agentB.name : 'Unassigned';
+						} else {
+							return 0;
+						}
+						
+						// Handle date sorting
+				if (sortKey === 'submitted_at') {
+							return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
+						} else {
+							// Text sorting
+							if (sortDir === 'asc') {
+								return aVal.localeCompare(bVal);
+							} else {
+								return bVal.localeCompare(aVal);
+							}
+						}
+					});
+				}
+				
 				return {
-					items: mockLeads,
-					total: mockLeads.length
+					items: filteredLeads,
+					total: filteredLeads.length
 				};
 			}
 			
@@ -1305,12 +1805,25 @@ const mockAuditLog = [
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
 				<td><button class="icon-btn" data-view="${lead.id}" title="View">👁️</button></td>
-				<td data-sort="health_status">${renderHealthStatus(lead.health_status)}</td>
+				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
 					<span class="badge-dot"><span class="dot"></span>${prefsSummary(lead.prefs)}</span>
 				</td>
-				<td><button class="icon-btn" data-matches="${lead.id}" title="Top Options">📋</button></td>
+				<td><button class="icon-btn showcase-btn" data-matches="${lead.id}" title="Top Listing Options">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+						<path d="M9 9h6v6H9z"/>
+						<path d="M9 3v6"/>
+						<path d="M9 15v6"/>
+						<path d="M15 3v6"/>
+						<path d="M15 15v6"/>
+						<path d="M3 9h6"/>
+						<path d="M15 9h6"/>
+						<path d="M3 15h6"/>
+						<path d="M15 15h6"/>
+					</svg>
+				</button></td>
 				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
 				</td>
@@ -1322,6 +1835,9 @@ const mockAuditLog = [
 		const healthButtons = document.querySelectorAll('.health-btn');
 		console.log('Health buttons found:', healthButtons.length);
 		document.getElementById('pageInfo').textContent = `Page ${state.page} · ${total} total`;
+		
+		// Update sort headers
+		updateSortHeaders('leadsTable');
 	}
 
 	function renderAgentSelect(lead){
@@ -1947,7 +2463,7 @@ function createLeadTable(lead, isExpanded = false) {
 					${isExpired ? '<div class="special-expired">EXPIRED</div>' : ''}
 					${expiresSoon && !isExpired ? '<div class="special-expires-soon">Expires Soon</div>' : ''}
 				</td>
-				<td data-sort="current_special">
+				<td>
 					<div class="special-description">${special.current_special}</div>
 				</td>
 				<td data-sort="commission_rate" class="mono">${special.commission_rate}</td>
@@ -1964,6 +2480,9 @@ function createLeadTable(lead, isExpanded = false) {
 			
 			tbody.appendChild(tr);
 		});
+		
+		// Update sort headers
+		updateSortHeaders('specialsTable');
 	}
 
 	// ---- Bug Tracker Functions ----
@@ -2457,18 +2976,55 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const tbody = document.getElementById('agentsTbody');
 		tbody.innerHTML = '';
 		
-		mockAgents.forEach(agent => {
+		// Apply sorting if active
+		let agentsToRender = [...mockAgents];
+		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
+			agentsToRender.sort((a, b) => {
+				const statsA = getAgentStats(a.id);
+				const statsB = getAgentStats(b.id);
+				
+				let aVal, bVal;
+				if (state.sort.key === 'name') {
+					aVal = a.name.toLowerCase();
+					bVal = b.name.toLowerCase();
+				} else if (state.sort.key === 'leads_assigned') {
+					aVal = statsA.assigned;
+					bVal = statsB.assigned;
+				} else if (state.sort.key === 'leads_closed') {
+					aVal = statsA.closed;
+					bVal = statsB.closed;
+				} else {
+					return 0;
+				}
+				
+				if (state.sort.key === 'leads_assigned' || state.sort.key === 'leads_closed') {
+					// Numeric sorting
+					const aNum = parseInt(aVal) || 0;
+					const bNum = parseInt(bVal) || 0;
+					return state.sort.dir === 'asc' ? aNum - bNum : bNum - aNum;
+				} else {
+					// Text sorting
+					if (state.sort.dir === 'asc') {
+						return aVal.localeCompare(bVal);
+					} else {
+						return bVal.localeCompare(aVal);
+					}
+				}
+			});
+		}
+		
+		agentsToRender.forEach(agent => {
 			const stats = getAgentStats(agent.id);
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
-				<td>
+				<td data-sort="name">
 					<div class="lead-name">${agent.name}</div>
 					<div class="subtle mono">${agent.email} · ${agent.phone}</div>
 					${!agent.active ? '<span class="subtle" style="color: #dc2626;">Inactive</span>' : ''}
 				</td>
 				<td><button class="icon-btn" data-view-agent="${agent.id}" title="View">👁️</button></td>
-				<td class="mono">${stats.assigned}</td>
-				<td class="mono">${stats.closed}</td>
+				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
+				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
 				<td>
 					<button class="action-btn" data-remove="${agent.id}">Remove Agent</button>
 					<button class="action-btn" data-edit="${agent.id}">Change Info</button>
@@ -2477,153 +3033,121 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			`;
 			tbody.appendChild(tr);
 		});
+		
+		// Update sort headers
+		updateSortHeaders('agentsTable');
 	}
-
-	// ---- Map Management ----
-	let map = null;
-	let markers = [];
-	let selectedProperty = null;
 
 	function initMap() {
 		if (map) return;
-		map = L.map('listingsMap', { 
-			zoomControl: true,
-			preferCanvas: true, // Better performance
-			renderer: L.canvas() // Use canvas for better performance
-		}).setView([29.48, -98.50], 10);
 		
-		// Multiple tile layers for better coverage and fallback
-		const osmLayer = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { 
-			maxZoom: 19, 
-			attribution: '&copy; OpenStreetMap',
-			subdomains: ['a', 'b', 'c'], // Use multiple subdomains for better loading
-			detectRetina: true
+		// Initialize Mapbox GL JS map
+		map = new mapboxgl.Map({
+			container: 'listingsMap',
+			style: 'mapbox://styles/mapbox/streets-v12',
+			center: [-98.50, 29.48], // [longitude, latitude] for San Antonio
+			zoom: 10,
+			attributionControl: true
 		});
 		
-		const cartoLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
-			maxZoom: 20,
-			attribution: '&copy; OpenStreetMap &copy; CARTO',
-			subdomains: 'abcd',
-			detectRetina: true
+		// Add navigation controls
+		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
+		
+		// Add scale control
+		map.addControl(new mapboxgl.ScaleControl({
+			maxWidth: 100,
+			unit: 'metric'
+		}), 'bottom-right');
+		
+		// Wait for map to load before adding markers
+		map.on('load', () => {
+			console.log('Mapbox map loaded');
+			// Ensure map fills container properly
+			map.resize();
+			// Ensure map starts centered on San Antonio
+			map.setCenter([-98.50, 29.48]);
+			map.setZoom(10);
+			// Mark as initialized
+			map.hasBeenInitialized = true;
 		});
 		
-		const satelliteLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-			maxZoom: 19,
-			attribution: '&copy; Esri',
-			detectRetina: true
-		});
-		
-		// Add base layers
-		const baseLayers = {
-			"Street Map": osmLayer,
-			"CartoDB": cartoLayer,
-			"Satellite": satelliteLayer
-		};
-		
-		// Add default layer
-		osmLayer.addTo(map);
-		
-		// Add layer control
-		L.control.layers(baseLayers).addTo(map);
-		
-		// Handle tile loading errors
-		map.on('tileerror', function(e) {
-			console.log('Tile loading error:', e);
-		});
-		
-		// Handle zoom changes to toggle between dots and prices
-		map.on('zoomend', function() {
-			const currentZoom = map.getZoom();
-			const showPrices = currentZoom >= 12; // Show prices at zoom level 12 and above
-			
-			markers.forEach(markerGroup => {
-				if (markerGroup.dot && markerGroup.price) {
-					if (showPrices) {
-						// Show prices, hide dots
-						markerGroup.dot.setOpacity(0);
-						markerGroup.price.setOpacity(1);
-					} else {
-						// Show dots, hide prices
-						markerGroup.dot.setOpacity(1);
-						markerGroup.price.setOpacity(0);
-					}
-				}
-			});
+		// Handle window resize to ensure map fills container
+		window.addEventListener('resize', () => {
+			if (map) {
+				map.resize();
+			}
 		});
 	}
 
 	function clearMarkers() {
 		markers.forEach(markerGroup => {
-			if (markerGroup.dot) markerGroup.dot.remove();
-			if (markerGroup.price) markerGroup.price.remove();
+			// Handle both old and new marker structures
+			if (markerGroup.pin) {
+				markerGroup.pin.remove();
+			} else if (markerGroup.dot) {
+				// Legacy marker cleanup
+				if (markerGroup.dot.remove) {
+					markerGroup.dot.remove();
+				}
+			}
 		});
 		markers = [];
 	}
 
 	function addMarker(prop) {
 		const isSelected = selectedProperty && selectedProperty.id === prop.id;
-		
-		// Create dot marker (always visible)
-		const dotMarker = L.circleMarker([prop.lat, prop.lng], {
-			radius: 8,
-			fillColor: isSelected ? '#ef4444' : '#3b82f6',
-			color: isSelected ? '#dc2626' : '#1e40af',
-			weight: 2,
-			opacity: 1,
-			fillOpacity: 0.8
-		}).addTo(map);
-		
-		// Create price marker (only visible at high zoom)
-		const priceIcon = L.divIcon({ 
-			html: `<div class="price-marker ${isSelected ? 'selected' : ''}">$${prop.rent_min.toLocaleString()}</div>`, 
-			className: '', 
-			iconSize: [0, 0],
-			useCanvas: true
-		});
-		
-		const priceMarker = L.marker([prop.lat, prop.lng], { 
-			icon: priceIcon,
-			riseOnHover: true
-		}).addTo(map);
-		
-		// Initially hide price marker
-		priceMarker.setOpacity(0);
-		
-		// Store both markers
-		const markerGroup = {
-			dot: dotMarker,
-			price: priceMarker,
-			property: prop
-		};
-		
-		// Add popup content
-		const popupContent = `
+
+			// Create popup content
+			const popupContent = `
+				<div class="mapbox-popup">
 			<strong>${prop.name}</strong><br>
 			${prop.address}<br>
 			<span class="subtle">$${prop.rent_min.toLocaleString()} - $${prop.rent_max.toLocaleString()} · ${prop.beds_min}-${prop.beds_max} bd / ${prop.baths_min}-${prop.baths_max} ba</span>
-		`;
-		
-		dotMarker.bindPopup(popupContent, {
-			closeButton: true,
-			autoClose: false,
-			closeOnClick: false
-		});
-		
-		priceMarker.bindPopup(popupContent, {
-			closeButton: true,
-			autoClose: false,
-			closeOnClick: false
-		});
-		
-		// Add click handlers
-		dotMarker.on('click', () => {
+				</div>
+			`;
+
+			// Create popup
+			const popup = new mapboxgl.Popup({
+				closeButton: true,
+				closeOnClick: false
+			}).setHTML(popupContent);
+
+			// Create custom dot marker element
+			const dotElement = document.createElement('div');
+			dotElement.className = 'custom-dot-marker';
+			dotElement.style.cssText = `
+				width: 12px;
+				height: 12px;
+				border-radius: 50%;
+				background: ${isSelected ? '#ef4444' : (prop.isPUMI ? '#22c55e' : '#3b82f6')};
+				border: 2px solid white;
+				box-shadow: ${prop.isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
+				cursor: pointer;
+				transition: all 0.2s ease;
+				animation: ${prop.isPUMI ? 'pumi-pulse 2s infinite' : 'none'};
+			`;
+
+		// Create dot marker using custom element
+		const dotMarker = new mapboxgl.Marker({
+			element: dotElement,
+			anchor: 'center'
+		})
+		.setLngLat([prop.lng, prop.lat])
+		.setPopup(popup)
+		.addTo(map);
+
+			// Store marker
+			const markerGroup = {
+				pin: dotMarker,
+				property: prop
+			};
+
+			// Add click handler
+			dotElement.addEventListener('click', () => {
 			selectProperty(prop);
 		});
-		priceMarker.on('click', () => {
-			selectProperty(prop);
-		});
 		
-		markers.push(markerGroup);
+			markers.push(markerGroup);
 	}
 
 	function selectProperty(prop) {
@@ -2648,34 +3172,33 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		markers.forEach(markerGroup => {
 			const isSelected = markerGroup.property.id === prop.id;
 			
-			// Update dot marker
-			if (markerGroup.dot) {
-				markerGroup.dot.setStyle({
-					fillColor: isSelected ? '#ef4444' : '#3b82f6',
-					color: isSelected ? '#dc2626' : '#1e40af'
-				});
-			}
-			
-			// Update price marker
-			if (markerGroup.price) {
-				const newIcon = L.divIcon({ 
-					html: `<div class="price-marker ${isSelected ? 'selected' : ''}">$${markerGroup.property.rent_min.toLocaleString()}</div>`, 
-					className: '', 
-					iconSize: [0, 0],
-					useCanvas: true
-				});
-				markerGroup.price.setIcon(newIcon);
+			// Update dot marker - handle both old and new structures
+			if (markerGroup.pin) {
+				const dotElement = markerGroup.pin.getElement();
+				dotElement.style.background = isSelected ? '#ef4444' : (markerGroup.property.isPUMI ? '#22c55e' : '#3b82f6');
+				dotElement.style.boxShadow = markerGroup.property.isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)';
+				dotElement.style.animation = markerGroup.property.isPUMI ? 'pumi-pulse 2s infinite' : 'none';
+			} else if (markerGroup.dot) {
+				// Legacy marker handling - skip for now to avoid errors
+				console.log('Skipping legacy marker update');
 			}
 		});
 		
 		// Center map on selected property
-		map.setView([prop.lat, prop.lng], Math.max(map.getZoom(), 14));
+		map.flyTo({
+			center: [prop.lng, prop.lat],
+			zoom: Math.max(map.getZoom(), 14)
+		});
 	}
 
 	// ---- Rendering: Listings Table ----
 	async function renderListings(){
-		console.log('renderListings called');
 		const tbody = document.getElementById('listingsTbody');
+		if (!tbody) {
+			console.error('listingsTbody not found!');
+			return;
+		}
+		
 		const search = state.search.toLowerCase();
 		
 		// Apply both search and filters
@@ -2693,55 +3216,163 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		
 		// Apply listings filters
 		filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
+		
+		// Apply sorting if active
+		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
+			filtered.sort((a, b) => {
+				let aVal, bVal;
+				
+				if (state.sort.key === 'name') {
+					aVal = a.name.toLowerCase();
+					bVal = b.name.toLowerCase();
+				} else if (state.sort.key === 'rent_min') {
+					aVal = a.rent_min;
+					bVal = b.rent_min;
+				} else if (state.sort.key === 'commission_pct') {
+					aVal = Math.max(a.escort_pct, a.send_pct);
+					bVal = Math.max(b.escort_pct, b.send_pct);
+				} else {
+					return 0;
+				}
+				
+				// Handle numeric sorting
+				if (['rent_min', 'commission_pct'].includes(state.sort.key)) {
+					const aNum = typeof aVal === 'number' ? aVal : parseFloat(aVal) || 0;
+					const bNum = typeof bVal === 'number' ? bVal : parseFloat(bVal) || 0;
+					return state.sort.dir === 'asc' ? aNum - bNum : bNum - aNum;
+				} else {
+					// Text sorting
+					if (state.sort.dir === 'asc') {
+						return aVal.localeCompare(bVal);
+					} else {
+						return bVal.localeCompare(aVal);
+					}
+				}
+			});
+		}
 
 		tbody.innerHTML = '';
-		filtered.forEach(prop => {
+		console.log('Rendering', filtered.length, 'filtered properties');
+		filtered.forEach((prop, index) => {
+			console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI);
+			
 			const tr = document.createElement('tr');
 			tr.dataset.propertyId = prop.id;
 			
+			// Add PUMI class for styling
+			if (prop.isPUMI) {
+				tr.classList.add('pumi-listing');
+				console.log('Added pumi-listing class to:', prop.name);
+			}
+			
 			tr.innerHTML = `
+				<td><input type="checkbox" class="listing-checkbox" data-listing-id="${prop.id}"></td>
 				<td data-sort="name">
-					<div class="lead-name">${prop.name}</div>
+					<div class="lead-name">
+						${prop.name}
+						${prop.isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
+						${prop.markForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
+					</div>
 					<div class="subtle mono">${prop.address}</div>
+					<div class="community-details">
+						<span class="market-info">${prop.market}</span>
+						<span class="beds-baths">${prop.beds_min}-${prop.beds_max} bed / ${prop.baths_min}-${prop.baths_max} bath</span>
+					</div>
+					<div class="community-meta">
+						<div class="listing-controls">
+							${state.role === 'manager' ? `
+								<div class="gear-icon" data-property-id="${prop.id}" data-property-name="${prop.name}" title="Edit Listing & Mark PUMI">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
+										<path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+									</svg>
+								</div>
+							` : ''}
+							<div class="interest-count" data-property-id="${prop.id}" data-property-name="${prop.name}">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #ef4444;">
+									<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+								</svg>
+								<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
+							</div>
+						</div>
+						<div class="last-updated">Updated: ${formatDate(prop.pricing_last_updated)}</div>
+					</div>
 				</td>
-				<td class="mono" data-sort="market">${prop.market}</td>
 				<td class="mono" data-sort="rent_min">$${prop.rent_min} - $${prop.rent_max}</td>
-				<td class="mono" data-sort="beds_min">${prop.beds_min}-${prop.beds_max} / ${prop.baths_min}-${prop.baths_max}</td>
 				<td class="mono" data-sort="commission_pct">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
-			<td class="mono">
-				<div class="interest-count" data-property-id="${prop.id}" data-property-name="${prop.name}">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-					</svg>
-					${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0} interested
-				</div>
-			</td>
-				<td class="mono" data-sort="last_updated">${formatDate(prop.pricing_last_updated)}</td>
 			`;
 			
 			// Add click handler to table row
-			tr.addEventListener('click', () => {
+			tr.addEventListener('click', (e) => {
+				// Don't trigger if clicking on gear icon or heart icon
+				if (!e.target.closest('.gear-icon') && !e.target.closest('.interest-count')) {
 				selectProperty(prop);
+				}
 			});
+			
+			// Add gear icon click handler (manager only)
+			if (state.role === 'manager') {
+				const gearIcon = tr.querySelector('.gear-icon');
+				if (gearIcon) {
+					gearIcon.addEventListener('click', (e) => {
+						e.stopPropagation();
+						openListingEditModal(prop);
+					});
+				}
+			}
+			
+			// Add interest count click handler
+			const interestCount = tr.querySelector('.interest-count');
+			if (interestCount) {
+				interestCount.addEventListener('click', (e) => {
+					console.log('=== HEART ICON CLICKED ===');
+					console.log('Property ID:', prop.id);
+					console.log('Property Name:', prop.name);
+					e.stopPropagation();
+					openInterestedLeads(prop.id, prop.name);
+				});
+			}
 			
 			tbody.appendChild(tr);
 		});
 
-		// Update map
+		// Update map - simplified marker addition
 		if (map) {
+			console.log('Map exists, clearing markers and adding new ones');
 			clearMarkers();
+			
+			// Add markers directly
 			if (filtered.length > 0) {
-				const bounds = [];
+				console.log('Adding', filtered.length, 'markers to map');
 				filtered.forEach(prop => {
+					console.log('Adding marker for:', prop.name, 'at', prop.lng, prop.lat);
 					addMarker(prop);
-					bounds.push([prop.lat, prop.lng]);
 				});
-				if (bounds.length > 0) {
-					// Only fit bounds if no property is selected, otherwise maintain current view
-					if (!selectedProperty) {
-						map.fitBounds(bounds, { padding: [30, 30] });
-					}
-				}
+			}
+		} else {
+			console.log('Map not available yet');
+		}
+		
+		// Ensure map fills container after rendering
+		setTimeout(() => {
+			if (map) map.resize();
+		}, 100);
+		
+		// Update sort headers
+		updateSortHeaders('listingsTable');
+		
+		// Debug table column widths
+		console.log('=== TABLE WIDTH DEBUG ===');
+		const table = document.getElementById('listingsTable');
+		if (table) {
+			const cols = table.querySelectorAll('th');
+			cols.forEach((col, i) => {
+				console.log(`Column ${i + 1}:`, col.textContent.trim(), 'Width:', col.offsetWidth + 'px');
+			});
+			
+			const firstCol = table.querySelector('th:first-child');
+			if (firstCol) {
+				console.log('First column computed style:', getComputedStyle(firstCol).width);
+				console.log('First column offsetWidth:', firstCol.offsetWidth);
 			}
 		}
 	}
@@ -3010,19 +3641,32 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	// ---- Interested Leads Modal ----
 	async function openInterestedLeads(propertyId, propertyName) {
-		console.log('Opening interested leads for property:', propertyId, propertyName);
+		console.log('=== OPENING INTERESTED LEADS ===');
+		console.log('propertyId:', propertyId);
+		console.log('propertyName:', propertyName);
+		
+		const modal = document.getElementById('interestedLeadsModal');
+		console.log('Modal element:', modal);
+		
+		if (!modal) {
+			console.error('Modal not found!');
+			return;
+		}
+		
 		document.getElementById('propertyName').textContent = propertyName;
 		
 		try {
 			const interests = await api.getInterestedLeads(propertyId);
 			console.log('Fetched interests:', interests);
 			renderInterestedLeads(interests);
-			show(document.getElementById('interestedLeadsModal'));
+			show(modal);
+			console.log('Modal should be visible now');
 		} catch (error) {
 			console.error('Error loading interested leads:', error);
 			// Show empty state if no data
 			renderInterestedLeads([]);
-			show(document.getElementById('interestedLeadsModal'));
+			show(modal);
+			console.log('Modal should be visible now (empty state)');
 		}
 	}
 
@@ -3032,7 +3676,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	function renderInterestedLeads(interests) {
 		console.log('renderInterestedLeads called with:', interests);
-		const content = document.getElementById('interestedLeadsContent');
+		const content = document.getElementById('interestedLeadsList');
 		
 		if (interests.length === 0) {
 			console.log('No interests found, showing empty state');
@@ -3074,6 +3718,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const selectedProperties = state.currentMatches.filter(prop => 
 			state.selectedMatches.has(prop.id)
 		);
+		const includeReferralBonus = document.getElementById('referralBonus').checked;
+		const includeMovingBonus = document.getElementById('movingBonus').checked;
 		
 		// Generate unique showcase ID for tracking
 		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -3081,6 +3727,19 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Create landing page URL with tracking parameters
 		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
 		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${Array.from(state.selectedMatches).join(',')}`;
+		
+		// Create bonus perks text
+		let bonusPerks = '';
+		if (includeReferralBonus || includeMovingBonus) {
+			bonusPerks = '<ul style="margin: 20px 0; padding-left: 0; list-style: none;">';
+			if (includeReferralBonus) {
+				bonusPerks += '<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🎁 <strong>Referral bonus</strong> for recommending friends</li>';
+			}
+			if (includeMovingBonus) {
+				bonusPerks += '<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🚚 <strong>Moving bonus</strong> to help with relocation costs</li>';
+			}
+			bonusPerks += '</ul>';
+		}
 		
 		// Create email content
 		const emailContent = {
@@ -3104,6 +3763,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">⚡ <strong>Priority scheduling</strong> for property tours</li>
 							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🛡️ <strong>Expert guidance</strong> throughout your search</li>
 						</ul>
+						
+						${bonusPerks}
 						
 						<p style="font-size: 16px; color: #374151; margin-bottom: 30px;">Here's a list of options based on what you're looking for. Click which ones you're interested in and hit submit, and then we'll schedule you to go take a look at them!</p>
 						
@@ -3174,6 +3835,177 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		show(document.getElementById('showcaseModal'));
 	}
 	function closeShowcase(){ hide(document.getElementById('showcaseModal')); }
+
+	// ---- Build Showcase from Listings ----
+	async function openBuildShowcaseModal(){
+		const selectedListings = getSelectedListings();
+		if (selectedListings.length === 0) {
+			toast('Please select at least one listing', 'error');
+			return;
+		}
+
+		// Populate lead dropdown with leads assigned to current agent
+		const leadSelect = document.getElementById('buildShowcaseLead');
+		leadSelect.innerHTML = '<option value="">Choose a lead...</option>';
+		
+		// Get leads assigned to current agent (in real app, this would filter by agent)
+		const agentLeads = mockLeads.filter(lead => 
+			lead.assigned_agent_id === state.agentId || state.role === 'manager'
+		);
+		
+		agentLeads.forEach(lead => {
+			const option = document.createElement('option');
+			option.value = lead.id;
+			option.textContent = `${lead.name} (${lead.email})`;
+			leadSelect.appendChild(option);
+		});
+
+		// Update selection count
+		document.getElementById('buildSelectedCount').textContent = selectedListings.length;
+
+		// Populate listings grid with selected properties (same format as Top Listing Options)
+		const listingsGrid = document.getElementById('buildListingsGrid');
+		listingsGrid.innerHTML = selectedListings.map(prop => {
+			return `
+				<div class="listing-card" data-property-id="${prop.id}">
+					<div class="listing-image">
+						<img src="${prop.image_url || 'https://via.placeholder.com/300x200?text=Property+Image'}" alt="${prop.name}" />
+						<div class="commission-badge">${Math.max(prop.escort_pct, prop.send_pct)}% Commission</div>
+					</div>
+					<div class="listing-content">
+						<h4>${prop.name}</h4>
+						<div class="listing-rating">
+							<span class="stars">★★★★★</span>
+							<span class="rating-number">4.2</span>
+						</div>
+						<p class="listing-price">$${prop.rent_min} - $${prop.rent_max}/mo</p>
+						<p class="listing-details">${prop.beds_min}-${prop.beds_max} bd • ${prop.baths_min}-${prop.baths_max} ba • ${prop.sqft_min}-${prop.sqft_max} sqft</p>
+						<div class="listing-amenities">
+							${prop.amenities.slice(0, 2).map(amenity => `<span class="amenity-tag">${amenity}</span>`).join('')}
+						</div>
+						<div class="listing-selection">
+							<span>Selected Property</span>
+							<input type="checkbox" class="listing-check" checked disabled>
+						</div>
+					</div>
+				</div>
+			`;
+		}).join('');
+
+		show(document.getElementById('buildShowcaseModal'));
+	}
+
+	function closeBuildShowcase(){ 
+		hide(document.getElementById('buildShowcaseModal')); 
+	}
+
+	function getSelectedListings(){
+		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
+		return Array.from(checkboxes).map(cb => {
+			const listingId = cb.dataset.listingId;
+			return mockProperties.find(prop => prop.id === listingId);
+		}).filter(Boolean);
+	}
+
+	function updateBuildShowcaseButton(){
+		const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
+		const buildBtn = document.getElementById('buildShowcaseBtn');
+		buildBtn.disabled = selectedCount === 0;
+		buildBtn.textContent = selectedCount > 0 ? `Build Showcase (${selectedCount})` : 'Build Showcase';
+	}
+
+	async function sendBuildShowcase(){
+		const leadId = document.getElementById('buildShowcaseLead').value;
+		const selectedListings = getSelectedListings();
+		const includeReferralBonus = document.getElementById('buildReferralBonus').checked;
+		const includeMovingBonus = document.getElementById('buildMovingBonus').checked;
+
+		if (!leadId) {
+			toast('Please select a lead', 'error');
+			return;
+		}
+
+		if (selectedListings.length === 0) {
+			toast('Please select at least one listing', 'error');
+			return;
+		}
+
+		const lead = mockLeads.find(l => l.id === leadId);
+		if (!lead) {
+			toast('Lead not found', 'error');
+			return;
+		}
+
+		// Generate unique showcase ID for tracking
+		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+		
+		// Create landing page URL with tracking parameters
+		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
+		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${selectedListings.map(p => p.id).join(',')}`;
+		
+		// Create email content with bonus information
+		let bonusText = '';
+		if (includeReferralBonus || includeMovingBonus) {
+			bonusText = '<p><strong>Special Perks:</strong></p><ul>';
+			if (includeReferralBonus) {
+				bonusText += '<li>Referral bonus for recommending friends</li>';
+			}
+			if (includeMovingBonus) {
+				bonusText += '<li>Moving bonus to help with relocation costs</li>';
+			}
+			bonusText += '</ul>';
+		}
+		
+		const emailContent = {
+			to: lead.email,
+			subject: 'Top options hand picked for you',
+			html: `
+				<h2>Top Property Options for You</h2>
+				<p>Hi ${lead.name},</p>
+				<p>I've hand-picked these properties based on your preferences:</p>
+				${bonusText}
+				${selectedListings.map(prop => `
+					<div style="border: 1px solid #e5e7eb; padding: 16px; margin: 16px 0; border-radius: 8px;">
+						<h3>${prop.name}</h3>
+						<p><strong>Location:</strong> ${prop.market}</p>
+						<p><strong>Rent:</strong> $${prop.rent_min} - $${prop.rent_max}</p>
+						<p><strong>Size:</strong> ${prop.beds_min}-${prop.beds_max} bed / ${prop.baths_min}-${prop.baths_max} bath</p>
+						<p><strong>Amenities:</strong> ${prop.amenities.slice(0, 5).join(', ')}</p>
+					</div>
+				`).join('')}
+				<p>Click the link below to view your personalized property showcase and schedule tours:</p>
+				<p><a href="${landingUrl}" style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Your Property Showcase</a></p>
+				<p>Best regards,<br>Your TRE Agent</p>
+			`,
+			showcase_id: showcaseId
+		};
+		
+		try {
+			// Send email via API
+			await api.sendEmail(emailContent);
+			
+			// Create showcase record in database
+			await api.createShowcase({
+				lead_id: lead.id,
+				agent_id: state.agentId || 'current-agent-id',
+				listing_ids: selectedListings.map(p => p.id),
+				message: `Showcase sent to ${lead.name} with ${selectedListings.length} properties`,
+				showcase_id: showcaseId,
+				landing_url: landingUrl
+			});
+			
+			toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
+			closeBuildShowcase();
+			
+			// Clear selections
+			document.querySelectorAll('.listing-checkbox:checked').forEach(cb => cb.checked = false);
+			updateBuildShowcaseButton();
+			
+		} catch (error) {
+			console.error('Error sending showcase email:', error);
+			toast('Error sending email. Please try again.');
+		}
+	}
 
 	async function sendShowcase(){
 		const lead = await api.getLead(state.selectedLeadId);
@@ -3387,14 +4219,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			});
 		}
 
-		// sort by submitted_at
-		const sortTh = document.querySelector('th[data-sort="submitted_at"]');
-		if (sortTh) {
-			sortTh.addEventListener('click', ()=>{
-				state.sort.dir = state.sort.dir === 'desc' ? 'asc' : 'desc';
-				renderLeads();
-			});
-		}
+		// Old sort event listener removed - now handled by table delegation
 
 		// pagination
 		const prevPageEl = document.getElementById('prevPage');
@@ -3422,7 +4247,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// agents table delegation
 		const agentsTableEl = document.getElementById('agentsTable');
 		if (agentsTableEl) {
-		agentsTableEl.addEventListener('click', (e)=>{
+			agentsTableEl.addEventListener('click', (e)=>{
 			// Handle sorting
 			const sortableHeader = e.target.closest('th[data-sort]');
 			if (sortableHeader) {
@@ -3432,21 +4257,21 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				return;
 			}
 			
-			const view = e.target.closest('button[data-view-agent]');
-			if (view){ openAgentDrawer(view.dataset.viewAgent); return; }
-			const remove = e.target.closest('button[data-remove]');
-			if (remove){ 
-				if (confirm('Are you sure you want to remove this agent?')) {
-					toast('Agent removed (mock action)');
-					renderAgents();
+				const view = e.target.closest('button[data-view-agent]');
+				if (view){ openAgentDrawer(view.dataset.viewAgent); return; }
+				const remove = e.target.closest('button[data-remove]');
+				if (remove){ 
+					if (confirm('Are you sure you want to remove this agent?')) {
+						toast('Agent removed (mock action)');
+						renderAgents();
+					}
+					return; 
 				}
-				return; 
-			}
-			const edit = e.target.closest('button[data-edit]');
-			if (edit){ toast('Edit agent info (mock action)'); return; }
-			const assignLeads = e.target.closest('button[data-assign-leads]');
-			if (assignLeads){ toast('Assign leads to agent (mock action)'); return; }
-		});
+				const edit = e.target.closest('button[data-edit]');
+				if (edit){ toast('Edit agent info (mock action)'); return; }
+				const assignLeads = e.target.closest('button[data-assign-leads]');
+				if (assignLeads){ toast('Assign leads to agent (mock action)'); return; }
+			});
 		}
 		
 		// listings table delegation
@@ -3489,6 +4314,28 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				}
 			});
 		}
+
+		// admin users table delegation - using document level delegation
+		document.addEventListener('click', (e) => {
+			// Check if click is on admin users table
+			const usersTable = e.target.closest('#usersTable');
+			if (usersTable) {
+				console.log('Admin users table clicked, target:', e.target);
+				// Handle sorting
+				const sortableHeader = e.target.closest('th[data-sort]');
+				if (sortableHeader) {
+					const column = sortableHeader.dataset.sort;
+					console.log('Sortable header clicked, column:', column);
+					console.log('Current sort state before:', window.state?.sort);
+					sortTable(column, 'usersTable');
+					console.log('Current sort state after:', window.state?.sort);
+					e.preventDefault();
+					return;
+				} else {
+					console.log('No sortable header found');
+				}
+			}
+		});
 		
 		// assignment change
 		if (leadsTableEl) {
@@ -3592,6 +4439,51 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		if (sendShowcaseEl) {
 			sendShowcaseEl.addEventListener('click', sendShowcase);
 		}
+
+		// Build showcase from listings
+		const buildShowcaseBtn = document.getElementById('buildShowcaseBtn');
+		if (buildShowcaseBtn) {
+			buildShowcaseBtn.addEventListener('click', openBuildShowcaseModal);
+		}
+
+		const closeBuildShowcaseEl = document.getElementById('closeBuildShowcase');
+		if (closeBuildShowcaseEl) {
+			closeBuildShowcaseEl.addEventListener('click', closeBuildShowcase);
+		}
+
+		const sendBuildShowcaseEl = document.getElementById('sendBuildShowcase');
+		if (sendBuildShowcaseEl) {
+			sendBuildShowcaseEl.addEventListener('click', sendBuildShowcase);
+		}
+
+		// Lead selection dropdown for build showcase
+		const buildShowcaseLeadEl = document.getElementById('buildShowcaseLead');
+		if (buildShowcaseLeadEl) {
+			buildShowcaseLeadEl.addEventListener('change', (e) => {
+				const leadId = e.target.value;
+				const leadNameEl = document.getElementById('buildSendLeadName');
+				const sendBtn = document.getElementById('sendBuildShowcase');
+				
+				if (leadId) {
+					const lead = mockLeads.find(l => l.id === leadId);
+					if (lead) {
+						leadNameEl.textContent = lead.name;
+						// Enable button since properties are already selected
+						sendBtn.disabled = false;
+					}
+				} else {
+					leadNameEl.textContent = 'Lead';
+					sendBtn.disabled = true;
+				}
+			});
+		}
+
+		// Individual listing checkboxes
+		document.addEventListener('change', (e) => {
+			if (e.target.classList.contains('listing-checkbox')) {
+				updateBuildShowcaseButton();
+			}
+		});
 		const copyShowcaseLinkEl = document.getElementById('copyShowcaseLink');
 		if (copyShowcaseLinkEl) {
 			copyShowcaseLinkEl.addEventListener('click', ()=>{
@@ -4157,6 +5049,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			});
 		}
 
+		const pumiOnlyFilterEl = document.getElementById('pumiOnlyFilter');
+		if (pumiOnlyFilterEl) {
+			pumiOnlyFilterEl.addEventListener('change', (e) => {
+				state.listingsFilters.pumiOnly = e.target.checked;
+				renderListings();
+			});
+		}
+
 		const clearListingsFiltersEl = document.getElementById('clearListingsFilters');
 		if (clearListingsFiltersEl) {
 			clearListingsFiltersEl.addEventListener('click', () => {
@@ -4167,7 +5067,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					maxPrice: '', 
 					beds: 'any', 
 					commission: '0', 
-					amenities: 'any' 
+					amenities: 'any',
+					pumiOnly: false
 				};
 				if (listingsSearchInputEl) listingsSearchInputEl.value = '';
 				if (marketFilterEl) marketFilterEl.value = 'all';
@@ -4176,6 +5077,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				if (bedsFilterEl) bedsFilterEl.value = 'any';
 				if (commissionFilterEl) commissionFilterEl.value = '0';
 				if (amenitiesFilterEl) amenitiesFilterEl.value = 'any';
+				if (pumiOnlyFilterEl) pumiOnlyFilterEl.checked = false;
 				renderListings();
 			});
 		}
@@ -4395,17 +5297,152 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			}
 		});
 
+		// Add event listeners for listing edit modal
+		document.getElementById('closeListingEdit').addEventListener('click', closeListingEditModal);
+		document.getElementById('cancelListingEdit').addEventListener('click', closeListingEditModal);
+		document.getElementById('saveListingEdit').addEventListener('click', saveListingEdit);
+		
+		// Close modal when clicking outside
+		document.getElementById('listingEditModal').addEventListener('click', (e) => {
+			if (e.target.id === 'listingEditModal') {
+				closeListingEditModal();
+			}
+		});
+
 		// initial route
 		if (!location.hash) location.hash = '/leads';
 		route();
 		window.addEventListener('hashchange', route);
 	});
 
+	// ---- Listing Edit Modal ----
+	function openListingEditModal(property) {
+		console.log('Opening listing edit modal for:', property);
+		
+		// Populate the modal with current property data
+		document.getElementById('editListingName').textContent = property.name;
+		document.getElementById('editPropertyName').value = property.name;
+		document.getElementById('editAddress').value = property.address;
+		document.getElementById('editMarket').value = property.market;
+		document.getElementById('editPhone').value = property.phone;
+		document.getElementById('editRentMin').value = property.rent_min;
+		document.getElementById('editRentMax').value = property.rent_max;
+		document.getElementById('editBedsMin').value = property.beds_min;
+		document.getElementById('editBedsMax').value = property.beds_max;
+		document.getElementById('editBathsMin').value = property.baths_min;
+		document.getElementById('editBathsMax').value = property.baths_max;
+		document.getElementById('editEscortPct').value = property.escort_pct;
+		document.getElementById('editSendPct').value = property.send_pct;
+		document.getElementById('editWebsite').value = property.website;
+		document.getElementById('editAmenities').value = property.amenities.join(', ');
+		document.getElementById('editSpecials').value = property.specials_text || '';
+		document.getElementById('editBonus').value = property.bonus_text || '';
+		document.getElementById('editIsPUMI').checked = property.isPUMI || false;
+		document.getElementById('editMarkForReview').checked = property.markForReview || false;
+		
+		// Store the current property for saving
+		window.currentEditingProperty = property;
+		
+		// Show the modal
+		showModal('listingEditModal');
+	}
+	
+	function closeListingEditModal() {
+		hideModal('listingEditModal');
+		window.currentEditingProperty = null;
+	}
+	
+	function saveListingEdit() {
+		const property = window.currentEditingProperty;
+		if (!property) return;
+		
+		// Get form data
+		const formData = {
+			name: document.getElementById('editPropertyName').value,
+			address: document.getElementById('editAddress').value,
+			market: document.getElementById('editMarket').value,
+			phone: document.getElementById('editPhone').value,
+			rent_min: parseInt(document.getElementById('editRentMin').value),
+			rent_max: parseInt(document.getElementById('editRentMax').value),
+			beds_min: parseInt(document.getElementById('editBedsMin').value),
+			beds_max: parseInt(document.getElementById('editBedsMax').value),
+			baths_min: parseFloat(document.getElementById('editBathsMin').value),
+			baths_max: parseFloat(document.getElementById('editBathsMax').value),
+			escort_pct: parseFloat(document.getElementById('editEscortPct').value),
+			send_pct: parseFloat(document.getElementById('editSendPct').value),
+			website: document.getElementById('editWebsite').value,
+			amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
+			specials_text: document.getElementById('editSpecials').value,
+			bonus_text: document.getElementById('editBonus').value,
+			isPUMI: document.getElementById('editIsPUMI').checked,
+			markForReview: document.getElementById('editMarkForReview').checked
+		};
+		
+		// Update the property object
+		Object.assign(property, formData);
+		
+		// Show success message
+		toast(`Listing "${property.name}" updated successfully!`);
+		
+		// Close modal and refresh display
+		closeListingEditModal();
+		renderListings();
+	}
+
+	// Initialize health status for all leads
+	function initializeHealthStatus() {
+		mockLeads.forEach(lead => {
+			const calculatedStatus = calculateHealthStatus(lead);
+			lead.health_status = calculatedStatus;
+			lead.health_updated_at = new Date().toISOString();
+		});
+		console.log('Health status initialized for all leads');
+	}
+
+	// Initialize health status when page loads
+	document.addEventListener('DOMContentLoaded', () => {
+		initializeHealthStatus();
+	});
+
 	// Global functions for admin page onclick handlers
 	window.editUser = editUser;
 	window.changePassword = changePassword;
 	window.deleteUser = deleteUser;
+	
+	// Expose state to global scope
+	window.state = state;
 })();
+
+// Global function for updating sort headers
+function updateSortHeaders(tableId) {
+	console.log('updateSortHeaders called with tableId:', tableId);
+	const table = document.getElementById(tableId);
+	if (!table) {
+		console.log('Table not found:', tableId);
+		return;
+	}
+	
+	const currentState = window.state || { sort: { key: null, dir: null } };
+	console.log('updateSortHeaders - currentState.sort:', currentState.sort);
+	const headers = table.querySelectorAll('th[data-sort]');
+	console.log('Found sortable headers:', headers.length);
+	headers.forEach(header => {
+		const column = header.dataset.sort;
+		const icon = header.querySelector('.sort-icon');
+		
+		if (column === currentState.sort.key && currentState.sort.dir !== 'none') {
+			header.classList.add('sorted');
+			if (icon) {
+				icon.textContent = currentState.sort.dir === 'asc' ? '↑' : '↓';
+			}
+		} else {
+			header.classList.remove('sorted');
+			if (icon) {
+				icon.textContent = '↕';
+			}
+		}
+	});
+}
 
 // Admin page functions - defined in global scope
 let realUsers = [];
@@ -4577,20 +5614,67 @@ async function renderAdmin() {
 	} catch (error) {
 		console.error('Error loading admin data:', error);
 		// Fallback to mock data for demo
-		renderUsersTable();
-		renderAuditLog();
+		console.log('Using mock data for admin page');
 	}
+	
+	// Always render the table (either with real data or mock data)
+	renderUsersTable();
+	renderAuditLog();
 }
 
 function renderUsersTable() {
-	console.log('renderUsersTable called, realUsers:', realUsers?.length || 0);
+	console.log('renderUsersTable called, realUsers:', realUsers?.length || 0, 'mockUsers:', mockUsers?.length || 0);
 	const tbody = document.getElementById('usersTbody');
 	if (!tbody) {
 		console.log('usersTbody not found');
 		return;
 	}
 	
-	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
+	let users = realUsers.length > 0 ? [...realUsers] : [...(mockUsers || [])];
+	console.log('Users to render:', users.length);
+	
+	// Apply sorting if active
+	const currentState = window.state || { sort: { key: null, dir: null } };
+	console.log('renderUsersTable - currentState.sort:', currentState.sort);
+	if (currentState.sort.key && currentState.sort.dir && currentState.sort.dir !== 'none') {
+		console.log('Applying sorting to users, key:', currentState.sort.key, 'dir:', currentState.sort.dir);
+		try {
+			users.sort((a, b) => {
+				let aVal, bVal;
+				
+				if (currentState.sort.key === 'name') {
+					aVal = (a.name || '').toLowerCase();
+					bVal = (b.name || '').toLowerCase();
+				} else if (currentState.sort.key === 'role') {
+					aVal = a.role || '';
+					bVal = b.role || '';
+				} else if (currentState.sort.key === 'status') {
+					aVal = a.status || '';
+					bVal = b.status || '';
+				} else if (currentState.sort.key === 'created_at') {
+					aVal = new Date(a.created_at || 0);
+					bVal = new Date(b.created_at || 0);
+				} else {
+					return 0;
+				}
+				
+				// Handle date sorting
+				if (currentState.sort.key === 'created_at') {
+					return currentState.sort.dir === 'asc' ? aVal - bVal : bVal - aVal;
+				} else {
+					// Text sorting
+					if (currentState.sort.dir === 'asc') {
+						return aVal.localeCompare(bVal);
+					} else {
+						return bVal.localeCompare(aVal);
+					}
+				}
+			});
+		} catch (error) {
+			console.error('Error sorting users:', error);
+		}
+	}
+	
 	tbody.innerHTML = users.map(user => {
 		const createdBy = user.created_by === 'system' ? 'System' : 
 			users.find(u => u.id === user.created_by)?.name || 'Unknown';
@@ -4631,6 +5715,9 @@ function renderUsersTable() {
 			</tr>
 		`;
 	}).join('');
+	
+	// Update sort headers
+	updateSortHeaders('usersTable');
 }
 
 function renderAuditLog() {
@@ -4742,16 +5829,11 @@ async function deleteUser(userId) {
 					toast('User deleted successfully');
 				}
 			}
-		} catch (error) {
-			console.error('Error deleting user:', error);
-			toast('Error deleting user', 'error');
-		}
+	} catch (error) {
+		console.error('Error deleting user:', error);
+		toast('Error deleting user', 'error');
+	}
 	}
 }
-
-// Make functions globally accessible
-window.renderAdmin = renderAdmin;
-window.renderUsersTable = renderUsersTable;
-window.renderAuditLog = renderAuditLog;
 
 // formatDate is already globally accessible

@@ -4,13 +4,21 @@
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	<title>TRE CRM - Phase 1 Wireframe</title>
+	<script
+		src="https://js.sentry-cdn.com/3f73a6241615ff5791c9704729e18948.min.js"
+		crossorigin="anonymous"
+	></script>
 	<link rel="stylesheet" href="styles.css" />
+	<!-- Mapbox GL JS -->
+	<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
+	<!-- Leaflet (keeping for now, will remove after Mapbox integration) -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
 <body>
 	<header class="app-header">
 		<div class="brand">
-			<img src="images/tre_logo_black_bg.png" alt="TRE CRM" class="brand-logo">
+			<span class="brand-text">TRE CRM</span>
 		</div>
 		
 		<nav class="main-nav">
@@ -81,7 +89,7 @@
 							<th data-sort="name" class="sortable">Lead Name <span class="sort-icon">↕</span></th>
 							<th>View Details</th>
 							<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span></th>
-							<th class="sortable" data-sort="submitted_at">LeadFoundDate <span class="sort-icon">↕</span></th>
+							<th class="sortable" data-sort="submitted_at">Lead Found Date <span class="sort-icon">↕</span></th>
 							<th>Preference Summary</th>
 							<th>Top Listing Options</th>
 							<th data-sort="assigned_agent_id" class="sortable">Agent Assigned <span class="sort-icon">↕</span></th>
@@ -131,12 +139,7 @@
 		<!-- Route: #/listings -->
 		<section id="listingsView" class="route-view hidden">
 			<div class="view-bar">
-				<h1>Listings</h1>
 				<div id="listingsRoleLabel" class="role-label"></div>
-			</div>
-
-			<div class="table-actions">
-				<input id="listingSearch" type="search" placeholder="Search community, neighborhood, amenities" />
 			</div>
 
 			<!-- Listings Filters -->
@@ -192,8 +195,30 @@
 						<option value="ev">EV Charging</option>
 					</select>
 				</div>
+				<div class="filter-group">
+					<label class="pumi-filter-label">
+						<input type="checkbox" id="pumiOnlyFilter" class="pumi-filter-checkbox">
+						<span class="pumi-filter-icon">PUMI</span>
+						<span class="pumi-filter-text">PUMI Only</span>
+					</label>
+				</div>
 				<div class="filter-spacer"></div>
 				<button id="clearListingsFilters" class="btn btn-secondary">Clear</button>
+				<button id="buildShowcaseBtn" class="btn btn-success" disabled>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
+						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+						<path d="M9 9h6v6H9z"/>
+						<path d="M9 3v6"/>
+						<path d="M9 15v6"/>
+						<path d="M15 3v6"/>
+						<path d="M15 15v6"/>
+						<path d="M3 9h6"/>
+						<path d="M15 9h6"/>
+						<path d="M3 15h6"/>
+						<path d="M15 15h6"/>
+					</svg>
+					Build Showcase
+				</button>
 			</div>
 
 			<div class="listings-layout">
@@ -201,13 +226,10 @@
 					<table id="listingsTable" class="data-table">
 						<thead>
 							<tr>
+								<th></th>
 								<th data-sort="name" class="sortable">Community <span class="sort-icon">↕</span></th>
-								<th data-sort="market" class="sortable">Market <span class="sort-icon">↕</span></th>
 								<th data-sort="rent_min" class="sortable">Rent Range <span class="sort-icon">↕</span></th>
-								<th data-sort="beds_min" class="sortable">Beds/Baths <span class="sort-icon">↕</span></th>
 								<th data-sort="commission_pct" class="sortable">Commission % <span class="sort-icon">↕</span></th>
-								<th>Interested Leads</th>
-								<th data-sort="last_updated" class="sortable">Last Updated <span class="sort-icon">↕</span></th>
 							</tr>
 						</thead>
 						<tbody id="listingsTbody">
@@ -238,7 +260,7 @@
 					<thead>
 						<tr>
 							<th data-sort="property_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
-							<th data-sort="current_special" class="sortable">Current Special <span class="sort-icon">↕</span></th>
+							<th>Current Special</th>
 							<th data-sort="commission_rate" class="sortable">Commission Rate <span class="sort-icon">↕</span></th>
 							<th data-sort="expiration_date" class="sortable">Expiration Date <span class="sort-icon">↕</span></th>
 							<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
@@ -372,7 +394,7 @@
 							<thead>
 								<tr>
 									<th data-sort="name" class="sortable">Name <span class="sort-icon">↕</span></th>
-									<th data-sort="email" class="sortable">Email <span class="sort-icon">↕</span></th>
+									<th>Email</th>
 									<th data-sort="role" class="sortable">Role <span class="sort-icon">↕</span></th>
 									<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span></th>
 									<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
@@ -441,7 +463,24 @@
 				<h3>Top Listing Options — <span id="leadNameTitle2">Lead</span></h3>
 				<button id="closeMatches" class="icon-btn" aria-label="Close">×</button>
 			</div>
-			<div class="modal-sticky-header">
+		<div class="modal-sticky-header">
+			<div class="showcase-controls">
+				<div class="control-group">
+					<label class="checkbox-label">
+						<input type="checkbox" id="referralBonus" class="bonus-checkbox">
+						<span class="checkmark"></span>
+						Include Referral Bonus
+					</label>
+				</div>
+				<div class="control-group">
+					<label class="checkbox-label">
+						<input type="checkbox" id="movingBonus" class="bonus-checkbox">
+						<span class="checkmark"></span>
+						Include Moving Bonus
+					</label>
+				</div>
+			</div>
+			<div class="showcase-actions">
 				<button id="sendBtn" class="btn btn-primary showcase-btn" disabled>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
 						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
@@ -452,6 +491,7 @@
 					<span id="selectedCount">0</span> properties selected
 				</div>
 			</div>
+		</div>
 			<div class="modal-body">
 				<div id="listingsGrid" class="listings-grid">
 					<!-- matches injected -->
@@ -489,7 +529,70 @@
 		</div>
 	</div>
 
-	<!-- History Modal -->
+	<!-- Interested Leads Modal -->
+	<div id="interestedLeadsModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Interested Leads - <span id="propertyName">Property</span></h3>
+				<button id="closeInterestedLeads" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="interestedLeadsList">
+					<!-- Interested leads will be populated here -->
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Build Showcase Modal -->
+	<div id="buildShowcaseModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Build Showcase</h3>
+				<button id="closeBuildShowcase" class="icon-btn" aria-label="Close">×</button>
+			</div>
+		<div class="modal-sticky-header">
+			<div class="showcase-controls">
+				<div class="control-group">
+					<label>Select Lead</label>
+					<select id="buildShowcaseLead" class="form-select">
+						<option value="">Choose a lead...</option>
+					</select>
+				</div>
+				<div class="control-group">
+					<label class="checkbox-label">
+						<input type="checkbox" id="buildReferralBonus" class="bonus-checkbox">
+						<span class="checkmark"></span>
+						Include Referral Bonus
+					</label>
+				</div>
+				<div class="control-group">
+					<label class="checkbox-label">
+						<input type="checkbox" id="buildMovingBonus" class="bonus-checkbox">
+						<span class="checkmark"></span>
+						Include Moving Bonus
+					</label>
+				</div>
+			</div>
+			<div class="showcase-actions">
+				<button id="sendBuildShowcase" class="btn btn-primary showcase-btn" disabled>
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+					</svg>
+					Preview & Send Showcase to <span id="buildSendLeadName">Lead</span>
+				</button>
+				<div class="selection-count">
+					<span id="buildSelectedCount">0</span> properties selected
+				</div>
+			</div>
+		</div>
+			<div class="modal-body">
+				<div id="buildListingsGrid" class="listings-grid">
+					<!-- selected listings will be shown here -->
+				</div>
+			</div>
+		</div>
+	</div>
 	<div id="historyModal" class="modal hidden">
 		<div class="modal-card">
 			<div class="modal-header">
@@ -572,17 +675,129 @@
 		</div>
 	</div>
 
-	<!-- Interested Leads Modal -->
-	<div id="interestedLeadsModal" class="modal hidden">
+	<!-- Listing Edit Modal -->
+	<div id="listingEditModal" class="modal hidden">
 		<div class="modal-card">
 			<div class="modal-header">
-				<h3>Interested Leads - <span id="propertyName">Property Name</span></h3>
-				<button id="closeInterestedLeads" class="icon-btn" aria-label="Close">×</button>
+				<h3>Edit Listing - <span id="editListingName">Property Name</span></h3>
+				<button id="closeListingEdit" class="icon-btn" aria-label="Close">×</button>
 			</div>
 			<div class="modal-body">
-				<div id="interestedLeadsContent">
-					<!-- Interested leads will be loaded here -->
-				</div>
+				<form id="listingEditForm">
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" id="editIsPUMI">
+							<span class="checkmark"></span>
+							Mark as PUMI
+						</label>
+					</div>
+					
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" id="editMarkForReview">
+							<span class="checkmark"></span>
+							Mark for Review
+						</label>
+					</div>
+					
+					<div class="form-group">
+						<label for="editPropertyName">Property Name</label>
+						<input type="text" id="editPropertyName" required>
+					</div>
+					
+					<div class="form-group">
+						<label for="editAddress">Address</label>
+						<input type="text" id="editAddress" required>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editMarket">Market</label>
+							<select id="editMarket" required>
+								<option value="Austin">Austin</option>
+								<option value="Dallas">Dallas</option>
+								<option value="Houston">Houston</option>
+							</select>
+						</div>
+						
+						<div class="form-group">
+							<label for="editPhone">Phone</label>
+							<input type="tel" id="editPhone" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editRentMin">Min Rent</label>
+							<input type="number" id="editRentMin" min="0" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="editRentMax">Max Rent</label>
+							<input type="number" id="editRentMax" min="0" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editBedsMin">Min Beds</label>
+							<input type="number" id="editBedsMin" min="0" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="editBedsMax">Max Beds</label>
+							<input type="number" id="editBedsMax" min="0" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editBathsMin">Min Baths</label>
+							<input type="number" id="editBathsMin" min="0" step="0.5" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="editBathsMax">Max Baths</label>
+							<input type="number" id="editBathsMax" min="0" step="0.5" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="editEscortPct">Escort Commission %</label>
+							<input type="number" id="editEscortPct" min="0" max="10" step="0.1" required>
+						</div>
+						
+						<div class="form-group">
+							<label for="editSendPct">Send Commission %</label>
+							<input type="number" id="editSendPct" min="0" max="10" step="0.1" required>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="editWebsite">Website</label>
+						<input type="url" id="editWebsite">
+					</div>
+					
+					<div class="form-group">
+						<label for="editAmenities">Amenities (comma-separated)</label>
+						<input type="text" id="editAmenities" placeholder="Pool, Gym, Parking">
+					</div>
+					
+					<div class="form-group">
+						<label for="editSpecials">Special Offers</label>
+						<input type="text" id="editSpecials" placeholder="1 month free">
+					</div>
+					
+					<div class="form-group">
+						<label for="editBonus">Bonus Text</label>
+						<input type="text" id="editBonus" placeholder="$300 bonus">
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" id="cancelListingEdit" class="btn btn-secondary">Cancel</button>
+				<button type="button" id="saveListingEdit" class="btn btn-primary">Save Changes</button>
 			</div>
 		</div>
 	</div>
@@ -610,6 +825,7 @@
 							<option value="agent">Agent</option>
 							<option value="manager">Manager</option>
 							<option value="super_user">Super User</option>
+							<option value="accountant">Accountant</option>
 						</select>
 					</div>
 					<div class="field">
@@ -863,6 +1079,10 @@
 	</div>
 
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script>
+		// Mapbox configuration
+		mapboxgl.accessToken = 'pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg';
+	</script>
 	<script src="script.js"></script>
 </body>
 </html>
