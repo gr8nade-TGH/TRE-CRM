@@ -9,6 +9,11 @@
 		crossorigin="anonymous"
 	></script>
 	<link rel="stylesheet" href="styles.css" />
+	<link rel="stylesheet" href="auth-styles.css" />
+	<!-- Supabase Client -->
+	<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+	<script src="supabase-client.js"></script>
+	<script src="auth.js"></script>
 	<!-- Mapbox GL JS -->
 	<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 	<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
@@ -16,6 +21,83 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
 <body>
+	<!-- Login Modal -->
+	<div id="loginModal" class="modal" style="display: none;">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Login to TRE CRM</h3>
+				<button class="close-btn" onclick="closeLoginModal()">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="loginForm">
+					<div class="field">
+						<label>Email</label>
+						<input type="email" id="loginEmail" required placeholder="Enter your email">
+					</div>
+					<div class="field">
+						<label>Password</label>
+						<input type="password" id="loginPassword" required placeholder="Enter your password">
+					</div>
+					<div class="field">
+						<button type="submit" class="btn primary">Login</button>
+					</div>
+				</form>
+				<p style="text-align: center; margin-top: 15px;">
+					Don't have an account? <a href="#" onclick="showRegisterModal()" style="color: #007bff;">Register</a>
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- Register Modal -->
+	<div id="registerModal" class="modal" style="display: none;">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Register for TRE CRM</h3>
+				<button class="close-btn" onclick="closeRegisterModal()">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="registerForm">
+					<div class="field">
+						<label>Full Name</label>
+						<input type="text" id="registerName" required placeholder="Enter your full name">
+					</div>
+					<div class="field">
+						<label>Email</label>
+						<input type="email" id="registerEmail" required placeholder="Enter your email">
+					</div>
+					<div class="field">
+						<label>Password</label>
+						<input type="password" id="registerPassword" required placeholder="Create a password">
+					</div>
+					<div class="field">
+						<label>Role</label>
+						<select id="registerRole" required>
+							<option value="">Select your role</option>
+							<option value="agent">Agent</option>
+							<option value="manager">Manager</option>
+							<option value="super_user">Super User</option>
+						</select>
+					</div>
+					<div class="field">
+						<button type="submit" class="btn primary">Register</button>
+					</div>
+				</form>
+				<p style="text-align: center; margin-top: 15px;">
+					Already have an account? <a href="#" onclick="showLoginModal()" style="color: #007bff;">Login</a>
+				</p>
+			</div>
+		</div>
+	</div>
+
+	<!-- User Info Bar (shown when logged in) -->
+	<div id="userInfoBar" class="user-info-bar" style="display: none;">
+		<div class="user-info-content">
+			<span id="userName">Welcome, User</span>
+			<span id="userRole" class="user-role"></span>
+			<button id="logoutBtn" class="btn secondary small">Logout</button>
+		</div>
+	</div>
 	<header class="app-header">
 		<div class="brand">
 			<span class="brand-text">TRE CRM</span>

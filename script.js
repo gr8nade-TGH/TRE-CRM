@@ -1272,7 +1272,7 @@ const mockAuditLog = [
 	const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
 		? 'http://localhost:3001/api' 
 		: null; // Will use mock data when API_BASE is null
-	const USE_MOCK_DATA = true; // Set to false when backend is deployed
+	const USE_MOCK_DATA = false; // Now using real Supabase data
 
 	// Helper function to handle API responses
 	async function handleResponse(response) {
@@ -1361,19 +1361,57 @@ const mockAuditLog = [
 				};
 			}
 			
-			const params = new URLSearchParams({
-				role,
-				agentId,
-				search,
-				sortKey,
-				sortDir,
-				page,
-				pageSize,
-				...filters
-			});
-
-			const response = await fetch(`${API_BASE}/leads?${params}`);
-			return handleResponse(response);
+			// Use Supabase data
+			console.log('Using Supabase data for leads');
+			try {
+				let query = window.supabaseClient
+					.from('leads')
+					.select('*');
+				
+				// Apply filters
+				if (filters.status && filters.status !== 'all') {
+					query = query.eq('health_status', filters.status);
+				}
+				
+				if (filters.fromDate) {
+					query = query.gte('submitted_at', filters.fromDate);
+				}
+				
+				if (filters.toDate) {
+					const toDate = new Date(filters.toDate);
+					toDate.setHours(23, 59, 59, 999);
+					query = query.lte('submitted_at', toDate.toISOString());
+				}
+				
+				// Apply search
+				if (search) {
+					query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
+				}
+				
+				// Apply sorting
+				if (sortKey && sortDir && sortDir !== 'none') {
+					const ascending = sortDir === 'asc';
+					query = query.order(sortKey, { ascending });
+				} else {
+					query = query.order('submitted_at', { ascending: false });
+				}
+				
+				const { data, error } = await query;
+				
+				if (error) {
+					console.error('Error fetching leads from Supabase:', error);
+					return { items: [], total: 0 };
+				}
+				
+				console.log('✅ Fetched', data.length, 'leads from Supabase');
+				return {
+					items: data,
+					total: data.length
+				};
+			} catch (error) {
+				console.error('Error fetching leads:', error);
+				return { items: [], total: 0 };
+			}
 		},
 
 		async getLead(id) {
@@ -1381,8 +1419,24 @@ const mockAuditLog = [
 				return mockLeads.find(lead => lead.id === id) || mockLeads[0];
 			}
 			
-			const response = await fetch(`${API_BASE}/leads/${id}`);
-			return handleResponse(response);
+			// Use Supabase data
+			try {
+				const { data, error } = await window.supabaseClient
+					.from('leads')
+					.select('*')
+					.eq('id', id)
+					.single();
+				
+				if (error) {
+					console.error('Error fetching lead from Supabase:', error);
+					return null;
+				}
+				
+				return data;
+			} catch (error) {
+				console.error('Error fetching lead:', error);
+				return null;
+			}
 		},
 
 		async assignLead(id, agent_id) {
@@ -1841,15 +1895,230 @@ const mockAuditLog = [
 	}
 
 	function renderAgentSelect(lead){
-		const opts = mockAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
+		// Get agents from Supabase
+		let agents = [];
+		try {
+			if (USE_MOCK_DATA) {
+				agents = mockAgents;
+			} else {
+				const { data, error } = await window.supabaseClient
+					.from('users')
+					.select('*')
+					.in('role', ['agent', 'manager', 'super_user'])
+					.order('name');
+				
+				if (error) {
+					console.error('Error fetching agents:', error);
+					agents = mockAgents; // Fallback to mock data
+				} else {
+					agents = data;
+					console.log('✅ Fetched', data.length, 'agents from Supabase');
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching agents:', error);
+			agents = mockAgents; // Fallback to mock data
+		}
+		
+		const opts = agents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
 	function renderAgentReadOnly(lead){
-		const a = mockAgents.find(a => a.id === lead.assigned_agent_id);
+		// Get agents from Supabase
+		let agents = [];
+		try {
+			if (USE_MOCK_DATA) {
+				agents = mockAgents;
+			} else {
+				const { data, error } = await window.supabaseClient
+					.from('users')
+					.select('*')
+					.in('role', ['agent', 'manager', 'super_user']);
+				
+				if (error) {
+					console.error('Error fetching agents:', error);
+					agents = mockAgents; // Fallback to mock data
+				} else {
+					agents = data;
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching agents:', error);
+			agents = mockAgents; // Fallback to mock data
+		}
+		
+		const a = agents.find(a => a.id === lead.assigned_agent_id);
 		return `<span class="subtle">${a ? a.name : 'Unassigned'}</span>`;
 	}
 
-	// ---- Document Status Rendering ----
+	// Authentication state
+	let currentUser = null;
+	let authSubscription = null;
+
+	// Initialize authentication
+	async function initializeAuth() {
+		console.log('🔐 Initializing authentication...');
+		
+		// Check for existing session
+		const session = await getCurrentSession();
+		if (session && session.user) {
+			currentUser = session.user;
+			showMainApp();
+			console.log('✅ User already logged in:', currentUser.email);
+		} else {
+			showLoginModal();
+			console.log('❌ No active session, showing login');
+		}
+		
+		// Listen for auth state changes
+		authSubscription = onAuthStateChange((event, session) => {
+			console.log('🔐 Auth state changed:', event, session?.user?.email);
+			
+			if (event === 'SIGNED_IN' && session?.user) {
+				currentUser = session.user;
+				showMainApp();
+			} else if (event === 'SIGNED_OUT') {
+				currentUser = null;
+				showLoginModal();
+			}
+		});
+	}
+
+	// Show main app (hide auth modals, show user info)
+	function showMainApp() {
+		document.getElementById('loginModal').style.display = 'none';
+		document.getElementById('registerModal').style.display = 'none';
+		
+		// Show user info bar
+		const userInfoBar = document.getElementById('userInfoBar');
+		const userName = document.getElementById('userName');
+		const userRole = document.getElementById('userRole');
+		
+		if (currentUser) {
+			const userData = currentUser.user_metadata || {};
+			const role = userData.role || 'user';
+			
+			userName.textContent = `Welcome, ${userData.name || currentUser.email}`;
+			userRole.textContent = role.replace('_', ' ');
+			userInfoBar.style.display = 'block';
+			
+			// Update role-based UI
+			updateRoleBasedUI(role);
+		}
+	}
+
+	// Show login modal
+	function showLoginModal() {
+		document.getElementById('loginModal').style.display = 'flex';
+		document.getElementById('registerModal').style.display = 'none';
+		document.getElementById('userInfoBar').style.display = 'none';
+	}
+
+	// Show register modal
+	function showRegisterModal() {
+		document.getElementById('registerModal').style.display = 'flex';
+		document.getElementById('loginModal').style.display = 'none';
+	}
+
+	// Close login modal
+	function closeLoginModal() {
+		document.getElementById('loginModal').style.display = 'none';
+	}
+
+	// Close register modal
+	function closeRegisterModal() {
+		document.getElementById('registerModal').style.display = 'none';
+	}
+
+	// Update UI based on user role
+	function updateRoleBasedUI(role) {
+		// Show/hide admin features based on role
+		const adminElements = document.querySelectorAll('[data-admin-only]');
+		const managerElements = document.querySelectorAll('[data-manager-only]');
+		
+		adminElements.forEach(el => {
+			el.style.display = role === 'super_user' ? 'block' : 'none';
+		});
+		
+		managerElements.forEach(el => {
+			el.style.display = ['manager', 'super_user'].includes(role) ? 'block' : 'none';
+		});
+		
+		// Update navigation based on role
+		const agentsNav = document.querySelector('a[href="#agents"]');
+		if (agentsNav) {
+			agentsNav.style.display = ['manager', 'super_user'].includes(role) ? 'block' : 'none';
+		}
+		
+		const adminNav = document.querySelector('a[href="#admin"]');
+		if (adminNav) {
+			adminNav.style.display = role === 'super_user' ? 'block' : 'none';
+		}
+	}
+
+	// Handle login form submission
+	async function handleLogin(event) {
+		event.preventDefault();
+		
+		const email = document.getElementById('loginEmail').value;
+		const password = document.getElementById('loginPassword').value;
+		
+		try {
+			const button = event.target.querySelector('button[type="submit"]');
+			button.disabled = true;
+			button.textContent = 'Logging in...';
+			
+			await signIn(email, password);
+			// Auth state change will handle the rest
+			
+		} catch (error) {
+			console.error('Login error:', error);
+			alert('Login failed: ' + error.message);
+			
+			const button = event.target.querySelector('button[type="submit"]');
+			button.disabled = false;
+			button.textContent = 'Login';
+		}
+	}
+
+	// Handle register form submission
+	async function handleRegister(event) {
+		event.preventDefault();
+		
+		const name = document.getElementById('registerName').value;
+		const email = document.getElementById('registerEmail').value;
+		const password = document.getElementById('registerPassword').value;
+		const role = document.getElementById('registerRole').value;
+		
+		try {
+			const button = event.target.querySelector('button[type="submit"]');
+			button.disabled = true;
+			button.textContent = 'Registering...';
+			
+			await signUp(email, password, { name, role });
+			alert('Registration successful! Please check your email to confirm your account.');
+			showLoginModal();
+			
+		} catch (error) {
+			console.error('Registration error:', error);
+			alert('Registration failed: ' + error.message);
+			
+			const button = event.target.querySelector('button[type="submit"]');
+			button.disabled = false;
+			button.textContent = 'Register';
+		}
+	}
+
+	// Handle logout
+	async function handleLogout() {
+		try {
+			await signOut();
+			// Auth state change will handle the rest
+		} catch (error) {
+			console.error('Logout error:', error);
+			alert('Logout failed: ' + error.message);
+		}
+	}
 	function renderDocumentStepStatus(step, currentStep) {
 		if (step.id < currentStep) {
 			return `<span class="step-completed">✓ Completed</span>`;
@@ -3201,8 +3470,30 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		
 		const search = state.search.toLowerCase();
 		
-		// Apply both search and filters
-		let filtered = mockProperties;
+		// Fetch properties from Supabase
+		let filtered = [];
+		try {
+			if (USE_MOCK_DATA) {
+				filtered = mockProperties;
+			} else {
+				console.log('Fetching properties from Supabase...');
+				const { data, error } = await window.supabaseClient
+					.from('properties')
+					.select('*')
+					.order('created_at', { ascending: false });
+				
+				if (error) {
+					console.error('Error fetching properties:', error);
+					filtered = [];
+				} else {
+					filtered = data;
+					console.log('✅ Fetched', data.length, 'properties from Supabase');
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching properties:', error);
+			filtered = [];
+		}
 		
 		// Apply search filter
 		if (search) {
@@ -5837,3 +6128,6 @@ async function deleteUser(userId) {
 }
 
 // formatDate is already globally accessible
+
+ 
+ 
