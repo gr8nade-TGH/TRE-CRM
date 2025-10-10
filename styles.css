@@ -1,5 +1,9 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
+/* ========================================
+   CSS VARIABLES & RESET
+   ======================================== */
+
 :root {
   --bg: #f6f7f9;
   --panel: #ffffff;
@@ -19,6 +23,10 @@
   --danger: #ef4444;
 }
 
+/* ========================================
+   BASE STYLES & RESET
+   ======================================== */
+
 * { box-sizing: border-box; }
 body { 
   margin: 0; 
@@ -30,6 +38,10 @@ body {
 }
 
 .hidden { display: none !important; }
+
+/* ========================================
+   LAYOUT & HEADER
+   ======================================== */
 
 .app-header { 
   position: sticky; 
@@ -59,6 +71,11 @@ body {
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .app-header .main-nav { display: flex; gap: 32px; }
+
+/* ========================================
+   NAVIGATION STYLES
+   ======================================== */
+
 .app-header .nav-link { 
   font-family: 'Inter', sans-serif;
   color: #fff; 
@@ -96,6 +113,10 @@ body {
   color: var(--ink);
   font-weight: 500;
 }
+
+/* ========================================
+   MAIN CONTENT & VIEWS
+   ======================================== */
 
 .view-bar { 
   display: flex; 
@@ -147,7 +168,10 @@ body {
   box-shadow: 0 0 0 3px rgba(21, 62, 122, 0.1);
 }
 
-/* Filters */
+/* ========================================
+   FILTERS & SEARCH
+   ======================================== */
+
 .filters {
   display: flex;
   align-items: end;
@@ -196,6 +220,10 @@ body {
 .filter-spacer {
   flex: 1;
 }
+
+/* ========================================
+   TABLES & DATA DISPLAY
+   ======================================== */
 
 .table-wrapper { 
   background: #f1f5f9; 
@@ -351,6 +379,10 @@ body {
   color: var(--ink);
 }
 
+
+/* ========================================
+   BUTTONS & INTERACTIVE ELEMENTS
+   ======================================== */
 
 /* Build Showcase Button */
 .btn-success {
@@ -622,6 +654,10 @@ body {
 .field input, .field textarea, .field select { width: 100%; padding: 8px 10px; border: 1px solid #d0d5dd; border-radius: 8px; }
 .field .value { font-weight: 600; }
 
+/* ========================================
+   MODALS & OVERLAYS
+   ======================================== */
+
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
 .modal-card { background: #fff; width: 900px; max-width: 100%; border-radius: 12px; border: 1px solid #e4e7ec; overflow: hidden; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e4e7ec; }
@@ -691,7 +727,15 @@ body {
 	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 .modal-body { padding: 16px; max-height: 60vh; overflow: auto; }
-.modal-footer { padding: 12px 16px; border-top: 1px solid #e4e7ec; display: flex; gap: 10px; justify-content: flex-end; }
+
+/* Consolidated modal-footer - removed duplicate */
+.modal-footer { 
+  padding: 20px 24px; 
+  border-top: 1px solid #e5e7eb; 
+  display: flex; 
+  gap: 12px; 
+  justify-content: flex-end; 
+}
 
 /* Showcase Button Styles */
 .showcase-btn {
@@ -2113,6 +2157,10 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* ========================================
+   UTILITIES & RESPONSIVE DESIGN
+   ======================================== */
+
 @media (max-width: 1100px) {
   .listings-layout { 
     grid-template-columns: 1fr; 
@@ -2928,21 +2976,7 @@ body {
 	color: var(--muted);
 }
 
-/* Responsive Design */
-@media (max-width: 768px) {
-	.progress-leads-container {
-		grid-template-columns: 1fr;
-	}
-	
-	.progress-card {
-		padding: 16px;
-	}
-	
-	.progress-step-label {
-		font-size: 10px;
-		max-width: 60px;
-	}
-}
+/* Removed duplicate responsive design - consolidated above */
 
 /* Admin Page Styles */
 .admin-content {
@@ -3130,14 +3164,7 @@ body {
 	color: #7c3aed;
 }
 
-.modal-footer {
-	display: flex;
-	justify-content: flex-end;
-	gap: 12px;
-	padding: 20px 24px;
-	border-top: 1px solid #e5e7eb;
-	background: #f8fafc;
-}
+/* Removed duplicate modal-footer rule - consolidated above */
 
 .field label input[type="checkbox"] {
 	margin-right: 8px;
