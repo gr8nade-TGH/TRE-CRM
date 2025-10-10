@@ -230,7 +230,10 @@ body {
   border-spacing: 0; 
 }
 
-/* Listings table specific styles - min-width removed to allow column width changes */
+/* Listings table specific styles */
+#listingsTable {
+  min-width: 700px; /* Ensure table has minimum width */
+}
 
 #listingsTable th,
 #listingsTable td {
@@ -239,44 +242,14 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Fire emoji pulsing red glow effect */
-.nav-link[data-page="specials"] {
-	animation: fire-pulse 2s infinite;
-	text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.4);
-}
-
-@keyframes fire-pulse {
-	0%, 100% {
-		transform: scale(1);
-		text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.4);
-	}
-	50% {
-		transform: scale(1.1);
-		text-shadow: 0 0 15px rgba(239, 68, 68, 1), 0 0 25px rgba(239, 68, 68, 0.8), 0 0 35px rgba(239, 68, 68, 0.6);
-	}
-}
-
-/* Percentage-based column widths - this approach worked before */
-#listingsTable {
-	table-layout: fixed !important;
-	width: 100% !important;
-}
-
-#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { 
-	width: 8% !important; 
-} /* Checkbox */
-
-#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { 
-	width: 35% !important; 
-} /* Community */
-
-#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { 
-	width: 32% !important; 
-} /* Rent Range */
-
-#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { 
-	width: 25% !important; 
-} /* Commission */
+/* Optimize column widths for listings table */
+#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 220px; min-width: 200px; } /* Community */
+#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 140px; min-width: 120px; } /* Market */
+#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 140px; min-width: 120px; } /* Rent Range */
+#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Beds/Baths */
+#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 120px; min-width: 100px; } /* Commission */
+#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 140px; min-width: 120px; } /* Interested Leads */
+#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 160px; min-width: 140px; } /* Last Updated */
 .data-table thead th { 
   background: #1e293b; 
   text-align: left; 
@@ -385,7 +358,42 @@ body {
   margin: 0;
 }
 
-/* Removed conflicting CSS rules */
+/* Listings table layout - AGGRESSIVE FIX */
+#listingsTable {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+/* Checkbox column styling - FORCE NARROW */
+#listingsTable th:first-child,
+#listingsTable td:first-child {
+  width: 25px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  padding: 4px 8px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  width: auto !important;
+}
+
+#listingsTable th:nth-child(3),
+#listingsTable td:nth-child(3) {
+  width: 120px !important;
+}
+
+#listingsTable th:nth-child(4),
+#listingsTable td:nth-child(4) {
+  width: 100px !important;
+}
+
+#listingsTable th:first-child {
+  border-right: none !important;
+}
 
 /* PUMI Label Styling */
 .pumi-label {
@@ -627,16 +635,16 @@ body {
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e4e7ec; }
 .modal-actions { display: flex; align-items: center; gap: 12px; }
 .modal-sticky-header {
-  position: sticky;
-  top: 0;
-  background: #f8fbff;
+	position: sticky;
+	top: 0;
+	background: #f8fbff;
 	padding: 24px;
-  border-bottom: 1px solid #e4e7ec;
-  display: flex;
+	border-bottom: 1px solid #e4e7ec;
+	display: flex;
 	align-items: flex-start;
 	gap: 24px;
-  justify-content: space-between;
-  z-index: 10;
+	justify-content: space-between;
+	z-index: 10;
 }
 
 /* Showcase controls layout */
@@ -669,9 +677,9 @@ body {
 }
 
 .selection-count {
-  font-size: 14px;
+	font-size: 14px;
 	color: #6b7280;
-  font-weight: 500;
+	font-weight: 500;
 	text-align: right;
 }
 
@@ -1348,18 +1356,32 @@ body {
   color: var(--brand); 
 }
 
-/* Map Layout - aligned with search bar, minimal gap */
+/* Map Layout */
 .listings-layout { 
   display: grid; 
   grid-template-columns: 35% 65%; 
-  gap: 4px; /* Minimal gap */
-  margin: 0 24px 24px; /* Match filters margin for perfect alignment */
-  height: calc(100vh - 150px);
-  max-height: 900px;
+  gap: 20px; 
+  margin: 0 24px 24px;
+  height: calc(100vh - 150px); /* Increased height by ~10% (was 200px, now 150px) */
+  max-height: 900px; /* Increased max height by ~10% (was 800px, now 900px) */
 }
 
 
-/* Removed conflicting column width constraints */
+/* Column width constraints for listings table */
+#listingsTable th:nth-child(1),
+#listingsTable td:nth-child(1) {
+  width: 50%;
+}
+
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  width: 30%;
+}
+
+#listingsTable th:nth-child(3),
+#listingsTable td:nth-child(3) {
+  width: 20%;
+}
 
 /* Custom scrollbar for listings table */
 .listings-table-container::-webkit-scrollbar {
