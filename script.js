@@ -3793,12 +3793,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	
 	// Load internal notes for a lead
 	async function loadInternalNotes(leadId) {
+		console.log('loadInternalNotes called with leadId:', leadId);
 		const container = document.getElementById('internalNotesContainer');
+		console.log('Container element:', container);
 		
 		try {
 			if (USE_MOCK_DATA) {
+				console.log('Loading notes in mock data mode');
 				// Get notes from state (user-added notes) and combine with default mock notes
 				const userNotes = state.leadNotes && state.leadNotes[leadId] ? state.leadNotes[leadId] : [];
+				console.log('User notes for leadId', leadId, ':', userNotes);
 				
 				// Default mock notes for demonstration
 				const defaultMockNotes = [
@@ -3821,6 +3825,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					new Date(b.created_at) - new Date(a.created_at)
 				);
 				
+				console.log('All notes (user + default):', allNotes);
 				
 				if (allNotes.length === 0) {
 					container.innerHTML = '<div class="internal-note"><div class="internal-note-content">No internal notes yet.</div></div>';
@@ -3835,6 +3840,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 						</div>
 					`).join('');
 				}
+				
+				console.log('Notes rendered successfully');
 			} else {
 				// TODO: Fetch from Supabase lead_notes table
 				container.innerHTML = '<div class="internal-note"><div class="internal-note-content">No internal notes yet.</div></div>';
@@ -3867,6 +3874,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			}
 			
 			if (USE_MOCK_DATA) {
+				console.log('Adding note in mock data mode');
+				console.log('Current state.leadNotes:', state.leadNotes);
+				console.log('leadId:', leadId);
+				
 				// Add note to mock data and display immediately
 				const newNote = {
 					id: 'note_' + Date.now(),
@@ -3875,21 +3886,29 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					created_at: new Date().toISOString()
 				};
 				
+				console.log('New note created:', newNote);
+				
 				// Add to mock notes array (we'll store this in state for now)
 				if (!state.leadNotes) state.leadNotes = {};
 				if (!state.leadNotes[leadId]) state.leadNotes[leadId] = [];
 				state.leadNotes[leadId].push(newNote);
 				
+				console.log('Updated state.leadNotes:', state.leadNotes);
+				
 				// Save to localStorage
 				localStorage.setItem('treLeadNotes', JSON.stringify(state.leadNotes));
+				console.log('Saved to localStorage');
 				
 				// Clear the input
 				document.getElementById('newInternalNote').value = '';
+				console.log('Cleared input field');
 				
 				// Reload notes to show the new one
+				console.log('Calling loadInternalNotes...');
 				await loadInternalNotes(leadId);
 				
 				// Update comment icon in leads table
+				console.log('Calling updateCommentIcon...');
 				updateCommentIcon(leadId);
 				
 				toast('Internal note added successfully!', 'success');
@@ -3967,10 +3986,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	
 	// Check if a lead has comments
 	function checkLeadHasComments(leadId) {
+		console.log('checkLeadHasComments called with leadId:', leadId);
 		if (USE_MOCK_DATA) {
 			// Check if lead has user-added comments
 			const userNotes = state.leadNotes && state.leadNotes[leadId] ? state.leadNotes[leadId] : [];
-			return userNotes.length > 0;
+			console.log('User notes for leadId', leadId, ':', userNotes);
+			const hasComments = userNotes.length > 0;
+			console.log('Has comments result:', hasComments);
+			return hasComments;
 		} else {
 			// TODO: Check Supabase for comments
 			return false;
@@ -4047,14 +4070,21 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	
 	// Update comment icon for a specific lead
 	function updateCommentIcon(leadId) {
+		console.log('updateCommentIcon called with leadId:', leadId);
 		const icon = document.querySelector(`.comment-icon[data-lead-id="${leadId}"]`);
+		console.log('Found comment icon:', icon);
 		if (icon) {
 			const hasComments = checkLeadHasComments(leadId);
+			console.log('Has comments:', hasComments);
 			if (hasComments) {
 				icon.classList.add('has-comments');
+				console.log('Added has-comments class');
 			} else {
 				icon.classList.remove('has-comments');
+				console.log('Removed has-comments class');
 			}
+		} else {
+			console.log('Comment icon not found for leadId:', leadId);
 		}
 	}
 
