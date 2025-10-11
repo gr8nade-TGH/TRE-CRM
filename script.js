@@ -6780,8 +6780,12 @@ function processCsvFile(file) {
 	reader.readAsText(file);
 }
 
-// Add event listeners for listing management
+// Add event listeners for listing management (only when logged in and on listings page)
 document.addEventListener('click', function(e) {
+	// Only process listing management clicks if user is logged in and on listings page
+	if (!state.currentUser) return;
+	if (window.location.hash !== '#/listings') return;
+	
 	if (e.target.id === 'addListingBtn') {
 		showModal('addListingModal');
 	}
