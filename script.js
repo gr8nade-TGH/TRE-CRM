@@ -3489,8 +3489,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			const dotElement = document.createElement('div');
 			dotElement.className = 'custom-dot-marker';
 			dotElement.style.cssText = `
-				width: 12px;
-				height: 12px;
+				width: ${prop.isPUMI ? '16px' : '12px'};
+				height: ${prop.isPUMI ? '16px' : '12px'};
 				border-radius: 50%;
 				background: ${isSelected ? '#ef4444' : (prop.isPUMI ? '#22c55e' : '#3b82f6')};
 				border: 2px solid white;
