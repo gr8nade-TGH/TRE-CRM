@@ -1901,9 +1901,9 @@ const mockAuditLog = [
 				<td>
 					<div style="display: flex; align-items: center; gap: 8px;">
 						<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
-						<button class="comment-icon" data-lead-id="${lead.id}" title="View Comments">
-							💬
-						</button>
+                    <button class="comment-icon" data-lead-id="${lead.id}" title="View Comments">
+                        📝
+                    </button>
 					</div>
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
