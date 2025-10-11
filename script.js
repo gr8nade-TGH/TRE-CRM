@@ -5937,22 +5937,26 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Handle listing management buttons first
 			if (e.target.id === 'addListingBtn') {
 				console.log('Add Listing button clicked');
-				console.log('Current user:', state.currentUser);
+				console.log('Current user:', currentUser);
 				console.log('Current hash:', window.location.hash);
-				console.log('Should show modal:', state.currentUser && window.location.hash === '#/listings');
+				console.log('Should show modal:', currentUser && window.location.hash === '#/listings');
 				
-				if (state.currentUser && window.location.hash === '#/listings') {
+				if (currentUser && window.location.hash === '#/listings') {
 					console.log('Opening add listing modal');
 					showModal('addListingModal');
+				} else {
+					console.log('Cannot open modal - user not logged in or not on listings page');
 				}
 				return;
 			}
 			
 			if (e.target.id === 'csvUploadBtn') {
 				console.log('CSV Upload button clicked');
-				if (state.currentUser && window.location.hash === '#/listings') {
+				if (currentUser && window.location.hash === '#/listings') {
 					console.log('Opening CSV upload modal');
 					showModal('csvUploadModal');
+				} else {
+					console.log('Cannot open modal - user not logged in or not on listings page');
 				}
 				return;
 			}
