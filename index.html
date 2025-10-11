@@ -293,20 +293,41 @@
 		/* Checkbox Grid */
 		.checkbox-grid {
 			display: grid;
-			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-			gap: 8px;
-			margin-top: 8px;
+			grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+			gap: 12px;
+			margin-top: 1rem;
 		}
 
 		.checkbox-item {
 			display: flex;
 			align-items: center;
-			font-size: 14px;
-			cursor: pointer;
+			gap: 8px;
+			padding: 8px 0;
 		}
 
 		.checkbox-item input[type="checkbox"] {
-			margin-right: 8px;
+			width: 18px;
+			height: 18px;
+			margin: 0;
+			flex-shrink: 0;
+		}
+
+		.checkbox-item label {
+			margin: 0;
+			font-weight: 500;
+			font-size: 14px;
+			color: #333;
+			cursor: pointer;
+			flex: 1;
+		}
+
+		.checkbox-item label {
+			margin: 0;
+			font-weight: 500;
+			font-size: 14px;
+			color: #333;
+			cursor: pointer;
+			flex: 1;
 		}
 
 		/* Upload Area */
@@ -2014,18 +2035,54 @@
 						<div class="form-group">
 							<label>Amenities (Select all that apply)</label>
 							<div class="checkbox-grid">
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="pool"> Swimming Pool</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="gym"> Fitness Center</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="laundry"> In-Unit Laundry</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="dishwasher"> Dishwasher</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="hardwood"> Hardwood Floors</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="patio"> Patio/Balcony</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="parking"> Parking</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="pet_friendly"> Pet Friendly</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="air_conditioning"> Air Conditioning</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="heating"> Heating</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="walk_in_closet"> Walk-in Closet</label>
-								<label class="checkbox-item"><input type="checkbox" name="amenities" value="garden"> Garden</label>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="pool" id="amenity_pool">
+									<label for="amenity_pool">Swimming Pool</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="gym" id="amenity_gym">
+									<label for="amenity_gym">Fitness Center</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="laundry" id="amenity_laundry">
+									<label for="amenity_laundry">In-Unit Laundry</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="dishwasher" id="amenity_dishwasher">
+									<label for="amenity_dishwasher">Dishwasher</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="hardwood" id="amenity_hardwood">
+									<label for="amenity_hardwood">Hardwood Floors</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="patio" id="amenity_patio">
+									<label for="amenity_patio">Patio/Balcony</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="parking" id="amenity_parking">
+									<label for="amenity_parking">Parking</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="pet_friendly" id="amenity_pet_friendly">
+									<label for="amenity_pet_friendly">Pet Friendly</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="air_conditioning" id="amenity_air_conditioning">
+									<label for="amenity_air_conditioning">Air Conditioning</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="heating" id="amenity_heating">
+									<label for="amenity_heating">Heating</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="walk_in_closet" id="amenity_walk_in_closet">
+									<label for="amenity_walk_in_closet">Walk-in Closet</label>
+								</div>
+								<div class="checkbox-item">
+									<input type="checkbox" name="amenities" value="garden" id="amenity_garden">
+									<label for="amenity_garden">Garden</label>
+								</div>
 							</div>
 						</div>
 						<div class="form-group">
