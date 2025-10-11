@@ -1902,7 +1902,7 @@ const mockAuditLog = [
 					<div style="display: flex; align-items: center; gap: 8px;">
 						<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
                     <button class="comment-icon" data-lead-id="${lead.id}" title="View Comments">
-                        📝
+                        📋
                     </button>
 					</div>
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
@@ -1913,19 +1913,8 @@ const mockAuditLog = [
 				<td class="mono">
 					<span class="badge-dot"><span class="dot"></span>${prefsSummary(lead.prefs)}</span>
 				</td>
-				<td><button class="icon-btn showcase-btn" data-matches="${lead.id}" title="Top Listing Options">
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-						<path d="M9 9h6v6H9z"/>
-						<path d="M9 3v6"/>
-						<path d="M9 15v6"/>
-						<path d="M15 3v6"/>
-						<path d="M15 15v6"/>
-						<path d="M3 9h6"/>
-						<path d="M15 9h6"/>
-						<path d="M3 15h6"/>
-						<path d="M15 15h6"/>
-					</svg>
+				<td><button class="top-listing-btn" data-matches="${lead.id}" title="Top Listing Options">
+					🏠 Top Listing Options
 				</button></td>
 				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}

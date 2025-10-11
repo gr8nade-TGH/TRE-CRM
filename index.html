@@ -101,6 +101,35 @@
 			transform: translateY(0);
 		}
 		
+		/* Top Listing Options Button */
+		.top-listing-btn {
+			background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+			border: none;
+			color: white;
+			padding: 10px 16px;
+			border-radius: 8px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+			font-weight: 500;
+			font-size: 14px;
+		}
+		
+		.top-listing-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+			background: linear-gradient(135deg, #218838 0%, #1ea085 100%);
+		}
+		
+		.top-listing-btn:active {
+			transform: translateY(0);
+		}
+		
+		/* Center content in Top Listing Options column */
+		th:nth-child(6), td:nth-child(6) {
+			text-align: center;
+		}
+		
 		/* Comment Icon Styles */
 		.comment-icon {
 			background: none;
