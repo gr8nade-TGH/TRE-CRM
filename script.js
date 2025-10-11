@@ -304,6 +304,7 @@ const mockAuditLog = [
 		currentMatches: [],
 		showcases: {}, // id -> showcase
 		publicBanner: 'Earn a $200 gift card when you lease through us.',
+		agents: [], // Pre-loaded agents for dropdowns
 		filters: {
 			search: '',
 			status: 'all',
@@ -813,6 +814,11 @@ const mockAuditLog = [
 		
 		// Ensure score stays within bounds
 		healthScore = Math.max(0, Math.min(100, healthScore));
+		
+		// CRITICAL: If no agent assigned, force red status
+		if (!lead.assigned_agent_id) {
+			return 'red';
+		}
 		
 		// Determine final status
 		if (healthScore >= 80) return 'green';
@@ -1834,9 +1840,46 @@ const mockAuditLog = [
 		}
 	};
 
+	// ---- Load Agents Data ----
+	async function loadAgents() {
+		try {
+			if (USE_MOCK_DATA) {
+				state.agents = mockAgents;
+			} else {
+				// Try a simpler query first
+				const { data, error } = await window.supabaseClient
+					.from('users')
+					.select('*')
+					.order('name', { ascending: true });
+				
+				if (error) {
+					console.error('Error fetching agents:', error);
+					console.error('Error details:', error.message, error.details, error.hint);
+					state.agents = mockAgents; // Fallback to mock data
+				} else {
+					// Filter agents by role in JavaScript
+					const filteredAgents = data.filter(user => 
+						['agent', 'manager', 'super_user'].includes(user.role)
+					);
+					state.agents = filteredAgents;
+					console.log('✅ Loaded', filteredAgents.length, 'agents for dropdowns');
+				}
+			}
+		} catch (error) {
+			console.error('Error loading agents:', error);
+			state.agents = mockAgents; // Fallback to mock data
+		}
+	}
+
 	// ---- Rendering: Leads Table ----
 	async function renderLeads(){
 		console.log('renderLeads called'); // Debug
+		
+		// Load agents first if not already loaded
+		if (state.agents.length === 0) {
+			await loadAgents();
+		}
+		
 		const tbody = document.getElementById('leadsTbody');
 		console.log('tbody element:', tbody); // Debug
 		const { items, total } = await api.getLeads({
@@ -1892,63 +1935,56 @@ const mockAuditLog = [
 		
 		// Update sort headers
 		updateSortHeaders('leadsTable');
+		
+		// Add event listeners for agent assignment changes
+		setTimeout(() => {
+			document.querySelectorAll('.agent-select').forEach(select => {
+				select.addEventListener('change', function() {
+					// Update the class based on selection
+					if (this.value === '') {
+						this.classList.add('unassigned');
+					} else {
+						this.classList.remove('unassigned');
+					}
+					
+					// Update the lead's assigned_agent_id
+					const leadId = this.dataset.assign;
+					const lead = items.find(l => l.id === leadId);
+					if (lead) {
+						lead.assigned_agent_id = this.value || null;
+						
+						// Update health status since assignment changed
+						const healthBtn = this.closest('tr').querySelector('.health-btn');
+						if (healthBtn) {
+							const newStatus = calculateHealthStatus(lead);
+							lead.health_status = newStatus;
+							
+							// Update the health button
+							const healthDot = healthBtn.querySelector('.health-dot');
+							healthDot.className = `health-dot health-${newStatus}`;
+						}
+					}
+				});
+			});
+		}, 100);
 	}
 
-	async function renderAgentSelect(lead){
-		// Get agents from Supabase
-		let agents = [];
-		try {
-			if (USE_MOCK_DATA) {
-				agents = mockAgents;
-			} else {
-				const { data, error } = await window.supabaseClient
-					.from('users')
-					.select('*')
-					.in('role', ['agent', 'manager', 'super_user'])
-					.order('name');
-				
-				if (error) {
-					console.error('Error fetching agents:', error);
-					agents = mockAgents; // Fallback to mock data
-				} else {
-					agents = data;
-					console.log('✅ Fetched', data.length, 'agents from Supabase');
-				}
-			}
-		} catch (error) {
-			console.error('Error fetching agents:', error);
-			agents = mockAgents; // Fallback to mock data
-		}
+	function renderAgentSelect(lead){
+		// Use pre-loaded agents from state
+		const agents = state.agents || [];
 		
 		const opts = agents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
-		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
+		const isUnassigned = !lead.assigned_agent_id;
+		const className = isUnassigned ? 'agent-select unassigned' : 'agent-select';
+		return `<select class="${className}" data-assign="${lead.id}"><option value="" ${isUnassigned?'selected':''}>Unassigned</option>${opts}</select>`;
 	}
-	async function renderAgentReadOnly(lead){
-		// Get agents from Supabase
-		let agents = [];
-		try {
-			if (USE_MOCK_DATA) {
-				agents = mockAgents;
-			} else {
-				const { data, error } = await window.supabaseClient
-					.from('users')
-					.select('*')
-					.in('role', ['agent', 'manager', 'super_user']);
-				
-				if (error) {
-					console.error('Error fetching agents:', error);
-					agents = mockAgents; // Fallback to mock data
-				} else {
-					agents = data;
-				}
-			}
-		} catch (error) {
-			console.error('Error fetching agents:', error);
-			agents = mockAgents; // Fallback to mock data
-		}
+	function renderAgentReadOnly(lead){
+		// Use pre-loaded agents from state
+		const agents = state.agents || [];
 		
 		const a = agents.find(a => a.id === lead.assigned_agent_id);
-		return `<span class="subtle">${a ? a.name : 'Unassigned'}</span>`;
+		const className = a ? 'agent-name' : 'agent-name unassigned';
+		return `<span class="${className}">${a ? a.name : 'Unassigned'}</span>`;
 	}
 
 	// Authentication state
@@ -3692,7 +3728,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			<div class="field"><label>Credit tier</label><div class="value">${lead.prefs.credit_tier}</div></div>
 			<div class="field"><label>Background</label><div class="value">${lead.prefs.background}</div></div>
 			<div class="field"><label>Notes</label><div class="value">${lead.prefs.notes}</div></div>
-			${state.role==='manager' ? `<div class="field"><label>Assign to</label>${renderAgentSelect(await api.getLead(leadId))}</div>` : ''}
+			${state.role==='manager' ? `<div class="field"><label>Assign to</label>${renderAgentSelect(lead)}</div>` : ''}
 		`;
 		show(document.getElementById('leadDrawer'));
 	}

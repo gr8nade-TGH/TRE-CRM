@@ -23,25 +23,49 @@ document.addEventListener('DOMContentLoaded', async function() {
 				const email = document.getElementById('loginEmail').value;
 				const password = document.getElementById('loginPassword').value;
 				
+				const button = e.target.querySelector('button[type="submit"]');
+				
+				// Prevent double submission
+				if (button.disabled) {
+					console.log('Login already in progress, ignoring duplicate submission');
+					return;
+				}
+				
 				try {
-					const button = e.target.querySelector('button[type="submit"]');
 					button.disabled = true;
 					button.textContent = 'Logging in...';
 					
-					await window.signIn(email, password);
+					console.log('Attempting login for:', email);
+					
+					// Add timeout to prevent hanging
+					const loginPromise = window.signIn(email, password);
+					const timeoutPromise = new Promise((_, reject) => 
+						setTimeout(() => reject(new Error('Login timeout - please try again')), 10000)
+					);
+					
+					await Promise.race([loginPromise, timeoutPromise]);
+					
 					// Get the user after successful login
 					const session = await window.getCurrentSession();
 					if (session && session.user) {
+						console.log('Login successful, showing main app');
+						
+						// Reset button state before showing main app
+						button.disabled = false;
+						button.textContent = 'Login';
+						
 						document.body.classList.remove('modal-open');
 						showMainApp(session.user);
 						document.getElementById('loginModal').style.display = 'none';
+					} else {
+						throw new Error('No session found after login');
 					}
 					
 				} catch (error) {
 					console.error('Login error:', error);
 					alert('Login failed: ' + error.message);
 					
-					const button = e.target.querySelector('button[type="submit"]');
+					// Reset button state
 					button.disabled = false;
 					button.textContent = 'Login';
 				}
@@ -140,6 +164,15 @@ window.showLoginModal = function() {
 	document.body.classList.add('modal-open');
 	document.getElementById('loginModal').style.display = 'flex';
 	document.getElementById('registerModal').style.display = 'none';
+	
+	// Reset the login form
+	const loginForm = document.getElementById('loginForm');
+	const submitBtn = loginForm.querySelector('button[type="submit"]');
+	submitBtn.disabled = false;
+	submitBtn.textContent = 'Login';
+	
+	// Clear any error states
+	loginForm.classList.remove('error');
 };
 
 window.showRegisterModal = function() {
