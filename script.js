@@ -1894,7 +1894,7 @@ const mockAuditLog = [
 		updateSortHeaders('leadsTable');
 	}
 
-	function renderAgentSelect(lead){
+	async function renderAgentSelect(lead){
 		// Get agents from Supabase
 		let agents = [];
 		try {
@@ -1923,7 +1923,7 @@ const mockAuditLog = [
 		const opts = agents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
-	function renderAgentReadOnly(lead){
+	async function renderAgentReadOnly(lead){
 		// Get agents from Supabase
 		let agents = [];
 		try {
@@ -4357,9 +4357,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	function route(){
+		console.log('🔧 Route function called, hash:', location.hash);
 		const hash = location.hash.slice(1);
+		console.log('🔧 Processing hash:', hash);
+		
 		// public showcase route: #/sc_xxxxxx
 		if (hash.startsWith('/sc_')){
+			console.log('🔧 Public showcase route detected');
 			// render public showcase view (read-only)
 			document.body.innerHTML = `
 				<link rel="stylesheet" href="styles.css" />
@@ -4382,15 +4386,21 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 
 		// Hide all views
-		document.querySelectorAll('.route-view').forEach(view => hide(view));
+		console.log('🔧 Hiding all route views');
+		document.querySelectorAll('.route-view').forEach(view => {
+			console.log('🔧 Hiding view:', view.id);
+			hide(view);
+		});
 
 		// Show appropriate view based on route
 		if (hash === '/agents') {
+			console.log('🔧 Showing agents view');
 			state.currentPage = 'agents';
 			show(document.getElementById('agentsView'));
 			setRoleLabel('agents');
 			renderAgents();
 		} else if (hash === '/listings') {
+			console.log('🔧 Showing listings view');
 			state.currentPage = 'listings';
 			show(document.getElementById('listingsView'));
 			setRoleLabel('listings');
@@ -4400,6 +4410,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				renderListings();
 			}, 100);
 		} else if (hash === '/documents') {
+			console.log('🔧 Showing documents view');
 			state.currentPage = 'documents';
 			show(document.getElementById('documentsView'));
 			setRoleLabel('documents');
@@ -5702,11 +5713,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	window.changePassword = changePassword;
 	window.deleteUser = deleteUser;
 	
-	// Expose routing function to global scope
-	window.route = route;
-	
 	// Expose state to global scope
 	window.state = state;
+	
+	// Expose routing function to global scope
+	window.route = route;
+	console.log('🔧 Route function exposed to window.route:', typeof window.route);
 })();
 
 // Global function for updating sort headers
@@ -6133,6 +6145,3 @@ async function deleteUser(userId) {
 }
 
 // formatDate is already globally accessible
-
- 
- 
