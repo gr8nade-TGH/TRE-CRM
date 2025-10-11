@@ -5934,6 +5934,44 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.log('Target classList:', e.target.classList);
 			console.log('Target parent:', e.target.parentElement);
 			
+			// Handle listing management buttons first
+			if (e.target.id === 'addListingBtn') {
+				console.log('Add Listing button clicked');
+				console.log('Current user:', state.currentUser);
+				console.log('Current hash:', window.location.hash);
+				console.log('Should show modal:', state.currentUser && window.location.hash === '#/listings');
+				
+				if (state.currentUser && window.location.hash === '#/listings') {
+					console.log('Opening add listing modal');
+					showModal('addListingModal');
+				}
+				return;
+			}
+			
+			if (e.target.id === 'csvUploadBtn') {
+				console.log('CSV Upload button clicked');
+				if (state.currentUser && window.location.hash === '#/listings') {
+					console.log('Opening CSV upload modal');
+					showModal('csvUploadModal');
+				}
+				return;
+			}
+			
+			if (e.target.id === 'saveListingBtn') {
+				saveNewListing();
+				return;
+			}
+			
+			if (e.target.id === 'downloadTemplateBtn') {
+				downloadCsvTemplate();
+				return;
+			}
+			
+			if (e.target.id === 'processCsvBtn') {
+				processCsvFile(document.getElementById('csvFileInput').files[0]);
+				return;
+			}
+			
 			// Check if clicked element is expand button or inside expand button
 			const expandBtn = e.target.closest('.expand-btn');
 			if (expandBtn) {
@@ -6779,48 +6817,7 @@ function processCsvFile(file) {
 	reader.readAsText(file);
 }
 
-// Add event listeners for listing management (only when logged in and on listings page)
-document.addEventListener('click', function(e) {
-	// Debug logging
-	if (e.target.id === 'addListingBtn') {
-		console.log('Add Listing button clicked');
-		console.log('Current user:', state.currentUser);
-		console.log('Current hash:', window.location.hash);
-		console.log('Should show modal:', state.currentUser && window.location.hash === '#/listings');
-	}
-	
-	// Only process listing management clicks if user is logged in and on listings page
-	if (!state.currentUser) {
-		console.log('No current user, skipping listing management');
-		return;
-	}
-	if (window.location.hash !== '#/listings') {
-		console.log('Not on listings page, skipping listing management');
-		return;
-	}
-	
-	if (e.target.id === 'addListingBtn') {
-		console.log('Opening add listing modal');
-		showModal('addListingModal');
-	}
-	
-	if (e.target.id === 'csvUploadBtn') {
-		console.log('Opening CSV upload modal');
-		showModal('csvUploadModal');
-	}
-	
-	if (e.target.id === 'saveListingBtn') {
-		saveNewListing();
-	}
-	
-	if (e.target.id === 'downloadTemplateBtn') {
-		downloadCsvTemplate();
-	}
-	
-	if (e.target.id === 'processCsvBtn') {
-		processCsvFile(document.getElementById('csvFileInput').files[0]);
-	}
-});
+// Listing management event listeners moved to main click handler above
 
 // CSV Upload Area Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
