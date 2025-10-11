@@ -412,11 +412,11 @@
 					<label for="statusFilter">Status</label>
 					<select id="statusFilter" class="filter-select">
 						<option value="all">All</option>
-						<option value="green">Healthy</option>
-						<option value="yellow">Warm</option>
-						<option value="red">At Risk</option>
-						<option value="closed">Closed</option>
-						<option value="lost">Lost</option>
+						<option value="green">🟢 Healthy</option>
+						<option value="yellow">🟡 Warm</option>
+						<option value="red">🔴 At Risk</option>
+						<option value="closed">✅ Closed</option>
+						<option value="lost">❌ Lost</option>
 					</select>
 				</div>
 				<div class="filter-group">
@@ -437,7 +437,7 @@
 						<tr>
 							<th data-sort="name" class="sortable">Lead Name <span class="sort-icon">↕</span></th>
 							<th>View Details</th>
-							<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span></th>
+							<th data-sort="health_status" class="sortable">Status <span class="sort-icon">↕</span></th>
 							<th class="sortable" data-sort="submitted_at">Lead Found Date <span class="sort-icon">↕</span></th>
 							<th>Preference Summary</th>
 							<th>Showcase Options</th>
