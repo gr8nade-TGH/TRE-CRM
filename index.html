@@ -130,6 +130,39 @@
 			text-align: center;
 		}
 		
+		/* Preference Tags */
+		.preference-tags {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 4px;
+			max-width: 200px;
+			max-height: 48px;
+			overflow: hidden;
+		}
+		
+		.preference-tag {
+			background: #e3f2fd;
+			color: #1976d2;
+			padding: 2px 6px;
+			border-radius: 12px;
+			font-size: 11px;
+			font-weight: 500;
+			white-space: nowrap;
+			border: 1px solid #bbdefb;
+		}
+		
+		.preference-tag:nth-child(odd) {
+			background: #f3e5f5;
+			color: #7b1fa2;
+			border-color: #ce93d8;
+		}
+		
+		.preference-tag:nth-child(3n) {
+			background: #e8f5e8;
+			color: #388e3c;
+			border-color: #a5d6a7;
+		}
+		
 		/* Comment Icon Styles */
 		.comment-icon {
 			background: none;
@@ -395,7 +428,7 @@
 							<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span></th>
 							<th class="sortable" data-sort="submitted_at">Lead Found Date <span class="sort-icon">↕</span></th>
 							<th>Preference Summary</th>
-							<th>Top Listing Options</th>
+							<th>Showcase Options</th>
 							<th data-sort="assigned_agent_id" class="sortable">Agent Assigned <span class="sort-icon">↕</span></th>
 						</tr>
 					</thead>

@@ -387,10 +387,65 @@ const mockAuditLog = [
 		}
 	];
 
-	function prefsSummary(p) {
-		if (!p) return '';
-		const price = p.budget_max ? `<$${p.budget_max}/mo` : (p.budget ? `$${p.budget}/mo` : '');
-		return `${p.beds || '?'}bed/${p.baths || '?'}bath ${price}`;
+	function prefsSummary(lead) {
+		if (!lead) return '';
+		
+		const tags = [];
+		
+		// Bed/Bath tag
+		if (lead.bedrooms && lead.bathrooms) {
+			tags.push(`${lead.bedrooms}bed/${lead.bathrooms}bath`);
+		} else if (lead.bedrooms) {
+			tags.push(`${lead.bedrooms}bed`);
+		} else if (lead.bathrooms) {
+			tags.push(`${lead.bathrooms}bath`);
+		}
+		
+		// Price range tag
+		if (lead.price_range) {
+			tags.push(lead.price_range);
+		}
+		
+		// Lease status tag
+		if (lead.lease_term) {
+			tags.push(lead.lease_term);
+		}
+		
+		// Credit history tag
+		if (lead.credit_history) {
+			tags.push(lead.credit_history);
+		}
+		
+		// Area of town tag
+		if (lead.area_of_town) {
+			tags.push(lead.area_of_town);
+		}
+		
+		// Move-in date tag
+		if (lead.move_in_date) {
+			const moveInDate = new Date(lead.move_in_date);
+			const now = new Date();
+			const diffDays = Math.ceil((moveInDate - now) / (1000 * 60 * 60 * 24));
+			
+			if (diffDays < 0) {
+				tags.push('ASAP');
+			} else if (diffDays <= 30) {
+				tags.push('This Month');
+			} else if (diffDays <= 60) {
+				tags.push('Next Month');
+			} else {
+				tags.push('Future');
+			}
+		}
+		
+		// Return tags as HTML with fixed width and max 2 rows
+		if (tags.length === 0) return '<div class="preference-tags">No preferences</div>';
+		
+		const tagHtml = tags.slice(0, 6).map(tag => 
+			`<span class="preference-tag">${tag}</span>`
+		).join('');
+		
+		return `<div class="preference-tags">${tagHtml}</div>`;
 	}
 
 	function randomDate(daysBack=30){
@@ -1907,14 +1962,14 @@ const mockAuditLog = [
 					</div>
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
-				<td><button class="view-details-btn" data-view="${lead.id}" title="View Details">👁️ Details</button></td>
+				<td><button class="view-details-btn" data-view="${lead.id}" title="View Details">Details</button></td>
 				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
-					<span class="badge-dot"><span class="dot"></span>${prefsSummary(lead.prefs)}</span>
+					${prefsSummary(lead)}
 				</td>
-				<td><button class="top-listing-btn" data-matches="${lead.id}" title="Top Listing Options">
-					🏠 Top Listing Options
+				<td><button class="top-listing-btn" data-matches="${lead.id}" title="Build Showcase">
+					🏠 Build Showcase
 				</button></td>
 				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
