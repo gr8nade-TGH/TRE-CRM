@@ -5938,6 +5938,22 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			if (e.target.id === 'addListingBtn') {
 				console.log('Add Listing button clicked');
 				console.log('Current user:', currentUser);
+				console.log('Window getCurrentSession available:', typeof window.getCurrentSession);
+				
+				// Try to get current session if currentUser is null
+				if (!currentUser && window.getCurrentSession) {
+					try {
+						const session = await window.getCurrentSession();
+						console.log('Session from getCurrentSession:', session);
+						if (session && session.user) {
+							currentUser = session.user;
+							console.log('Updated currentUser from session:', currentUser.email);
+						}
+					} catch (error) {
+						console.error('Error getting session:', error);
+					}
+				}
+				
 				console.log('Current hash:', window.location.hash);
 				console.log('Should show modal:', currentUser && window.location.hash === '#/listings');
 				
@@ -5946,6 +5962,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					showModal('addListingModal');
 				} else {
 					console.log('Cannot open modal - user not logged in or not on listings page');
+					console.log('currentUser:', currentUser);
+					console.log('hash:', window.location.hash);
 				}
 				return;
 			}
