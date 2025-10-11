@@ -7,15 +7,7 @@ function formatDate(iso) {
 	} 
 }
 
-function showModal(modalId) {
-	const modal = document.getElementById(modalId);
-	if (modal) modal.classList.remove('hidden');
-}
-
-function hideModal(modalId) {
-	const modal = document.getElementById(modalId);
-	if (modal) modal.classList.add('hidden');
-}
+// Removed duplicate showModal/hideModal functions - using the ones in the utilities section
 
 // Add Lead functionality
 function saveNewLead() {
@@ -668,8 +660,15 @@ const mockAuditLog = [
 	function show(el){ el.classList.remove('hidden'); }
 	function hide(el){ el.classList.add('hidden'); }
 	function showModal(modalId){ 
+		console.log('showModal called with:', modalId);
 		const modal = document.getElementById(modalId);
-		if (modal) modal.classList.remove('hidden');
+		console.log('Modal element found:', modal);
+		if (modal) {
+			modal.classList.remove('hidden');
+			console.log('Modal shown, classes:', modal.className);
+		} else {
+			console.error('Modal not found:', modalId);
+		}
 	}
 	function hideModal(modalId){ 
 		const modal = document.getElementById(modalId);
@@ -6782,15 +6781,31 @@ function processCsvFile(file) {
 
 // Add event listeners for listing management (only when logged in and on listings page)
 document.addEventListener('click', function(e) {
+	// Debug logging
+	if (e.target.id === 'addListingBtn') {
+		console.log('Add Listing button clicked');
+		console.log('Current user:', state.currentUser);
+		console.log('Current hash:', window.location.hash);
+		console.log('Should show modal:', state.currentUser && window.location.hash === '#/listings');
+	}
+	
 	// Only process listing management clicks if user is logged in and on listings page
-	if (!state.currentUser) return;
-	if (window.location.hash !== '#/listings') return;
+	if (!state.currentUser) {
+		console.log('No current user, skipping listing management');
+		return;
+	}
+	if (window.location.hash !== '#/listings') {
+		console.log('Not on listings page, skipping listing management');
+		return;
+	}
 	
 	if (e.target.id === 'addListingBtn') {
+		console.log('Opening add listing modal');
 		showModal('addListingModal');
 	}
 	
 	if (e.target.id === 'csvUploadBtn') {
+		console.log('Opening CSV upload modal');
 		showModal('csvUploadModal');
 	}
 	
