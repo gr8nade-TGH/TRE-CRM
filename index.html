@@ -174,6 +174,129 @@
 			color: #388e3c;
 			border-color: #a5d6a7;
 		}
+
+		/* Large Modal for Add Listing */
+		.large-modal {
+			max-width: 90vw;
+			max-height: 90vh;
+			width: 1200px;
+		}
+
+		/* Form Sections */
+		.form-section {
+			margin-bottom: 2rem;
+			padding-bottom: 1.5rem;
+			border-bottom: 1px solid #e0e0e0;
+		}
+
+		.form-section:last-child {
+			border-bottom: none;
+		}
+
+		.form-section h3 {
+			color: #333;
+			margin-bottom: 1rem;
+			font-size: 1.1rem;
+			font-weight: 600;
+		}
+
+		/* Checkbox Grid */
+		.checkbox-grid {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+			gap: 8px;
+			margin-top: 8px;
+		}
+
+		.checkbox-item {
+			display: flex;
+			align-items: center;
+			font-size: 14px;
+			cursor: pointer;
+		}
+
+		.checkbox-item input[type="checkbox"] {
+			margin-right: 8px;
+		}
+
+		/* Upload Area */
+		.upload-area {
+			border: 2px dashed #ccc;
+			border-radius: 8px;
+			padding: 2rem;
+			text-align: center;
+			background: #f9f9f9;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		.upload-area:hover {
+			border-color: #007bff;
+			background: #f0f8ff;
+		}
+
+		.upload-area.dragover {
+			border-color: #007bff;
+			background: #e6f3ff;
+		}
+
+		.upload-content svg {
+			color: #666;
+			margin-bottom: 1rem;
+		}
+
+		.upload-content h3 {
+			margin: 0.5rem 0;
+			color: #333;
+		}
+
+		.upload-content p {
+			margin: 0;
+			color: #666;
+		}
+
+		/* CSV Template */
+		.csv-template {
+			margin: 1.5rem 0;
+			padding: 1rem;
+			background: #f8f9fa;
+			border-radius: 6px;
+		}
+
+		.csv-template h4 {
+			margin: 0 0 0.5rem 0;
+			color: #333;
+		}
+
+		.csv-template p {
+			margin: 0 0 1rem 0;
+			color: #666;
+		}
+
+		/* CSV Instructions */
+		.csv-instructions {
+			margin: 1.5rem 0;
+		}
+
+		.csv-instructions h4 {
+			margin: 0 0 1rem 0;
+			color: #333;
+		}
+
+		.csv-instructions ul {
+			margin: 0;
+			padding-left: 1.5rem;
+		}
+
+		.csv-instructions li {
+			margin-bottom: 0.5rem;
+			color: #666;
+		}
+
+		.csv-instructions strong {
+			color: #333;
+			font-family: monospace;
+		}
 		
 		/* Comment Icon Styles */
 		.comment-icon {
@@ -552,6 +675,8 @@
 					</label>
 				</div>
 				<div class="filter-spacer"></div>
+				<button id="addListingBtn" class="btn btn-primary">➕ Add Listing</button>
+				<button id="csvUploadBtn" class="btn btn-secondary">📊 CSV Upload</button>
 				<button id="clearListingsFilters" class="btn btn-secondary">Clear</button>
 				<button id="buildShowcaseBtn" class="btn btn-success" disabled>
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
@@ -1632,6 +1757,315 @@
 			<div class="modal-footer">
 				<button id="updateBugStatusBtn" class="btn btn-primary">Update Status</button>
 				<button id="closeBugDetailsModalBtn" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Add Listing Modal -->
+	<div id="addListingModal" class="modal">
+		<div class="modal-content large-modal">
+			<div class="modal-header">
+				<h2>Add New Property Listing</h2>
+				<span class="close" data-modal="addListingModal">&times;</span>
+			</div>
+			<div class="modal-body">
+				<form id="addListingForm">
+					<!-- Basic Property Information -->
+					<div class="form-section">
+						<h3>Basic Property Information</h3>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="propertyName">Property Name *</label>
+								<input type="text" id="propertyName" name="property_name" required placeholder="e.g., Weston at Copperfield">
+							</div>
+							<div class="form-group">
+								<label for="propertyType">Property Type *</label>
+								<select id="propertyType" name="property_type" required>
+									<option value="">Select Type</option>
+									<option value="apartment">Apartment</option>
+									<option value="condo">Condo</option>
+									<option value="townhome">Townhome</option>
+									<option value="house">House</option>
+									<option value="duplex">Duplex</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="streetAddress">Street Address *</label>
+								<input type="text" id="streetAddress" name="street_address" required placeholder="e.g., 15125 West Road">
+							</div>
+							<div class="form-group">
+								<label for="city">City *</label>
+								<input type="text" id="city" name="city" required placeholder="e.g., Houston">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="state">State *</label>
+								<select id="state" name="state" required>
+									<option value="">Select State</option>
+									<option value="TX">Texas</option>
+									<option value="CA">California</option>
+									<option value="FL">Florida</option>
+									<option value="NY">New York</option>
+									<option value="IL">Illinois</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="zipCode">ZIP Code *</label>
+								<input type="text" id="zipCode" name="zip_code" required placeholder="e.g., 77095">
+							</div>
+						</div>
+					</div>
+
+					<!-- Property Details -->
+					<div class="form-section">
+						<h3>Property Details</h3>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="bedrooms">Bedrooms *</label>
+								<select id="bedrooms" name="bedrooms" required>
+									<option value="">Select</option>
+									<option value="studio">Studio</option>
+									<option value="1">1 Bedroom</option>
+									<option value="2">2 Bedrooms</option>
+									<option value="3">3 Bedrooms</option>
+									<option value="4">4+ Bedrooms</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="bathrooms">Bathrooms *</label>
+								<select id="bathrooms" name="bathrooms" required>
+									<option value="">Select</option>
+									<option value="1">1 Bathroom</option>
+									<option value="1.5">1.5 Bathrooms</option>
+									<option value="2">2 Bathrooms</option>
+									<option value="2.5">2.5 Bathrooms</option>
+									<option value="3">3+ Bathrooms</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="squareFootage">Square Footage</label>
+								<input type="number" id="squareFootage" name="square_footage" placeholder="e.g., 850">
+							</div>
+							<div class="form-group">
+								<label for="unitsAvailable">Units Available *</label>
+								<input type="number" id="unitsAvailable" name="units_available" required placeholder="e.g., 28">
+							</div>
+						</div>
+					</div>
+
+					<!-- Pricing Information -->
+					<div class="form-section">
+						<h3>Pricing Information</h3>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="rentMin">Starting Rent *</label>
+								<input type="number" id="rentMin" name="rent_min" required placeholder="e.g., 960">
+							</div>
+							<div class="form-group">
+								<label for="rentMax">Max Rent</label>
+								<input type="number" id="rentMax" name="rent_max" placeholder="e.g., 1500">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="securityDeposit">Security Deposit</label>
+								<input type="number" id="securityDeposit" name="security_deposit" placeholder="e.g., 960">
+							</div>
+							<div class="form-group">
+								<label for="applicationFee">Application Fee</label>
+								<input type="number" id="applicationFee" name="application_fee" placeholder="e.g., 50">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="commissionRate">Commission Rate (%) *</label>
+								<input type="number" id="commissionRate" name="commission_rate" required step="0.1" placeholder="e.g., 3.5">
+							</div>
+							<div class="form-group">
+								<label for="petDeposit">Pet Deposit</label>
+								<input type="number" id="petDeposit" name="pet_deposit" placeholder="e.g., 300">
+							</div>
+						</div>
+					</div>
+
+					<!-- Contact Information -->
+					<div class="form-section">
+						<h3>Property Management Contact</h3>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="contactPhone">Contact Phone *</label>
+								<input type="tel" id="contactPhone" name="contact_phone" required placeholder="e.g., (209) 396-7186">
+							</div>
+							<div class="form-group">
+								<label for="contactEmail">Contact Email *</label>
+								<input type="email" id="contactEmail" name="contact_email" required placeholder="e.g., info@westoncopperfield.com">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="guestCardEmail">Guest Card Email *</label>
+								<input type="email" id="guestCardEmail" name="guest_card_email" required placeholder="e.g., guestcards@westoncopperfield.com">
+							</div>
+							<div class="form-group">
+								<label for="propertyManager">Property Manager Name</label>
+								<input type="text" id="propertyManager" name="property_manager" placeholder="e.g., John Smith">
+							</div>
+						</div>
+					</div>
+
+					<!-- Amenities -->
+					<div class="form-section">
+						<h3>Amenities & Features</h3>
+						<div class="form-group">
+							<label>Amenities (Select all that apply)</label>
+							<div class="checkbox-grid">
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="pool"> Swimming Pool</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="gym"> Fitness Center</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="laundry"> In-Unit Laundry</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="dishwasher"> Dishwasher</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="hardwood"> Hardwood Floors</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="patio"> Patio/Balcony</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="parking"> Parking</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="pet_friendly"> Pet Friendly</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="air_conditioning"> Air Conditioning</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="heating"> Heating</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="walk_in_closet"> Walk-in Closet</label>
+								<label class="checkbox-item"><input type="checkbox" name="amenities" value="garden"> Garden</label>
+							</div>
+						</div>
+						<div class="form-group">
+							<label for="specialFeatures">Special Features/Highlights</label>
+							<input type="text" id="specialFeatures" name="special_features" placeholder="e.g., Pet Paradise, Modern Living">
+						</div>
+					</div>
+
+					<!-- Property Description -->
+					<div class="form-section">
+						<h3>Property Description</h3>
+						<div class="form-group">
+							<label for="propertyDescription">Property Description *</label>
+							<textarea id="propertyDescription" name="property_description" required rows="4" placeholder="Describe the property, its features, and what makes it special..."></textarea>
+						</div>
+						<div class="form-group">
+							<label for="headline">Headline/Slogan</label>
+							<input type="text" id="headline" name="headline" placeholder="e.g., Modern living with pet-friendly amenities in Houston">
+						</div>
+					</div>
+
+					<!-- Availability & Status -->
+					<div class="form-section">
+						<h3>Availability & Status</h3>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="availabilityStatus">Availability Status *</label>
+								<select id="availabilityStatus" name="availability_status" required>
+									<option value="">Select Status</option>
+									<option value="available">Available</option>
+									<option value="limited">Limited Availability</option>
+									<option value="waitlist">Waitlist Only</option>
+									<option value="coming_soon">Coming Soon</option>
+									<option value="off_market">Off Market</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="moveInDate">Earliest Move-in Date</label>
+								<input type="date" id="moveInDate" name="move_in_date">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="form-group">
+								<label for="leaseTerm">Minimum Lease Term (months)</label>
+								<input type="number" id="leaseTerm" name="lease_term" placeholder="e.g., 12">
+							</div>
+							<div class="form-group">
+								<label for="isVerified">Verified Listing</label>
+								<select id="isVerified" name="is_verified">
+									<option value="false">Not Verified</option>
+									<option value="true">Verified</option>
+								</select>
+							</div>
+						</div>
+					</div>
+
+					<!-- Images -->
+					<div class="form-section">
+						<h3>Property Images</h3>
+						<div class="form-group">
+							<label for="propertyImages">Image URLs (one per line)</label>
+							<textarea id="propertyImages" name="property_images" rows="3" placeholder="https://example.com/image1.jpg&#10;https://example.com/image2.jpg&#10;https://example.com/image3.jpg"></textarea>
+						</div>
+					</div>
+
+					<!-- Internal Notes -->
+					<div class="form-section">
+						<h3>Internal Notes</h3>
+						<div class="form-group">
+							<label for="internalNotes">TRE Internal Notes</label>
+							<textarea id="internalNotes" name="internal_notes" rows="3" placeholder="Any internal notes about this property..."></textarea>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-modal="addListingModal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="saveListingBtn">Add Property</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- CSV Upload Modal -->
+	<div id="csvUploadModal" class="modal">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2>Bulk Upload Properties (CSV)</h2>
+				<span class="close" data-modal="csvUploadModal">&times;</span>
+			</div>
+			<div class="modal-body">
+				<div class="upload-area" id="csvUploadArea">
+					<div class="upload-content">
+						<svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+							<polyline points="14,2 14,8 20,8"/>
+							<line x1="16" y1="13" x2="8" y2="13"/>
+							<line x1="16" y1="17" x2="8" y2="17"/>
+							<polyline points="10,9 9,9 8,9"/>
+						</svg>
+						<h3>Drop CSV file here or click to browse</h3>
+						<p>Upload a CSV file with property data</p>
+						<input type="file" id="csvFileInput" accept=".csv" style="display: none;">
+					</div>
+				</div>
+				<div class="csv-template">
+					<h4>CSV Template</h4>
+					<p>Download our template to ensure proper formatting:</p>
+					<button type="button" class="btn btn-secondary" id="downloadTemplateBtn">Download Template</button>
+				</div>
+				<div class="csv-instructions">
+					<h4>Required Fields</h4>
+					<ul>
+						<li><strong>property_name</strong> - Property name (e.g., "Weston at Copperfield")</li>
+						<li><strong>street_address</strong> - Street address</li>
+						<li><strong>city</strong> - City name</li>
+						<li><strong>state</strong> - State abbreviation (e.g., "TX")</li>
+						<li><strong>zip_code</strong> - ZIP code</li>
+						<li><strong>bedrooms</strong> - Number of bedrooms</li>
+						<li><strong>bathrooms</strong> - Number of bathrooms</li>
+						<li><strong>rent_min</strong> - Starting rent price</li>
+						<li><strong>contact_phone</strong> - Contact phone number</li>
+						<li><strong>contact_email</strong> - Contact email</li>
+						<li><strong>guest_card_email</strong> - Guest card email</li>
+						<li><strong>commission_rate</strong> - Commission rate percentage</li>
+					</ul>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-modal="csvUploadModal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="processCsvBtn" disabled>Process CSV</button>
 			</div>
 		</div>
 	</div>

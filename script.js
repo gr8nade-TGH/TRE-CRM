@@ -6609,3 +6609,215 @@ async function deleteUser(userId) {
 }
 
 // formatDate is already globally accessible
+
+// ---- Add Listing Management ----
+function saveNewListing() {
+	const form = document.getElementById('addListingForm');
+	const formData = new FormData(form);
+	
+	// Collect form data
+	const listingData = {
+		id: 'listing_' + Date.now(),
+		name: formData.get('property_name'),
+		address: formData.get('street_address'),
+		city: formData.get('city'),
+		state: formData.get('state'),
+		zip: formData.get('zip_code'),
+		property_type: formData.get('property_type'),
+		bedrooms: formData.get('bedrooms'),
+		bathrooms: formData.get('bathrooms'),
+		square_footage: parseInt(formData.get('square_footage')) || 0,
+		units_available: parseInt(formData.get('units_available')),
+		rent_min: parseInt(formData.get('rent_min')),
+		rent_max: parseInt(formData.get('rent_max')) || parseInt(formData.get('rent_min')),
+		security_deposit: parseInt(formData.get('security_deposit')) || 0,
+		application_fee: parseInt(formData.get('application_fee')) || 0,
+		commission_rate: parseFloat(formData.get('commission_rate')),
+		pet_deposit: parseInt(formData.get('pet_deposit')) || 0,
+		contact_phone: formData.get('contact_phone'),
+		contact_email: formData.get('contact_email'),
+		guest_card_email: formData.get('guest_card_email'),
+		property_manager: formData.get('property_manager'),
+		amenities: Array.from(formData.getAll('amenities')),
+		special_features: formData.get('special_features'),
+		description: formData.get('property_description'),
+		headline: formData.get('headline'),
+		availability_status: formData.get('availability_status'),
+		move_in_date: formData.get('move_in_date'),
+		lease_term: parseInt(formData.get('lease_term')) || 12,
+		is_verified: formData.get('is_verified') === 'true',
+		property_images: formData.get('property_images').split('\n').filter(url => url.trim()),
+		internal_notes: formData.get('internal_notes'),
+		created_at: new Date().toISOString(),
+		isPUMI: false
+	};
+	
+	// Add to mock data
+	if (USE_MOCK_DATA) {
+		state.mockProperties.push(listingData);
+		// Save to localStorage
+		localStorage.setItem('treMockProperties', JSON.stringify(state.mockProperties));
+	} else {
+		// TODO: Save to Supabase
+		console.log('Would save to Supabase:', listingData);
+	}
+	
+	// Re-render listings
+	renderListings();
+	
+	// Close modal and reset form
+	hideModal('addListingModal');
+	form.reset();
+	
+	toast('Property added successfully!');
+}
+
+// ---- CSV Upload Management ----
+function downloadCsvTemplate() {
+	const csvContent = [
+		'property_name,street_address,city,state,zip_code,bedrooms,bathrooms,rent_min,rent_max,contact_phone,contact_email,guest_card_email,commission_rate,description,amenities',
+		'Weston at Copperfield,15125 West Road,Houston,TX,77095,1,1,960,1500,(209) 396-7186,info@westoncopperfield.com,guestcards@westoncopperfield.com,3.5,"Modern living with pet-friendly amenities",pool,gym,laundry,dishwasher,pet_friendly'
+	].join('\n');
+	
+	const blob = new Blob([csvContent], { type: 'text/csv' });
+	const url = window.URL.createObjectURL(blob);
+	const a = document.createElement('a');
+	a.href = url;
+	a.download = 'property_template.csv';
+	document.body.appendChild(a);
+	a.click();
+	document.body.removeChild(a);
+	window.URL.revokeObjectURL(url);
+}
+
+function handleFileSelect(event) {
+	const file = event.target.files[0];
+	if (file && file.type === 'text/csv') {
+		processCsvFile(file);
+	} else {
+		toast('Please select a valid CSV file', 'error');
+	}
+}
+
+function handleDragOver(event) {
+	event.preventDefault();
+	document.getElementById('csvUploadArea').classList.add('dragover');
+}
+
+function handleDragLeave(event) {
+	event.preventDefault();
+	document.getElementById('csvUploadArea').classList.remove('dragover');
+}
+
+function handleDrop(event) {
+	event.preventDefault();
+	document.getElementById('csvUploadArea').classList.remove('dragover');
+	
+	const files = event.dataTransfer.files;
+	if (files.length > 0 && files[0].type === 'text/csv') {
+		processCsvFile(files[0]);
+	} else {
+		toast('Please drop a valid CSV file', 'error');
+	}
+}
+
+function processCsvFile(file) {
+	const reader = new FileReader();
+	reader.onload = function(e) {
+		const csv = e.target.result;
+		const lines = csv.split('\n');
+		const headers = lines[0].split(',').map(h => h.trim());
+		
+		const properties = [];
+		for (let i = 1; i < lines.length; i++) {
+			if (lines[i].trim()) {
+				const values = lines[i].split(',').map(v => v.trim());
+				const property = {};
+				
+				headers.forEach((header, index) => {
+					property[header] = values[index] || '';
+				});
+				
+				// Convert to our format
+				properties.push({
+					id: 'listing_' + Date.now() + '_' + i,
+					name: property.property_name,
+					address: property.street_address,
+					city: property.city,
+					state: property.state,
+					zip: property.zip_code,
+					bedrooms: property.bedrooms,
+					bathrooms: property.bathrooms,
+					rent_min: parseInt(property.rent_min) || 0,
+					rent_max: parseInt(property.rent_max) || parseInt(property.rent_min) || 0,
+					contact_phone: property.contact_phone,
+					contact_email: property.contact_email,
+					guest_card_email: property.guest_card_email,
+					commission_rate: parseFloat(property.commission_rate) || 0,
+					description: property.description || '',
+					amenities: property.amenities ? property.amenities.split(',').map(a => a.trim()) : [],
+					created_at: new Date().toISOString(),
+					isPUMI: false
+				});
+			}
+		}
+		
+		// Add to mock data
+		if (USE_MOCK_DATA) {
+			state.mockProperties.push(...properties);
+			localStorage.setItem('treMockProperties', JSON.stringify(state.mockProperties));
+		}
+		
+		// Re-render listings
+		renderListings();
+		
+		// Close modal
+		hideModal('csvUploadModal');
+		
+		toast(`Successfully imported ${properties.length} properties!`);
+	};
+	
+	reader.readAsText(file);
+}
+
+// Add event listeners for listing management
+document.addEventListener('click', function(e) {
+	if (e.target.id === 'addListingBtn') {
+		showModal('addListingModal');
+	}
+	
+	if (e.target.id === 'csvUploadBtn') {
+		showModal('csvUploadModal');
+	}
+	
+	if (e.target.id === 'saveListingBtn') {
+		saveNewListing();
+	}
+	
+	if (e.target.id === 'downloadTemplateBtn') {
+		downloadCsvTemplate();
+	}
+	
+	if (e.target.id === 'processCsvBtn') {
+		processCsvFile(document.getElementById('csvFileInput').files[0]);
+	}
+});
+
+// CSV Upload Area Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+	const uploadArea = document.getElementById('csvUploadArea');
+	const fileInput = document.getElementById('csvFileInput');
+	
+	if (uploadArea && fileInput) {
+		// Click to browse
+		uploadArea.addEventListener('click', () => fileInput.click());
+		
+		// File input change
+		fileInput.addEventListener('change', handleFileSelect);
+		
+		// Drag and drop
+		uploadArea.addEventListener('dragover', handleDragOver);
+		uploadArea.addEventListener('dragleave', handleDragLeave);
+		uploadArea.addEventListener('drop', handleDrop);
+	}
+});
