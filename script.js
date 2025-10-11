@@ -1279,7 +1279,7 @@ const mockAuditLog = [
 	const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
 		? 'http://localhost:3001/api' 
 		: null; // Will use mock data when API_BASE is null
-	const USE_MOCK_DATA = false; // Now using real Supabase data
+	const USE_MOCK_DATA = true; // Temporarily using mock data for notes testing
 
 	// Helper function to handle API responses
 	async function handleResponse(response) {
