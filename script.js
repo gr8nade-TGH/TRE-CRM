@@ -5051,7 +5051,19 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			});
 		}
 
-		// admin users table delegation - using document level delegation
+		// Handle ESC key to close modals
+	document.addEventListener('keydown', (e) => {
+		if (e.key === 'Escape') {
+			// Find any open modal and close it
+			const openModal = document.querySelector('.modal:not(.hidden)');
+			if (openModal) {
+				console.log('ESC key pressed, closing modal:', openModal.id);
+				hideModal(openModal.id);
+			}
+		}
+	});
+
+	// admin users table delegation - using document level delegation
 		document.addEventListener('click', (e) => {
 			// Check if click is on admin users table
 			const usersTable = e.target.closest('#usersTable');
@@ -5961,6 +5973,37 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			
 			if (e.target.id === 'processCsvBtn') {
 				processCsvFile(document.getElementById('csvFileInput').files[0]);
+				return;
+			}
+			
+			// Handle modal close buttons
+			if (e.target.classList.contains('close') || e.target.hasAttribute('data-modal')) {
+				const modalId = e.target.getAttribute('data-modal') || e.target.closest('[data-modal]')?.getAttribute('data-modal');
+				if (modalId) {
+					console.log('Closing modal:', modalId);
+					hideModal(modalId);
+				}
+				return;
+			}
+			
+			// Handle modal overlay clicks
+			if (e.target.classList.contains('modal')) {
+				console.log('Closing modal via overlay click');
+				hideModal(e.target.id);
+				return;
+			}
+			
+			// Handle Cancel button in Add Listing modal
+			if (e.target.textContent === 'Cancel' && e.target.closest('#addListingModal')) {
+				console.log('Cancel button clicked in Add Listing modal');
+				hideModal('addListingModal');
+				return;
+			}
+			
+			// Handle Cancel button in CSV Upload modal
+			if (e.target.textContent === 'Cancel' && e.target.closest('#csvUploadModal')) {
+				console.log('Cancel button clicked in CSV Upload modal');
+				hideModal('csvUploadModal');
 				return;
 			}
 			
