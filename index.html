@@ -17,6 +17,171 @@
 			box-shadow: 0 0 20px rgba(255, 0, 0, 0.8) !important;
 			background-color: rgba(255, 0, 0, 0.1) !important;
 		}
+		
+		/* Lead Details Modal Styles */
+		.large-modal {
+			max-width: 800px;
+			width: 90vw;
+			max-height: 90vh;
+			overflow-y: auto;
+		}
+		
+		.form-section {
+			margin-bottom: 2rem;
+			padding-bottom: 1.5rem;
+			border-bottom: 1px solid #e0e0e0;
+		}
+		
+		.form-section:last-child {
+			border-bottom: none;
+		}
+		
+		.form-section h4 {
+			margin: 0 0 1rem 0;
+			color: #333;
+			font-size: 1.1rem;
+			font-weight: 600;
+		}
+		
+		.btn-sm {
+			padding: 0.5rem 1rem;
+			font-size: 0.9rem;
+			margin-top: 0.5rem;
+		}
+		
+		/* Internal Notes Styling */
+		.internal-note {
+			background: #f8f9fa;
+			border-left: 4px solid #007bff;
+			padding: 1rem;
+			margin-bottom: 1rem;
+			border-radius: 0 4px 4px 0;
+		}
+		
+		.internal-note-header {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-bottom: 0.5rem;
+		}
+		
+		.internal-note-author {
+			font-weight: 600;
+			color: #007bff;
+		}
+		
+		.internal-note-date {
+			font-size: 0.85rem;
+			color: #666;
+		}
+		
+		.internal-note-content {
+			color: #333;
+			line-height: 1.5;
+		}
+		
+		/* Cooler view details icon */
+		.view-details-btn {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			border: none;
+			color: white;
+			padding: 8px 12px;
+			border-radius: 6px;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		
+		.view-details-btn:hover {
+			transform: translateY(-1px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+		}
+		
+		.view-details-btn:active {
+			transform: translateY(0);
+		}
+		
+		/* Comment Icon Styles */
+		.comment-icon {
+			background: none;
+			border: none;
+			font-size: 16px;
+			cursor: pointer;
+			padding: 4px;
+			border-radius: 4px;
+			transition: all 0.2s ease;
+			filter: grayscale(100%);
+			opacity: 0.6;
+			vertical-align: middle;
+			line-height: 1;
+		}
+		
+		.comment-icon.has-comments {
+			filter: grayscale(0%);
+			opacity: 1;
+			color: #ffc107;
+			background: rgba(255, 193, 7, 0.1);
+		}
+		
+		.comment-icon:hover {
+			transform: scale(1.1);
+			background: rgba(0, 0, 0, 0.1);
+		}
+		
+		.comment-icon.has-comments:hover {
+			background: rgba(255, 193, 7, 0.2);
+		}
+		
+		/* Comments Popup */
+		.comments-popup {
+			position: absolute;
+			background: white;
+			border: 1px solid #ddd;
+			border-radius: 8px;
+			box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+			padding: 1rem;
+			max-width: 300px;
+			z-index: 1000;
+			display: none;
+		}
+		
+		.comments-popup.show {
+			display: block;
+		}
+		
+		.comments-popup h4 {
+			margin: 0 0 0.5rem 0;
+			font-size: 0.9rem;
+			color: #333;
+		}
+		
+		.comment-item {
+			margin-bottom: 0.5rem;
+			padding-bottom: 0.5rem;
+			border-bottom: 1px solid #f0f0f0;
+		}
+		
+		.comment-item:last-child {
+			border-bottom: none;
+			margin-bottom: 0;
+		}
+		
+		.comment-author {
+			font-weight: 600;
+			font-size: 0.8rem;
+			color: #007bff;
+		}
+		
+		.comment-date {
+			font-size: 0.75rem;
+			color: #666;
+		}
+		
+		.comment-text {
+			font-size: 0.85rem;
+			color: #333;
+			margin-top: 0.25rem;
+		}
 	</style>
 	<!-- Supabase Client -->
 	<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -981,6 +1146,215 @@
 			<div class="modal-footer">
 				<button id="savePasswordBtn" class="btn btn-primary">Update Password</button>
 				<button id="cancelPasswordBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Lead Details Modal -->
+	<div id="leadDetailsModal" class="modal hidden">
+		<div class="modal-card large-modal">
+			<div class="modal-header">
+				<h3 id="leadDetailsTitle">Lead Details</h3>
+				<button id="closeLeadDetailsModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="leadDetailsForm">
+					<div class="form-section">
+						<h4>Contact Information</h4>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailLeadName">Name *</label>
+								<input type="text" id="detailLeadName" required>
+							</div>
+							<div class="field">
+								<label for="detailLeadPhone">Phone *</label>
+								<input type="tel" id="detailLeadPhone" required>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailLeadEmail">Email *</label>
+								<input type="email" id="detailLeadEmail" required>
+							</div>
+							<div class="field">
+								<label for="detailBestTimeToCall">Best Time to Call *</label>
+								<select id="detailBestTimeToCall" required>
+									<option value="">Select time</option>
+									<option value="morning">Morning (8AM-12PM)</option>
+									<option value="afternoon">Afternoon (12PM-5PM)</option>
+									<option value="evening">Evening (5PM-8PM)</option>
+									<option value="anytime">Anytime</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-section">
+						<h4>Property Preferences</h4>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailBedrooms"># of Bedrooms *</label>
+								<select id="detailBedrooms" required>
+									<option value="">Select bedrooms</option>
+									<option value="studio">Studio</option>
+									<option value="1">1 Bedroom</option>
+									<option value="2">2 Bedrooms</option>
+									<option value="3">3 Bedrooms</option>
+									<option value="4">4 Bedrooms</option>
+									<option value="5+">5+ Bedrooms</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="detailBathrooms"># of Bathrooms *</label>
+								<select id="detailBathrooms" required>
+									<option value="">Select bathrooms</option>
+									<option value="1">1 Bathroom</option>
+									<option value="1.5">1.5 Bathrooms</option>
+									<option value="2">2 Bathrooms</option>
+									<option value="2.5">2.5 Bathrooms</option>
+									<option value="3">3 Bathrooms</option>
+									<option value="3+">3+ Bathrooms</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailPriceRange">Price Range *</label>
+								<select id="detailPriceRange" required>
+									<option value="">Select price range</option>
+									<option value="under-1000">Under $1,000</option>
+									<option value="1000-1500">$1,000 - $1,500</option>
+									<option value="1500-2000">$1,500 - $2,000</option>
+									<option value="2000-2500">$2,000 - $2,500</option>
+									<option value="2500-3000">$2,500 - $3,000</option>
+									<option value="3000-4000">$3,000 - $4,000</option>
+									<option value="4000+">$4,000+</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="detailAreaOfTown">Area of Town *</label>
+								<select id="detailAreaOfTown" required>
+									<option value="">Select area</option>
+									<option value="downtown">Downtown</option>
+									<option value="north-side">North Side</option>
+									<option value="south-side">South Side</option>
+									<option value="east-side">East Side</option>
+									<option value="west-side">West Side</option>
+									<option value="northwest">Northwest</option>
+									<option value="northeast">Northeast</option>
+									<option value="southwest">Southwest</option>
+									<option value="southeast">Southeast</option>
+									<option value="suburbs">Suburbs</option>
+									<option value="flexible">Flexible</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailMoveInDate">Target Move-in Date *</label>
+								<input type="date" id="detailMoveInDate" required>
+							</div>
+							<div class="field">
+								<label for="detailCreditHistory">Credit History *</label>
+								<select id="detailCreditHistory" required>
+									<option value="">Select credit tier</option>
+									<option value="excellent">Excellent (750+)</option>
+									<option value="good">Good (700-749)</option>
+									<option value="fair">Fair (650-699)</option>
+									<option value="poor">Poor (Below 650)</option>
+									<option value="no-credit">No Credit History</option>
+								</select>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-section">
+						<h4>Additional Information</h4>
+						<div class="field">
+							<label for="detailLeaseTerm">Lease Term / Special Requirements</label>
+							<textarea id="detailLeaseTerm" rows="2" placeholder="12-month lease, pet-friendly, furnished, etc..."></textarea>
+						</div>
+						<div class="field">
+							<label for="detailComments">Comments</label>
+							<textarea id="detailComments" rows="2" placeholder="Any additional comments or requirements..."></textarea>
+						</div>
+						<div class="field">
+							<label for="detailDesiredNeighborhoods">Desired Neighborhoods</label>
+							<textarea id="detailDesiredNeighborhoods" rows="2" placeholder="Specific neighborhoods or areas of interest..."></textarea>
+						</div>
+					</div>
+					
+					<div class="form-section">
+						<h4>Lead Management</h4>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailLeadStatus">Status</label>
+								<select id="detailLeadStatus">
+									<option value="new">New</option>
+									<option value="contacted">Contacted</option>
+									<option value="qualified">Qualified</option>
+									<option value="proposal">Proposal</option>
+									<option value="negotiation">Negotiation</option>
+									<option value="closed_won">Closed Won</option>
+									<option value="closed_lost">Closed Lost</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="detailLeadHealth">Health Status</label>
+								<select id="detailLeadHealth">
+									<option value="green">Green</option>
+									<option value="yellow">Yellow</option>
+									<option value="red">Red</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailLeadSource">Source</label>
+								<select id="detailLeadSource">
+									<option value="website">Website</option>
+									<option value="referral">Referral</option>
+									<option value="cold_call">Cold Call</option>
+									<option value="social_media">Social Media</option>
+									<option value="advertisement">Advertisement</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="detailLeadAgent">Assigned Agent</label>
+								<select id="detailLeadAgent">
+									<option value="">Unassigned</option>
+								</select>
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="detailLeadCreated">Created Date</label>
+								<input type="text" id="detailLeadCreated" readonly>
+							</div>
+							<div class="field">
+								<label for="detailLeadUpdated">Last Updated</label>
+								<input type="text" id="detailLeadUpdated" readonly>
+							</div>
+						</div>
+					</div>
+					
+					<div class="form-section">
+						<h4>TRE Internal Notes</h4>
+						<div id="internalNotesContainer">
+							<!-- Internal notes will be loaded here -->
+						</div>
+						<div class="field">
+							<label for="newInternalNote">Add Internal Note</label>
+							<textarea id="newInternalNote" rows="2" placeholder="Add a note for internal team use only..."></textarea>
+							<button type="button" id="addInternalNoteBtn" class="btn btn-primary btn-sm">Add Note</button>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="saveLeadDetailsBtn" class="btn btn-primary">Save Changes</button>
+				<button id="cancelLeadDetailsBtn" class="btn btn-secondary">Cancel</button>
 			</div>
 		</div>
 	</div>

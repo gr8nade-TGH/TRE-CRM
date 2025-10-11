@@ -7,12 +7,15 @@ document.addEventListener('DOMContentLoaded', async function() {
 		try {
 			// Check for existing session
 			const session = await window.getCurrentSession();
+			console.log('Session check result:', session);
 			if (session && session.user) {
 				console.log('✅ User already logged in:', session.user.email);
+				console.log('Session expires at:', new Date(session.expires_at * 1000));
 				// User is logged in - show main app
 				showMainApp(session.user);
 			} else {
 				console.log('❌ No active session, showing branded portal');
+				console.log('Session was:', session);
 				showLoginPortal();
 			}
 			
@@ -193,18 +196,27 @@ window.closeRegisterModal = function() {
 
 // Show branded login portal
 function showLoginPortal() {
+	console.log('showLoginPortal called');
 	document.body.classList.remove('logged-in');
 	document.body.classList.add('not-logged-in');
 	document.getElementById('loginPortal').style.display = 'flex';
 	document.getElementById('mainAppContent').style.display = 'none';
+	
+	console.log('Login portal display set to:', document.getElementById('loginPortal').style.display);
+	console.log('Main app display set to:', document.getElementById('mainAppContent').style.display);
 }
 
 // Show main app when logged in
 function showMainApp(user) {
+	console.log('showMainApp called with user:', user);
+	
 	document.body.classList.remove('not-logged-in');
 	document.body.classList.add('logged-in');
 	document.getElementById('loginPortal').style.display = 'none';
 	document.getElementById('mainAppContent').style.display = 'block';
+	
+	console.log('Login portal display:', document.getElementById('loginPortal').style.display);
+	console.log('Main app display:', document.getElementById('mainAppContent').style.display);
 	
 	// Show user info bar
 	const userInfoBar = document.getElementById('userInfoBar');

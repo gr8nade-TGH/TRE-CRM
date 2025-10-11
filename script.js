@@ -319,7 +319,8 @@ const mockAuditLog = [
 			beds: 'any',
 			commission: '0',
 			amenities: 'any'
-		}
+		},
+		leadNotes: JSON.parse(localStorage.getItem('treLeadNotes') || '{}') // Load from localStorage
 	};
 
 	// ---- Global Variables ----
@@ -1898,10 +1899,15 @@ const mockAuditLog = [
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 				<td>
-					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
+					<div style="display: flex; align-items: center; gap: 8px;">
+						<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
+						<button class="comment-icon" data-lead-id="${lead.id}" title="View Comments">
+							💬
+						</button>
+					</div>
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
-				<td><button class="icon-btn" data-view="${lead.id}" title="View">👁️</button></td>
+				<td><button class="view-details-btn" data-view="${lead.id}" title="View Details">👁️ Details</button></td>
 				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
@@ -1964,6 +1970,24 @@ const mockAuditLog = [
 							healthDot.className = `health-dot health-${newStatus}`;
 						}
 					}
+				});
+			});
+			
+			// Update comment icons based on whether leads have comments
+			document.querySelectorAll('.comment-icon').forEach(icon => {
+				const leadId = icon.dataset.leadId;
+				const hasComments = checkLeadHasComments(leadId);
+				
+				if (hasComments) {
+					icon.classList.add('has-comments');
+				} else {
+					icon.classList.remove('has-comments');
+				}
+				
+				// Add click handler for comment icon
+				icon.addEventListener('click', (e) => {
+					e.stopPropagation();
+					showCommentsPopup(leadId, icon);
 				});
 			});
 		}, 100);
@@ -3705,32 +3729,333 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	// ---- Drawer ----
-	async function openDrawer(leadId){
+	// ---- Lead Details Modal ----
+	async function showLeadDetails(leadId){
 		state.selectedLeadId = leadId;
 		const lead = await api.getLead(leadId);
-		const c = document.getElementById('drawerContent');
-		const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || '—';
-		c.innerHTML = `
-			<div class="field"><label>Lead</label><div class="value">${lead.name}</div></div>
-			<div class="field"><label>Contact</label><div class="value">${lead.email} · ${lead.phone}</div></div>
-			<div class="field"><label>Submitted at</label><div class="value mono">${formatDate(lead.submitted_at)}</div></div>
-			<div class="field"><label>Agent who found lead</label><div class="value">${foundBy}</div></div>
-			<hr />
-			<div class="field"><label>Market</label><div class="value">${lead.prefs.market}</div></div>
-			<div class="field"><label>Neighborhoods</label><div class="value">${lead.prefs.neighborhoods.join(', ')}</div></div>
-			<div class="field"><label>Budget</label><div class="value">$${lead.prefs.budget_min} - $${lead.prefs.budget_max}</div></div>
-			<div class="field"><label>Beds/Baths</label><div class="value">${lead.prefs.beds} / ${lead.prefs.baths}</div></div>
-			<div class="field"><label>Move in</label><div class="value">${lead.prefs.move_in}</div></div>
-			<div class="field"><label>Pets</label><div class="value">${lead.prefs.pets}</div></div>
-			<div class="field"><label>Parking</label><div class="value">${lead.prefs.parking}</div></div>
-			<div class="field"><label>Sqft</label><div class="value">${lead.prefs.sqft_min} - ${lead.prefs.sqft_max}</div></div>
-			<div class="field"><label>Amenities</label><div class="value">${lead.prefs.amenities.join(', ')}</div></div>
-			<div class="field"><label>Credit tier</label><div class="value">${lead.prefs.credit_tier}</div></div>
-			<div class="field"><label>Background</label><div class="value">${lead.prefs.background}</div></div>
-			<div class="field"><label>Notes</label><div class="value">${lead.prefs.notes}</div></div>
-			${state.role==='manager' ? `<div class="field"><label>Assign to</label>${renderAgentSelect(lead)}</div>` : ''}
-		`;
-		show(document.getElementById('leadDrawer'));
+		
+		// Update modal title
+		document.getElementById('leadDetailsTitle').textContent = `Lead Details - ${lead.name}`;
+		
+		// Populate form fields
+		document.getElementById('detailLeadName').value = lead.name || '';
+		document.getElementById('detailLeadEmail').value = lead.email || '';
+		document.getElementById('detailLeadPhone').value = lead.phone || '';
+		document.getElementById('detailBestTimeToCall').value = lead.best_time_to_call || '';
+		document.getElementById('detailBedrooms').value = lead.bedrooms || '';
+		document.getElementById('detailBathrooms').value = lead.bathrooms || '';
+		document.getElementById('detailPriceRange').value = lead.price_range || '';
+		document.getElementById('detailAreaOfTown').value = lead.area_of_town || '';
+		document.getElementById('detailMoveInDate').value = lead.move_in_date || '';
+		document.getElementById('detailCreditHistory').value = lead.credit_history || '';
+		document.getElementById('detailLeaseTerm').value = lead.lease_term || '';
+		document.getElementById('detailComments').value = lead.comments || '';
+		document.getElementById('detailDesiredNeighborhoods').value = lead.desired_neighborhoods || '';
+		document.getElementById('detailLeadStatus').value = lead.status || 'new';
+		document.getElementById('detailLeadHealth').value = lead.health_status || 'green';
+		document.getElementById('detailLeadSource').value = lead.source || 'website';
+		document.getElementById('detailLeadCreated').value = formatDate(lead.submitted_at || lead.created_at);
+		document.getElementById('detailLeadUpdated').value = formatDate(lead.updated_at || lead.submitted_at || lead.created_at);
+		
+		// Populate agent dropdown
+		const agentSelect = document.getElementById('detailLeadAgent');
+		const agents = state.agents || [];
+		const agentOptions = agents.map(a => `<option value="${a.id}" ${a.id === lead.assigned_agent_id ? 'selected' : ''}>${a.name}</option>`).join('');
+		agentSelect.innerHTML = `<option value="">Unassigned</option>${agentOptions}`;
+		
+		// Load internal notes
+		await loadInternalNotes(leadId);
+		
+		// Show modal
+		document.getElementById('leadDetailsModal').classList.remove('hidden');
+		
+		// Add event listener for Add Note button (now that modal is open)
+		const addInternalNoteBtn = document.getElementById('addInternalNoteBtn');
+		console.log('Looking for addInternalNoteBtn:', addInternalNoteBtn);
+		if (addInternalNoteBtn) {
+			console.log('Found addInternalNoteBtn, adding event listener');
+			addInternalNoteBtn.addEventListener('click', () => {
+				console.log('Button clicked!');
+				const content = document.getElementById('newInternalNote').value.trim();
+				console.log('Content:', content);
+				console.log('Selected lead:', state.selectedLeadId);
+				
+				if (state.selectedLeadId) {
+					addInternalNote(state.selectedLeadId, content);
+				} else {
+					console.log('No lead selected');
+				}
+			});
+		} else {
+			console.log('addInternalNoteBtn not found!');
+		}
+	}
+	
+	// Load internal notes for a lead
+	async function loadInternalNotes(leadId) {
+		const container = document.getElementById('internalNotesContainer');
+		
+		try {
+			if (USE_MOCK_DATA) {
+				// Get notes from state (user-added notes) and combine with default mock notes
+				const userNotes = state.leadNotes && state.leadNotes[leadId] ? state.leadNotes[leadId] : [];
+				
+				// Default mock notes for demonstration
+				const defaultMockNotes = [
+					{
+						id: 'note_1',
+						content: 'Initial contact made, lead seems very interested in downtown area',
+						author: 'John Smith',
+						created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString()
+					},
+					{
+						id: 'note_2', 
+						content: 'Followed up with showcase, waiting for response',
+						author: 'Jane Doe',
+						created_at: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000).toISOString()
+					}
+				];
+				
+				// Combine all notes and sort by date (newest first)
+				const allNotes = [...userNotes, ...defaultMockNotes].sort((a, b) => 
+					new Date(b.created_at) - new Date(a.created_at)
+				);
+				
+				
+				if (allNotes.length === 0) {
+					container.innerHTML = '<div class="internal-note"><div class="internal-note-content">No internal notes yet.</div></div>';
+				} else {
+					container.innerHTML = allNotes.map(note => `
+						<div class="internal-note">
+							<div class="internal-note-header">
+								<span class="internal-note-author">${note.author}</span>
+								<span class="internal-note-date">${formatDate(note.created_at)}</span>
+							</div>
+							<div class="internal-note-content">${note.content}</div>
+						</div>
+					`).join('');
+				}
+			} else {
+				// TODO: Fetch from Supabase lead_notes table
+				container.innerHTML = '<div class="internal-note"><div class="internal-note-content">No internal notes yet.</div></div>';
+			}
+		} catch (error) {
+			console.error('Error loading internal notes:', error);
+			container.innerHTML = '<div class="internal-note"><div class="internal-note-content">Error loading notes.</div></div>';
+		}
+	}
+	
+	// Add new internal note
+	async function addInternalNote(leadId, content) {
+		console.log('addInternalNote called with:', leadId, content);
+		
+		if (!content.trim()) {
+			toast('Please enter a note', 'error');
+			return;
+		}
+		
+		try {
+			// Get current user info from auth system
+			let currentUserName = 'Current User';
+			try {
+				const session = await window.getCurrentSession();
+				if (session && session.user && session.user.user_metadata) {
+					currentUserName = session.user.user_metadata.name || session.user.email || 'Current User';
+				}
+			} catch (error) {
+				console.log('Could not get current user, using default name');
+			}
+			
+			if (USE_MOCK_DATA) {
+				// Add note to mock data and display immediately
+				const newNote = {
+					id: 'note_' + Date.now(),
+					content: content.trim(),
+					author: currentUserName,
+					created_at: new Date().toISOString()
+				};
+				
+				// Add to mock notes array (we'll store this in state for now)
+				if (!state.leadNotes) state.leadNotes = {};
+				if (!state.leadNotes[leadId]) state.leadNotes[leadId] = [];
+				state.leadNotes[leadId].push(newNote);
+				
+				// Save to localStorage
+				localStorage.setItem('treLeadNotes', JSON.stringify(state.leadNotes));
+				
+				// Clear the input
+				document.getElementById('newInternalNote').value = '';
+				
+				// Reload notes to show the new one
+				await loadInternalNotes(leadId);
+				
+				// Update comment icon in leads table
+				updateCommentIcon(leadId);
+				
+				toast('Internal note added successfully!', 'success');
+			} else {
+				// TODO: Save to Supabase lead_notes table
+				toast('Internal note added successfully!', 'success');
+				document.getElementById('newInternalNote').value = '';
+				await loadInternalNotes(leadId);
+			}
+		} catch (error) {
+			console.error('Error adding internal note:', error);
+			toast('Error adding note', 'error');
+		}
+	}
+	
+	// Save lead details
+	async function saveLeadDetails() {
+		const leadId = state.selectedLeadId;
+		if (!leadId) return;
+		
+		// Get form data
+		const formData = {
+			name: document.getElementById('detailLeadName').value.trim(),
+			email: document.getElementById('detailLeadEmail').value.trim(),
+			phone: document.getElementById('detailLeadPhone').value.trim(),
+			best_time_to_call: document.getElementById('detailBestTimeToCall').value,
+			bedrooms: document.getElementById('detailBedrooms').value,
+			bathrooms: document.getElementById('detailBathrooms').value,
+			price_range: document.getElementById('detailPriceRange').value,
+			area_of_town: document.getElementById('detailAreaOfTown').value,
+			move_in_date: document.getElementById('detailMoveInDate').value,
+			credit_history: document.getElementById('detailCreditHistory').value,
+			lease_term: document.getElementById('detailLeaseTerm').value.trim(),
+			comments: document.getElementById('detailComments').value.trim(),
+			desired_neighborhoods: document.getElementById('detailDesiredNeighborhoods').value.trim(),
+			status: document.getElementById('detailLeadStatus').value,
+			health_status: document.getElementById('detailLeadHealth').value,
+			source: document.getElementById('detailLeadSource').value,
+			assigned_agent_id: document.getElementById('detailLeadAgent').value || null,
+			updated_at: new Date().toISOString()
+		};
+		
+		// Validation
+		if (!formData.name || !formData.email || !formData.phone) {
+			toast('Please fill in all required fields', 'error');
+			return;
+		}
+		
+		try {
+			if (USE_MOCK_DATA) {
+				// Update mock data
+				const leadIndex = mockLeads.findIndex(l => l.id === leadId);
+				if (leadIndex !== -1) {
+					mockLeads[leadIndex] = { ...mockLeads[leadIndex], ...formData };
+					renderLeads(); // Refresh the table
+					toast('Lead updated successfully!', 'success');
+					closeLeadDetailsModal();
+				}
+			} else {
+				// TODO: Update in Supabase
+				toast('Lead updated successfully!', 'success');
+				closeLeadDetailsModal();
+			}
+		} catch (error) {
+			console.error('Error saving lead details:', error);
+			toast('Error saving lead details', 'error');
+		}
+	}
+	
+	// Close lead details modal
+	function closeLeadDetailsModal() {
+		document.getElementById('leadDetailsModal').classList.add('hidden');
+		state.selectedLeadId = null;
+	}
+	
+	// Check if a lead has comments
+	function checkLeadHasComments(leadId) {
+		if (USE_MOCK_DATA) {
+			// Check if lead has user-added comments
+			const userNotes = state.leadNotes && state.leadNotes[leadId] ? state.leadNotes[leadId] : [];
+			return userNotes.length > 0;
+		} else {
+			// TODO: Check Supabase for comments
+			return false;
+		}
+	}
+	
+	// Show comments popup
+	function showCommentsPopup(leadId, iconElement) {
+		// Remove any existing popup
+		const existingPopup = document.querySelector('.comments-popup');
+		if (existingPopup) {
+			existingPopup.remove();
+		}
+		
+		// Get comments for this lead
+		let comments = [];
+		if (USE_MOCK_DATA) {
+			const userNotes = state.leadNotes && state.leadNotes[leadId] ? state.leadNotes[leadId] : [];
+			comments = userNotes;
+		}
+		
+		// Create popup
+		const popup = document.createElement('div');
+		popup.className = 'comments-popup show';
+		
+		if (comments.length === 0) {
+			popup.innerHTML = `
+				<h4>Comments</h4>
+				<div class="comment-item">
+					<div class="comment-text">No comments yet.</div>
+				</div>
+			`;
+		} else {
+			popup.innerHTML = `
+				<h4>Comments (${comments.length})</h4>
+				${comments.map(comment => `
+					<div class="comment-item">
+						<div class="comment-author">${comment.author}</div>
+						<div class="comment-date">${formatDate(comment.created_at)}</div>
+						<div class="comment-text">${comment.content}</div>
+					</div>
+				`).join('')}
+			`;
+		}
+		
+		// Position popup near the icon
+		document.body.appendChild(popup);
+		
+		const iconRect = iconElement.getBoundingClientRect();
+		const popupRect = popup.getBoundingClientRect();
+		
+		// Position popup to the right of the icon, or left if not enough space
+		let left = iconRect.right + 10;
+		if (left + popupRect.width > window.innerWidth) {
+			left = iconRect.left - popupRect.width - 10;
+		}
+		
+		popup.style.position = 'fixed';
+		popup.style.left = left + 'px';
+		popup.style.top = (iconRect.top - popupRect.height / 2 + iconRect.height / 2) + 'px';
+		
+		// Close popup when clicking outside
+		const closePopup = (e) => {
+			if (!popup.contains(e.target) && !iconElement.contains(e.target)) {
+				popup.remove();
+				document.removeEventListener('click', closePopup);
+			}
+		};
+		
+		setTimeout(() => {
+			document.addEventListener('click', closePopup);
+		}, 100);
+	}
+	
+	// Update comment icon for a specific lead
+	function updateCommentIcon(leadId) {
+		const icon = document.querySelector(`.comment-icon[data-lead-id="${leadId}"]`);
+		if (icon) {
+			const hasComments = checkLeadHasComments(leadId);
+			if (hasComments) {
+				icon.classList.add('has-comments');
+			} else {
+				icon.classList.remove('has-comments');
+			}
+		}
 	}
 
 	function closeDrawer(){ 
@@ -4576,7 +4901,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				const a = e.target.closest('a.lead-name');
 				if (a){ e.preventDefault(); openDrawer(a.dataset.id); return; }
 				const view = e.target.closest('button[data-view]');
-				if (view){ openDrawer(view.dataset.view); return; }
+				if (view){ showLeadDetails(view.dataset.view); return; }
 				const matches = e.target.closest('button[data-matches]');
 				if (matches){ openMatches(matches.dataset.matches); return; }
 			});
@@ -5116,6 +5441,35 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				hideModal('addLeadModal');
 			});
 		}
+		
+		// Lead Details Modal functionality
+		const closeLeadDetailsModalBtn = document.getElementById('closeLeadDetailsModal');
+		const saveLeadDetailsBtn = document.getElementById('saveLeadDetailsBtn');
+		const cancelLeadDetailsBtn = document.getElementById('cancelLeadDetailsBtn');
+		const addInternalNoteBtn = document.getElementById('addInternalNoteBtn');
+		
+		// Close Lead Details modal
+		if (closeLeadDetailsModalBtn) {
+			closeLeadDetailsModalBtn.addEventListener('click', () => {
+				closeLeadDetailsModal();
+			});
+		}
+		
+		// Cancel Lead Details
+		if (cancelLeadDetailsBtn) {
+			cancelLeadDetailsBtn.addEventListener('click', () => {
+				closeLeadDetailsModal();
+			});
+		}
+		
+		// Save Lead Details
+		if (saveLeadDetailsBtn) {
+			saveLeadDetailsBtn.addEventListener('click', () => {
+				saveLeadDetails();
+			});
+		}
+		
+		// Add Internal Note - moved to showLeadDetails function
 
 		// Save Add Lead
 		if (saveAddLeadBtn) {

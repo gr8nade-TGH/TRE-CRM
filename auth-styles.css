@@ -220,11 +220,11 @@ body.modal-open #mainAppContent {
 }
 
 /* Hide main app content when not logged in */
-body:not(.logged-in) #mainAppContent {
+body.not-logged-in #mainAppContent {
 	display: none !important;
 }
 
-body:not(.logged-in) #loginPortal {
+body.not-logged-in #loginPortal {
 	display: flex !important;
 }
 
