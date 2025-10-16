@@ -492,6 +492,52 @@
 			color: #333;
 			margin-top: 0.25rem;
 		}
+		/* Agent Landing Page Buttons */
+		.landing-page-btn, .share-btn {
+			background: #007bff;
+			color: white;
+			border: none;
+			padding: 6px 12px;
+			border-radius: 4px;
+			cursor: pointer;
+			font-size: 14px;
+			margin: 2px;
+			transition: all 0.2s ease;
+		}
+
+		.landing-page-btn:hover {
+			background: #0056b3;
+			transform: translateY(-1px);
+		}
+
+		.share-btn {
+			background: #28a745;
+		}
+
+		.share-btn:hover {
+			background: #1e7e34;
+			transform: translateY(-1px);
+		}
+
+		/* View Details Button - Match Leads Page Style */
+		.view-details-btn {
+			background: linear-gradient(135deg, #253A89 0%, #1e2a5e 100%);
+			color: white;
+			border: none;
+			padding: 8px 16px;
+			border-radius: 6px;
+			cursor: pointer;
+			font-size: 14px;
+			font-weight: 500;
+			transition: all 0.3s ease;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+
+		.view-details-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+			background: linear-gradient(135deg, #1e2a5e 0%, #253A89 100%);
+		}
 	</style>
 	<!-- Supabase Client -->
 	<script src="https://unpkg.com/@supabase/supabase-js@2"></script>
@@ -709,6 +755,7 @@
 							<th>View Details</th>
 							<th data-sort="leads_assigned" class="sortable">Leads Assigned <span class="sort-icon">↕</span></th>
 							<th data-sort="leads_closed" class="sortable">Leads Closed (90d) <span class="sort-icon">↕</span></th>
+							<th>Landing Page</th>
 							<th>Actions</th>
 						</tr>
 					</thead>
@@ -2148,14 +2195,6 @@
 						</div>
 					</div>
 
-					<!-- Internal Notes -->
-					<div class="form-section">
-						<h3>Internal Notes</h3>
-						<div class="form-group">
-							<label for="internalNotes">TRE Internal Notes</label>
-							<textarea id="internalNotes" name="internal_notes" rows="3" placeholder="Any internal notes about this property..."></textarea>
-						</div>
-					</div>
 				</form>
 			</div>
 			<div class="modal-footer">

@@ -3394,9 +3394,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					<div class="subtle mono">${agent.email} · ${agent.phone}</div>
 					${!agent.active ? '<span class="subtle" style="color: #dc2626;">Inactive</span>' : ''}
 				</td>
-				<td><button class="icon-btn" data-view-agent="${agent.id}" title="View">👁️</button></td>
+				<td><button class="view-details-btn" data-view-agent="${agent.id}" title="View Details">Details</button></td>
 				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
 				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
+				<td>
+					<button class="landing-page-btn" data-view-landing="${agent.id}" title="View Landing Page">👁️</button>
+					<button class="share-btn" data-share-landing="${agent.id}" title="Copy Shareable Link">🔗</button>
+				</td>
 				<td>
 					<button class="action-btn" data-remove="${agent.id}">Remove Agent</button>
 					<button class="action-btn" data-edit="${agent.id}">Change Info</button>
@@ -4867,6 +4871,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			show(document.getElementById('bugsView'));
 			setRoleLabel('bugs');
 			renderBugs();
+		} else if (hash.startsWith('/landing/')) {
+			console.log('🔧 Showing landing page for agent:', hash);
+			// Extract agent ID from hash
+			const agentId = hash.split('/landing/')[1];
+			showAgentLandingPage(agentId);
 		} else {
 			// default: leads
 			state.currentPage = 'leads';
@@ -5063,8 +5072,296 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 	});
 
+	// Agent Landing Page Functions
+	function viewAgentLandingPage(agentId) {
+		console.log('viewAgentLandingPage called with agentId:', agentId);
+		console.log('Function is accessible and being called');
+		const agent = mockAgents.find(a => a.id === agentId);
+		console.log('Found agent:', agent);
+		if (!agent) {
+			console.error('Agent not found:', agentId);
+			return;
+		}
+		
+		// Generate landing page URL
+		const landingUrl = generateLandingPageUrl(agentId);
+		console.log('Generated landing URL:', landingUrl);
+		
+		// Open in new tab
+		window.open(landingUrl, '_blank');
+		console.log('Opened new tab with landing page');
+	}
+	
+	function shareAgentLandingPage(agentId) {
+		console.log('shareAgentLandingPage called with agentId:', agentId);
+		const agent = mockAgents.find(a => a.id === agentId);
+		console.log('Found agent:', agent);
+		if (!agent) {
+			console.error('Agent not found:', agentId);
+			return;
+		}
+		
+		// Generate landing page URL
+		const landingUrl = generateLandingPageUrl(agentId);
+		console.log('Generated landing URL:', landingUrl);
+		
+		// Copy to clipboard
+		navigator.clipboard.writeText(landingUrl).then(() => {
+			// Show success message
+			console.log('URL copied to clipboard successfully');
+			toast(`Landing page link copied to clipboard!`);
+		}).catch(err => {
+			console.error('Failed to copy to clipboard:', err);
+			// Fallback: show the URL in a prompt
+			prompt('Copy this landing page URL:', landingUrl);
+		});
+	}
+	
+	function showAgentLandingPage(agentId) {
+		const agent = mockAgents.find(a => a.id === agentId);
+		if (!agent) {
+			console.error('Agent not found:', agentId);
+			// Redirect to leads page if agent not found
+			location.hash = '/leads';
+			return;
+		}
+		
+		// Hide all views
+		document.querySelectorAll('.route-view').forEach(view => {
+			hide(view);
+		});
+		
+		// Create landing page content
+		const landingPageHtml = generateAgentLandingPage(agentId);
+		
+		// Create a temporary div to hold the landing page
+		let landingContainer = document.getElementById('landingPageContainer');
+		if (!landingContainer) {
+			landingContainer = document.createElement('div');
+			landingContainer.id = 'landingPageContainer';
+			landingContainer.className = 'route-view';
+			document.body.appendChild(landingContainer);
+		}
+		
+		landingContainer.innerHTML = landingPageHtml;
+		show(landingContainer);
+		
+		// Set up form submission handler
+		setupLandingPageForm(agentId);
+	}
+	
+	function setupLandingPageForm(agentId) {
+		const form = document.getElementById('leadForm');
+		if (!form) return;
+		
+		form.addEventListener('submit', async function(e) {
+			e.preventDefault();
+			
+			const formData = new FormData(this);
+			const leadData = {
+				name: formData.get('name'),
+				phone: formData.get('phone'),
+				email: formData.get('email'),
+				bestTime: formData.get('bestTime'),
+				bedrooms: formData.get('bedrooms'),
+				bathrooms: formData.get('bathrooms'),
+				priceRange: formData.get('priceRange'),
+				areaOfTown: formData.get('areaOfTown'),
+				moveInDate: formData.get('moveInDate'),
+				creditHistory: formData.get('creditHistory'),
+				comments: formData.get('comments'),
+				agentId: agentId,
+				agentName: mockAgents.find(a => a.id === agentId)?.name || 'Unknown Agent',
+				source: 'landing_page',
+				created_at: new Date().toISOString()
+			};
+			
+			try {
+				// For now, add to mock data
+				if (USE_MOCK_DATA) {
+					const newLead = {
+						id: 'lead_' + Date.now(),
+						...leadData,
+						health: 'green',
+						status: 'new',
+						assigned_agent_id: agentId,
+						assigned_agent_name: leadData.agentName
+					};
+					
+					// Add to mock leads
+					mockLeads.push(newLead);
+					
+					// Save to localStorage
+					localStorage.setItem('treMockLeads', JSON.stringify(mockLeads));
+					
+					alert('Thank you! We\'ll be in touch with you today!');
+					this.reset();
+				} else {
+					// Send to real API
+					const response = await fetch('/api/leads', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(leadData)
+					});
+					
+					if (response.ok) {
+						alert('Thank you! We\'ll be in touch with you today!');
+						this.reset();
+					} else {
+						throw new Error('Failed to submit form');
+					}
+				}
+			} catch (error) {
+				console.error('Error submitting form:', error);
+				alert('Thank you for your interest! We\'ll contact you soon.');
+			}
+		});
+	}
+	
+	function generateAgentLandingPage(agentId) {
+		const agent = mockAgents.find(a => a.id === agentId);
+		if (!agent) {
+			console.error('Agent not found:', agentId);
+			return '';
+		}
+		
+		return `
+		<div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; color: #333; margin: 0; padding: 0;">
+			<div style="background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('data:image/svg+xml,<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 1200 600\"><rect fill=\"%23f0f0f0\" width=\"1200\" height=\"600\"/><rect fill=\"%23ddd\" x=\"200\" y=\"200\" width=\"800\" height=\"400\" rx=\"20\"/><rect fill=\"%23bbb\" x=\"300\" y=\"300\" width=\"600\" height=\"200\"/><circle fill=\"%23aaa\" cx=\"400\" cy=\"400\" r=\"20\"/><circle fill=\"%23aaa\" cx=\"800\" cy=\"400\" r=\"20\"/></svg>'); background-size: cover; background-position: center; height: 400px; display: flex; align-items: center; justify-content: center;">
+				<div style="background: rgba(255, 140, 0, 0.9); padding: 2rem; border-radius: 8px; text-align: center; color: white;">
+					<h1 style="font-size: 2.5rem; margin-bottom: 1rem; font-weight: 700;">Start Your Search Now</h1>
+				</div>
+			</div>
+			
+			<div style="padding: 3rem 2rem; text-align: center; background: #f8f9fa;">
+				<h2 style="font-size: 1.8rem; margin-bottom: 1rem; color: #333;">Schedule an Appointment</h2>
+				<p style="font-size: 1.1rem; color: #666; max-width: 600px; margin: 0 auto;">Choose a time that best suits you and we'll make it happen!</p>
+				<h2 style="font-size: 1.8rem; margin: 2rem 0 1rem; color: #333;">Are you ready for your new apartment? GREAT!!</h2>
+				<p style="font-size: 1.1rem; color: #666; max-width: 600px; margin: 0 auto;">Please fill out the form below and I'll be in contact with you TODAY!</p>
+			</div>
+			
+			<div style="max-width: 800px; margin: 0 auto; padding: 2rem; background: white; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+				<form id="leadForm">
+					<p style="font-size: 14px; color: #666; margin-bottom: 2rem;">Fields marked with an <span style="color: #dc3545;">*</span> are required</p>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Name: <span style="color: #dc3545;">*</span></label>
+						<input type="text" id="name" name="name" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px; transition: border-color 0.2s ease;">
+					</div>
+					
+					<div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+						<div style="flex: 1;">
+							<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Phone: <span style="color: #dc3545;">*</span></label>
+							<input type="tel" id="phone" name="phone" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+						</div>
+						<div style="flex: 1;">
+							<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Email: <span style="color: #dc3545;">*</span></label>
+							<input type="email" id="email" name="email" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+						</div>
+					</div>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Best time to call you: <span style="color: #dc3545;">*</span></label>
+						<select id="bestTime" name="bestTime" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+							<option value="">Select</option>
+							<option value="morning">Morning (8AM-12PM)</option>
+							<option value="afternoon">Afternoon (12PM-5PM)</option>
+							<option value="evening">Evening (5PM-8PM)</option>
+							<option value="anytime">Anytime</option>
+						</select>
+					</div>
+					
+					<div style="display: flex; gap: 1rem; margin-bottom: 1.5rem;">
+						<div style="flex: 1;">
+							<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;"># of Bedrooms: <span style="color: #dc3545;">*</span></label>
+							<select id="bedrooms" name="bedrooms" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+								<option value="">Select</option>
+								<option value="studio">Studio</option>
+								<option value="1">1 Bedroom</option>
+								<option value="2">2 Bedrooms</option>
+								<option value="3">3 Bedrooms</option>
+								<option value="4+">4+ Bedrooms</option>
+							</select>
+						</div>
+						<div style="flex: 1;">
+							<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;"># of Bathrooms: <span style="color: #dc3545;">*</span></label>
+							<select id="bathrooms" name="bathrooms" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+								<option value="">Select</option>
+								<option value="1">1 Bathroom</option>
+								<option value="1.5">1.5 Bathrooms</option>
+								<option value="2">2 Bathrooms</option>
+								<option value="2.5">2.5 Bathrooms</option>
+								<option value="3+">3+ Bathrooms</option>
+							</select>
+						</div>
+					</div>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Price Range: <span style="color: #dc3545;">*</span></label>
+						<select id="priceRange" name="priceRange" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+							<option value="">Select</option>
+							<option value="under-1000">Under $1,000</option>
+							<option value="1000-1500">$1,000 - $1,500</option>
+							<option value="1500-2000">$1,500 - $2,000</option>
+							<option value="2000-2500">$2,000 - $2,500</option>
+							<option value="2500-3000">$2,500 - $3,000</option>
+							<option value="3000+">$3,000+</option>
+						</select>
+					</div>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Area of Town: <span style="color: #dc3545;">*</span></label>
+						<input type="text" id="areaOfTown" name="areaOfTown" placeholder="e.g., Downtown, Northside, Westside" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+					</div>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Target move in Date: <span style="color: #dc3545;">*</span></label>
+						<input type="date" id="moveInDate" name="moveInDate" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+					</div>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Credit History: <span style="color: #dc3545;">*</span></label>
+						<select id="creditHistory" name="creditHistory" required style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px;">
+							<option value="">Select</option>
+							<option value="excellent">Excellent (750+)</option>
+							<option value="good">Good (700-749)</option>
+							<option value="fair">Fair (650-699)</option>
+							<option value="poor">Poor (Below 650)</option>
+							<option value="new">New to Credit</option>
+						</select>
+					</div>
+					
+					<div style="margin-bottom: 1.5rem;">
+						<label style="display: block; margin-bottom: 0.5rem; font-weight: 600; color: #333;">Lease Term / Special Requirements / Comments / Desired Neighborhoods:</label>
+						<textarea id="comments" name="comments" rows="4" placeholder="Tell us about your specific needs, preferred lease terms, or any special requirements..." style="width: 100%; padding: 12px; border: 2px solid #e1e5e9; border-radius: 6px; font-size: 16px; resize: vertical;"></textarea>
+					</div>
+					
+					<button type="submit" style="background: #333; color: white; padding: 15px 30px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; width: 100%; transition: background 0.2s ease;">SUBMIT</button>
+				</form>
+			</div>
+			
+			<div style="background: #000; color: white; padding: 2rem; text-align: center;">
+				<div style="margin-bottom: 1rem;">
+					<img src="images/tre_logo_black_bg.png" alt="Texas Relocation Experts" style="height: 60px;">
+					<h3 style="margin-top: 1rem;">TEXAS RELOCATION EXPERTS</h3>
+				</div>
+				<div style="display: flex; justify-content: center; gap: 1rem; margin-top: 1rem;">
+					<a href="#" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 18px; background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);">📷</a>
+					<a href="#" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 18px; background: #1da1f2;">🐦</a>
+					<a href="#" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 18px; background: #4267b2;">📘</a>
+					<a href="#" style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; text-decoration: none; font-size: 18px; background: #ff0000;">📺</a>
+				</div>
+			</div>
+		</div>
+		`;
+	}
+
 	// admin users table delegation - using document level delegation
+		console.log('🔧 Setting up main click event listener...');
 		document.addEventListener('click', (e) => {
+			console.log('🔧 Main click event listener triggered!', e.target);
 			// Check if click is on admin users table
 			const usersTable = e.target.closest('#usersTable');
 			if (usersTable) {
@@ -5380,6 +5677,26 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								password: userData.password,
 								sendInvitation: userData.sendInvitation
 							});
+							
+							// If this is an agent, also add them to mockAgents for landing page functionality
+							if (userData.role === 'agent') {
+								const newAgent = {
+									id: 'agent_' + Date.now(),
+									name: userData.name,
+									email: userData.email,
+									phone: '', // Will be filled in later
+									active: true,
+									created_at: new Date().toISOString()
+								};
+								mockAgents.unshift(newAgent);
+								
+								// Save to localStorage
+								localStorage.setItem('treMockAgents', JSON.stringify(mockAgents));
+								
+								console.log('Agent created and added to mockAgents:', newAgent);
+								toast('Agent created successfully! Landing page is now available.');
+							}
+							
 							toast('User created successfully');
 						}
 						await loadAuditLog();
@@ -5410,10 +5727,35 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								created_by: 'system'
 							};
 							mockUsers.unshift(newUser);
+							
+							// If this is an agent, also add them to mockAgents
+							if (userData.role === 'agent') {
+								const newAgent = {
+									id: newUser.id,
+									name: userData.name,
+									email: userData.email,
+									phone: '', // Will be filled in later
+									active: true,
+									created_at: new Date().toISOString()
+								};
+								mockAgents.unshift(newAgent);
+								
+								// Save to localStorage
+								localStorage.setItem('treMockAgents', JSON.stringify(mockAgents));
+								
+								console.log('Agent created and added to mockAgents:', newAgent);
+								toast('Agent created successfully! Landing page is now available.');
+							}
+							
 							toast('User created successfully (mock data)');
 						}
 						renderUsersTable();
 						renderAuditLog();
+						
+						// If we're on the agents page, refresh it
+						if (state.currentPage === 'agents') {
+							renderAgents();
+						}
 					}
 					
 					hideModal('userModal');
@@ -6004,6 +6346,35 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			if (e.target.textContent === 'Cancel' && e.target.closest('#csvUploadModal')) {
 				console.log('Cancel button clicked in CSV Upload modal');
 				hideModal('csvUploadModal');
+				return;
+			}
+			
+			// Handle Agent Landing Page buttons
+			if (e.target.hasAttribute('data-view-landing')) {
+				console.log('🎯 LANDING PAGE BUTTON CLICKED - Event handler reached!');
+				const agentId = e.target.getAttribute('data-view-landing');
+				console.log('View landing page clicked for agent:', agentId);
+				console.log('Calling viewAgentLandingPage function...');
+				console.log('Function exists?', typeof viewAgentLandingPage);
+				try {
+					viewAgentLandingPage(agentId);
+					console.log('viewAgentLandingPage called successfully');
+				} catch (error) {
+					console.error('Error calling viewAgentLandingPage:', error);
+				}
+				return;
+			}
+			
+			if (e.target.hasAttribute('data-share-landing')) {
+				const agentId = e.target.getAttribute('data-share-landing');
+				console.log('Share landing page clicked for agent:', agentId);
+				console.log('Calling shareAgentLandingPage function...');
+				try {
+					shareAgentLandingPage(agentId);
+					console.log('shareAgentLandingPage called successfully');
+				} catch (error) {
+					console.error('Error calling shareAgentLandingPage:', error);
+				}
 				return;
 			}
 			
