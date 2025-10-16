@@ -5073,6 +5073,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	});
 
 	// Agent Landing Page Functions
+	function generateLandingPageUrl(agentId) {
+		return `${window.location.origin}${window.location.pathname}#/landing/${agentId}`;
+	}
+
 	function viewAgentLandingPage(agentId) {
 		console.log('viewAgentLandingPage called with agentId:', agentId);
 		console.log('Function is accessible and being called');
