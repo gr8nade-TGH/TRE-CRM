@@ -9,7 +9,7 @@ function formatDate(iso) {
 
 // Agent Landing Page Functions - defined globally
 function generateLandingPageUrl(agentId) {
-	return `${window.location.origin}${window.location.pathname}#/landing/${agentId}`;
+	return `${window.location.origin}/landing.html?agent=${agentId}`;
 }
 
 function showAgentLandingPage(agentId) {
