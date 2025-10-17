@@ -7597,373 +7597,204 @@ async function saveNewAgent() {
 		}
 	});
 
-// Global function for updating sort headers
-function updateSortHeaders(tableId) {
-	console.log('updateSortHeaders called with tableId:', tableId);
-	const table = document.getElementById(tableId);
-	if (!table) {
-		console.log('Table not found:', tableId);
-		return;
-	}
-	
-	const currentState = window.state || { sort: { key: null, dir: null } };
-	const headers = table.querySelectorAll('th[data-sort]');
-	
-	headers.forEach(header => {
-		const sortKey = header.getAttribute('data-sort');
-		const isActive = currentState.sort.key === sortKey;
-		const isAsc = isActive && currentState.sort.dir === 'asc';
-		const isDesc = isActive && currentState.sort.dir === 'desc';
-		
-		// Remove existing sort indicators
-		header.classList.remove('sort-asc', 'sort-desc');
-		
-		// Add appropriate sort indicator
-		if (isAsc) {
-			header.classList.add('sort-asc');
-		} else if (isDesc) {
-			header.classList.add('sort-desc');
-		}
-	});
-}
-
-// Global function for admin page
-function renderUsersTable() {
-	console.log('renderUsersTable called');
-	const realUsers = window.mockUsers || [];
-	const mockUsers = [
-		{
-			id: 'user_1',
-			name: 'John Smith',
-			email: 'john@trecrm.com',
-			role: 'manager',
-			status: 'active',
-			created_at: '2024-01-01T10:00:00Z',
-			created_by: 'system',
-			last_login: '2024-01-15T16:30:00Z'
-		},
-		{
-			id: 'user_2',
-			name: 'Alex Agent',
-			email: 'alex@trecrm.com',
-			role: 'agent',
-			status: 'active',
-			created_at: '2024-01-02T09:15:00Z',
-			created_by: 'user_1',
-			last_login: '2024-01-15T16:45:00Z'
-		},
-		{
-			id: 'user_3',
-			name: 'Bailey Broker',
-			email: 'bailey@trecrm.com',
-			role: 'agent',
-			status: 'active',
-			created_at: '2024-01-03T11:20:00Z',
-			created_by: 'user_1',
-			last_login: '2024-01-14T13:20:00Z'
-		},
-		{
-			id: 'user_4',
-			name: 'Sarah Johnson',
-			email: 'sarah@trecrm.com',
-			role: 'agent',
-			status: 'invited',
-			created_at: '2024-01-10T15:30:00Z',
-			created_by: 'user_1',
-			last_login: null
-		},
-		{
-			id: 'user_5',
-			name: 'Mike Wilson',
-			email: 'mike@trecrm.com',
-			role: 'super_user',
-			status: 'active',
-			created_at: '2024-01-05T14:45:00Z',
-			created_by: 'user_1',
-			last_login: '2024-01-15T10:15:00Z'
-		}
-	];
-	
-	console.log('realUsers:', realUsers.length, 'mockUsers:', mockUsers.length);
-	const users = realUsers.length > 0 ? realUsers : mockUsers;
-	console.log('Users to render:', users.length);
-	
-	const tbody = document.querySelector('#usersTable tbody');
-	if (!tbody) {
-		console.log('Users table tbody not found');
-		return;
-	}
-	
-	tbody.innerHTML = users.map(user => `
-		<tr>
-			<td>${user.name}</td>
-			<td>${user.email}</td>
-			<td>${user.role.replace('_', ' ')}</td>
-			<td>
-				<span class="status-badge ${user.status}">${user.status}</span>
-			</td>
-			<td>${user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never'}</td>
-			<td>
-				<button class="btn btn-sm btn-secondary" onclick="editUser('${user.id}')">Edit</button>
-				<button class="btn btn-sm btn-warning" onclick="changePassword('${user.id}')">Change Password</button>
-				<button class="btn btn-sm btn-danger" onclick="deleteUser('${user.id}')">Delete</button>
-			</td>
-		</tr>
-	`).join('');
-	
-	// Update sort headers
-	updateSortHeaders('usersTable');
-}
-
-function renderAuditLog() {
-	const auditLog = [
-		{
-			id: 'audit_1',
-			action: 'user_created',
-			performed_by: 'user_1',
-			performed_by_name: 'John Smith',
-			timestamp: '2024-01-15T16:30:00Z',
-			details: 'Created user: Alex Agent'
-		},
-		{
-			id: 'audit_2',
-			action: 'user_updated',
-			performed_by: 'user_1',
-			performed_by_name: 'John Smith',
-			timestamp: '2024-01-15T16:25:00Z',
-			details: 'Updated user: Bailey Broker'
-		},
-		{
-			id: 'audit_3',
-			action: 'password_changed',
-			performed_by: 'user_2',
-			performed_by_name: 'Alex Agent',
-			timestamp: '2024-01-15T16:20:00Z',
-			details: 'Changed password for user: Alex Agent'
-		}
-	];
-	
-	const tbody = document.querySelector('#auditLogTable tbody');
-	if (tbody) {
-		tbody.innerHTML = auditLog.map(entry => `
-			<tr>
-				<td>${entry.action.replace('_', ' ')}</td>
-				<td>${entry.performed_by_name}</td>
-				<td>${new Date(entry.timestamp).toLocaleString()}</td>
-				<td>${entry.details}</td>
-			</tr>
-		`).join('');
-	}
-}
-
-function editUser(userId) {
-	console.log('editUser called with userId:', userId);
-	const user = window.mockUsers.find(u => u.id === userId);
-	if (!user) {
-		console.log('User not found:', userId);
-		return;
-	}
-	
-	// Populate form with user data
-	document.getElementById('userName').value = user.name;
-	document.getElementById('userEmail').value = user.email;
-	document.getElementById('userRole').value = user.role;
-	document.getElementById('userStatus').value = user.status;
-	
-	// Set user ID for update
-	document.getElementById('userModal').setAttribute('data-user-id', userId);
-	
-	showModal('userModal');
-}
-
-function changePassword(userId) {
-	console.log('changePassword called with userId:', userId);
-	document.getElementById('passwordModal').setAttribute('data-user-id', userId);
-	showModal('passwordModal');
-}
-
-async function deleteUser(userId) {
-	console.log('deleteUser called with userId:', userId);
-	if (!confirm('Are you sure you want to delete this user?')) {
-		return;
-	}
-	
+// Agent management functions
+async function saveNewAgent() {
 	try {
-		// Try to delete from API first
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-			? 'http://localhost:3001/api' 
-			: null;
+		const form = document.getElementById('addAgentForm');
+		const formData = new FormData(form);
 		
-		if (apiBase) {
-			await deleteUserFromAPI(userId);
-			toast('User deleted successfully');
-		} else {
-			// Fallback to mock data
-			const userIndex = window.mockUsers.findIndex(u => u.id === userId);
-			if (userIndex !== -1) {
-				window.mockUsers.splice(userIndex, 1);
-				localStorage.setItem('treMockUsers', JSON.stringify(window.mockUsers));
-				toast('User deleted successfully');
-			}
-		}
+		// Get form data
+		const agentData = {
+			name: formData.get('name'),
+			email: formData.get('email'),
+			phone: formData.get('phone') || '',
+			role: formData.get('role'),
+			password: formData.get('password'),
+			licenseNumber: formData.get('licenseNumber') || '',
+			hireDate: formData.get('hireDate') || new Date().toISOString().split('T')[0],
+			notes: formData.get('notes') || '',
+			sendInvitation: document.getElementById('agentSendInvitation').checked
+		};
 		
-		renderUsersTable();
-	} catch (error) {
-		console.error('Error deleting user:', error);
-		toast('Error deleting user: ' + error.message, 'error');
-	}
-}
-
-// Listing management functions
-function saveNewListing() {
-	const form = document.getElementById('addListingForm');
-	const formData = new FormData(form);
-	
-	const listingData = {
-		name: formData.get('name'),
-		address: formData.get('address'),
-		rent: parseFloat(formData.get('rent')),
-		bedrooms: parseInt(formData.get('bedrooms')),
-		bathrooms: parseFloat(formData.get('bathrooms')),
-		sqft: parseInt(formData.get('sqft')),
-		commission: parseFloat(formData.get('commission')),
-		amenities: formData.getAll('amenities'),
-		description: formData.get('description'),
-		images: formData.getAll('images')
-	};
-	
-	// Add to mock data
-	if (!window.state.mockProperties) {
-		window.state.mockProperties = [];
-	}
-	
-	const newProperty = {
-		id: 'prop_' + Date.now(),
-		...listingData,
-		created_at: new Date().toISOString(),
-		status: 'active'
-	};
-	
-	window.state.mockProperties.unshift(newProperty);
-	
-	// Save to localStorage
-	localStorage.setItem('treMockProperties', JSON.stringify(window.state.mockProperties));
-	
-	// Close modal
-	hideModal('addListingModal');
-	
-	// Reset form
-	form.reset();
-	
-	// Re-render listings
-	if (window.state.currentPage === 'listings') {
-		renderListings();
-	}
-	
-	toast('Property added successfully!');
-}
-
-function downloadCsvTemplate() {
-	const csvContent = 'name,address,rent,bedrooms,bathrooms,sqft,commission,amenities,description\n' +
-		'Example Property,123 Main St,1500,2,2,1200,5.0,"Pool,Gym",Beautiful apartment in downtown area';
-	
-	const blob = new Blob([csvContent], { type: 'text/csv' });
-	const url = window.URL.createObjectURL(blob);
-	const a = document.createElement('a');
-	a.href = url;
-	a.download = 'property_template.csv';
-	document.body.appendChild(a);
-	a.click();
-	document.body.removeChild(a);
-	window.URL.revokeObjectURL(url);
-}
-
-function handleFileSelect(event) {
-	const file = event.target.files[0];
-	if (file && file.type === 'text/csv') {
-		processCsvFile(file);
-	} else {
-		toast('Please select a valid CSV file', 'error');
-	}
-}
-
-function handleDragOver(event) {
-	event.preventDefault();
-	document.getElementById('csvUploadArea').classList.add('dragover');
-}
-
-function handleDragLeave(event) {
-	event.preventDefault();
-	document.getElementById('csvUploadArea').classList.remove('dragover');
-}
-
-function handleDrop(event) {
-	event.preventDefault();
-	document.getElementById('csvUploadArea').classList.remove('dragover');
-	const file = event.dataTransfer.files[0];
-	if (file && file.type === 'text/csv') {
-		processCsvFile(file);
-	} else {
-		toast('Please drop a valid CSV file', 'error');
-	}
-}
-
-function processCsvFile(file) {
-	const reader = new FileReader();
-	reader.onload = function(e) {
-		const csv = e.target.result;
-		const lines = csv.split('\n');
-		const headers = lines[0].split(',');
-		
-		const properties = [];
-		for (let i = 1; i < lines.length; i++) {
-			if (lines[i].trim()) {
-				const values = lines[i].split(',');
-				const property = {};
-				headers.forEach((header, index) => {
-					property[header.trim()] = values[index] ? values[index].trim() : '';
-				});
-				properties.push(property);
-			}
-		}
-		
-		// Add properties to mock data
-		if (!window.state.mockProperties) {
-			window.state.mockProperties = [];
-		}
-		
-		properties.forEach(prop => {
-			const newProperty = {
-				id: 'prop_' + Date.now() + '_' + Math.random(),
-				name: prop.name || 'Imported Property',
-				address: prop.address || '',
-				rent: parseFloat(prop.rent) || 0,
-				bedrooms: parseInt(prop.bedrooms) || 0,
-				bathrooms: parseFloat(prop.bathrooms) || 0,
-				sqft: parseInt(prop.sqft) || 0,
-				commission: parseFloat(prop.commission) || 0,
-				amenities: prop.amenities ? prop.amenities.split(',').map(a => a.trim()) : [],
-				description: prop.description || '',
-				images: [],
-				created_at: new Date().toISOString(),
-				status: 'active'
-			};
-			window.state.mockProperties.unshift(newProperty);
+		// Get selected specialties
+		const specialties = [];
+		const specialtyCheckboxes = form.querySelectorAll('input[name="specialties"]:checked');
+		specialtyCheckboxes.forEach(checkbox => {
+			specialties.push(checkbox.value);
 		});
 		
-		// Save to localStorage
-		localStorage.setItem('treMockProperties', JSON.stringify(window.state.mockProperties));
-		
-		// Close modal
-		hideModal('csvUploadModal');
-		
-		// Re-render listings
-		if (window.state.currentPage === 'listings') {
-			renderListings();
+		// Validation
+		if (!agentData.name || !agentData.email || !agentData.password) {
+			toast('Please fill in all required fields', 'error');
+			return;
 		}
 		
-		toast(`Successfully imported ${properties.length} properties!`);
-	};
-	
-	reader.readAsText(file);
+		if (agentData.password.length < 6) {
+			toast('Password must be at least 6 characters long', 'error');
+			return;
+		}
+		
+		// Check for duplicate email
+		const existingAgent = window.mockAgents.find(a => a.email === agentData.email);
+		if (existingAgent) {
+			toast('An agent with this email already exists', 'error');
+			return;
+		}
+		
+		// Create user data for Supabase
+		const userData = {
+			email: agentData.email,
+			password: agentData.password,
+			user_metadata: {
+				name: agentData.name,
+				phone: agentData.phone,
+				role: agentData.role,
+				license_number: agentData.licenseNumber,
+				hire_date: agentData.hireDate,
+				notes: agentData.notes,
+				specialties: specialties,
+				send_invitation: agentData.sendInvitation
+			}
+		};
+		
+		// Try to create user in Supabase first
+		if (window.supabaseClient) {
+			try {
+				// Create user in Supabase Auth
+				const { data: authData, error: authError } = await window.supabaseClient.auth.admin.createUser({
+					email: userData.email,
+					password: userData.password,
+					user_metadata: userData.user_metadata
+				});
+				
+				if (authError) {
+					throw authError;
+				}
+				
+				// Insert into users table
+				const { data: userRecord, error: userError } = await window.supabaseClient
+					.from('users')
+					.insert([{
+						id: authData.user.id,
+						name: agentData.name,
+						email: agentData.email,
+						phone: agentData.phone,
+						role: agentData.role,
+						license_number: agentData.licenseNumber,
+						hire_date: agentData.hireDate,
+						notes: agentData.notes,
+						specialties: specialties,
+						status: 'active',
+						created_at: new Date().toISOString(),
+						created_by: window.state?.user?.id || 'system'
+					}])
+					.select()
+					.single();
+				
+				if (userError) {
+					throw userError;
+				}
+				
+				// Add to mock data for immediate UI update
+				const newAgent = {
+					id: authData.user.id,
+					name: agentData.name,
+					email: agentData.email,
+					phone: agentData.phone,
+					role: agentData.role,
+					licenseNumber: agentData.licenseNumber,
+					hireDate: agentData.hireDate,
+					notes: agentData.notes,
+					specialties: specialties,
+					status: 'active',
+					created_at: new Date().toISOString(),
+					created_by: window.state?.user?.id || 'system'
+				};
+				
+				// Generate slug for landing page
+				const agentSlug = agentData.name.toLowerCase()
+					.replace(/\s+/g, '-')
+					.replace(/[^a-z0-9-]/g, '')
+					.replace(/-+/g, '-')
+					.replace(/^-|-$/g, '');
+				newAgent.slug = agentSlug;
+				
+				window.mockAgents.unshift(newAgent);
+				
+				// Save to localStorage
+				localStorage.setItem('treMockAgents', JSON.stringify(window.mockAgents));
+				
+				toast('Agent created successfully!', 'success');
+				
+				// Close modal
+				hideModal('addAgentModal');
+				
+				// Reset form
+				form.reset();
+				
+				// Re-render agents table
+				if (window.state.currentPage === 'agents') {
+					renderAgents();
+				}
+				
+				// Show landing page URL
+				const landingUrl = generateLandingPageUrl(newAgent.id);
+				toast(`Landing page ready: ${landingUrl}`, 'success');
+				
+			} catch (error) {
+				console.error('Supabase error:', error);
+				toast('Error creating agent: ' + error.message, 'error');
+			}
+		} else {
+			// Fallback to mock data only
+			const newAgent = {
+				id: 'agent_' + Date.now(),
+				name: agentData.name,
+				email: agentData.email,
+				phone: agentData.phone,
+				role: agentData.role,
+				licenseNumber: agentData.licenseNumber,
+				hireDate: agentData.hireDate,
+				notes: agentData.notes,
+				specialties: specialties,
+				status: 'active',
+				created_at: new Date().toISOString(),
+				created_by: window.state?.user?.id || 'system'
+			};
+			
+			// Generate slug for landing page
+			const agentSlug = agentData.name.toLowerCase()
+				.replace(/\s+/g, '-')
+				.replace(/[^a-z0-9-]/g, '')
+				.replace(/-+/g, '-')
+				.replace(/^-|-$/g, '');
+			newAgent.slug = agentSlug;
+			
+			window.mockAgents.unshift(newAgent);
+			
+			// Save to localStorage
+			localStorage.setItem('treMockAgents', JSON.stringify(window.mockAgents));
+			
+			toast('Agent created successfully!', 'success');
+			
+			// Close modal
+			hideModal('addAgentModal');
+			
+			// Reset form
+			form.reset();
+			
+			// Re-render agents table
+			if (window.state.currentPage === 'agents') {
+				renderAgents();
+			}
+			
+			// Show landing page URL
+			const landingUrl = generateLandingPageUrl(newAgent.id);
+			toast(`Landing page ready: ${landingUrl}`, 'success');
+		}
+		
+	} catch (error) {
+		console.error('Error creating agent:', error);
+		toast('Error creating agent: ' + error.message, 'error');
+	}
 }
