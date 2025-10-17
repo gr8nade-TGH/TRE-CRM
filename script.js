@@ -4609,9 +4609,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Save User button
 		if (saveUserBtn) {
 			saveUserBtn.addEventListener('click', async () => {
+				console.log('💾 Save User button clicked');
+
 				const form = document.getElementById('userForm');
 				const formData = new FormData(form);
-				
+
 				const userData = {
 					name: document.getElementById('userName').value,
 					email: document.getElementById('userEmail').value,
@@ -4620,22 +4622,35 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					confirmPassword: document.getElementById('userConfirmPassword').value
 				};
 
+				console.log('User data collected:', { ...userData, password: '***', confirmPassword: '***' });
+
 				// Basic validation
 				if (!userData.name || !userData.email || !userData.role) {
+					console.log('❌ Validation failed: missing required fields');
 					toast('Please fill in all required fields', 'error');
 					return;
 				}
 
-				if (userData.password && userData.password !== userData.confirmPassword) {
+				if (!userData.password) {
+					console.log('❌ Validation failed: password required');
+					toast('Password is required', 'error');
+					return;
+				}
+
+				if (userData.password !== userData.confirmPassword) {
+					console.log('❌ Validation failed: passwords do not match');
 					toast('Passwords do not match', 'error');
 					return;
 				}
+
+				console.log('✅ Validation passed');
 
 				try {
 					const userId = document.getElementById('userModal').getAttribute('data-user-id');
 
 					// Use Supabase to create/update users
 					if (userId) {
+						console.log('Updating existing user:', userId);
 						// Update existing user
 						await updateUser(userId, {
 							name: userData.name,
@@ -4644,6 +4659,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 						});
 						toast('User updated successfully');
 					} else {
+						console.log('Creating new user...');
 						// Create new user
 						await createUser({
 							name: userData.name,
@@ -4656,9 +4672,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 					hideModal('userModal');
 					document.getElementById('userModal').removeAttribute('data-user-id');
-					
+
 				} catch (error) {
-					console.error('Error saving user:', error);
+					console.error('❌ Error saving user:', error);
 					toast('Error saving user: ' + error.message, 'error');
 				}
 			});
