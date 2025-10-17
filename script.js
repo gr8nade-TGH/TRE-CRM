@@ -1,21 +1,37 @@
-// Utility functions - defined globally
-function formatDate(iso) { 
-	try { 
-		return new Date(iso).toLocaleString(); 
-	} catch { 
-		return iso; 
-	} 
-}
+// ============================================================================
+// IMPORTS - Modular Architecture
+// ============================================================================
 
-function showModal(modalId) {
-	const modal = document.getElementById(modalId);
-	if (modal) modal.classList.remove('hidden');
-}
+// Import utility functions
+import {
+	formatDate,
+	showModal,
+	hideModal,
+	toast,
+	show,
+	hide,
+	formatCurrency,
+	formatPhone,
+	capitalize,
+	truncate,
+	isEmpty,
+	generateId,
+	deepClone
+} from './src/utils/helpers.js';
 
-function hideModal(modalId) {
-	const modal = document.getElementById(modalId);
-	if (modal) modal.classList.add('hidden');
-}
+// Import validators
+import {
+	isValidEmail,
+	isValidPhone,
+	isRequired,
+	validateForm
+} from './src/utils/validators.js';
+
+// ============================================================================
+// GLOBAL FUNCTIONS (Keep for backward compatibility)
+// ============================================================================
+// Note: These are now imported from modules above, but we keep them
+// accessible globally for functions that expect them in global scope
 
 // Add Lead functionality
 function saveNewLead() {
@@ -607,19 +623,8 @@ const mockAuditLog = [
 	});
 
 	// ---- Utilities ----
+	// Note: formatDate, showModal, hideModal, toast, show, hide are now imported from helpers.js
 	function byKey(key) { return (a,b)=> (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0); }
-	function show(el){ el.classList.remove('hidden'); }
-	function hide(el){ el.classList.add('hidden'); }
-	function showModal(modalId){ 
-		const modal = document.getElementById(modalId);
-		if (modal) modal.classList.remove('hidden');
-	}
-	function hideModal(modalId){ 
-		const modal = document.getElementById(modalId);
-		if (modal) modal.classList.add('hidden');
-	}
-	function toast(msg){ const t = document.getElementById('toast'); t.textContent = msg; show(t); setTimeout(()=> hide(t), 2000); }
-	// formatDate function moved to global scope
 
 	// ---- Table Sorting ----
 	function sortTable(column, tableId) {
