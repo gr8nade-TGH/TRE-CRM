@@ -84,28 +84,9 @@ class App {
     }
     
     setupRouting() {
-        // Register route handlers
-        registerRoute('leads', () => {
-            console.log('🔧 Router: Loading leads page');
-            this.loadLeadsPage();
-        });
-        
-        registerRoute('agents', () => {
-            console.log('🔧 Router: Loading agents page');
-            this.loadAgentsPage();
-        });
-        
-        registerRoute('listings', () => {
-            console.log('🔧 Router: Loading listings page');
-            this.loadListingsPage();
-        });
-        
-        registerRoute('admin', () => {
-            console.log('🔧 Router: Loading admin page');
-            this.loadAdminPage();
-        });
-        
-        console.log('🔧 Router: Routes registered');
+        // Route handlers are now registered by individual feature modules
+        // No need to register them here anymore
+        console.log('🔧 Router: Routes registered by feature modules');
     }
     
     setupGlobalListeners() {
