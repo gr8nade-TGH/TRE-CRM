@@ -2913,6 +2913,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	async function createListing() {
 		try {
+			// Debug: Check current user state
+			console.log('🔍 Current user state:', {
+				agentId: state.agentId,
+				currentUser: window.currentUser,
+				userId: window.getUserId()
+			});
+
 			// Get form values
 			const communityName = document.getElementById('listingCommunityName').value.trim();
 			const streetAddress = document.getElementById('listingStreetAddress').value.trim();
@@ -2962,6 +2969,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				}
 			}
 
+			// Get user email for created_by (public.users uses email as PK, not UUID)
+			const userEmail = window.currentUser?.email || null;
+
 			// Create property data
 			const now = new Date().toISOString();
 			const propertyData = {
@@ -2984,12 +2994,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				leasing_link: leasingLink || null,
 				map_lat: lat,
 				map_lng: lng,
-				created_by: state.agentId,
+				created_by: userEmail,
 				created_at: now,
 				updated_at: now,
 				// Old schema fields (for backward compatibility)
 				name: communityName,
-				address: streetAddress
+				address: streetAddress,
+				// Also set lat/lng for old schema
+				lat: lat,
+				lng: lng
 			};
 
 			console.log('Creating property:', propertyData);
@@ -2999,14 +3012,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.log('✅ Property created:', newProperty);
 
 			// If there's a note, create it
-			if (noteContent && state.agentId) {
+			if (noteContent && userEmail) {
 				const authorName = window.currentUser?.user_metadata?.name ||
 								   window.currentUser?.email ||
 								   'Unknown';
 				const noteData = {
 					property_id: newProperty.id,
 					content: noteContent,
-					author_id: state.agentId,
+					author_id: userEmail,
 					author_name: authorName
 				};
 				try {
@@ -3016,8 +3029,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					console.error('❌ Error creating note (continuing anyway):', noteError);
 					// Don't fail the whole operation if note creation fails
 				}
-			} else if (noteContent && !state.agentId) {
-				console.warn('⚠️ Cannot create note: user ID not available');
+			} else if (noteContent && !userEmail) {
+				console.warn('⚠️ Cannot create note: user email not available');
 			}
 
 			toast('Listing created successfully!', 'success');
