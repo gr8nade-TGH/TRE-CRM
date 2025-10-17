@@ -4634,66 +4634,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 				try {
 					const userId = document.getElementById('userModal').getAttribute('data-user-id');
-					
-					// Check if we have real API available
-					const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-						? 'http://localhost:3001/api' 
-						: null;
-					
-					if (apiBase) {
-						// Use real API
-						if (userId) {
-							await updateUser(userId, {
-								name: userData.name,
-								email: userData.email,
-								role: userData.role,
-								status: userData.sendInvitation ? 'invited' : 'active'
-							});
-							toast('User updated successfully');
-						} else {
-							await createUser({
-								name: userData.name,
-								email: userData.email,
-								role: userData.role,
-								password: userData.password,
-								sendInvitation: userData.sendInvitation
-							});
-							toast('User created successfully');
-						}
-						await loadAuditLog();
+
+					// Use Supabase to create/update users
+					if (userId) {
+						// Update existing user
+						await updateUser(userId, {
+							name: userData.name,
+							email: userData.email,
+							role: userData.role
+						});
+						toast('User updated successfully');
 					} else {
-						// Use mock data
-						if (userId) {
-							// Update mock user
-							const userIndex = mockUsers.findIndex(u => u.id === userId);
-							if (userIndex !== -1) {
-								mockUsers[userIndex] = {
-									...mockUsers[userIndex],
-									name: userData.name,
-									email: userData.email,
-									role: userData.role,
-									status: userData.sendInvitation ? 'invited' : 'active'
-								};
-							}
-							toast('User updated successfully (mock data)');
-						} else {
-							// Add new mock user
-							const newUser = {
-								id: 'user_' + Date.now(),
-								name: userData.name,
-								email: userData.email,
-								role: userData.role,
-								status: userData.sendInvitation ? 'invited' : 'active',
-								created_at: new Date().toISOString(),
-								created_by: 'system'
-							};
-							mockUsers.unshift(newUser);
-							toast('User created successfully (mock data)');
-						}
-						renderUsersTable();
-						renderAuditLog();
+						// Create new user
+						await createUser({
+							name: userData.name,
+							email: userData.email,
+							role: userData.role,
+							password: userData.password
+						});
+						toast('User created successfully! They can now log in.');
 					}
-					
+
 					hideModal('userModal');
 					document.getElementById('userModal').removeAttribute('data-user-id');
 					
@@ -5542,24 +5503,40 @@ async function loadAuditLog() {
 
 async function createUser(userData) {
 	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-			? 'http://localhost:3001/api' 
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
-		
-		const response = await fetch(`${apiBase}/users`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				...userData,
-				createdBy: 'system' // In production, get from auth token
-			})
+		console.log('Creating user with Supabase:', userData);
+
+		// Use Supabase signUp to create the user
+		// This works with the anon key and creates an auth user
+		const { data, error } = await window.supabase.auth.signUp({
+			email: userData.email,
+			password: userData.password,
+			options: {
+				data: {
+					name: userData.name,
+					role: userData.role
+				},
+				emailRedirectTo: window.location.origin
+			}
 		});
-		if (!response.ok) throw new Error('Failed to create user');
-		const newUser = await response.json();
-		realUsers.unshift(newUser);
-		renderUsersTable();
-		return newUser;
+
+		if (error) {
+			throw error;
+		}
+
+		if (!data.user) {
+			throw new Error('No user returned from signup');
+		}
+
+		console.log('✅ User created in Supabase auth:', data.user);
+
+		// Note: The user is created but needs email confirmation by default
+		// To auto-confirm, we need to disable email confirmation in Supabase settings
+		// Or use the Admin API with service role key (requires backend)
+
+		// Refresh the users table
+		await renderUsersTable();
+
+		return data.user;
 	} catch (error) {
 		console.error('Error creating user:', error);
 		throw error;
