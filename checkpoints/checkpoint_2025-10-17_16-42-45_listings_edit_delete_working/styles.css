@@ -2218,50 +2218,6 @@ body {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
-/* Bulk Actions Bar */
-.bulk-actions-bar {
-  background: linear-gradient(135deg, #153e7a 0%, #1e5a9e 100%);
-  border: 1px solid #2563eb;
-  border-radius: 8px;
-  padding: 16px 20px;
-  margin: 0 0 16px 0;
-  box-shadow: 0 4px 12px rgba(21, 62, 122, 0.2);
-  transition: all 0.3s ease;
-}
-
-.bulk-actions-bar.hidden {
-  display: none;
-}
-
-.bulk-actions-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.bulk-actions-count {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.bulk-actions-buttons {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.bulk-actions-note {
-  font-size: 12px;
-  color: #fbbf24;
-  margin-top: 8px;
-  font-style: italic;
-}
-
 @media (max-width: 1100px) {
   .listings-layout { 
     grid-template-columns: 1fr; 

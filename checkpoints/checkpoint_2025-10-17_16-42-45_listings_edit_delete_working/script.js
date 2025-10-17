@@ -3170,15 +3170,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
 			});
 
-			// Filter out unavailable listings (is_available = false)
-			const availableProperties = properties.filter(prop => {
-				// If is_available field doesn't exist yet, assume available
-				return prop.is_available !== false;
-			});
-
 			// Fetch notes count for each property (with error handling for missing table)
 			const propertiesWithNotes = await Promise.all(
-				availableProperties.map(async (prop) => {
+				properties.map(async (prop) => {
 					try {
 						const notes = await SupabaseAPI.getPropertyNotes(prop.id);
 						return { ...prop, notesCount: notes.length };
@@ -3918,102 +3912,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const buildBtn = document.getElementById('buildShowcaseBtn');
 		buildBtn.disabled = selectedCount === 0;
 		buildBtn.textContent = selectedCount > 0 ? `Build Showcase (${selectedCount})` : 'Build Showcase';
-
-		// Update bulk actions bar visibility
-		updateBulkActionsBar();
-	}
-
-	function updateBulkActionsBar() {
-		const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
-		const bulkActionsBar = document.getElementById('bulkActionsBar');
-		const bulkActionsCount = document.getElementById('bulkActionsCount');
-		const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
-		const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-
-		if (!bulkActionsBar) return;
-
-		// Show/hide bulk actions bar based on selection and role
-		const isManagerOrSuperUser = state.role === 'manager' || state.role === 'super_user';
-
-		if (selectedCount > 0 && isManagerOrSuperUser) {
-			bulkActionsBar.classList.remove('hidden');
-			bulkActionsCount.textContent = `${selectedCount} selected`;
-		} else {
-			bulkActionsBar.classList.add('hidden');
-		}
-	}
-
-	async function bulkMarkAsUnavailable() {
-		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-		const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
-
-		if (selectedIds.length === 0) {
-			toast('No listings selected', 'error');
-			return;
-		}
-
-		const confirmed = confirm(`Are you sure you want to mark ${selectedIds.length} listing(s) as unavailable? They will be removed from the listings table but can be restored later.`);
-
-		if (!confirmed) return;
-
-		try {
-			console.log('Marking listings as unavailable:', selectedIds);
-
-			// Update each property to set is_available = false
-			for (const id of selectedIds) {
-				await SupabaseAPI.updateProperty(id, { is_available: false });
-			}
-
-			// Show success message
-			toast(`${selectedIds.length} listing(s) marked as unavailable`, 'success');
-
-			// Clear selections and refresh
-			checkboxes.forEach(cb => cb.checked = false);
-			updateBulkActionsBar();
-			await renderListings();
-		} catch (error) {
-			console.error('Error marking listings as unavailable:', error);
-			toast(`Error: ${error.message}`, 'error');
-		}
-	}
-
-	async function bulkDeleteListings() {
-		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-		const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
-
-		if (selectedIds.length === 0) {
-			toast('No listings selected', 'error');
-			return;
-		}
-
-		const confirmed = confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE ${selectedIds.length} listing(s)?\n\nThis action CANNOT be undone. The listings will be gone forever.`);
-
-		if (!confirmed) return;
-
-		// Double confirmation for safety
-		const doubleConfirmed = confirm(`This is your final confirmation. Delete ${selectedIds.length} listing(s) permanently?`);
-
-		if (!doubleConfirmed) return;
-
-		try {
-			console.log('Deleting listings:', selectedIds);
-
-			// Delete each property
-			for (const id of selectedIds) {
-				await SupabaseAPI.deleteProperty(id);
-			}
-
-			// Show success message
-			toast(`${selectedIds.length} listing(s) deleted permanently`, 'success');
-
-			// Clear selections and refresh
-			checkboxes.forEach(cb => cb.checked = false);
-			updateBulkActionsBar();
-			await renderListings();
-		} catch (error) {
-			console.error('Error deleting listings:', error);
-			toast(`Error: ${error.message}`, 'error');
-		}
 	}
 
 	async function sendBuildShowcase(){
@@ -5584,17 +5482,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	// Global functions for property notes
 	window.openPropertyNotesModal = openPropertyNotesModal;
-
-	// Bulk actions event listeners
-	const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
-	const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-
-	if (bulkMarkUnavailableBtn) {
-		bulkMarkUnavailableBtn.addEventListener('click', bulkMarkAsUnavailable);
-	}
-	if (bulkDeleteBtn) {
-		bulkDeleteBtn.addEventListener('click', bulkDeleteListings);
-	}
 
 	// Expose state to global scope
 	window.state = state;

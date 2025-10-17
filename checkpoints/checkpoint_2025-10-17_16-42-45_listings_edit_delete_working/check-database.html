@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TRE CRM - Database Schema Check</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 3px solid #4CAF50;
+            padding-bottom: 10px;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #dee2e6;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .table-info {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-left: 4px solid #4CAF50;
+        }
+        .column-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .column-item {
+            padding: 8px;
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 TRE CRM - Database Schema Check</h1>
+    
+    <div class="section">
+        <h2>Connection Status</h2>
+        <div id="connectionStatus" class="status info">Checking connection...</div>
+    </div>
+
+    <div class="section">
+        <h2>Database Tables</h2>
+        <button onclick="checkTables()">Check Tables</button>
+        <div id="tablesResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Table Structures</h2>
+        <button onclick="checkTableStructures()">Check All Table Structures</button>
+        <div id="structuresResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Row Counts</h2>
+        <button onclick="checkRowCounts()">Check Row Counts</button>
+        <div id="rowCountsResult"></div>
+    </div>
+
+    <div class="section">
+        <h2>Sample Data</h2>
+        <button onclick="checkSampleData()">Get Sample Data</button>
+        <div id="sampleDataResult"></div>
+    </div>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA';
+        
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        
+        // Check connection
+        async function checkConnection() {
+            const statusDiv = document.getElementById('connectionStatus');
+            try {
+                const { data, error } = await supabase.from('leads').select('count', { count: 'exact', head: true });
+                if (error) throw error;
+                statusDiv.className = 'status success';
+                statusDiv.innerHTML = '✅ Connected to Supabase successfully!';
+            } catch (error) {
+                statusDiv.className = 'status error';
+                statusDiv.innerHTML = `❌ Connection error: ${error.message}`;
+            }
+        }
+
+        // Check what tables exist
+        async function checkTables() {
+            const resultDiv = document.getElementById('tablesResult');
+            resultDiv.innerHTML = '<div class="status info">Checking tables...</div>';
+            
+            const tablesToCheck = ['leads', 'lead_notes', 'users', 'agents', 'properties', 'listings', 'specials', 'bugs', 'documents'];
+            const results = [];
+            
+            for (const table of tablesToCheck) {
+                try {
+                    const { data, error, count } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (error) {
+                        results.push({ table, exists: false, error: error.message });
+                    } else {
+                        results.push({ table, exists: true, count: count || 0 });
+                    }
+                } catch (err) {
+                    results.push({ table, exists: false, error: err.message });
+                }
+            }
+            
+            let html = '<h3>Table Status:</h3>';
+            results.forEach(r => {
+                if (r.exists) {
+                    html += `<div class="status success">✅ <strong>${r.table}</strong> - Exists (${r.count} rows)</div>`;
+                } else {
+                    html += `<div class="status error">❌ <strong>${r.table}</strong> - Not found (${r.error})</div>`;
+                }
+            });
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Check table structures
+        async function checkTableStructures() {
+            const resultDiv = document.getElementById('structuresResult');
+            resultDiv.innerHTML = '<div class="status info">Checking table structures...</div>';
+            
+            const existingTables = ['leads', 'lead_notes', 'users', 'agents', 'properties', 'listings', 'specials'];
+            let html = '';
+            
+            for (const table of existingTables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(1);
+                    
+                    if (!error && data && data.length > 0) {
+                        const columns = Object.keys(data[0]);
+                        html += `<div class="table-info">
+                            <h4>📋 ${table} (${columns.length} columns)</h4>
+                            <div class="column-list">
+                                ${columns.map(col => `<div class="column-item">${col}</div>`).join('')}
+                            </div>
+                        </div>`;
+                    } else if (!error && data && data.length === 0) {
+                        html += `<div class="status warning">⚠️ <strong>${table}</strong> - Table exists but is empty</div>`;
+                    }
+                } catch (err) {
+                    // Table doesn't exist, skip
+                }
+            }
+            
+            resultDiv.innerHTML = html || '<div class="status warning">No tables found with data</div>';
+        }
+
+        // Check row counts
+        async function checkRowCounts() {
+            const resultDiv = document.getElementById('rowCountsResult');
+            resultDiv.innerHTML = '<div class="status info">Counting rows...</div>';
+            
+            const tables = ['leads', 'lead_notes', 'users', 'agents', 'properties', 'listings', 'specials', 'bugs'];
+            let html = '<h3>Row Counts:</h3>';
+            
+            for (const table of tables) {
+                try {
+                    const { count, error } = await supabase
+                        .from(table)
+                        .select('*', { count: 'exact', head: true });
+                    
+                    if (!error) {
+                        html += `<div class="status success">📊 <strong>${table}</strong>: ${count} rows</div>`;
+                    }
+                } catch (err) {
+                    // Skip tables that don't exist
+                }
+            }
+            
+            resultDiv.innerHTML = html;
+        }
+
+        // Get sample data
+        async function checkSampleData() {
+            const resultDiv = document.getElementById('sampleDataResult');
+            resultDiv.innerHTML = '<div class="status info">Fetching sample data...</div>';
+            
+            const tables = ['leads', 'agents', 'properties', 'users'];
+            let html = '';
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabase
+                        .from(table)
+                        .select('*')
+                        .limit(3);
+                    
+                    if (!error && data && data.length > 0) {
+                        html += `<h4>Sample from ${table}:</h4>`;
+                        html += `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    }
+                } catch (err) {
+                    // Skip tables that don't exist
+                }
+            }
+            
+            resultDiv.innerHTML = html || '<div class="status warning">No sample data available</div>';
+        }
+
+        // Check connection on load
+        checkConnection();
+    </script>
+</body>
+</html>
+
