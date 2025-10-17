@@ -5591,22 +5591,26 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	// Global functions for property notes
 	window.openPropertyNotesModal = openPropertyNotesModal;
 
-	// Bulk actions event listeners
-	const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
-	const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
+	// Bulk actions event listeners using event delegation
+	document.addEventListener('click', (e) => {
+		// Handle bulk mark as unavailable button
+		if (e.target.id === 'bulkMarkUnavailableBtn' || e.target.closest('#bulkMarkUnavailableBtn')) {
+			console.log('Bulk Mark as Unavailable clicked!');
+			e.preventDefault();
+			bulkMarkAsUnavailable();
+			return;
+		}
 
-	console.log('Setting up bulk action listeners...');
-	console.log('bulkMarkUnavailableBtn:', bulkMarkUnavailableBtn);
-	console.log('bulkDeleteBtn:', bulkDeleteBtn);
+		// Handle bulk delete button
+		if (e.target.id === 'bulkDeleteBtn' || e.target.closest('#bulkDeleteBtn')) {
+			console.log('Bulk Delete clicked!');
+			e.preventDefault();
+			bulkDeleteListings();
+			return;
+		}
+	});
 
-	if (bulkMarkUnavailableBtn) {
-		bulkMarkUnavailableBtn.addEventListener('click', bulkMarkAsUnavailable);
-		console.log('✅ Mark as Unavailable listener added');
-	}
-	if (bulkDeleteBtn) {
-		bulkDeleteBtn.addEventListener('click', bulkDeleteListings);
-		console.log('✅ Delete Forever listener added');
-	}
+	console.log('✅ Bulk action event delegation set up');
 
 	// Expose state to global scope
 	window.state = state;
