@@ -5380,48 +5380,37 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		if (!property) return;
 
 		try {
-			// Get form data
+			// Get form data - ONLY use new schema field names
 			const formData = {
-				name: document.getElementById('editPropertyName').value,
 				community_name: document.getElementById('editPropertyName').value,
-				address: document.getElementById('editAddress').value,
 				street_address: document.getElementById('editAddress').value,
-				market: document.getElementById('editMarket').value,
 				city: document.getElementById('editMarket').value,
-				phone: document.getElementById('editPhone').value,
-				rent_min: parseInt(document.getElementById('editRentMin').value),
-				rent_max: parseInt(document.getElementById('editRentMax').value),
+				contact_email: document.getElementById('editPhone').value, // Using contact_email for phone
 				rent_range_min: parseInt(document.getElementById('editRentMin').value),
 				rent_range_max: parseInt(document.getElementById('editRentMax').value),
-				beds_min: parseInt(document.getElementById('editBedsMin').value),
-				beds_max: parseInt(document.getElementById('editBedsMax').value),
-				baths_min: parseFloat(document.getElementById('editBathsMin').value),
-				baths_max: parseFloat(document.getElementById('editBathsMax').value),
-				escort_pct: parseFloat(document.getElementById('editEscortPct').value),
-				send_pct: parseFloat(document.getElementById('editSendPct').value),
+				bed_range: `${document.getElementById('editBedsMin').value}-${document.getElementById('editBedsMax').value}`,
+				bath_range: `${document.getElementById('editBathsMin').value}-${document.getElementById('editBathsMax').value}`,
 				commission_pct: Math.max(parseFloat(document.getElementById('editEscortPct').value), parseFloat(document.getElementById('editSendPct').value)),
-				website: document.getElementById('editWebsite').value,
 				leasing_link: document.getElementById('editWebsite').value,
 				amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
-				specials_text: document.getElementById('editSpecials').value,
-				bonus_text: document.getElementById('editBonus').value,
-				isPUMI: document.getElementById('editIsPUMI').checked,
 				is_pumi: document.getElementById('editIsPUMI').checked,
-				markForReview: document.getElementById('editMarkForReview').checked,
 				updated_at: new Date().toISOString()
 			};
+
+			console.log('Saving listing with data:', formData);
 
 			// Update in Supabase
 			await SupabaseAPI.updateProperty(property.id, formData);
 
 			// Show success message
-			toast(`Listing "${formData.name}" updated successfully!`, 'success');
+			toast(`Listing "${formData.community_name}" updated successfully!`, 'success');
 
 			// Close modal and refresh display
 			closeListingEditModal();
 			await renderListings();
 		} catch (error) {
 			console.error('Error updating listing:', error);
+			console.error('Error details:', JSON.stringify(error, null, 2));
 			toast(`Error updating listing: ${error.message}`, 'error');
 		}
 	}
