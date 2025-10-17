@@ -3,9 +3,9 @@
  * This file sets up the Supabase client and provides global functions
  */
 
-// Supabase configuration
-const SUPABASE_URL = 'https://your-project.supabase.co';
-const SUPABASE_ANON_KEY = 'your-anon-key';
+// Supabase configuration - will be loaded from config
+let SUPABASE_URL = 'https://your-project.supabase.co';
+let SUPABASE_ANON_KEY = 'your-anon-key';
 
 // Initialize Supabase client
 let supabase = null;
@@ -53,6 +53,44 @@ function createMockSupabase() {
                 return { error: null };
             }
         }
+    };
+    
+    // Add the global functions that auth.js expects
+    window.signIn = async function(email, password) {
+        console.log('🔧 Mock: Global signIn called', email);
+        const result = await window.supabase.auth.signInWithPassword({ email, password });
+        if (result.data && result.data.user) {
+            // Store session
+            localStorage.setItem('tre_session', JSON.stringify(result.data.session));
+            return result.data.user;
+        }
+        throw new Error(result.error?.message || 'Login failed');
+    };
+    
+    window.signUp = async function(email, password, userData) {
+        console.log('🔧 Mock: Global signUp called', email);
+        const result = await window.supabase.auth.signUp({ email, password, options: { data: userData } });
+        if (result.data && result.data.user) {
+            return result.data.user;
+        }
+        throw new Error(result.error?.message || 'Registration failed');
+    };
+    
+    window.signOut = async function() {
+        console.log('🔧 Mock: Global signOut called');
+        await window.supabase.auth.signOut();
+        localStorage.removeItem('tre_session');
+    };
+    
+    // Add other global functions that might be needed
+    window.showMainApp = function(user) {
+        console.log('🔧 Mock: showMainApp called', user);
+        // This will be handled by the main app
+    };
+    
+    window.showLoginPortal = function() {
+        console.log('🔧 Mock: showLoginPortal called');
+        // This will be handled by the main app
     };
     
     supabase = window.supabase;
