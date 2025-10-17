@@ -73,9 +73,12 @@ class Router {
         const pageElement = document.getElementById(page + 'View');
         if (pageElement) {
             pageElement.classList.remove('hidden');
-            console.log('🔧 Router: Showing page', page);
+            console.log('🔧 Router: Showing page', page, 'Element found:', pageElement.id);
         } else {
             console.warn('🔧 Router: Page element not found', page + 'View');
+            // List all available page elements for debugging
+            const allPages = document.querySelectorAll('[id$="View"]');
+            console.log('🔧 Router: Available pages:', Array.from(allPages).map(p => p.id));
         }
     }
     

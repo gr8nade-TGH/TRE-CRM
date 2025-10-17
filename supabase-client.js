@@ -6,13 +6,13 @@
 // Supabase configuration - loaded from config.js
 
 // Initialize Supabase client
-let supabase = null;
+let supabaseClient = null;
 
 // Initialize Supabase when the script loads
 document.addEventListener('DOMContentLoaded', function() {
     // Check if Supabase is available
     if (typeof window.supabase !== 'undefined') {
-        supabase = window.supabase;
+        supabaseClient = window.supabase;
         console.log('🔧 Supabase: Client initialized');
     } else {
         console.warn('🔧 Supabase: Client not available, using mock mode');
@@ -139,7 +139,7 @@ function createMockSupabase() {
         }
     };
     
-    supabase = window.supabase;
+    supabaseClient = window.supabase;
     console.log('🔧 Supabase: Mock client created');
 }
 
