@@ -2901,35 +2901,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Parse amenities
 			const amenities = amenitiesInput ? amenitiesInput.split(',').map(a => a.trim()).filter(a => a) : [];
 
-			// Create property data
+			// Create property data (using only new schema fields)
 			const propertyData = {
 				id: `prop_${Date.now()}`,
 				community_name: communityName,
-				name: communityName, // For backward compatibility
 				street_address: streetAddress,
-				address: streetAddress, // For backward compatibility
-				city: market, // Using market as city for now
+				city: market,
 				market: market,
 				zip_code: zipCode,
 				bed_range: bedRange,
 				bath_range: bathRange,
 				rent_range_min: rentMin,
 				rent_range_max: rentMax,
-				rent_min: rentMin, // For backward compatibility
-				rent_max: rentMax, // For backward compatibility
 				commission_pct: commission,
 				amenities: amenities,
 				is_pumi: isPUMI,
-				isPUMI: isPUMI, // For backward compatibility
 				last_updated: lastUpdated || new Date().toISOString(),
 				contact_email: contactEmail || null,
 				leasing_link: leasingLink || null,
 				map_lat: mapLat ? parseFloat(mapLat) : null,
 				map_lng: mapLng ? parseFloat(mapLng) : null,
-				lat: mapLat ? parseFloat(mapLat) : null, // For backward compatibility
-				lng: mapLng ? parseFloat(mapLng) : null, // For backward compatibility
-				created_by: state.userId,
-				created_at: new Date().toISOString()
+				created_by: state.userId
 			};
 
 			console.log('Creating property:', propertyData);
