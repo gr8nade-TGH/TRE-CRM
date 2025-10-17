@@ -2971,7 +2971,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					lng = coords.lng;
 					toast('Address geocoded successfully!', 'success');
 				} else {
-					toast('Warning: Could not geocode address. Property will not appear on map.', 'warning');
+					// Address validation failed - reject the submission
+					toast('Error: Invalid address. Please enter a valid street address.', 'error');
+					return;
 				}
 			}
 
@@ -5341,24 +5343,24 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		console.log('Opening listing edit modal for:', property);
 
 		// Populate the modal with current property data
-		document.getElementById('editListingName').textContent = property.name;
-		document.getElementById('editPropertyName').value = property.name;
-		document.getElementById('editAddress').value = property.address;
-		document.getElementById('editMarket').value = property.market;
-		document.getElementById('editPhone').value = property.phone;
-		document.getElementById('editRentMin').value = property.rent_min;
-		document.getElementById('editRentMax').value = property.rent_max;
-		document.getElementById('editBedsMin').value = property.beds_min;
-		document.getElementById('editBedsMax').value = property.beds_max;
-		document.getElementById('editBathsMin').value = property.baths_min;
-		document.getElementById('editBathsMax').value = property.baths_max;
-		document.getElementById('editEscortPct').value = property.escort_pct;
-		document.getElementById('editSendPct').value = property.send_pct;
-		document.getElementById('editWebsite').value = property.website;
-		document.getElementById('editAmenities').value = property.amenities.join(', ');
+		document.getElementById('editListingName').textContent = property.name || property.community_name;
+		document.getElementById('editPropertyName').value = property.name || property.community_name;
+		document.getElementById('editAddress').value = property.address || property.street_address;
+		document.getElementById('editMarket').value = property.market || property.city;
+		document.getElementById('editPhone').value = property.phone || property.contact_email || '';
+		document.getElementById('editRentMin').value = property.rent_min || property.rent_range_min || 0;
+		document.getElementById('editRentMax').value = property.rent_max || property.rent_range_max || 0;
+		document.getElementById('editBedsMin').value = property.beds_min || 0;
+		document.getElementById('editBedsMax').value = property.beds_max || 0;
+		document.getElementById('editBathsMin').value = property.baths_min || 0;
+		document.getElementById('editBathsMax').value = property.baths_max || 0;
+		document.getElementById('editEscortPct').value = property.escort_pct || property.commission_pct || 0;
+		document.getElementById('editSendPct').value = property.send_pct || property.commission_pct || 0;
+		document.getElementById('editWebsite').value = property.website || property.leasing_link || '';
+		document.getElementById('editAmenities').value = Array.isArray(property.amenities) ? property.amenities.join(', ') : '';
 		document.getElementById('editSpecials').value = property.specials_text || '';
 		document.getElementById('editBonus').value = property.bonus_text || '';
-		document.getElementById('editIsPUMI').checked = property.isPUMI || false;
+		document.getElementById('editIsPUMI').checked = property.is_pumi || property.isPUMI || false;
 		document.getElementById('editMarkForReview').checked = property.markForReview || false;
 
 		// Store the current property for saving

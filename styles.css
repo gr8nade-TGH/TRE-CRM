@@ -1560,6 +1560,33 @@ body {
 	transform: scale(1.1);
 }
 
+.notes-count {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.notes-count:hover {
+	transform: scale(1.05);
+}
+
+.notes-count svg {
+	transition: all 0.2s ease;
+}
+
+.notes-count:hover svg {
+	transform: scale(1.1);
+	color: #fbbf24 !important; /* Yellow on hover */
+}
+
+.notes-count span {
+	font-size: 12px;
+	font-weight: 500;
+	color: #374151;
+}
+
 .last-updated {
 	color: #6b7280;
 	font-size: 11px;
