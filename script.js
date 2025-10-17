@@ -831,8 +831,8 @@ async function deleteSpecialAPI(specialId) {
 			}
 		}
 
-		// PUMI filter
-		if (filters.pumiOnly && !property.isPUMI) {
+		// PUMI filter (support both old and new field names)
+		if (filters.pumiOnly && !(property.is_pumi || property.isPUMI)) {
 			return false;
 		}
 
@@ -2778,19 +2778,22 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				closeOnClick: false
 			}).setHTML(popupContent);
 
+			// Check if property is PUMI (support both old and new field names)
+			const isPUMI = prop.is_pumi || prop.isPUMI || false;
+
 			// Create custom dot marker element
 			const dotElement = document.createElement('div');
 			dotElement.className = 'custom-dot-marker';
 			dotElement.style.cssText = `
-				width: 12px;
-				height: 12px;
+				width: ${isPUMI ? '16px' : '12px'};
+				height: ${isPUMI ? '16px' : '12px'};
 				border-radius: 50%;
-				background: ${isSelected ? '#ef4444' : (prop.isPUMI ? '#22c55e' : '#3b82f6')};
+				background: ${isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6')};
 				border: 2px solid white;
-				box-shadow: ${prop.isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
+				box-shadow: ${isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
 				cursor: pointer;
 				transition: all 0.2s ease;
-				animation: ${prop.isPUMI ? 'pumi-pulse 2s infinite' : 'none'};
+				animation: ${isPUMI ? 'pumi-pulse 2s infinite' : 'none'};
 			`;
 
 		// Create dot marker using custom element
@@ -2837,13 +2840,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Update map markers
 		markers.forEach(markerGroup => {
 			const isSelected = markerGroup.property.id === prop.id;
+			const isPUMI = markerGroup.property.is_pumi || markerGroup.property.isPUMI || false;
 
 			// Update dot marker - handle both old and new structures
 			if (markerGroup.pin) {
 				const dotElement = markerGroup.pin.getElement();
-				dotElement.style.background = isSelected ? '#ef4444' : (markerGroup.property.isPUMI ? '#22c55e' : '#3b82f6');
-				dotElement.style.boxShadow = markerGroup.property.isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)';
-				dotElement.style.animation = markerGroup.property.isPUMI ? 'pumi-pulse 2s infinite' : 'none';
+				dotElement.style.width = isPUMI ? '16px' : '12px';
+				dotElement.style.height = isPUMI ? '16px' : '12px';
+				dotElement.style.background = isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6');
+				dotElement.style.boxShadow = isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)';
+				dotElement.style.animation = isPUMI ? 'pumi-pulse 2s infinite' : 'none';
 			} else if (markerGroup.dot) {
 				// Legacy marker handling - skip for now to avoid errors
 				console.log('Skipping legacy marker update');
@@ -3266,19 +3272,20 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								</svg>
 								<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
 							</div>
+							${prop.notesCount > 0 ? `
+								<div class="notes-count" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount} note(s)" style="cursor: pointer;">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #3b82f6;">
+										<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
+									</svg>
+									<span>${prop.notesCount}</span>
+								</div>
+							` : ''}
 						</div>
 						<div class="last-updated">Updated: ${formatDate(prop.pricing_last_updated || prop.last_updated)}</div>
 					</div>
 				</td>
 				<td class="mono" data-sort="rent_min">$${rentMin} - $${rentMax}</td>
 				<td class="mono" data-sort="commission_pct">${commission}%</td>
-				<td style="text-align: center;">
-					${prop.notesCount > 0 ? `
-						<span class="notes-icon" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" style="cursor: pointer; font-size: 20px;" title="${prop.notesCount} note(s)">
-							📝
-						</span>
-					` : ''}
-				</td>
 			`;
 
 			// Add click handler to table row
