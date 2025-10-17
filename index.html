@@ -9,6 +9,29 @@
 		crossorigin="anonymous"
 	></script>
 	<link rel="stylesheet" href="styles.css" />
+
+	<!-- Supabase JS Client -->
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script>
+		// Initialize Supabase client
+		const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+		const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA';
+
+		// Create Supabase client
+		window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+		console.log('✅ Supabase client initialized');
+
+		// Helper function to get current session
+		window.getCurrentSession = async function() {
+			const { data: { session }, error } = await window.supabase.auth.getSession();
+			if (error) {
+				console.error('Error getting session:', error);
+				return null;
+			}
+			return session;
+		};
+	</script>
+
 	<!-- Mapbox GL JS -->
 	<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 	<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />

@@ -1,25 +1,89 @@
 /**
  * Supabase Client Configuration
  * This file sets up the Supabase client and provides global functions
+ *
+ * NOTE: Supabase client is now initialized in index.html
+ * This file provides additional helper functions
  */
 
-// Supabase configuration - loaded from config.js
-
-// Initialize Supabase client
+// Initialize Supabase client reference
 let supabaseClient = null;
 
 // Initialize Supabase when the script loads
 document.addEventListener('DOMContentLoaded', function() {
     // Check if Supabase is available
-    if (typeof window.supabase !== 'undefined') {
+    if (typeof window.supabase !== 'undefined' && window.supabase.auth) {
         supabaseClient = window.supabase;
-        console.log('🔧 Supabase: Client initialized');
+        console.log('✅ Supabase: Real client connected');
+
+        // Set up global auth helper functions
+        setupAuthHelpers();
     } else {
-        console.warn('🔧 Supabase: Client not available, using mock mode');
+        console.warn('⚠️ Supabase: Client not available, using mock mode');
         // Create mock functions for development
         createMockSupabase();
     }
 });
+
+// Set up auth helper functions for real Supabase
+function setupAuthHelpers() {
+    window.signIn = async function(email, password) {
+        console.log('🔐 Real Supabase: Signing in', email);
+        const { data, error } = await window.supabase.auth.signInWithPassword({
+            email,
+            password
+        });
+
+        if (error) {
+            console.error('Sign in error:', error);
+            throw new Error(error.message);
+        }
+
+        if (data && data.user) {
+            console.log('✅ Sign in successful:', data.user.email);
+            return data.user;
+        }
+
+        throw new Error('Login failed - no user returned');
+    };
+
+    window.signUp = async function(email, password, userData) {
+        console.log('🔐 Real Supabase: Signing up', email);
+        const { data, error } = await window.supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: userData
+            }
+        });
+
+        if (error) {
+            console.error('Sign up error:', error);
+            throw new Error(error.message);
+        }
+
+        if (data && data.user) {
+            console.log('✅ Sign up successful:', data.user.email);
+            return data.user;
+        }
+
+        throw new Error('Registration failed');
+    };
+
+    window.signOut = async function() {
+        console.log('🔐 Real Supabase: Signing out');
+        const { error } = await window.supabase.auth.signOut();
+
+        if (error) {
+            console.error('Sign out error:', error);
+            throw new Error(error.message);
+        }
+
+        console.log('✅ Sign out successful');
+    };
+
+    console.log('✅ Real Supabase auth helpers configured');
+}
 
 // Create mock Supabase functions for development
 function createMockSupabase() {
