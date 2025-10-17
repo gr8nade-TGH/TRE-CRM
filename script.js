@@ -2846,11 +2846,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	// ---- Add Listing Modal Functions ----
 	function openAddListingModal() {
-		const modal = document.getElementById('addListingModal');
 		const form = document.getElementById('addListingForm');
 
 		// Reset form
-		form.reset();
+		if (form) {
+			form.reset();
+		}
 
 		// Set default date to today
 		const lastUpdatedInput = document.getElementById('listingLastUpdated');
@@ -2858,12 +2859,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			lastUpdatedInput.valueAsDate = new Date();
 		}
 
-		showModal(modal);
+		showModal('addListingModal');
 	}
 
 	function closeAddListingModal() {
-		const modal = document.getElementById('addListingModal');
-		hideModal(modal);
+		hideModal('addListingModal');
 	}
 
 	async function createListing() {
@@ -2968,21 +2968,25 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		currentPropertyForNotes = propertyId;
 
 		const modal = document.getElementById('propertyNotesModal');
-		const modalHeader = modal.querySelector('.modal-header h3');
-		modalHeader.textContent = `📝 Notes: ${propertyName}`;
+		const modalHeader = modal ? modal.querySelector('.modal-header h3') : null;
+		if (modalHeader) {
+			modalHeader.textContent = `📝 Notes: ${propertyName}`;
+		}
 
 		// Clear note input
-		document.getElementById('newPropertyNote').value = '';
+		const noteInput = document.getElementById('newPropertyNote');
+		if (noteInput) {
+			noteInput.value = '';
+		}
 
 		// Load and display notes
 		await loadPropertyNotes(propertyId);
 
-		showModal(modal);
+		showModal('propertyNotesModal');
 	}
 
 	function closePropertyNotesModal() {
-		const modal = document.getElementById('propertyNotesModal');
-		hideModal(modal);
+		hideModal('propertyNotesModal');
 		currentPropertyForNotes = null;
 	}
 
@@ -3073,11 +3077,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
 			});
 
-			// Fetch notes count for each property
+			// Fetch notes count for each property (with error handling for missing table)
 			const propertiesWithNotes = await Promise.all(
 				properties.map(async (prop) => {
-					const notes = await SupabaseAPI.getPropertyNotes(prop.id);
-					return { ...prop, notesCount: notes.length };
+					try {
+						const notes = await SupabaseAPI.getPropertyNotes(prop.id);
+						return { ...prop, notesCount: notes.length };
+					} catch (error) {
+						// If property_notes table doesn't exist yet, just return property without notes
+						console.warn('Property notes not available yet (run migration)');
+						return { ...prop, notesCount: 0 };
+					}
 				})
 			);
 
