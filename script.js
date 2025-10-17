@@ -4617,8 +4617,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					email: document.getElementById('userEmail').value,
 					role: document.getElementById('userRole').value,
 					password: document.getElementById('userPassword').value,
-					confirmPassword: document.getElementById('userConfirmPassword').value,
-					sendInvitation: document.getElementById('sendInvitation').checked
+					confirmPassword: document.getElementById('userConfirmPassword').value
 				};
 
 				// Basic validation
