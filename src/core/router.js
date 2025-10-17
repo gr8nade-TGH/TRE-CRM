@@ -37,14 +37,15 @@ class Router {
     
     // Handle route changes
     handleRoute() {
-        const hash = window.location.hash.slice(1);
-        const [page, ...params] = hash.split('/');
+        const hash = window.location.hash.slice(1); // Remove '#'
+        const parts = hash.split('/').filter(p => p); // Remove empty strings
+        const [page, ...params] = parts.length ? parts : [ROUTES.LEADS];
         
         console.log('🔧 Router: Handling route', page, params);
         
         // Update state
         update({
-            currentPage: page || ROUTES.LEADS,
+            currentPage: page,
             routeParams: params
         });
         
@@ -52,13 +53,13 @@ class Router {
         this.hideAllPages();
         
         // Show current page
-        this.showPage(page || ROUTES.LEADS);
+        this.showPage(page);
         
         // Update navigation
         this.updateNavigation(page || ROUTES.LEADS);
         
         // Execute route handler
-        this.executeRouteHandler(page || ROUTES.LEADS, params);
+        this.executeRouteHandler(page, params);
     }
     
     // Hide all page elements
