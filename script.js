@@ -50,6 +50,23 @@ import {
 	navigateToPage
 } from './src/state/state.js';
 
+// Import mock data (TEMPORARY - will be removed in Phase 2B)
+import {
+	mockAgents,
+	mockLeads,
+	mockDocumentSteps,
+	mockDocumentStatuses,
+	mockClosedLeads,
+	mockInterestedLeads,
+	mockProperties,
+	mockSpecials,
+	mockBugs,
+	prefsSummary
+} from './src/state/mockData.js';
+
+// Import Supabase API (for real data)
+import * as SupabaseAPI from './src/api/supabase-api.js';
+
 // ============================================================================
 // GLOBAL FUNCTIONS (Keep for backward compatibility)
 // ============================================================================
@@ -1268,11 +1285,9 @@ const mockAuditLog = [
 	}
 
 	// ---- Real API Layer ----
-	// Use localhost for local development, or fallback to mock data for production
-	const API_BASE = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-		? 'http://localhost:3001/api' 
-		: null; // Will use mock data when API_BASE is null
-	const USE_MOCK_DATA = true; // Set to false when backend is deployed
+	// Use Supabase for data storage
+	const API_BASE = null; // Not using REST API, using Supabase directly
+	const USE_MOCK_DATA = false; // ✅ NOW USING REAL SUPABASE DATA!
 
 	// Helper function to handle API responses
 	async function handleResponse(response) {
@@ -1285,6 +1300,13 @@ const mockAuditLog = [
 
 	const api = {
 		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters = {} }){
+			if (!USE_MOCK_DATA) {
+				// Use real Supabase data
+				console.log('✅ Using Supabase for leads');
+				return await SupabaseAPI.getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters });
+			}
+
+			// Fallback to mock data
 			if (USE_MOCK_DATA) {
 				console.log('Using mock data for leads, count:', mockLeads.length);
 				
@@ -1572,6 +1594,12 @@ const mockAuditLog = [
 
 		// Specials API functions
 		async getSpecials({ role, agentId, search, sortKey, sortDir, page, pageSize }){
+			if (!USE_MOCK_DATA) {
+				// Use real Supabase data
+				console.log('✅ Using Supabase for specials');
+				return await SupabaseAPI.getSpecials({ role, agentId, search, sortKey, sortDir, page, pageSize });
+			}
+
 			if (USE_MOCK_DATA) {
 				console.log('Using mock data for specials, count:', mockSpecials.length);
 				let filteredSpecials = [...mockSpecials];
