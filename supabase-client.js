@@ -3,9 +3,7 @@
  * This file sets up the Supabase client and provides global functions
  */
 
-// Supabase configuration - will be loaded from config
-let SUPABASE_URL = 'https://your-project.supabase.co';
-let SUPABASE_ANON_KEY = 'your-anon-key';
+// Supabase configuration - loaded from config.js
 
 // Initialize Supabase client
 let supabase = null;
@@ -85,12 +83,60 @@ function createMockSupabase() {
     // Add other global functions that might be needed
     window.showMainApp = function(user) {
         console.log('🔧 Mock: showMainApp called', user);
-        // This will be handled by the main app
+        
+        // Hide login portal and show main app
+        const loginPortal = document.getElementById('loginPortal');
+        const mainApp = document.getElementById('mainAppContent');
+        
+        if (loginPortal) {
+            loginPortal.style.display = 'none';
+            console.log('🔧 Mock: Login portal hidden');
+        }
+        
+        if (mainApp) {
+            mainApp.style.display = 'block';
+            console.log('🔧 Mock: Main app shown');
+        }
+        
+        // Update role-based UI
+        if (user && user.role) {
+            const role = user.role;
+            const agentsNav = document.querySelector('[href="#/agents"]');
+            const adminNav = document.querySelector('[href="#/admin"]');
+            const bugsNav = document.querySelector('[href="#/bugs"]');
+            
+            if (agentsNav) {
+                agentsNav.style.display = ['manager', 'super_user'].includes(role) ? 'block' : 'none';
+            }
+            
+            if (adminNav) {
+                adminNav.style.display = role === 'super_user' ? 'block' : 'none';
+            }
+            
+            if (bugsNav) {
+                bugsNav.style.display = 'block'; // All roles can see bugs
+            }
+            
+            console.log('🔧 Mock: UI updated for role:', role);
+        }
     };
     
     window.showLoginPortal = function() {
         console.log('🔧 Mock: showLoginPortal called');
-        // This will be handled by the main app
+        
+        // Show login portal and hide main app
+        const loginPortal = document.getElementById('loginPortal');
+        const mainApp = document.getElementById('mainAppContent');
+        
+        if (loginPortal) {
+            loginPortal.style.display = 'flex';
+            console.log('🔧 Mock: Login portal shown');
+        }
+        
+        if (mainApp) {
+            mainApp.style.display = 'none';
+            console.log('🔧 Mock: Main app hidden');
+        }
     };
     
     supabase = window.supabase;
