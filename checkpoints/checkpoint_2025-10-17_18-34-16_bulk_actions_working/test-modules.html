@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Module Test - TRE CRM</title>
+	<style>
+		body {
+			font-family: Arial, sans-serif;
+			max-width: 800px;
+			margin: 50px auto;
+			padding: 20px;
+			background: #f5f5f5;
+		}
+		.test-section {
+			background: white;
+			padding: 20px;
+			margin-bottom: 20px;
+			border-radius: 8px;
+			box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+		}
+		h1 {
+			color: #153e7a;
+		}
+		h2 {
+			color: #333;
+			border-bottom: 2px solid #153e7a;
+			padding-bottom: 10px;
+		}
+		.test-result {
+			padding: 10px;
+			margin: 10px 0;
+			border-radius: 4px;
+		}
+		.test-result.pass {
+			background: #d4edda;
+			color: #155724;
+			border: 1px solid #c3e6cb;
+		}
+		.test-result.fail {
+			background: #f8d7da;
+			color: #721c24;
+			border: 1px solid #f5c6cb;
+		}
+		button {
+			background: #153e7a;
+			color: white;
+			border: none;
+			padding: 10px 20px;
+			border-radius: 4px;
+			cursor: pointer;
+			margin: 5px;
+		}
+		button:hover {
+			background: #0f2d5c;
+		}
+		.modal {
+			display: none;
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%;
+			height: 100%;
+			background: rgba(0,0,0,0.5);
+			justify-content: center;
+			align-items: center;
+		}
+		.modal.show {
+			display: flex;
+		}
+		.modal-content {
+			background: white;
+			padding: 30px;
+			border-radius: 8px;
+			max-width: 400px;
+		}
+		.hidden {
+			display: none !important;
+		}
+		.toast {
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			padding: 15px 20px;
+			border-radius: 4px;
+			color: white;
+			font-weight: 500;
+			opacity: 0;
+			transform: translateY(-20px);
+			transition: all 0.3s ease;
+			z-index: 10000;
+		}
+		.toast.show {
+			opacity: 1;
+			transform: translateY(0);
+		}
+		.toast-success {
+			background: #28a745;
+		}
+		.toast-error {
+			background: #dc3545;
+		}
+		.toast-info {
+			background: #17a2b8;
+		}
+		.toast-warning {
+			background: #ffc107;
+			color: #333;
+		}
+	</style>
+</head>
+<body>
+	<h1>🧪 TRE CRM Module Tests</h1>
+
+	<div class="test-section">
+		<h2>Helper Functions Test</h2>
+		<div id="helperTests"></div>
+		<button onclick="testHelpers()">Run Helper Tests</button>
+		<button onclick="testToast()">Test Toast</button>
+		<button onclick="testModal()">Test Modal</button>
+	</div>
+
+	<div class="test-section">
+		<h2>Validator Functions Test</h2>
+		<div id="validatorTests"></div>
+		<button onclick="testValidators()">Run Validator Tests</button>
+	</div>
+
+	<div class="test-section">
+		<h2>State Management Test</h2>
+		<div id="stateTests"></div>
+		<button onclick="testState()">Run State Tests</button>
+	</div>
+
+	<div class="test-section">
+		<h2>Mock Data Test</h2>
+		<div id="mockDataTests"></div>
+		<button onclick="testMockData()">Run Mock Data Tests</button>
+	</div>
+
+	<!-- Test Modal -->
+	<div id="testModal" class="modal hidden">
+		<div class="modal-content">
+			<h3>Test Modal</h3>
+			<p>This is a test modal!</p>
+			<button onclick="closeTestModal()">Close</button>
+		</div>
+	</div>
+
+	<script type="module">
+		// Import modules
+		import * as helpers from './src/utils/helpers.js';
+		import * as validators from './src/utils/validators.js';
+		import * as stateModule from './src/state/state.js';
+		import * as mockData from './src/state/mockData.js';
+
+		// Make functions available globally for onclick handlers
+		window.helpers = helpers;
+		window.validators = validators;
+		window.stateModule = stateModule;
+		window.mockData = mockData;
+
+		// Helper Tests
+		window.testHelpers = function() {
+			const results = [];
+			const container = document.getElementById('helperTests');
+
+			// Test formatDate
+			const testDate = '2024-01-15T10:30:00Z';
+			const formatted = helpers.formatDate(testDate);
+			results.push({
+				name: 'formatDate',
+				pass: formatted.includes('2024'),
+				message: `formatDate: ${formatted}`
+			});
+
+			// Test generateId
+			const id = helpers.generateId('test');
+			results.push({
+				name: 'generateId',
+				pass: id.startsWith('test_'),
+				message: `generateId: ${id}`
+			});
+
+			// Test isEmpty
+			results.push({
+				name: 'isEmpty (empty string)',
+				pass: helpers.isEmpty(''),
+				message: 'isEmpty("") = true'
+			});
+
+			results.push({
+				name: 'isEmpty (non-empty)',
+				pass: !helpers.isEmpty('test'),
+				message: 'isEmpty("test") = false'
+			});
+
+			// Test formatCurrency
+			const currency = helpers.formatCurrency(1234.56);
+			results.push({
+				name: 'formatCurrency',
+				pass: currency.includes('$') && currency.includes('1,234'),
+				message: `formatCurrency(1234.56) = ${currency}`
+			});
+
+			// Test formatPhone
+			const phone = helpers.formatPhone('1234567890');
+			results.push({
+				name: 'formatPhone',
+				pass: phone.includes('(123)'),
+				message: `formatPhone("1234567890") = ${phone}`
+			});
+
+			// Test capitalize
+			const cap = helpers.capitalize('hello');
+			results.push({
+				name: 'capitalize',
+				pass: cap === 'Hello',
+				message: `capitalize("hello") = ${cap}`
+			});
+
+			// Test truncate
+			const trunc = helpers.truncate('This is a long string', 10);
+			results.push({
+				name: 'truncate',
+				pass: trunc.length <= 13 && trunc.includes('...'),
+				message: `truncate("This is a long string", 10) = ${trunc}`
+			});
+
+			// Display results
+			container.innerHTML = results.map(r => `
+				<div class="test-result ${r.pass ? 'pass' : 'fail'}">
+					${r.pass ? '✅' : '❌'} ${r.message}
+				</div>
+			`).join('');
+		};
+
+		// Validator Tests
+		window.testValidators = function() {
+			const results = [];
+			const container = document.getElementById('validatorTests');
+
+			// Test isValidEmail
+			results.push({
+				name: 'isValidEmail (valid)',
+				pass: validators.isValidEmail('test@example.com'),
+				message: 'isValidEmail("test@example.com") = true'
+			});
+
+			results.push({
+				name: 'isValidEmail (invalid)',
+				pass: !validators.isValidEmail('invalid-email'),
+				message: 'isValidEmail("invalid-email") = false'
+			});
+
+			// Test isValidPhone
+			results.push({
+				name: 'isValidPhone (valid)',
+				pass: validators.isValidPhone('1234567890'),
+				message: 'isValidPhone("1234567890") = true'
+			});
+
+			results.push({
+				name: 'isValidPhone (invalid)',
+				pass: !validators.isValidPhone('123'),
+				message: 'isValidPhone("123") = false'
+			});
+
+			// Test isRequired
+			results.push({
+				name: 'isRequired (filled)',
+				pass: validators.isRequired('test'),
+				message: 'isRequired("test") = true'
+			});
+
+			results.push({
+				name: 'isRequired (empty)',
+				pass: !validators.isRequired(''),
+				message: 'isRequired("") = false'
+			});
+
+			// Test minLength
+			results.push({
+				name: 'minLength (pass)',
+				pass: validators.minLength('testing', 5),
+				message: 'minLength("testing", 5) = true'
+			});
+
+			results.push({
+				name: 'minLength (fail)',
+				pass: !validators.minLength('test', 10),
+				message: 'minLength("test", 10) = false'
+			});
+
+			// Test isValidUrl
+			results.push({
+				name: 'isValidUrl (valid)',
+				pass: validators.isValidUrl('https://example.com'),
+				message: 'isValidUrl("https://example.com") = true'
+			});
+
+			results.push({
+				name: 'isValidUrl (invalid)',
+				pass: !validators.isValidUrl('not-a-url'),
+				message: 'isValidUrl("not-a-url") = false'
+			});
+
+			// Test isValidDate
+			results.push({
+				name: 'isValidDate (valid)',
+				pass: validators.isValidDate('2024-01-15'),
+				message: 'isValidDate("2024-01-15") = true'
+			});
+
+			results.push({
+				name: 'isValidDate (invalid)',
+				pass: !validators.isValidDate('invalid-date'),
+				message: 'isValidDate("invalid-date") = false'
+			});
+
+			// Test validatePassword
+			const pwdResult = validators.validatePassword('Test123!@#');
+			results.push({
+				name: 'validatePassword (strong)',
+				pass: pwdResult.isValid && pwdResult.strength === 'strong',
+				message: `validatePassword("Test123!@#") = ${pwdResult.strength}`
+			});
+
+			// Display results
+			container.innerHTML = results.map(r => `
+				<div class="test-result ${r.pass ? 'pass' : 'fail'}">
+					${r.pass ? '✅' : '❌'} ${r.message}
+				</div>
+			`).join('');
+		};
+
+		// Toast Test
+		window.testToast = function() {
+			helpers.toast('Success toast!', 'success');
+			setTimeout(() => helpers.toast('Error toast!', 'error'), 1000);
+			setTimeout(() => helpers.toast('Info toast!', 'info'), 2000);
+			setTimeout(() => helpers.toast('Warning toast!', 'warning'), 3000);
+		};
+
+		// Modal Test
+		window.testModal = function() {
+			helpers.showModal('testModal');
+		};
+
+		window.closeTestModal = function() {
+			helpers.hideModal('testModal');
+		};
+
+		// State Tests
+		window.testState = function() {
+			const results = [];
+			const container = document.getElementById('stateTests');
+
+			// Test getState
+			const currentState = stateModule.getState();
+			results.push({
+				name: 'getState',
+				pass: currentState !== null && typeof currentState === 'object',
+				message: `getState() returns object: ${currentState !== null}`
+			});
+
+			// Test initial state values
+			results.push({
+				name: 'Initial role',
+				pass: currentState.role === 'manager',
+				message: `Initial role = "${currentState.role}"`
+			});
+
+			results.push({
+				name: 'Initial page',
+				pass: currentState.currentPage === 'leads',
+				message: `Initial page = "${currentState.currentPage}"`
+			});
+
+			// Test updateState
+			stateModule.updateState({ currentPage: 'agents' });
+			results.push({
+				name: 'updateState',
+				pass: currentState.currentPage === 'agents',
+				message: `updateState({currentPage: 'agents'}) = "${currentState.currentPage}"`
+			});
+
+			// Test updateSort
+			stateModule.updateSort('name', 'asc');
+			results.push({
+				name: 'updateSort',
+				pass: currentState.sort.key === 'name' && currentState.sort.dir === 'asc',
+				message: `updateSort('name', 'asc') = {key: "${currentState.sort.key}", dir: "${currentState.sort.dir}"}`
+			});
+
+			// Test updatePagination
+			stateModule.updatePagination(5, 20);
+			results.push({
+				name: 'updatePagination',
+				pass: currentState.page === 5 && currentState.pageSize === 20,
+				message: `updatePagination(5, 20) = {page: ${currentState.page}, pageSize: ${currentState.pageSize}}`
+			});
+
+			// Test selectLead
+			stateModule.selectLead('lead_123');
+			results.push({
+				name: 'selectLead',
+				pass: currentState.selectedLeadId === 'lead_123',
+				message: `selectLead('lead_123') = "${currentState.selectedLeadId}"`
+			});
+
+			// Test selectAgent
+			stateModule.selectAgent('agent_456');
+			results.push({
+				name: 'selectAgent',
+				pass: currentState.selectedAgentId === 'agent_456',
+				message: `selectAgent('agent_456') = "${currentState.selectedAgentId}"`
+			});
+
+			// Test selectedMatches
+			stateModule.addSelectedMatch('match_1');
+			stateModule.addSelectedMatch('match_2');
+			results.push({
+				name: 'addSelectedMatch',
+				pass: currentState.selectedMatches.has('match_1') && currentState.selectedMatches.has('match_2'),
+				message: `Added 2 matches, size = ${currentState.selectedMatches.size}`
+			});
+
+			stateModule.removeSelectedMatch('match_1');
+			results.push({
+				name: 'removeSelectedMatch',
+				pass: !currentState.selectedMatches.has('match_1') && currentState.selectedMatches.has('match_2'),
+				message: `Removed match_1, size = ${currentState.selectedMatches.size}`
+			});
+
+			// Test updateFilters
+			stateModule.updateFilters({ status: 'active', search: 'test' });
+			results.push({
+				name: 'updateFilters',
+				pass: currentState.filters.status === 'active' && currentState.filters.search === 'test',
+				message: `updateFilters() = {status: "${currentState.filters.status}", search: "${currentState.filters.search}"}`
+			});
+
+			// Test resetState
+			stateModule.resetState();
+			results.push({
+				name: 'resetState',
+				pass: currentState.currentPage === 'leads' && currentState.page === 1,
+				message: `resetState() restored defaults`
+			});
+
+			// Display results
+			container.innerHTML = results.map(r => `
+				<div class="test-result ${r.pass ? 'pass' : 'fail'}">
+					${r.pass ? '✅' : '❌'} ${r.message}
+				</div>
+			`).join('');
+		};
+
+		// Mock Data Tests
+		window.testMockData = function() {
+			const results = [];
+			const container = document.getElementById('mockDataTests');
+
+			// Test mockAgents
+			results.push({
+				name: 'mockAgents exists',
+				pass: Array.isArray(mockData.mockAgents),
+				message: `mockAgents is array: ${Array.isArray(mockData.mockAgents)}`
+			});
+
+			results.push({
+				name: 'mockAgents count',
+				pass: mockData.mockAgents.length === 5,
+				message: `mockAgents.length = ${mockData.mockAgents.length} (expected 5)`
+			});
+
+			results.push({
+				name: 'mockAgents structure',
+				pass: mockData.mockAgents[0].id && mockData.mockAgents[0].name && mockData.mockAgents[0].email,
+				message: `First agent: ${mockData.mockAgents[0].name} (${mockData.mockAgents[0].email})`
+			});
+
+			// Test mockLeads
+			results.push({
+				name: 'mockLeads exists',
+				pass: Array.isArray(mockData.mockLeads),
+				message: `mockLeads is array: ${Array.isArray(mockData.mockLeads)}`
+			});
+
+			results.push({
+				name: 'mockLeads count',
+				pass: mockData.mockLeads.length === 37,
+				message: `mockLeads.length = ${mockData.mockLeads.length} (expected 37)`
+			});
+
+			results.push({
+				name: 'mockLeads structure',
+				pass: mockData.mockLeads[0].id && mockData.mockLeads[0].name && mockData.mockLeads[0].email,
+				message: `First lead: ${mockData.mockLeads[0].name} (${mockData.mockLeads[0].email})`
+			});
+
+			// Test mockProperties
+			results.push({
+				name: 'mockProperties exists',
+				pass: Array.isArray(mockData.mockProperties),
+				message: `mockProperties is array: ${Array.isArray(mockData.mockProperties)}`
+			});
+
+			results.push({
+				name: 'mockProperties count',
+				pass: mockData.mockProperties.length === 50,
+				message: `mockProperties.length = ${mockData.mockProperties.length} (expected 50)`
+			});
+
+			results.push({
+				name: 'mockProperties structure',
+				pass: mockData.mockProperties[0].id && mockData.mockProperties[0].name && mockData.mockProperties[0].market,
+				message: `First property: ${mockData.mockProperties[0].name} in ${mockData.mockProperties[0].market}`
+			});
+
+			// Test mockSpecials
+			results.push({
+				name: 'mockSpecials exists',
+				pass: Array.isArray(mockData.mockSpecials),
+				message: `mockSpecials is array: ${Array.isArray(mockData.mockSpecials)}`
+			});
+
+			results.push({
+				name: 'mockSpecials count',
+				pass: mockData.mockSpecials.length === 4,
+				message: `mockSpecials.length = ${mockData.mockSpecials.length} (expected 4)`
+			});
+
+			// Test mockBugs
+			results.push({
+				name: 'mockBugs exists',
+				pass: Array.isArray(mockData.mockBugs),
+				message: `mockBugs is array: ${Array.isArray(mockData.mockBugs)}`
+			});
+
+			results.push({
+				name: 'mockBugs count',
+				pass: mockData.mockBugs.length === 3,
+				message: `mockBugs.length = ${mockData.mockBugs.length} (expected 3)`
+			});
+
+			// Test mockDocumentSteps
+			results.push({
+				name: 'mockDocumentSteps exists',
+				pass: Array.isArray(mockData.mockDocumentSteps),
+				message: `mockDocumentSteps is array: ${Array.isArray(mockData.mockDocumentSteps)}`
+			});
+
+			results.push({
+				name: 'mockDocumentSteps count',
+				pass: mockData.mockDocumentSteps.length === 5,
+				message: `mockDocumentSteps.length = ${mockData.mockDocumentSteps.length} (expected 5)`
+			});
+
+			// Test mockInterestedLeads
+			results.push({
+				name: 'mockInterestedLeads exists',
+				pass: typeof mockData.mockInterestedLeads === 'object',
+				message: `mockInterestedLeads is object: ${typeof mockData.mockInterestedLeads === 'object'}`
+			});
+
+			results.push({
+				name: 'mockInterestedLeads has data',
+				pass: mockData.mockInterestedLeads['prop_1'] && Array.isArray(mockData.mockInterestedLeads['prop_1']),
+				message: `mockInterestedLeads['prop_1'] has ${mockData.mockInterestedLeads['prop_1']?.length || 0} leads`
+			});
+
+			// Test helper function
+			const testPrefs = { beds: 2, baths: 1, budget_max: 1500 };
+			const summary = mockData.prefsSummary(testPrefs);
+			results.push({
+				name: 'prefsSummary helper',
+				pass: summary.includes('2bed') && summary.includes('1bath') && summary.includes('1500'),
+				message: `prefsSummary() = "${summary}"`
+			});
+
+			// Display results
+			container.innerHTML = results.map(r => `
+				<div class="test-result ${r.pass ? 'pass' : 'fail'}">
+					${r.pass ? '✅' : '❌'} ${r.message}
+				</div>
+			`).join('');
+		};
+
+		// Auto-run tests on load
+		console.log('✅ Modules loaded successfully!');
+		console.log('Helpers:', Object.keys(helpers));
+		console.log('Validators:', Object.keys(validators));
+		console.log('State:', Object.keys(stateModule));
+		console.log('Mock Data:', Object.keys(mockData));
+	</script>
+</body>
+</html>
+

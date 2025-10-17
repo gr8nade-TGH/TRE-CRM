@@ -1,0 +1,29 @@
+<svg width="24" height="24" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="fireGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:#dc2626;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#f97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="1" result="coloredBlur"/>
+      <feMerge> 
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <!-- Fire base -->
+  <path d="M12 22c-1.5-2-3-4-3-6.5 0-2.5 1.5-4.5 3-6.5 1.5 2 3 4 3 6.5 0 2.5-1.5 4.5-3 6.5z" fill="url(#fireGradient)" filter="url(#glow)"/>
+  
+  <!-- Fire flames -->
+  <path d="M8 18c-1-1.5-1.5-3-1.5-4.5 0-1.5 0.5-3 1.5-4.5 1 1.5 1.5 3 1.5 4.5 0 1.5-0.5 3-1.5 4.5z" fill="url(#fireGradient)" opacity="0.8"/>
+  <path d="M16 18c1-1.5 1.5-3 1.5-4.5 0-1.5-0.5-3-1.5-4.5-1 1.5-1.5 3-1.5 4.5 0 1.5 0.5 3 1.5 4.5z" fill="url(#fireGradient)" opacity="0.8"/>
+  
+  <!-- Inner fire -->
+  <path d="M12 20c-0.8-1.2-1.2-2.4-1.2-3.6 0-1.2 0.4-2.4 1.2-3.6 0.8 1.2 1.2 2.4 1.2 3.6 0 1.2-0.4 2.4-1.2 3.6z" fill="#fbbf24" opacity="0.9"/>
+  
+  <!-- TRE Text -->
+  <text x="12" y="16" font-family="Arial, sans-serif" font-size="8" font-weight="bold" text-anchor="middle" fill="white" stroke="#dc2626" stroke-width="0.5">TRE</text>
+</svg>
