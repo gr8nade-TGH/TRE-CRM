@@ -4197,10 +4197,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		// Initialize routing
 		initializeRouting();
-
-		// Load initial page
-		const hash = window.location.hash || '#/leads';
-		router(hash);
 	};
 
 	// Update navigation visibility based on role
@@ -4229,41 +4225,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	document.addEventListener('DOMContentLoaded', () => {
 		// Don't initialize app here - wait for auth.js to call initializeApp()
 		console.log('DOM loaded, waiting for authentication...');
-		
-		// role select
-		document.getElementById('roleSelect').addEventListener('change', (e)=>{
-			state.role = e.target.value;
-			state.page = 1;
-			setRoleLabel(state.currentPage);
-			
-			// Show/hide Agents and Admin nav based on role
-			const agentsNavLink = document.getElementById('agentsNavLink');
-			const adminNavLink = document.getElementById('adminNavLink');
-			
-			if (agentsNavLink) {
-				if (state.role === 'agent') {
-					agentsNavLink.style.display = 'none';
-				} else {
-					agentsNavLink.style.display = 'block';
-				}
-			}
-			
-			if (adminNavLink) {
-				if (state.role === 'agent') {
-					adminNavLink.style.display = 'none';
-				} else {
-					adminNavLink.style.display = 'block';
-				}
-			}
-			
-			if (state.currentPage === 'leads') renderLeads();
-			else if (state.currentPage === 'agents') renderAgents();
-			else if (state.currentPage === 'listings') renderListings();
-			else if (state.currentPage === 'specials') renderSpecials();
-			else if (state.currentPage === 'documents') renderDocuments();
-			else if (state.currentPage === 'admin') renderAdmin();
-			else if (state.currentPage === 'bugs') renderBugs();
-		});
 
 		// search
 		const leadSearchEl = document.getElementById('leadSearch');
