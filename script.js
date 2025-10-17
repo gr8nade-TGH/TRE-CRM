@@ -5467,27 +5467,26 @@ let realAuditLog = [];
 
 // API functions for real data
 async function loadUsers() {
-	// Check if we're running locally or on production
-	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-		? 'http://localhost:3001/api' 
-		: null;
-		
-	if (!apiBase) {
-		console.log('API_BASE not available, using mock data');
-		realUsers = [];
-		renderUsersTable();
-		return;
-	}
-	
 	try {
-		const response = await fetch(`${apiBase}/users`);
-		if (!response.ok) throw new Error('Failed to fetch users');
-		realUsers = await response.json();
-		console.log('Loaded users from API:', realUsers.length);
+		console.log('Loading users from Supabase...');
+
+		// Call our serverless function to list users
+		const response = await fetch('/api/list-users');
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || 'Failed to fetch users');
+		}
+
+		const result = await response.json();
+		realUsers = result.users || [];
+		console.log('✅ Loaded users from Supabase:', realUsers.length);
 		renderUsersTable();
 	} catch (error) {
 		console.error('Error loading users:', error);
-		throw error;
+		// Fall back to mock data on error
+		realUsers = [];
+		renderUsersTable();
 	}
 }
 
@@ -5543,8 +5542,8 @@ async function createUser(userData) {
 		const result = await response.json();
 		console.log('✅ User created successfully:', result.user);
 
-		// Refresh the users table
-		await renderUsersTable();
+		// Reload users from Supabase to refresh the table
+		await loadUsers();
 
 		return result.user;
 	} catch (error) {
