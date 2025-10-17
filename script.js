@@ -126,9 +126,9 @@ function saveNewLead() {
 
 function checkDuplicateLead(email, phone) {
 	const existingLeads = USE_MOCK_DATA ? mockLeads : state.leads || [];
-	
-	return existingLeads.some(lead => 
-		lead.email.toLowerCase() === email.toLowerCase() || 
+
+	return existingLeads.some(lead =>
+		lead.email.toLowerCase() === email.toLowerCase() ||
 		lead.phone === phone
 	);
 }
@@ -140,7 +140,7 @@ async function createLeadAPI(lead) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(lead)
 		});
-		
+
 		if (response.ok) {
 			toast('Lead added successfully!', 'success');
 			hideModal('addLeadModal');
@@ -201,7 +201,7 @@ async function createSpecialAPI(special) {
 			headers: { 'Content-Type': 'application/json' },
 			body: JSON.stringify(special)
 		});
-		
+
 		if (response.ok) {
 			toast('Special added successfully!', 'success');
 			hideModal('addSpecialModal');
@@ -231,7 +231,7 @@ async function deleteSpecialAPI(specialId) {
 		const response = await fetch(`${API_BASE}/specials/${specialId}`, {
 			method: 'DELETE'
 		});
-		
+
 		if (response.ok) {
 			toast('Special deleted successfully!', 'success');
 			renderSpecials(); // Refresh the specials list
@@ -271,13 +271,13 @@ async function deleteSpecialAPI(specialId) {
 			console.log('Table not found:', tableId);
 			return;
 		}
-		
+
 		const tbody = table.querySelector('tbody');
 		if (!tbody) {
 			console.log('Tbody not found in table:', tableId);
 			return;
 		}
-		
+
 		// Three-state cycle: ascending → descending → no sort (original order)
 		let newSortState;
 		if (state.sort.key === column) {
@@ -291,11 +291,11 @@ async function deleteSpecialAPI(specialId) {
 		} else {
 			newSortState = 'asc';
 		}
-		
+
 		// Update sort state
 		state.sort.key = column;
 		state.sort.dir = newSortState;
-		
+
 		// For tables with proper render functions, use those instead of DOM manipulation
 		if (tableId === 'leadsTable') {
 			renderLeads();
@@ -320,15 +320,15 @@ async function deleteSpecialAPI(specialId) {
 			renderUsersTable();
 			return;
 		}
-		
+
 		// For tables without render functions, use DOM manipulation
 		const rows = Array.from(tbody.querySelectorAll('tr'));
 		const isAscending = newSortState === 'asc';
-		
+
 		rows.sort((a, b) => {
 			const aVal = a.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
 			const bVal = b.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
-			
+
 			// Handle numeric sorting for specific columns
 			if (['rent_min', 'rent_max', 'beds_min', 'baths_min', 'sqft_min', 'commission_pct'].includes(column)) {
 				// Special handling for commission_pct column
@@ -337,33 +337,33 @@ async function deleteSpecialAPI(specialId) {
 					const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
 					return isAscending ? aNum - bNum : bNum - aNum;
 				}
-				
+
 				// For rent columns, extract the first number (min value)
 				if (['rent_min', 'rent_max'].includes(column)) {
 					const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
 					const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
 					return isAscending ? aNum - bNum : bNum - aNum;
 				}
-				
+
 				// For beds/baths columns, extract the first number
 				if (['beds_min', 'baths_min'].includes(column)) {
 					const aNum = parseFloat(aVal.split('-')[0]) || 0;
 					const bNum = parseFloat(bVal.split('-')[0]) || 0;
 					return isAscending ? aNum - bNum : bNum - aNum;
 				}
-				
+
 				const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
 				const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
 				return isAscending ? aNum - bNum : bNum - aNum;
 			}
-			
+
 			// Handle date sorting
 			if (['submitted_at', 'last_updated', 'created_at'].includes(column)) {
 				const aDate = new Date(aVal);
 				const bDate = new Date(bVal);
 				return isAscending ? aDate - bDate : bDate - aDate;
 			}
-			
+
 			// Default text sorting
 			if (isAscending) {
 				return aVal.localeCompare(bVal, undefined, { numeric: true });
@@ -371,54 +371,54 @@ async function deleteSpecialAPI(specialId) {
 				return bVal.localeCompare(aVal, undefined, { numeric: true });
 			}
 		});
-		
+
 		rows.forEach(row => tbody.appendChild(row));
 		updateSortHeaders(tableId);
 	}
 
 
 	// ---- Health Status ----
-	const STATUS_LABEL = { 
-		green: 'Healthy', 
-		yellow: 'Warm', 
-		red: 'At Risk', 
-		closed: 'Closed', 
-		lost: 'Lost' 
+	const STATUS_LABEL = {
+		green: 'Healthy',
+		yellow: 'Warm',
+		red: 'At Risk',
+		closed: 'Closed',
+		lost: 'Lost'
 	};
 
 	// ---- Health Status System ----
-	
+
 	// Health calculation function
 	function calculateHealthStatus(lead) {
 		const now = new Date();
 		const leadAge = now - new Date(lead.submitted_at);
 		let healthScore = 100; // Start with perfect health
-		
+
 		// Get proper current step info
 		const currentStep = getProperCurrentStep(lead);
 		const stepHours = getStepHours(lead, currentStep);
-		
+
 		// Time-based deductions
 		if (leadAge > 24 * 60 * 60 * 1000 && !lead.showcase_sent_at) {
 			healthScore -= 20; // No showcase sent in 24h
 		}
-		
+
 		if (lead.showcase_sent_at && leadAge > 72 * 60 * 60 * 1000 && !lead.showcase_response_at) {
 			healthScore -= 30; // No response to showcase in 72h
 		}
-		
+
 		if (lead.lease_sent_at && leadAge > 48 * 60 * 60 * 1000 && !lead.lease_signed_at) {
 			healthScore -= 40; // Lease pending signature for 48h
 		}
-		
+
 		if (leadAge > 120 * 60 * 60 * 1000 && !lead.tour_scheduled_at) {
 			healthScore -= 25; // No tour scheduled in 5 days
 		}
-		
+
 		if (leadAge > 168 * 60 * 60 * 1000 && !lead.last_activity_at) {
 			healthScore -= 50; // No activity for 7 days
 		}
-		
+
 		// Document step timing deductions (3-day rule)
 		if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
 			if (stepHours > 72) { // 3 days
@@ -429,7 +429,7 @@ async function deleteSpecialAPI(specialId) {
 				healthScore -= 5; // Minor deduction
 			}
 		}
-		
+
 		// Event-based adjustments
 		lead.events?.forEach(event => {
 			const eventImpacts = {
@@ -443,85 +443,85 @@ async function deleteSpecialAPI(specialId) {
 				'LEASE_DECLINED': -5,
 				'COMPETITOR_CHOSEN': -8
 			};
-			
+
 			if (eventImpacts[event.type]) {
 				healthScore += eventImpacts[event.type];
 			}
 		});
-		
+
 		// Document progress bonus
 		const docProgress = getDocumentProgress(lead.id);
 		healthScore += (docProgress * 0.2); // Up to 20 points for full progress
-		
+
 		// Ensure score stays within bounds
 		healthScore = Math.max(0, Math.min(100, healthScore));
-		
+
 		// Determine final status
 		if (healthScore >= 80) return 'green';
 		if (healthScore >= 50) return 'yellow';
 		if (healthScore >= 20) return 'red';
 		return 'lost';
 	}
-	
+
 	// Get proper current step based on document progress
 	function getProperCurrentStep(lead) {
 		const docStatus = mockDocumentStatuses[lead.id];
 		if (!docStatus) return 'New Lead';
-		
+
 		// Find the current step (in_progress or first pending)
 		const currentStep = docStatus.steps.find(step => step.status === 'in_progress');
 		if (currentStep) {
 			return currentStep.name;
 		}
-		
+
 		// If no in_progress step, find first pending
 		const firstPending = docStatus.steps.find(step => step.status === 'pending');
 		if (firstPending) {
 			return firstPending.name;
 		}
-		
+
 		// If all steps completed
 		const allCompleted = docStatus.steps.every(step => step.status === 'completed');
 		if (allCompleted) {
 			return 'Completed';
 		}
-		
+
 		return 'New Lead';
 	}
-	
+
 	// Get time on current step
 	function getTimeOnCurrentStep(lead) {
 		const docStatus = mockDocumentStatuses[lead.id];
 		if (!docStatus) return 'Never';
-		
+
 		// Find the current step
 		const currentStep = docStatus.steps.find(step => step.status === 'in_progress');
 		if (currentStep && currentStep.updated_at) {
 			return formatTimeAgo(currentStep.updated_at);
 		}
-		
+
 		// If no in_progress step, use last completed step
 		const lastCompleted = docStatus.steps
 			.filter(step => step.status === 'completed')
 			.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
-		
+
 		if (lastCompleted && lastCompleted.updated_at) {
 			return formatTimeAgo(lastCompleted.updated_at);
 		}
-		
+
 		return 'Never';
 	}
-	
+
 	// Dynamic health messages based on lead state
 	function getHealthMessages(lead) {
 		const now = new Date();
 		const leadAge = now - new Date(lead.submitted_at);
 		const hoursAgo = Math.floor(leadAge / (60 * 60 * 1000));
-		
+
 		// Get proper current step and timing
 		const currentStep = getProperCurrentStep(lead);
 		const timeOnCurrentStep = getTimeOnCurrentStep(lead);
-		
+
 		if (lead.health_status === 'green') {
 			return [
 				`✅ Lead is actively engaged`,
@@ -530,13 +530,13 @@ async function deleteSpecialAPI(specialId) {
 				`📅 Last activity: ${formatTimeAgo(lead.last_activity_at)}`
 			];
 		}
-		
+
 		if (lead.health_status === 'yellow') {
 			const messages = [`⚠️ Needs attention`];
-			
+
 			messages.push(`📄 Current step: ${currentStep}`);
 			messages.push(`⏰ Time on current step: ${timeOnCurrentStep}`);
-			
+
 			// Add step-specific warnings
 			if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
 				const stepHours = getStepHours(lead, currentStep);
@@ -544,29 +544,29 @@ async function deleteSpecialAPI(specialId) {
 					messages.push(`⏰ On ${currentStep} for ${Math.floor(stepHours/24)}d ${stepHours%24}h - needs action`);
 				}
 			}
-			
+
 			if (!lead.showcase_sent_at && hoursAgo > 24) {
 				messages.push(`📧 No showcase sent in ${hoursAgo}h - send immediately`);
 			}
-			
+
 			if (lead.showcase_sent_at && !lead.showcase_response_at && hoursAgo > 72) {
 				messages.push(`📞 No response to showcase in ${hoursAgo}h - follow up needed`);
 			}
-			
+
 			if (!lead.tour_scheduled_at && hoursAgo > 120) {
 				messages.push(`📅 No tour scheduled in ${hoursAgo}h - schedule tour`);
 			}
-			
+
 			messages.push(`🎯 Recommended action: ${getRecommendedAction(lead)}`);
 			return messages;
 		}
-		
+
 		if (lead.health_status === 'red') {
 			const messages = [`🚨 Urgent action required`];
-			
+
 			messages.push(`📄 Current step: ${currentStep}`);
 			messages.push(`⏰ Time on current step: ${timeOnCurrentStep}`);
-			
+
 			// Add urgent step warnings
 			if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
 				const stepHours = getStepHours(lead, currentStep);
@@ -574,21 +574,21 @@ async function deleteSpecialAPI(specialId) {
 					messages.push(`🚨 On ${currentStep} for ${Math.floor(stepHours/24)}d ${stepHours%24}h - URGENT`);
 				}
 			}
-			
+
 			if (lead.lease_sent_at && !lead.lease_signed_at) {
 				const leaseHours = Math.floor((now - new Date(lead.lease_sent_at)) / (60 * 60 * 1000));
 				messages.push(`⏰ Lease pending signature for ${leaseHours}h`);
 			}
-			
+
 			if (lead.showcase_sent_at && !lead.showcase_response_at) {
 				const showcaseHours = Math.floor((now - new Date(lead.showcase_sent_at)) / (60 * 60 * 1000));
 				messages.push(`📧 No response to showcase for ${showcaseHours}h`);
 			}
-			
+
 			messages.push(`🔥 Immediate action: ${getUrgentAction(lead)}`);
 			return messages;
 		}
-		
+
 		if (lead.health_status === 'closed') {
 			return [
 				`🎉 Lead successfully closed!`,
@@ -597,7 +597,7 @@ async function deleteSpecialAPI(specialId) {
 				`⭐ Final health score: ${lead.health_score}/100`
 			];
 		}
-		
+
 		return [
 			`❌ Lead lost`,
 			`📄 Last step: ${currentStep}`,
@@ -605,27 +605,27 @@ async function deleteSpecialAPI(specialId) {
 			`💭 Reason: ${lead.loss_reason || 'No reason provided'}`
 		];
 	}
-	
+
 	// Helper function to get hours on current step
 	function getStepHours(lead, stepName) {
 		const docStatus = mockDocumentStatuses[lead.id];
 		if (!docStatus) return 0;
-		
+
 		const step = docStatus.steps.find(s => s.name === stepName);
 		if (!step || !step.updated_at) return 0;
-		
+
 		const now = new Date();
 		const stepTime = new Date(step.updated_at);
 		return Math.floor((now - stepTime) / (60 * 60 * 1000));
 	}
-	
+
 	// Action recommendation functions
 	function getRecommendedAction(lead) {
 		const now = new Date();
 		const leadAge = now - new Date(lead.submitted_at);
 		const hoursAgo = Math.floor(leadAge / (60 * 60 * 1000));
 		const currentStep = getProperCurrentStep(lead);
-		
+
 		// Step-specific recommendations based on actual document steps
 		if (currentStep === 'New Lead') {
 			if (!lead.showcase_sent_at && hoursAgo > 24) {
@@ -633,54 +633,54 @@ async function deleteSpecialAPI(specialId) {
 			}
 			return "Send initial showcase";
 		}
-		
+
 		if (currentStep === 'Lease Agreement Sent') {
 			if (lead.lease_sent_at && !lead.lease_signed_at && hoursAgo > 48) {
 				return "Send lease reminder";
 			}
 			return "Follow up on lease agreement";
 		}
-		
+
 		if (currentStep === 'Signed By Lead') {
 			return "Send to property owner for signature";
 		}
-		
+
 		if (currentStep === 'Signed By Property Owner') {
 			return "Finalize lease agreement";
 		}
-		
+
 		if (currentStep === 'Finalized by Agent') {
 			return "Process payment step";
 		}
-		
+
 		if (currentStep === 'Payment Step') {
 			return "Complete payment processing";
 		}
-		
+
 		if (currentStep === 'Completed') {
 			return "Lead successfully closed";
 		}
-		
+
 		// General recommendations based on time
 		if (!lead.showcase_sent_at && hoursAgo > 24) {
 			return "Send showcase immediately";
 		}
-		
+
 		if (lead.showcase_sent_at && !lead.showcase_response_at && hoursAgo > 72) {
 			return "Follow up with phone call";
 		}
-		
+
 		if (lead.tour_scheduled_at && !lead.tour_completed_at && hoursAgo > 120) {
 			return "Reschedule tour";
 		}
-		
+
 		return "Continue normal follow-up";
 	}
-	
+
 	function getUrgentAction(lead) {
 		const now = new Date();
 		const currentStep = getProperCurrentStep(lead);
-		
+
 		// Step-specific urgent actions
 		if (currentStep === 'Lease Agreement Sent') {
 			if (lead.lease_sent_at && !lead.lease_signed_at) {
@@ -690,19 +690,19 @@ async function deleteSpecialAPI(specialId) {
 				}
 			}
 		}
-		
+
 		if (currentStep === 'Signed By Lead') {
 			return "Urgent: Send to property owner now";
 		}
-		
+
 		if (currentStep === 'Signed By Property Owner') {
 			return "Urgent: Finalize lease immediately";
 		}
-		
+
 		if (currentStep === 'Finalized by Agent') {
 			return "Urgent: Process payment now";
 		}
-		
+
 		// General urgent actions
 		if (lead.last_activity_at) {
 			const activityHours = Math.floor((now - new Date(lead.last_activity_at)) / (60 * 60 * 1000));
@@ -710,10 +710,10 @@ async function deleteSpecialAPI(specialId) {
 				return "Send re-engagement campaign";
 			}
 		}
-		
+
 		return "Schedule immediate follow-up call";
 	}
-	
+
 	// Helper function to format time ago
 	function formatTimeAgo(timestamp) {
 		if (!timestamp) return 'Never';
@@ -722,7 +722,7 @@ async function deleteSpecialAPI(specialId) {
 		const diffMs = now - time;
 		const diffHours = Math.floor(diffMs / (60 * 60 * 1000));
 		const diffDays = Math.floor(diffHours / 24);
-		
+
 		if (diffDays > 0) {
 			return `${diffDays}d ${diffHours % 24}h ago`;
 		} else if (diffHours > 0) {
@@ -731,7 +731,7 @@ async function deleteSpecialAPI(specialId) {
 			return 'Just now';
 		}
 	}
-	
+
 	// Legacy health messages for backward compatibility
 	const healthMessages = {
 		red: ['- Lead has not been provided listing options.', '- Lease Agreement has been pending e-signature for 2d 4h.'],
@@ -749,9 +749,9 @@ async function deleteSpecialAPI(specialId) {
 			lead.health_score = Math.max(0, Math.min(100, lead.health_score || 100));
 			lead.health_updated_at = new Date().toISOString();
 		}
-		
+
 		const finalStatus = lead ? lead.health_status : status;
-		
+
 		if (finalStatus === 'green') {
 			return `<button class="health-btn" data-status="green" aria-label="Healthy" data-lead-id="${lead?.id || ''}"><span class="health-dot health-green"></span></button>`;
 		}
@@ -780,7 +780,7 @@ async function deleteSpecialAPI(specialId) {
 		// Search filter
 		if (filters.search) {
 			const searchTerm = filters.search.toLowerCase();
-			const matchesSearch = 
+			const matchesSearch =
 				property.name.toLowerCase().includes(searchTerm) ||
 				property.address.toLowerCase().includes(searchTerm) ||
 				property.amenities.some(amenity => amenity.toLowerCase().includes(searchTerm));
@@ -858,13 +858,13 @@ async function deleteSpecialAPI(specialId) {
 			console.log('Popover element not found!'); // Debug
 			return;
 		}
-		
+
 		// Get lead ID from the button
 		const leadId = anchor.getAttribute('data-lead-id');
 		const lead = leadId ? mockLeads.find(l => l.id === leadId) : null;
-		
+
 		console.log('Showing popover for status:', status, 'lead:', lead?.name); // Debug
-		
+
 		if (lead) {
 			// Use dynamic messages
 			const messages = getHealthMessages(lead);
@@ -875,20 +875,20 @@ async function deleteSpecialAPI(specialId) {
 		popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
 		popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
 		}
-		
+
 		const r = anchor.getBoundingClientRect();
-		let top = r.bottom + 10; 
+		let top = r.bottom + 10;
 		let left = r.left - 12;
 		if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
 		if (left < 8) left = 8;
-		pop.style.top = `${Math.round(top)}px`; 
-		pop.style.left = `${Math.round(left)}px`; 
+		pop.style.top = `${Math.round(top)}px`;
+		pop.style.left = `${Math.round(left)}px`;
 		pop.style.display = 'block';
 		console.log('Popover should be visible now'); // Debug
 	}
 
-	function hidePopover() { 
-		if (pop) pop.style.display = 'none'; 
+	function hidePopover() {
+		if (pop) pop.style.display = 'none';
 	}
 
 	// ---- Agent Statistics ----
@@ -896,7 +896,7 @@ async function deleteSpecialAPI(specialId) {
 		const assignedLeads = mockLeads.filter(l => l.assigned_agent_id === agentId);
 		const now = new Date();
 		const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-		
+
 		// Mock closed leads (in real app, this would come from a separate table)
 		const closedLeads = assignedLeads.filter(l => {
 			const submittedDate = new Date(l.submitted_at);
@@ -934,42 +934,42 @@ async function deleteSpecialAPI(specialId) {
 			// Fallback to mock data
 			if (USE_MOCK_DATA) {
 				console.log('Using mock data for leads, count:', mockLeads.length);
-				
+
 				// Apply filters to mock data
 				let filteredLeads = [...mockLeads];
-				
+
 				// Apply status filter
 				if (filters.status && filters.status !== 'all') {
 					filteredLeads = filteredLeads.filter(lead => lead.health_status === filters.status);
 				}
-				
+
 				// Apply date filters
 				if (filters.fromDate) {
 					const fromDate = new Date(filters.fromDate);
 					filteredLeads = filteredLeads.filter(lead => new Date(lead.submitted_at) >= fromDate);
 				}
-				
+
 				if (filters.toDate) {
 					const toDate = new Date(filters.toDate);
 					toDate.setHours(23, 59, 59, 999); // End of day
 					filteredLeads = filteredLeads.filter(lead => new Date(lead.submitted_at) <= toDate);
 				}
-				
+
 				// Apply search filter
 				if (search) {
 					const searchLower = search.toLowerCase();
-					filteredLeads = filteredLeads.filter(lead => 
+					filteredLeads = filteredLeads.filter(lead =>
 						lead.name.toLowerCase().includes(searchLower) ||
 						lead.email.toLowerCase().includes(searchLower) ||
 						lead.phone.includes(search)
 					);
 				}
-				
+
 				// Apply sorting
 				if (sortKey && sortDir && sortDir !== 'none') {
 					filteredLeads.sort((a, b) => {
 						let aVal, bVal;
-						
+
 						if (sortKey === 'name') {
 							aVal = a.name.toLowerCase();
 							bVal = b.name.toLowerCase();
@@ -987,7 +987,7 @@ async function deleteSpecialAPI(specialId) {
 						} else {
 							return 0;
 						}
-						
+
 						// Handle date sorting
 				if (sortKey === 'submitted_at') {
 							return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
@@ -1001,13 +1001,13 @@ async function deleteSpecialAPI(specialId) {
 						}
 					});
 				}
-				
+
 				return {
 					items: filteredLeads,
 					total: filteredLeads.length
 				};
 			}
-			
+
 			const params = new URLSearchParams({
 				role,
 				agentId,
@@ -1027,7 +1027,7 @@ async function deleteSpecialAPI(specialId) {
 			if (USE_MOCK_DATA) {
 				return mockLeads.find(lead => lead.id === id) || mockLeads[0];
 			}
-			
+
 			const response = await fetch(`${API_BASE}/leads/${id}`);
 			return handleResponse(response);
 		},
@@ -1152,13 +1152,13 @@ async function deleteSpecialAPI(specialId) {
 			const response = await fetch(`${API_BASE}/showcases`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ 
-					lead_id, 
-					agent_id, 
-					listing_ids, 
-					message, 
-					showcase_id, 
-					landing_url 
+				body: JSON.stringify({
+					lead_id,
+					agent_id,
+					listing_ids,
+					message,
+					showcase_id,
+					landing_url
 				})
 			});
 			return handleResponse(response);
@@ -1175,7 +1175,7 @@ async function deleteSpecialAPI(specialId) {
 				const interestedLeads = mockInterestedLeads[propertyId] || [];
 				return interestedLeads.length;
 			}
-			
+
 			try {
 				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
 				const interests = await handleResponse(response);
@@ -1193,7 +1193,7 @@ async function deleteSpecialAPI(specialId) {
 				console.log('Mock data for', propertyId, ':', data);
 				return data;
 			}
-			
+
 			try {
 				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
 				return await handleResponse(response);
@@ -1228,31 +1228,31 @@ async function deleteSpecialAPI(specialId) {
 			if (USE_MOCK_DATA) {
 				console.log('Using mock data for specials, count:', mockSpecials.length);
 				let filteredSpecials = [...mockSpecials];
-				
+
 				// Filter by agent if role is agent
 				if (role === 'agent' && agentId) {
 					filteredSpecials = filteredSpecials.filter(special => special.agent_id === agentId);
 				}
-				
+
 				// Apply search filter
 				if (search) {
-					filteredSpecials = filteredSpecials.filter(special => 
+					filteredSpecials = filteredSpecials.filter(special =>
 						special.property_name.toLowerCase().includes(search.toLowerCase()) ||
 						special.current_special.toLowerCase().includes(search.toLowerCase())
 					);
 				}
-				
+
 				// Apply sorting
 				if (sortKey && sortDir) {
 					filteredSpecials.sort((a, b) => {
 						let aVal = a[sortKey];
 						let bVal = b[sortKey];
-						
+
 						if (sortKey === 'expiration_date' || sortKey === 'created_at') {
 							aVal = new Date(aVal);
 							bVal = new Date(bVal);
 						}
-						
+
 						if (sortDir === 'asc') {
 							return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
 						} else {
@@ -1260,13 +1260,13 @@ async function deleteSpecialAPI(specialId) {
 						}
 					});
 				}
-				
+
 				return {
 					items: filteredSpecials,
 					total: filteredSpecials.length
 				};
 			}
-			
+
 			const params = new URLSearchParams({
 				role,
 				agentId,
@@ -1291,7 +1291,7 @@ async function deleteSpecialAPI(specialId) {
 				mockSpecials.unshift(newSpecial); // Add to beginning for newest first
 				return newSpecial;
 			}
-			
+
 			const response = await fetch(`${API_BASE}/specials`, {
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
@@ -1309,7 +1309,7 @@ async function deleteSpecialAPI(specialId) {
 				}
 				throw new Error('Special not found');
 			}
-			
+
 			const response = await fetch(`${API_BASE}/specials/${id}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
@@ -1327,7 +1327,7 @@ async function deleteSpecialAPI(specialId) {
 				}
 				throw new Error('Special not found');
 			}
-			
+
 			const response = await fetch(`${API_BASE}/specials/${id}`, {
 				method: 'DELETE'
 			});
@@ -1339,26 +1339,26 @@ async function deleteSpecialAPI(specialId) {
 			if (USE_MOCK_DATA) {
 				console.log('Using mock data for bugs, count:', mockBugs.length);
 				let filteredBugs = [...mockBugs];
-				
+
 				// Filter by status
 				if (status) {
 					filteredBugs = filteredBugs.filter(bug => bug.status === status);
 				}
-				
+
 				// Filter by priority
 				if (priority) {
 					filteredBugs = filteredBugs.filter(bug => bug.priority === priority);
 				}
-				
+
 				// Sort by created date (newest first)
 				filteredBugs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-				
+
 				return {
 					items: filteredBugs,
 					total: filteredBugs.length
 				};
 			}
-			
+
 			const response = await fetch(`${API_BASE}/bugs?${new URLSearchParams({ status, priority, page, pageSize })}`);
 			return handleResponse(response);
 		},
@@ -1374,10 +1374,10 @@ async function deleteSpecialAPI(specialId) {
 				mockBugs.unshift(newBug);
 				return newBug;
 			}
-			
+
 			// Create FormData for file upload
 			const formData = new FormData();
-			
+
 			// Add all bug data fields
 			Object.keys(bugData).forEach(key => {
 				if (key === 'screenshot' && bugData[key]) {
@@ -1390,7 +1390,7 @@ async function deleteSpecialAPI(specialId) {
 					formData.append(key, bugData[key]);
 				}
 			});
-			
+
 			const response = await fetch(`${API_BASE}/bugs`, {
 				method: 'POST',
 				body: formData
@@ -1407,7 +1407,7 @@ async function deleteSpecialAPI(specialId) {
 				}
 				throw new Error('Bug not found');
 			}
-			
+
 			const response = await fetch(`${API_BASE}/bugs/${id}`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
@@ -1425,7 +1425,7 @@ async function deleteSpecialAPI(specialId) {
 				}
 				throw new Error('Bug not found');
 			}
-			
+
 			const response = await fetch(`${API_BASE}/bugs/${id}`, {
 				method: 'DELETE'
 			});
@@ -1483,12 +1483,12 @@ async function deleteSpecialAPI(specialId) {
 			`;
 			tbody.appendChild(tr);
 		});
-		
+
 		// Debug: Check if health buttons exist
 		const healthButtons = document.querySelectorAll('.health-btn');
 		console.log('Health buttons found:', healthButtons.length);
 		document.getElementById('pageInfo').textContent = `Page ${state.page} · ${total} total`;
-		
+
 		// Update sort headers
 		updateSortHeaders('leadsTable');
 	}
@@ -1516,7 +1516,7 @@ async function deleteSpecialAPI(specialId) {
 	function renderDocumentSteps(leadId) {
 		const docStatus = mockDocumentStatuses[leadId];
 		if (!docStatus) return 'No document status available';
-		
+
 		return docStatus.steps.map(step => `
 			<div class="document-step ${step.status === 'completed' ? 'completed' : step.status === 'in_progress' ? 'current' : 'pending'}">
 				<div class="step-header">
@@ -1542,11 +1542,11 @@ async function deleteSpecialAPI(specialId) {
 	function renderLeadDocumentSummary(leadId) {
 		const docStatus = mockDocumentStatuses[leadId];
 		if (!docStatus) return 'No documents';
-		
+
 		const completed = docStatus.steps.filter(s => s.status === 'completed').length;
 		const total = docStatus.steps.length;
 		const currentStep = docStatus.steps.find(s => s.status === 'in_progress');
-		
+
 		return `
 			<div class="lead-document-summary">
 				<div class="progress-bar">
@@ -1559,7 +1559,7 @@ async function deleteSpecialAPI(specialId) {
 	}
 
 	// ---- Interactive Progress System ----
-	
+
 	// Mock data for progress tracking
 	const mockProgressLeads = [
 		{
@@ -1807,15 +1807,15 @@ async function deleteSpecialAPI(specialId) {
 
 		// Clear existing content
 		container.innerHTML = '';
-		
+
 		// Create each lead as a separate table
 		leads.forEach((lead, index) => {
 			const leadTable = createLeadTable(lead, index === 0); // First lead expanded by default
 			container.appendChild(leadTable);
 		});
-		
+
 		// Event listeners are handled by event delegation in the main event listener setup
-		
+
 		// Add event listeners for progress steps
 		leads.forEach(lead => {
 			progressSteps.forEach(step => {
@@ -1833,7 +1833,7 @@ async function deleteSpecialAPI(specialId) {
 function createLeadTable(lead, isExpanded = false) {
 	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
-	
+
 	const table = document.createElement('div');
 	table.className = 'lead-table-container';
 	table.innerHTML = `
@@ -1857,7 +1857,7 @@ function createLeadTable(lead, isExpanded = false) {
 				</button>
 			</div>
 		</div>
-		
+
 		<div class="lead-table-content ${isExpanded ? 'expanded' : 'collapsed'}">
 			<div class="progress-section">
 				<div class="progress-bar-container">
@@ -1865,11 +1865,11 @@ function createLeadTable(lead, isExpanded = false) {
 						<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
 						<div class="progress-steps">
 							${progressSteps.map(step => {
-								const stepClass = step.id < lead.currentStep ? 'completed' : 
+								const stepClass = step.id < lead.currentStep ? 'completed' :
 																 step.id === lead.currentStep ? 'current' : 'pending';
 								return `
-									<div class="progress-step ${stepClass}" 
-										 data-lead-id="${lead.id}" 
+									<div class="progress-step ${stepClass}"
+										 data-lead-id="${lead.id}"
 										 data-step="${step.id}">
 										<div class="progress-step-dot ${stepClass}">${step.id}</div>
 										<div class="progress-step-label">${step.label}</div>
@@ -1882,7 +1882,7 @@ function createLeadTable(lead, isExpanded = false) {
 			</div>
 		</div>
 	`;
-	
+
 	return table;
 }
 
@@ -1895,7 +1895,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</div>
 					<a href="${lead.showcase.landingPageUrl}" target="_blank" class="modal-link">View Landing Page →</a>
 				`;
-				
+
 			case 2: // Lead Responded
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
@@ -1906,7 +1906,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Status:</strong> Lead has shown interest and selected properties</div>
 					<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
 				`;
-				
+
 			case 3: // Guest Card Sent
 				const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName)}&agent=${encodeURIComponent(lead.agentName)}&property=${encodeURIComponent(lead.showcase.selections.join(','))}&date=${encodeURIComponent(formatDate(lead.lastUpdated))}&agentPhone=210-391-4044&phoneNumber=210-579-6189&moveInDate=ASAP&bedrooms=${lead.property.bedrooms}&bathrooms=${lead.property.bathrooms}&priceRange=${lead.property.rent}&agentNotes=Guest card sent for property tour scheduling`;
 				return `
@@ -1917,7 +1917,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Status:</strong> Guest card prepared and sent to properties</div>
 					<a href="${guestCardUrl}" target="_blank" class="modal-link">View Filled Guest Card →</a>
 				`;
-				
+
 			case 4: // Property Selected
 				return `
 					<div class="modal-details"><strong>Property:</strong> ${lead.property.name}</div>
@@ -1925,7 +1925,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Rent:</strong> ${lead.property.rent}</div>
 					<div class="modal-details"><strong>Size:</strong> ${lead.property.bedrooms}bd/${lead.property.bathrooms}ba</div>
 				`;
-				
+
 			case 5: // Lease Sent
 				return `
 					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
@@ -1933,7 +1933,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
 					<a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="modal-link">View Lease →</a>
 				`;
-				
+
 			case 6: // Lease Signed
 				return `
 					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
@@ -1941,7 +1941,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Signed by:</strong> Property Management</div>
 					<a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="modal-link">View Signed Lease →</a>
 				`;
-				
+
 			case 7: // Lease Finalized
 				return `
 					<div class="modal-details"><strong>Status:</strong> Complete</div>
@@ -1949,7 +1949,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
 					<div class="modal-details"><strong>Commission:</strong> Ready for processing</div>
 				`;
-				
+
 			default:
 				return `<div class="modal-details">No details available</div>`;
 		}
@@ -1970,26 +1970,26 @@ function createLeadTable(lead, isExpanded = false) {
 				</div>
 			`;
 			document.body.appendChild(modal);
-			
+
 			// Add close event listeners
 			modal.querySelector('.progress-modal-close').addEventListener('click', () => {
 				modal.classList.remove('show');
 			});
-			
+
 			modal.addEventListener('click', (e) => {
 				if (e.target === modal) {
 					modal.classList.remove('show');
 				}
 			});
 		}
-		
+
 		// Update modal content
 		const title = modal.querySelector('.modal-title');
 		const content = modal.querySelector('.modal-content');
-		
+
 		title.textContent = step.label;
 		content.innerHTML = getStepModalContent(lead, step);
-		
+
 		// Show modal
 		modal.classList.add('show');
 	}
@@ -1997,21 +1997,21 @@ function createLeadTable(lead, isExpanded = false) {
 	function viewLeadDetails(leadId) {
 		const lead = mockProgressLeads.find(l => l.id === leadId);
 		if (!lead) return;
-		
+
 		const currentStep = progressSteps[lead.currentStep - 1];
 		showStepDetails(lead, currentStep);
 	}
 
 	function toggleLeadTable(leadId) {
 		console.log('toggleLeadTable called with leadId:', leadId);
-		
+
 		// Find the button in the currently visible view only
 		const managerView = document.getElementById('managerDocumentsView');
 		const agentView = document.getElementById('agentDocumentsView');
-		
+
 		let btn = null;
 		let container = null;
-		
+
 		// Check which view is visible and search within that view only
 		if (managerView && !managerView.classList.contains('hidden')) {
 			container = managerView.querySelector(`[data-lead-id="${leadId}"]`)?.closest('.lead-table-container');
@@ -2022,21 +2022,21 @@ function createLeadTable(lead, isExpanded = false) {
 			btn = container?.querySelector('.expand-btn');
 			console.log('Searching in Agent view');
 		}
-		
+
 		console.log('Found button:', btn);
 		console.log('Found container:', container);
-		
+
 		if (!btn || !container) {
 			console.log('No button or container found for leadId:', leadId);
 			return;
 		}
-		
+
 		const content = container.querySelector('.lead-table-content');
 		const expandIcon = container.querySelector('.expand-icon');
-		
+
 		console.log('Content element:', content);
 		console.log('Expand icon:', expandIcon);
-		
+
 		if (content.classList.contains('expanded')) {
 			content.classList.remove('expanded');
 			content.classList.add('collapsed');
@@ -2050,7 +2050,7 @@ function createLeadTable(lead, isExpanded = false) {
 			console.log('Expanded table');
 			console.log('Content classes after expand:', content.classList.toString());
 		}
-		
+
 		// Check computed styles
 		const computedStyle = window.getComputedStyle(content);
 		console.log('Computed max-height:', computedStyle.maxHeight);
@@ -2109,7 +2109,7 @@ function createLeadTable(lead, isExpanded = false) {
 			const tr = document.createElement('tr');
 			const isExpired = new Date(special.expiration_date) < new Date();
 			const expiresSoon = new Date(special.expiration_date) < new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days
-			
+
 			tr.innerHTML = `
 				<td data-sort="property_name">
 					<div class="special-property-name">${special.property_name}</div>
@@ -2130,10 +2130,10 @@ function createLeadTable(lead, isExpanded = false) {
 					</div>
 				</td>
 			`;
-			
+
 			tbody.appendChild(tr);
 		});
-		
+
 		// Update sort headers
 		updateSortHeaders('specialsTable');
 	}
@@ -2199,7 +2199,7 @@ function createLeadTable(lead, isExpanded = false) {
 		document.getElementById('bugTitle').value = context.title || '';
 		document.getElementById('bugDescription').value = context.description || '';
 		document.getElementById('bugSteps').value = context.steps || '';
-		
+
 		// Store context for submission
 		window.currentBugContext = {
 			page: context.page || state.currentPage,
@@ -2214,7 +2214,7 @@ function createLeadTable(lead, isExpanded = false) {
 				agent_id: state.agentId
 			}
 		};
-		
+
 		showModal('bugReportModal');
 	}
 
@@ -2265,7 +2265,7 @@ function createLeadTable(lead, isExpanded = false) {
 			toast('Bug report submitted successfully!', 'success');
 			hideModal('bugReportModal');
 			document.getElementById('bugReportForm').reset();
-			
+
 			// Refresh bugs table if we're on the bugs page
 			if (state.currentPage === 'bugs') {
 				renderBugs();
@@ -2274,7 +2274,7 @@ function createLeadTable(lead, isExpanded = false) {
 			toast('Error submitting bug report: ' + error.message, 'error');
 		}
 	}
-	
+
 	// Helper function to get current page name
 	function getCurrentPageName() {
 		const hash = window.location.hash;
@@ -2286,7 +2286,7 @@ function createLeadTable(lead, isExpanded = false) {
 		if (hash.includes('#/bugs')) return 'Bugs';
 		return 'Home';
 	}
-	
+
 	// Helper function to get browser info
 	function getBrowserInfo() {
 		const ua = navigator.userAgent;
@@ -2296,7 +2296,7 @@ function createLeadTable(lead, isExpanded = false) {
 		if (ua.includes('Edge')) return 'Edge';
 		return 'Unknown';
 	}
-	
+
 	// Helper function to get OS info
 	function getOSInfo() {
 		const ua = navigator.userAgent;
@@ -2318,20 +2318,20 @@ function createLeadTable(lead, isExpanded = false) {
 		flag.innerHTML = '🐛';
 		flag.title = 'Report Bug';
 		flag.style.display = 'none'; // Hidden by default
-		
+
 		flag.addEventListener('click', () => {
 			const currentPage = state.currentPage || 'leads';
 			const pageName = currentPage.charAt(0).toUpperCase() + currentPage.slice(1);
-			
+
 			console.log('Bug flag clicked on page:', currentPage); // Debug log
-			
+
 			showBugReportModal({
 				page: currentPage,
 				page_url: `#/${currentPage}`,
 				title: `Issue on ${pageName} page`
 			});
 		});
-		
+
 		document.body.appendChild(flag);
 
 		// Show flag for current page
@@ -2341,7 +2341,7 @@ function createLeadTable(lead, isExpanded = false) {
 	function updateBugFlagVisibility() {
 		const flag = document.querySelector('.bug-flag');
 		if (!flag) return;
-		
+
 		// Hide flag on bugs page, show on all other pages
 		const currentPage = state.currentPage;
 		if (currentPage === 'bugs') {
@@ -2426,7 +2426,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		try {
 			const statusSelect = document.querySelector(`.bug-status-select[data-bug-id="${bugId}"]`);
 			const prioritySelect = document.querySelector(`.bug-priority-select[data-bug-id="${bugId}"]`);
-			
+
 			if (!statusSelect || !prioritySelect) {
 				toast('Could not find bug fields to update', 'error');
 				return;
@@ -2440,13 +2440,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 			await api.updateBug(bugId, updates);
 			toast('Bug updated successfully!', 'success');
-			
+
 			// Hide save button
 			const saveBtn = document.querySelector(`.save-bug[data-id="${bugId}"]`);
 			if (saveBtn) {
 				saveBtn.style.display = 'none';
 			}
-			
+
 			// Refresh the bugs table
 			renderBugs();
 		} catch (error) {
@@ -2468,25 +2468,25 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		// Get all active leads with their agent info
 		let activeLeads = mockLeads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
-		
+
 		// Apply search filter
 		if (searchTerm.trim()) {
 			activeLeads = activeLeads.filter(lead => {
 				const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
 				const searchLower = searchTerm.toLowerCase();
-				
+
 				if (searchType === 'agent') {
 					return agent.name.toLowerCase().includes(searchLower);
 				} else if (searchType === 'lead') {
 					return lead.name.toLowerCase().includes(searchLower) || lead.email.toLowerCase().includes(searchLower);
 				} else { // both
-					return agent.name.toLowerCase().includes(searchLower) || 
-						   lead.name.toLowerCase().includes(searchLower) || 
+					return agent.name.toLowerCase().includes(searchLower) ||
+						   lead.name.toLowerCase().includes(searchLower) ||
 						   lead.email.toLowerCase().includes(searchLower);
 				}
 			});
 		}
-		
+
 		activeLeads.forEach(lead => {
 			const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
 			const progress = getDocumentProgress(lead.id);
@@ -2526,7 +2526,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		// Get current agent's leads
 		const agentLeads = mockLeads.filter(l => l.assigned_agent_id === state.agentId);
-		
+
 		agentLeads.forEach(lead => {
 			const progress = getDocumentProgress(lead.id);
 			const currentStep = getCurrentDocumentStep(lead.id);
@@ -2565,7 +2565,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	function getDocumentProgress(leadId) {
 		const status = mockDocumentStatuses[leadId];
 		if (!status) return 0;
-		
+
 		const completedSteps = status.steps.filter(step => step.status === 'completed').length;
 		return Math.round((completedSteps / status.steps.length) * 100);
 	}
@@ -2573,7 +2573,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	function getCurrentDocumentStep(leadId) {
 		const status = mockDocumentStatuses[leadId];
 		if (!status) return 'Not Started';
-		
+
 		const currentStep = status.steps.find(step => step.status === 'current');
 		return currentStep ? currentStep.name : 'Completed';
 	}
@@ -2588,11 +2588,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	function getLastDocumentUpdate(leadId) {
 		const status = mockDocumentStatuses[leadId];
 		if (!status) return new Date();
-		
+
 		const lastStep = status.steps
 			.filter(step => step.status === 'completed')
 			.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
-		
+
 		return lastStep ? lastStep.updated_at : new Date();
 	}
 
@@ -2628,14 +2628,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	async function renderAgents(){
 		const tbody = document.getElementById('agentsTbody');
 		tbody.innerHTML = '';
-		
+
 		// Apply sorting if active
 		let agentsToRender = [...mockAgents];
 		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
 			agentsToRender.sort((a, b) => {
 				const statsA = getAgentStats(a.id);
 				const statsB = getAgentStats(b.id);
-				
+
 				let aVal, bVal;
 				if (state.sort.key === 'name') {
 					aVal = a.name.toLowerCase();
@@ -2649,7 +2649,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				} else {
 					return 0;
 				}
-				
+
 				if (state.sort.key === 'leads_assigned' || state.sort.key === 'leads_closed') {
 					// Numeric sorting
 					const aNum = parseInt(aVal) || 0;
@@ -2665,7 +2665,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				}
 			});
 		}
-		
+
 		agentsToRender.forEach(agent => {
 			const stats = getAgentStats(agent.id);
 			const tr = document.createElement('tr');
@@ -2686,14 +2686,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			`;
 			tbody.appendChild(tr);
 		});
-		
+
 		// Update sort headers
 		updateSortHeaders('agentsTable');
 	}
 
 	function initMap() {
 		if (map) return;
-		
+
 		// Initialize Mapbox GL JS map
 		map = new mapboxgl.Map({
 			container: 'listingsMap',
@@ -2702,16 +2702,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			zoom: 10,
 			attributionControl: true
 		});
-		
+
 		// Add navigation controls
 		map.addControl(new mapboxgl.NavigationControl(), 'top-right');
-		
+
 		// Add scale control
 		map.addControl(new mapboxgl.ScaleControl({
 			maxWidth: 100,
 			unit: 'metric'
 		}), 'bottom-right');
-		
+
 		// Wait for map to load before adding markers
 		map.on('load', () => {
 			console.log('Mapbox map loaded');
@@ -2723,7 +2723,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Mark as initialized
 			map.hasBeenInitialized = true;
 		});
-		
+
 		// Handle window resize to ensure map fills container
 		window.addEventListener('resize', () => {
 			if (map) {
@@ -2799,18 +2799,18 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			dotElement.addEventListener('click', () => {
 			selectProperty(prop);
 		});
-		
+
 			markers.push(markerGroup);
 	}
 
 	function selectProperty(prop) {
 		selectedProperty = prop;
-		
+
 		// Update table selection
 		document.querySelectorAll('#listingsTbody tr').forEach(row => {
 			row.classList.remove('selected');
 		});
-		
+
 		// Find and highlight the table row
 		const rows = document.querySelectorAll('#listingsTbody tr');
 		rows.forEach(row => {
@@ -2820,11 +2820,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				row.scrollIntoView({ behavior: 'smooth', block: 'center' });
 			}
 		});
-		
+
 		// Update map markers
 		markers.forEach(markerGroup => {
 			const isSelected = markerGroup.property.id === prop.id;
-			
+
 			// Update dot marker - handle both old and new structures
 			if (markerGroup.pin) {
 				const dotElement = markerGroup.pin.getElement();
@@ -2836,12 +2836,223 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				console.log('Skipping legacy marker update');
 			}
 		});
-		
+
 		// Center map on selected property
 		map.flyTo({
 			center: [prop.lng, prop.lat],
 			zoom: Math.max(map.getZoom(), 14)
 		});
+	}
+
+	// ---- Add Listing Modal Functions ----
+	function openAddListingModal() {
+		const modal = document.getElementById('addListingModal');
+		const form = document.getElementById('addListingForm');
+
+		// Reset form
+		form.reset();
+
+		// Set default date to today
+		const lastUpdatedInput = document.getElementById('listingLastUpdated');
+		if (lastUpdatedInput) {
+			lastUpdatedInput.valueAsDate = new Date();
+		}
+
+		showModal(modal);
+	}
+
+	function closeAddListingModal() {
+		const modal = document.getElementById('addListingModal');
+		hideModal(modal);
+	}
+
+	async function createListing() {
+		try {
+			// Get form values
+			const communityName = document.getElementById('listingCommunityName').value.trim();
+			const streetAddress = document.getElementById('listingStreetAddress').value.trim();
+			const market = document.getElementById('listingMarket').value;
+			const zipCode = document.getElementById('listingZipCode').value.trim();
+			const bedRange = document.getElementById('listingBedRange').value.trim();
+			const bathRange = document.getElementById('listingBathRange').value.trim();
+			const rentMin = parseInt(document.getElementById('listingRentMin').value);
+			const rentMax = parseInt(document.getElementById('listingRentMax').value);
+			const commission = parseFloat(document.getElementById('listingCommission').value);
+			const amenitiesInput = document.getElementById('listingAmenities').value.trim();
+			const isPUMI = document.getElementById('listingIsPUMI').checked;
+			const lastUpdated = document.getElementById('listingLastUpdated').value;
+			const contactEmail = document.getElementById('listingContactEmail').value.trim();
+			const leasingLink = document.getElementById('listingLeasingLink').value.trim();
+			const mapLat = document.getElementById('listingMapLat').value;
+			const mapLng = document.getElementById('listingMapLng').value;
+			const noteContent = document.getElementById('listingNotes').value.trim();
+
+			// Validation
+			if (!communityName || !streetAddress || !market || !zipCode || !bedRange || !bathRange || !rentMin || !rentMax || !commission) {
+				toast('Please fill in all required fields', 'error');
+				return;
+			}
+
+			if (rentMin >= rentMax) {
+				toast('Rent Max must be greater than Rent Min', 'error');
+				return;
+			}
+
+			// Parse amenities
+			const amenities = amenitiesInput ? amenitiesInput.split(',').map(a => a.trim()).filter(a => a) : [];
+
+			// Create property data
+			const propertyData = {
+				id: `prop_${Date.now()}`,
+				community_name: communityName,
+				name: communityName, // For backward compatibility
+				street_address: streetAddress,
+				address: streetAddress, // For backward compatibility
+				city: market, // Using market as city for now
+				market: market,
+				zip_code: zipCode,
+				bed_range: bedRange,
+				bath_range: bathRange,
+				rent_range_min: rentMin,
+				rent_range_max: rentMax,
+				rent_min: rentMin, // For backward compatibility
+				rent_max: rentMax, // For backward compatibility
+				commission_pct: commission,
+				amenities: amenities,
+				is_pumi: isPUMI,
+				isPUMI: isPUMI, // For backward compatibility
+				last_updated: lastUpdated || new Date().toISOString(),
+				contact_email: contactEmail || null,
+				leasing_link: leasingLink || null,
+				map_lat: mapLat ? parseFloat(mapLat) : null,
+				map_lng: mapLng ? parseFloat(mapLng) : null,
+				lat: mapLat ? parseFloat(mapLat) : null, // For backward compatibility
+				lng: mapLng ? parseFloat(mapLng) : null, // For backward compatibility
+				created_by: state.userId,
+				created_at: new Date().toISOString()
+			};
+
+			console.log('Creating property:', propertyData);
+
+			// Create property in Supabase
+			const newProperty = await SupabaseAPI.createProperty(propertyData);
+			console.log('✅ Property created:', newProperty);
+
+			// If there's a note, create it
+			if (noteContent) {
+				const noteData = {
+					property_id: newProperty.id,
+					content: noteContent,
+					author_id: state.userId,
+					author_name: state.userName || 'Unknown'
+				};
+				await SupabaseAPI.createPropertyNote(noteData);
+				console.log('✅ Property note created');
+			}
+
+			toast('Listing created successfully!', 'success');
+			closeAddListingModal();
+
+			// Refresh listings
+			await renderListings();
+		} catch (error) {
+			console.error('❌ Error creating listing:', error);
+			toast(`Error creating listing: ${error.message}`, 'error');
+		}
+	}
+
+	// ---- Property Notes Modal Functions ----
+	let currentPropertyForNotes = null;
+
+	async function openPropertyNotesModal(propertyId, propertyName) {
+		currentPropertyForNotes = propertyId;
+
+		const modal = document.getElementById('propertyNotesModal');
+		const modalHeader = modal.querySelector('.modal-header h3');
+		modalHeader.textContent = `📝 Notes: ${propertyName}`;
+
+		// Clear note input
+		document.getElementById('newPropertyNote').value = '';
+
+		// Load and display notes
+		await loadPropertyNotes(propertyId);
+
+		showModal(modal);
+	}
+
+	function closePropertyNotesModal() {
+		const modal = document.getElementById('propertyNotesModal');
+		hideModal(modal);
+		currentPropertyForNotes = null;
+	}
+
+	async function loadPropertyNotes(propertyId) {
+		try {
+			const notes = await SupabaseAPI.getPropertyNotes(propertyId);
+			const notesContent = document.getElementById('propertyNotesContent');
+
+			if (notes.length === 0) {
+				notesContent.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">No notes yet. Add one below!</p>';
+				return;
+			}
+
+			notesContent.innerHTML = notes.map(note => `
+				<div class="note-item" style="border-bottom: 1px solid #e2e8f0; padding: 15px 0;">
+					<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
+						<div>
+							<strong style="color: #1e293b;">${note.author_name}</strong>
+							<span style="color: #64748b; font-size: 13px; margin-left: 10px;">
+								${formatDate(note.created_at)}
+							</span>
+						</div>
+					</div>
+					<div style="color: #475569; line-height: 1.6;">
+						${note.content}
+					</div>
+				</div>
+			`).join('');
+		} catch (error) {
+			console.error('Error loading property notes:', error);
+			toast('Error loading notes', 'error');
+		}
+	}
+
+	async function addPropertyNote() {
+		if (!currentPropertyForNotes) {
+			toast('No property selected', 'error');
+			return;
+		}
+
+		const noteContent = document.getElementById('newPropertyNote').value.trim();
+
+		if (!noteContent) {
+			toast('Please enter a note', 'error');
+			return;
+		}
+
+		try {
+			const noteData = {
+				property_id: currentPropertyForNotes,
+				content: noteContent,
+				author_id: state.userId,
+				author_name: state.userName || 'Unknown'
+			};
+
+			await SupabaseAPI.createPropertyNote(noteData);
+			toast('Note added successfully!', 'success');
+
+			// Clear input
+			document.getElementById('newPropertyNote').value = '';
+
+			// Reload notes
+			await loadPropertyNotes(currentPropertyForNotes);
+
+			// Refresh listings to update note icon
+			await renderListings();
+		} catch (error) {
+			console.error('Error adding note:', error);
+			toast(`Error adding note: ${error.message}`, 'error');
+		}
 	}
 
 	// ---- Rendering: Listings Table ----
@@ -2851,30 +3062,35 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.error('listingsTbody not found!');
 			return;
 		}
-		
-		const search = state.search.toLowerCase();
-		
-		// Apply both search and filters
-		let filtered = mockProperties;
-		
-		// Apply search filter
-		if (search) {
-			filtered = filtered.filter(prop => 
-				prop.name.toLowerCase().includes(search) ||
-				prop.market.toLowerCase().includes(search) ||
-				prop.neighborhoods.some(n => n.toLowerCase().includes(search)) ||
-				prop.amenities.some(a => a.toLowerCase().includes(search))
+
+		try {
+			// Fetch properties from Supabase
+			const properties = await SupabaseAPI.getProperties({
+				search: state.search,
+				market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
+				minPrice: state.listingsFilters.minPrice,
+				maxPrice: state.listingsFilters.maxPrice,
+				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
+			});
+
+			// Fetch notes count for each property
+			const propertiesWithNotes = await Promise.all(
+				properties.map(async (prop) => {
+					const notes = await SupabaseAPI.getPropertyNotes(prop.id);
+					return { ...prop, notesCount: notes.length };
+				})
 			);
-		}
-		
-		// Apply listings filters
-		filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
-		
+
+			let filtered = propertiesWithNotes;
+
+			// Apply additional filters
+			filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
+
 		// Apply sorting if active
 		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
 			filtered.sort((a, b) => {
 				let aVal, bVal;
-				
+
 				if (state.sort.key === 'name') {
 					aVal = a.name.toLowerCase();
 					bVal = b.name.toLowerCase();
@@ -2887,7 +3103,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				} else {
 					return 0;
 				}
-				
+
 				// Handle numeric sorting
 				if (['rent_min', 'commission_pct'].includes(state.sort.key)) {
 					const aNum = typeof aVal === 'number' ? aVal : parseFloat(aVal) || 0;
@@ -2908,52 +3124,68 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		console.log('Rendering', filtered.length, 'filtered properties');
 		filtered.forEach((prop, index) => {
 			console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI);
-			
+
 			const tr = document.createElement('tr');
 			tr.dataset.propertyId = prop.id;
-			
+
 			// Add PUMI class for styling
 			if (prop.isPUMI) {
 				tr.classList.add('pumi-listing');
 				console.log('Added pumi-listing class to:', prop.name);
 			}
-			
+
+			const communityName = prop.community_name || prop.name;
+			const address = prop.street_address || prop.address;
+			const bedRange = prop.bed_range || `${prop.beds_min}-${prop.beds_max} bed`;
+			const bathRange = prop.bath_range || `${prop.baths_min}-${prop.baths_max} bath`;
+			const rentMin = prop.rent_range_min || prop.rent_min;
+			const rentMax = prop.rent_range_max || prop.rent_max;
+			const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
+			const isPUMI = prop.is_pumi || prop.isPUMI;
+
 			tr.innerHTML = `
 				<td><input type="checkbox" class="listing-checkbox" data-listing-id="${prop.id}"></td>
 				<td data-sort="name">
 					<div class="lead-name">
-						${prop.name}
-						${prop.isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
+						${communityName}
+						${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
 						${prop.markForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
 					</div>
-					<div class="subtle mono">${prop.address}</div>
+					<div class="subtle mono">${address}</div>
 					<div class="community-details">
 						<span class="market-info">${prop.market}</span>
-						<span class="beds-baths">${prop.beds_min}-${prop.beds_max} bed / ${prop.baths_min}-${prop.baths_max} bath</span>
+						<span class="beds-baths">${bedRange} / ${bathRange}</span>
 					</div>
 					<div class="community-meta">
 						<div class="listing-controls">
 							${state.role === 'manager' ? `
-								<div class="gear-icon" data-property-id="${prop.id}" data-property-name="${prop.name}" title="Edit Listing & Mark PUMI">
+								<div class="gear-icon" data-property-id="${prop.id}" data-property-name="${communityName}" title="Edit Listing & Mark PUMI">
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
 										<path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
 									</svg>
 								</div>
 							` : ''}
-							<div class="interest-count" data-property-id="${prop.id}" data-property-name="${prop.name}">
+							<div class="interest-count" data-property-id="${prop.id}" data-property-name="${communityName}">
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #ef4444;">
 									<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 								</svg>
 								<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
 							</div>
 						</div>
-						<div class="last-updated">Updated: ${formatDate(prop.pricing_last_updated)}</div>
+						<div class="last-updated">Updated: ${formatDate(prop.pricing_last_updated || prop.last_updated)}</div>
 					</div>
 				</td>
-				<td class="mono" data-sort="rent_min">$${prop.rent_min} - $${prop.rent_max}</td>
-				<td class="mono" data-sort="commission_pct">${Math.max(prop.escort_pct, prop.send_pct)}%</td>
+				<td class="mono" data-sort="rent_min">$${rentMin} - $${rentMax}</td>
+				<td class="mono" data-sort="commission_pct">${commission}%</td>
+				<td style="text-align: center;">
+					${prop.notesCount > 0 ? `
+						<span class="notes-icon" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" style="cursor: pointer; font-size: 20px;" title="${prop.notesCount} note(s)">
+							📝
+						</span>
+					` : ''}
+				</td>
 			`;
-			
+
 			// Add click handler to table row
 			tr.addEventListener('click', (e) => {
 				// Don't trigger if clicking on gear icon or heart icon
@@ -2961,7 +3193,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				selectProperty(prop);
 				}
 			});
-			
+
 			// Add gear icon click handler (manager only)
 			if (state.role === 'manager') {
 				const gearIcon = tr.querySelector('.gear-icon');
@@ -2972,7 +3204,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					});
 				}
 			}
-			
+
 			// Add interest count click handler
 			const interestCount = tr.querySelector('.interest-count');
 			if (interestCount) {
@@ -2984,7 +3216,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					openInterestedLeads(prop.id, prop.name);
 				});
 			}
-			
+
 			tbody.appendChild(tr);
 		});
 
@@ -2992,7 +3224,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		if (map) {
 			console.log('Map exists, clearing markers and adding new ones');
 			clearMarkers();
-			
+
 			// Add markers directly
 			if (filtered.length > 0) {
 				console.log('Adding', filtered.length, 'markers to map');
@@ -3004,15 +3236,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		} else {
 			console.log('Map not available yet');
 		}
-		
+
 		// Ensure map fills container after rendering
 		setTimeout(() => {
 			if (map) map.resize();
 		}, 100);
-		
+
 		// Update sort headers
 		updateSortHeaders('listingsTable');
-		
+
 		// Debug table column widths
 		console.log('=== TABLE WIDTH DEBUG ===');
 		const table = document.getElementById('listingsTable');
@@ -3021,12 +3253,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			cols.forEach((col, i) => {
 				console.log(`Column ${i + 1}:`, col.textContent.trim(), 'Width:', col.offsetWidth + 'px');
 			});
-			
+
 			const firstCol = table.querySelector('th:first-child');
 			if (firstCol) {
 				console.log('First column computed style:', getComputedStyle(firstCol).width);
 				console.log('First column offsetWidth:', firstCol.offsetWidth);
 			}
+		}
+		} catch (error) {
+			console.error('Error rendering listings:', error);
+			toast('Error loading listings', 'error');
+			tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading listings. Please try again.</td></tr>';
 		}
 	}
 
@@ -3059,9 +3296,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		show(document.getElementById('leadDrawer'));
 	}
 
-	function closeDrawer(){ 
+	function closeDrawer(){
 		console.log('closeDrawer called'); // Debug
-		hide(document.getElementById('leadDrawer')); 
+		hide(document.getElementById('leadDrawer'));
 	}
 
 	// ---- Agent Drawer ----
@@ -3070,7 +3307,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const agent = mockAgents.find(a => a.id === agentId);
 		const stats = getAgentStats(agentId);
 		const c = document.getElementById('agentDrawerContent');
-		
+
 		c.innerHTML = `
 			<div class="field"><label>Agent Name</label><div class="value">${agent.name}</div></div>
 			<div class="field"><label>Contact</label><div class="value">${agent.email} · ${agent.phone}</div></div>
@@ -3100,7 +3337,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	function openDocumentDetails(leadId) {
 		const lead = mockLeads.find(l => l.id === leadId);
 		const docStatus = mockDocumentStatuses[leadId];
-		
+
 		if (!lead || !docStatus) {
 			toast('Document details not available for this lead');
 			return;
@@ -3179,11 +3416,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const grid = document.getElementById('listingsGrid');
 		const list = await api.getMatches(leadId, 10);
 		state.currentMatches = list;
-		
+
 		// Update modal title and send button
 		document.getElementById('leadNameTitle2').textContent = lead.name;
 		document.getElementById('sendLeadName').textContent = lead.name;
-		
+
 		grid.innerHTML = '';
 		list.forEach(item => {
 			const card = document.createElement('article');
@@ -3235,21 +3472,21 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	// ---- Email Preview Modal ----
 	async function openEmailPreview(){
 		const lead = await api.getLead(state.selectedLeadId);
-		const selectedProperties = state.currentMatches.filter(prop => 
+		const selectedProperties = state.currentMatches.filter(prop =>
 			state.selectedMatches.has(prop.id)
 		);
-		
+
 		// Update email content
 		document.getElementById('previewLeadName').textContent = lead.name;
 		document.getElementById('previewAgentEmail').textContent = 'agent@trecrm.com';
 		document.getElementById('agentEmail').textContent = 'agent@trecrm.com';
 		document.getElementById('emailRecipient').textContent = `To: ${lead.email}`;
 		document.getElementById('previewAgentName').textContent = 'Your Agent';
-		
+
 		// Render selected properties
 		const propertiesGrid = document.getElementById('previewProperties');
 		propertiesGrid.innerHTML = '';
-		
+
 		selectedProperties.forEach(property => {
 			const card = document.createElement('div');
 			card.className = 'preview-property-card';
@@ -3265,30 +3502,30 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			`;
 			propertiesGrid.appendChild(card);
 		});
-		
+
 		// Close matches modal and open email preview
 		closeMatches();
 		show(document.getElementById('emailPreviewModal'));
 	}
 
-	function closeEmailPreview(){ 
-		hide(document.getElementById('emailPreviewModal')); 
+	function closeEmailPreview(){
+		hide(document.getElementById('emailPreviewModal'));
 	}
 
 	function previewLandingPage() {
 		// Get the selected properties from the current showcase
 		const selectedProperties = Array.from(state.selectedMatches);
 		const propertyIds = selectedProperties.join(',');
-		
+
 		// Get current agent name (in real app, this would come from user data)
 		const agentName = 'John Smith'; // This would be dynamic in production
-		
+
 		// Create a preview URL with sample data
 		const previewUrl = `landing.html?showcase=preview_${Date.now()}&lead=sample_lead&agent=${encodeURIComponent(agentName)}&properties=${propertyIds}`;
-		
+
 		// Open in a new tab
 		window.open(previewUrl, '_blank');
-		
+
 		toast('Opening landing page preview in new tab...');
 	}
 
@@ -3297,17 +3534,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		console.log('=== OPENING INTERESTED LEADS ===');
 		console.log('propertyId:', propertyId);
 		console.log('propertyName:', propertyName);
-		
+
 		const modal = document.getElementById('interestedLeadsModal');
 		console.log('Modal element:', modal);
-		
+
 		if (!modal) {
 			console.error('Modal not found!');
 			return;
 		}
-		
+
 		document.getElementById('propertyName').textContent = propertyName;
-		
+
 		try {
 			const interests = await api.getInterestedLeads(propertyId);
 			console.log('Fetched interests:', interests);
@@ -3330,7 +3567,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	function renderInterestedLeads(interests) {
 		console.log('renderInterestedLeads called with:', interests);
 		const content = document.getElementById('interestedLeadsList');
-		
+
 		if (interests.length === 0) {
 			console.log('No interests found, showing empty state');
 			content.innerHTML = `
@@ -3368,19 +3605,19 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	async function sendShowcaseEmail(){
 		const lead = await api.getLead(state.selectedLeadId);
-		const selectedProperties = state.currentMatches.filter(prop => 
+		const selectedProperties = state.currentMatches.filter(prop =>
 			state.selectedMatches.has(prop.id)
 		);
 		const includeReferralBonus = document.getElementById('referralBonus').checked;
 		const includeMovingBonus = document.getElementById('movingBonus').checked;
-		
+
 		// Generate unique showcase ID for tracking
 		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-		
+
 		// Create landing page URL with tracking parameters
 		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
 		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${Array.from(state.selectedMatches).join(',')}`;
-		
+
 		// Create bonus perks text
 		let bonusPerks = '';
 		if (includeReferralBonus || includeMovingBonus) {
@@ -3393,7 +3630,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			}
 			bonusPerks += '</ul>';
 		}
-		
+
 		// Create email content
 		const emailContent = {
 			to: lead.email,
@@ -3404,27 +3641,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 						<h1 style="color: #1e293b; margin-bottom: 10px;">🏠 Your Perfect Home Awaits</h1>
 						<p style="color: #64748b; font-size: 18px;">Hand-picked properties just for you by our expert team</p>
 					</div>
-					
+
 					<div style="padding: 30px;">
 						<p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hi ${lead.name},</p>
-						
+
 						<p style="font-size: 16px; color: #374151; margin-bottom: 20px;">We have some great fits for you! Go through me and you'll get these perks:</p>
-						
+
 						<ul style="margin: 20px 0; padding-left: 0; list-style: none;">
 							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🎯 <strong>Exclusive access</strong> to properties before they hit the market</li>
 							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">💰 <strong>Better pricing</strong> through our direct relationships</li>
 							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">⚡ <strong>Priority scheduling</strong> for property tours</li>
 							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🛡️ <strong>Expert guidance</strong> throughout your search</li>
 						</ul>
-						
+
 						${bonusPerks}
-						
+
 						<p style="font-size: 16px; color: #374151; margin-bottom: 30px;">Here's a list of options based on what you're looking for. Click which ones you're interested in and hit submit, and then we'll schedule you to go take a look at them!</p>
-						
+
 						<div style="text-align: center; margin: 30px 0;">
 							<a href="${landingUrl}" style="background: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">View Your Personalized Property Matches</a>
 						</div>
-						
+
 						<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #4b5563; font-size: 14px;">
 							<p>Best regards,<br>Your Agent<br>TRE CRM Team</p>
 						</div>
@@ -3432,11 +3669,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				</div>
 			`
 		};
-		
+
 		try {
 			// Send email via API
 			await api.sendEmail(emailContent);
-			
+
 			// Create showcase record in database
 			await api.createShowcase({
 				lead_id: lead.id,
@@ -3446,30 +3683,30 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				showcase_id: showcaseId,
 				landing_url: landingUrl
 			});
-			
+
 			toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
 			closeEmailPreview();
-			
+
 		} catch (error) {
 			console.error('Error sending showcase email:', error);
 			toast('Error sending email. Please try again.');
 		}
 	}
-	
+
 	function updateSelectionSummary(){
 		const checkboxes = document.querySelectorAll('.listing-check');
 		const checked = Array.from(checkboxes).filter(cb => cb.checked);
 		const selectedCount = document.getElementById('selectedCount');
 		const sendBtn = document.getElementById('sendBtn');
-		
+
 		selectedCount.textContent = checked.length;
 		sendBtn.disabled = checked.length === 0;
-		
+
 		// Update state
 		state.selectedMatches.clear();
 		checked.forEach(cb => state.selectedMatches.add(cb.dataset.id));
 	}
-	
+
 	function updateCreateShowcaseBtn(){
 		const btn = document.getElementById('createShowcase');
 		btn.disabled = state.selectedMatches.size === 0;
@@ -3500,12 +3737,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Populate lead dropdown with leads assigned to current agent
 		const leadSelect = document.getElementById('buildShowcaseLead');
 		leadSelect.innerHTML = '<option value="">Choose a lead...</option>';
-		
+
 		// Get leads assigned to current agent (in real app, this would filter by agent)
-		const agentLeads = mockLeads.filter(lead => 
+		const agentLeads = mockLeads.filter(lead =>
 			lead.assigned_agent_id === state.agentId || state.role === 'manager'
 		);
-		
+
 		agentLeads.forEach(lead => {
 			const option = document.createElement('option');
 			option.value = lead.id;
@@ -3548,8 +3785,8 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		show(document.getElementById('buildShowcaseModal'));
 	}
 
-	function closeBuildShowcase(){ 
-		hide(document.getElementById('buildShowcaseModal')); 
+	function closeBuildShowcase(){
+		hide(document.getElementById('buildShowcaseModal'));
 	}
 
 	function getSelectedListings(){
@@ -3591,11 +3828,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		// Generate unique showcase ID for tracking
 		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-		
+
 		// Create landing page URL with tracking parameters
 		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
 		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${selectedListings.map(p => p.id).join(',')}`;
-		
+
 		// Create email content with bonus information
 		let bonusText = '';
 		if (includeReferralBonus || includeMovingBonus) {
@@ -3608,7 +3845,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			}
 			bonusText += '</ul>';
 		}
-		
+
 		const emailContent = {
 			to: lead.email,
 			subject: 'Top options hand picked for you',
@@ -3632,11 +3869,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			`,
 			showcase_id: showcaseId
 		};
-		
+
 		try {
 			// Send email via API
 			await api.sendEmail(emailContent);
-			
+
 			// Create showcase record in database
 			await api.createShowcase({
 				lead_id: lead.id,
@@ -3646,14 +3883,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				showcase_id: showcaseId,
 				landing_url: landingUrl
 			});
-			
+
 			toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
 			closeBuildShowcase();
-			
+
 			// Clear selections
 			document.querySelectorAll('.listing-checkbox:checked').forEach(cb => cb.checked = false);
 			updateBuildShowcaseButton();
-			
+
 		} catch (error) {
 			console.error('Error sending showcase email:', error);
 			toast('Error sending email. Please try again.');
@@ -3907,16 +4144,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				e.preventDefault();
 				return;
 			}
-			
+
 				const view = e.target.closest('button[data-view-agent]');
 				if (view){ openAgentDrawer(view.dataset.viewAgent); return; }
 				const remove = e.target.closest('button[data-remove]');
-				if (remove){ 
+				if (remove){
 					if (confirm('Are you sure you want to remove this agent?')) {
 						toast('Agent removed (mock action)');
 						renderAgents();
 					}
-					return; 
+					return;
 				}
 				const edit = e.target.closest('button[data-edit]');
 				if (edit){ toast('Edit agent info (mock action)'); return; }
@@ -3924,7 +4161,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				if (assignLeads){ toast('Assign leads to agent (mock action)'); return; }
 			});
 		}
-		
+
 		// listings table delegation
 		const listingsTableEl = document.getElementById('listingsTable');
 		if (listingsTableEl) {
@@ -3938,7 +4175,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					e.preventDefault();
 					return;
 				}
-				
+
 				// Handle interested leads clicks
 				const interestedBtn = e.target.closest('.interest-count');
 				if (interestedBtn) {
@@ -3987,7 +4224,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				}
 			}
 		});
-		
+
 		// assignment change
 		if (leadsTableEl) {
 			leadsTableEl.addEventListener('change', async (e)=>{
@@ -4025,14 +4262,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		document.addEventListener('click', (e) => {
 			const leadDrawer = document.getElementById('leadDrawer');
 			const agentDrawer = document.getElementById('agentDrawer');
-			
+
 			// Close lead drawer if clicking outside
 			if (leadDrawer && !leadDrawer.classList.contains('hidden')) {
 				if (!leadDrawer.contains(e.target) && !e.target.closest('[data-view]')) {
 					closeDrawer();
 				}
 			}
-			
+
 			// Close agent drawer if clicking outside
 			if (agentDrawer && !agentDrawer.classList.contains('hidden')) {
 				if (!agentDrawer.contains(e.target) && !e.target.closest('[data-view-agent]')) {
@@ -4114,7 +4351,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				const leadId = e.target.value;
 				const leadNameEl = document.getElementById('buildSendLeadName');
 				const sendBtn = document.getElementById('sendBuildShowcase');
-				
+
 				if (leadId) {
 					const lead = mockLeads.find(l => l.id === leadId);
 					if (lead) {
@@ -4344,7 +4581,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					hideModal('passwordModal');
 					document.getElementById('newPassword').value = '';
 					document.getElementById('confirmNewPassword').value = '';
-					
+
 				} catch (error) {
 					console.error('Error changing password:', error);
 					toast('Error changing password: ' + error.message, 'error');
@@ -4458,7 +4695,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					e.preventDefault();
 					return;
 				}
-				
+
 				// Handle edit button
 				const editBtn = e.target.closest('.edit-special');
 				if (editBtn) {
@@ -4466,7 +4703,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					toast('Edit special functionality coming soon!', 'info');
 					return;
 				}
-				
+
 				// Handle delete button
 				const deleteBtn = e.target.closest('.delete-special');
 				if (deleteBtn) {
@@ -4508,7 +4745,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				}
 			});
 		}
-		
+
 		const previewLandingBtnEl = document.getElementById('previewLandingBtn');
 		if (previewLandingBtnEl) {
 			previewLandingBtnEl.addEventListener('click', previewLandingPage);
@@ -4671,13 +4908,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const clearListingsFiltersEl = document.getElementById('clearListingsFilters');
 		if (clearListingsFiltersEl) {
 			clearListingsFiltersEl.addEventListener('click', () => {
-				state.listingsFilters = { 
-					search: '', 
-					market: 'all', 
-					minPrice: '', 
-					maxPrice: '', 
-					beds: 'any', 
-					commission: '0', 
+				state.listingsFilters = {
+					search: '',
+					market: 'all',
+					minPrice: '',
+					maxPrice: '',
+					beds: 'any',
+					commission: '0',
 					amenities: 'any',
 					pumiOnly: false
 				};
@@ -4693,13 +4930,49 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			});
 		}
 
+		// Add Listing button and modal
+		const addListingBtn = document.getElementById('addListingBtn');
+		if (addListingBtn) {
+			addListingBtn.addEventListener('click', openAddListingModal);
+		}
+
+		const closeAddListing = document.getElementById('closeAddListing');
+		const cancelAddListing = document.getElementById('cancelAddListing');
+		const saveListingBtn = document.getElementById('saveListingBtn');
+
+		if (closeAddListing) {
+			closeAddListing.addEventListener('click', closeAddListingModal);
+		}
+		if (cancelAddListing) {
+			cancelAddListing.addEventListener('click', closeAddListingModal);
+		}
+		if (saveListingBtn) {
+			saveListingBtn.addEventListener('click', createListing);
+		}
+
+		// Property Notes modal
+		const closePropertyNotes = document.getElementById('closePropertyNotes');
+		const cancelPropertyNotes = document.getElementById('cancelPropertyNotes');
+		const savePropertyNoteBtn = document.getElementById('savePropertyNoteBtn');
+
+		if (closePropertyNotes) {
+			closePropertyNotes.addEventListener('click', closePropertyNotesModal);
+		}
+		if (cancelPropertyNotes) {
+			cancelPropertyNotes.addEventListener('click', closePropertyNotesModal);
+		}
+		if (savePropertyNoteBtn) {
+			savePropertyNoteBtn.addEventListener('click', addPropertyNote);
+		}
+
+
 		// Initialize popover elements
 		initPopover();
 
 		// Health status hover events - using event delegation on the table
 		const leadsTable = document.getElementById('leadsTable');
 		console.log('Leads table found:', !!leadsTable); // Debug
-		
+
 		leadsTable.addEventListener('mouseenter', (e)=>{
 			console.log('Mouse enter event:', e.target); // Debug
 			const btn = e.target.closest('.health-btn');
@@ -4718,7 +4991,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		leadsTable.addEventListener('click', (e)=>{
 			console.log('Click event:', e.target); // Debug
-			
+
 			// Handle sorting
 			const sortableHeader = e.target.closest('th[data-sort]');
 			if (sortableHeader) {
@@ -4727,7 +5000,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				e.preventDefault();
 				return;
 			}
-			
+
 			const btn = e.target.closest('.health-btn');
 			console.log('Health button clicked:', !!btn, btn?.dataset.status); // Debug
 			if (btn) {
@@ -4768,7 +5041,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		testBtn.style.zIndex = '9999';
 		testBtn.innerHTML = '<span class="health-dot health-green"></span>';
 		document.body.appendChild(testBtn);
-		
+
 		setTimeout(() => {
 			showPopover(testBtn, 'green');
 		}, 100);
@@ -4779,7 +5052,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.log('Click detected on:', e.target);
 			console.log('Target classList:', e.target.classList);
 			console.log('Target parent:', e.target.parentElement);
-			
+
 			// Check if clicked element is expand button or inside expand button
 			const expandBtn = e.target.closest('.expand-btn');
 			if (expandBtn) {
@@ -4821,7 +5094,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Bug filters
 		const bugStatusFilter = document.getElementById('bugStatusFilter');
 		const bugPriorityFilter = document.getElementById('bugPriorityFilter');
-		
+
 		if (bugStatusFilter) {
 			bugStatusFilter.addEventListener('change', renderBugs);
 		}
@@ -4841,21 +5114,21 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					e.preventDefault();
 					return;
 				}
-				
+
 				// Handle view button
 				const viewBtn = e.target.closest('.view-bug');
 				if (viewBtn) {
 					showBugDetails(viewBtn.dataset.id);
 					return;
 				}
-				
+
 				// Handle save button
 				const saveBtn = e.target.closest('.save-bug');
 				if (saveBtn) {
 					saveBugChanges(saveBtn.dataset.id);
 					return;
 				}
-				
+
 				// Handle delete button
 				const deleteBtn = e.target.closest('.delete-bug');
 				if (deleteBtn) {
@@ -4872,13 +5145,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Bug Details Modal close functionality
 		const closeBugDetailsModal = document.getElementById('closeBugDetailsModal');
 		const closeBugDetailsModalBtn = document.getElementById('closeBugDetailsModalBtn');
-		
+
 		if (closeBugDetailsModal) {
 			closeBugDetailsModal.addEventListener('click', () => {
 				hideModal('bugDetailsModal');
 			});
 		}
-		
+
 		if (closeBugDetailsModalBtn) {
 			closeBugDetailsModalBtn.addEventListener('click', () => {
 				hideModal('bugDetailsModal');
@@ -4959,7 +5232,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	// ---- Listing Edit Modal ----
 	function openListingEditModal(property) {
 		console.log('Opening listing edit modal for:', property);
-		
+
 		// Populate the modal with current property data
 		document.getElementById('editListingName').textContent = property.name;
 		document.getElementById('editPropertyName').value = property.name;
@@ -4980,23 +5253,23 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		document.getElementById('editBonus').value = property.bonus_text || '';
 		document.getElementById('editIsPUMI').checked = property.isPUMI || false;
 		document.getElementById('editMarkForReview').checked = property.markForReview || false;
-		
+
 		// Store the current property for saving
 		window.currentEditingProperty = property;
-		
+
 		// Show the modal
 		showModal('listingEditModal');
 	}
-	
+
 	function closeListingEditModal() {
 		hideModal('listingEditModal');
 		window.currentEditingProperty = null;
 	}
-	
+
 	function saveListingEdit() {
 		const property = window.currentEditingProperty;
 		if (!property) return;
-		
+
 		// Get form data
 		const formData = {
 			name: document.getElementById('editPropertyName').value,
@@ -5018,13 +5291,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			isPUMI: document.getElementById('editIsPUMI').checked,
 			markForReview: document.getElementById('editMarkForReview').checked
 		};
-		
+
 		// Update the property object
 		Object.assign(property, formData);
-		
+
 		// Show success message
 		toast(`Listing "${property.name}" updated successfully!`);
-		
+
 		// Close modal and refresh display
 		closeListingEditModal();
 		renderListings();
@@ -5049,7 +5322,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	window.editUser = editUser;
 	window.changePassword = changePassword;
 	window.deleteUser = deleteUser;
-	
+
+	// Global functions for property notes
+	window.openPropertyNotesModal = openPropertyNotesModal;
+
 	// Expose state to global scope
 	window.state = state;
 })();
@@ -5062,7 +5338,7 @@ function updateSortHeaders(tableId) {
 		console.log('Table not found:', tableId);
 		return;
 	}
-	
+
 	const currentState = window.state || { sort: { key: null, dir: null } };
 	console.log('updateSortHeaders - currentState.sort:', currentState.sort);
 	const headers = table.querySelectorAll('th[data-sort]');
@@ -5070,7 +5346,7 @@ function updateSortHeaders(tableId) {
 	headers.forEach(header => {
 		const column = header.dataset.sort;
 		const icon = header.querySelector('.sort-icon');
-		
+
 		if (column === currentState.sort.key && currentState.sort.dir !== 'none') {
 			header.classList.add('sorted');
 			if (icon) {
@@ -5116,17 +5392,17 @@ async function loadUsers() {
 
 async function loadAuditLog() {
 	// Check if we're running locally or on production
-	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-		? 'http://localhost:3001/api' 
+	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+		? 'http://localhost:3001/api'
 		: null;
-		
+
 	if (!apiBase) {
 		console.log('API_BASE not available, using mock data');
 		realAuditLog = [];
 		renderAuditLog();
 		return;
 	}
-	
+
 	try {
 		const response = await fetch(`${apiBase}/audit-log`);
 		if (!response.ok) throw new Error('Failed to fetch audit log');
@@ -5178,11 +5454,11 @@ async function createUser(userData) {
 
 async function updateUser(userId, userData) {
 	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-			? 'http://localhost:3001/api' 
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+			? 'http://localhost:3001/api'
 			: null;
 		if (!apiBase) throw new Error('API not available in production');
-		
+
 		const response = await fetch(`${apiBase}/users/${userId}`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
@@ -5205,11 +5481,11 @@ async function updateUser(userId, userData) {
 
 async function deleteUserFromAPI(userId) {
 	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-			? 'http://localhost:3001/api' 
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+			? 'http://localhost:3001/api'
 			: null;
 		if (!apiBase) throw new Error('API not available in production');
-		
+
 		const response = await fetch(`${apiBase}/users/${userId}`, {
 			method: 'DELETE',
 			headers: { 'Content-Type': 'application/json' },
@@ -5229,11 +5505,11 @@ async function deleteUserFromAPI(userId) {
 
 async function changeUserPassword(userId, newPassword) {
 	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
-			? 'http://localhost:3001/api' 
+		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+			? 'http://localhost:3001/api'
 			: null;
 		if (!apiBase) throw new Error('API not available in production');
-		
+
 		const response = await fetch(`${apiBase}/users/${userId}/password`, {
 			method: 'PUT',
 			headers: { 'Content-Type': 'application/json' },
@@ -5253,11 +5529,11 @@ async function changeUserPassword(userId, newPassword) {
 async function renderAdmin() {
 	const currentRole = window.state?.role || 'manager';
 	const adminRoleLabel = document.getElementById('adminRoleLabel');
-	
+
 	if (adminRoleLabel) {
 		adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
 	}
-	
+
 	// Load real data from API
 	try {
 		await loadUsers();
@@ -5267,7 +5543,7 @@ async function renderAdmin() {
 		// Fallback to mock data for demo
 		console.log('Using mock data for admin page');
 	}
-	
+
 	// Always render the table (either with real data or mock data)
 	renderUsersTable();
 	renderAuditLog();
@@ -5284,7 +5560,7 @@ function renderUsersTable() {
 	// Use real users from Supabase (no mock data fallback)
 	let users = realUsers.length > 0 ? [...realUsers] : [];
 	console.log('Users to render:', users.length);
-	
+
 	// Apply sorting if active
 	const currentState = window.state || { sort: { key: null, dir: null } };
 	console.log('renderUsersTable - currentState.sort:', currentState.sort);
@@ -5293,7 +5569,7 @@ function renderUsersTable() {
 		try {
 			users.sort((a, b) => {
 				let aVal, bVal;
-				
+
 				if (currentState.sort.key === 'name') {
 					aVal = (a.name || '').toLowerCase();
 					bVal = (b.name || '').toLowerCase();
@@ -5309,7 +5585,7 @@ function renderUsersTable() {
 				} else {
 					return 0;
 				}
-				
+
 				// Handle date sorting
 				if (currentState.sort.key === 'created_at') {
 					return currentState.sort.dir === 'asc' ? aVal - bVal : bVal - aVal;
@@ -5326,11 +5602,11 @@ function renderUsersTable() {
 			console.error('Error sorting users:', error);
 		}
 	}
-	
+
 	tbody.innerHTML = users.map(user => {
-		const createdBy = user.created_by === 'system' ? 'System' : 
+		const createdBy = user.created_by === 'system' ? 'System' :
 			users.find(u => u.id === user.created_by)?.name || 'Unknown';
-		
+
 		return `
 			<tr>
 				<td data-sort="${user.name}">${user.name}</td>
@@ -5367,7 +5643,7 @@ function renderUsersTable() {
 			</tr>
 		`;
 	}).join('');
-	
+
 	// Update sort headers
 	updateSortHeaders('usersTable');
 }
@@ -5386,7 +5662,7 @@ function renderAuditLog() {
 			role_changed: '🔄',
 			password_changed: '🔐'
 		};
-		
+
 		return `
 			<div class="audit-entry">
 				<div class="audit-icon ${entry.action}">
@@ -5395,7 +5671,7 @@ function renderAuditLog() {
 				<div class="audit-content">
 					<div class="audit-action">${entry.details}</div>
 					<div class="audit-details">
-						User: ${entry.user_name} (${entry.user_email}) | 
+						User: ${entry.user_name} (${entry.user_email}) |
 						By: ${entry.performed_by_name}
 					</div>
 				</div>
@@ -5414,7 +5690,7 @@ function editUser(userId) {
 		console.log('User not found:', userId);
 		return;
 	}
-	
+
 	document.getElementById('userModalTitle').textContent = 'Edit User';
 	document.getElementById('userName').value = user.name;
 	document.getElementById('userEmail').value = user.email;
@@ -5423,10 +5699,10 @@ function editUser(userId) {
 	document.getElementById('userConfirmPassword').value = '';
 	document.getElementById('userPassword').required = false;
 	document.getElementById('userConfirmPassword').required = false;
-	
+
 	// Store user ID for update
 	document.getElementById('userModal').setAttribute('data-user-id', userId);
-	
+
 	showModal('userModal');
 }
 
@@ -5439,7 +5715,7 @@ function changePassword(userId) {
 		console.log('User not found for password change:', userId);
 		return;
 	}
-	
+
 	document.getElementById('passwordModal').setAttribute('data-user-id', userId);
 	showModal('passwordModal');
 }
@@ -5453,7 +5729,7 @@ async function deleteUser(userId) {
 		console.log('User not found for deletion:', userId);
 		return;
 	}
-	
+
 	if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
 		try {
 			if (realUsers.length > 0) {

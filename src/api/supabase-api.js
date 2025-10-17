@@ -215,19 +215,123 @@ export async function getProperties({ search, market, minPrice, maxPrice, beds, 
 
 export async function getProperty(id) {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('properties')
         .select('*')
         .eq('id', id)
         .single();
-    
+
     if (error) {
         console.error('Error fetching property:', error);
         throw error;
     }
-    
+
     return data;
+}
+
+export async function createProperty(propertyData) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('properties')
+        .insert([propertyData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating property:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function updateProperty(id, propertyData) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('properties')
+        .update(propertyData)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating property:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function deleteProperty(id) {
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('properties')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting property:', error);
+        throw error;
+    }
+
+    return { success: true };
+}
+
+/**
+ * Property Notes API
+ */
+export async function getPropertyNotes(propertyId) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('property_notes')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching property notes:', error);
+        throw error;
+    }
+
+    return data || [];
+}
+
+export async function createPropertyNote(noteData) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('property_notes')
+        .insert([noteData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating property note:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function deletePropertyNote(noteId) {
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('property_notes')
+        .delete()
+        .eq('id', noteId);
+
+    if (error) {
+        console.error('Error deleting property note:', error);
+        throw error;
+    }
+
+    return { success: true };
 }
 
 /**
