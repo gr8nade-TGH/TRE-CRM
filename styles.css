@@ -1,9 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 
-/* ========================================
-   CSS VARIABLES & RESET
-   ======================================== */
-
 :root {
   --bg: #f6f7f9;
   --panel: #ffffff;
@@ -23,10 +19,6 @@
   --danger: #ef4444;
 }
 
-/* ========================================
-   BASE STYLES & RESET
-   ======================================== */
-
 * { box-sizing: border-box; }
 body { 
   margin: 0; 
@@ -38,10 +30,6 @@ body {
 }
 
 .hidden { display: none !important; }
-
-/* ========================================
-   LAYOUT & HEADER
-   ======================================== */
 
 .app-header { 
   position: sticky; 
@@ -71,11 +59,6 @@ body {
   text-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 .app-header .main-nav { display: flex; gap: 32px; }
-
-/* ========================================
-   NAVIGATION STYLES
-   ======================================== */
-
 .app-header .nav-link { 
   font-family: 'Inter', sans-serif;
   color: #fff; 
@@ -113,10 +96,6 @@ body {
   color: var(--ink);
   font-weight: 500;
 }
-
-/* ========================================
-   MAIN CONTENT & VIEWS
-   ======================================== */
 
 .view-bar { 
   display: flex; 
@@ -168,10 +147,7 @@ body {
   box-shadow: 0 0 0 3px rgba(21, 62, 122, 0.1);
 }
 
-/* ========================================
-   FILTERS & SEARCH
-   ======================================== */
-
+/* Filters */
 .filters {
   display: flex;
   align-items: end;
@@ -221,10 +197,6 @@ body {
   flex: 1;
 }
 
-/* ========================================
-   TABLES & DATA DISPLAY
-   ======================================== */
-
 .table-wrapper { 
   background: #f1f5f9; 
   margin: 0 24px 24px; 
@@ -258,7 +230,10 @@ body {
   border-spacing: 0; 
 }
 
-/* Listings table specific styles - min-width removed to allow column width changes */
+/* Listings table specific styles */
+#listingsTable {
+  min-width: 700px; /* Ensure table has minimum width */
+}
 
 #listingsTable th,
 #listingsTable td {
@@ -267,44 +242,14 @@ body {
   text-overflow: ellipsis;
 }
 
-/* Fire emoji pulsing red glow effect */
-.nav-link[data-page="specials"] {
-	animation: fire-pulse 2s infinite;
-	text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.4);
-}
-
-@keyframes fire-pulse {
-	0%, 100% {
-		transform: scale(1);
-		text-shadow: 0 0 10px rgba(239, 68, 68, 0.8), 0 0 20px rgba(239, 68, 68, 0.6), 0 0 30px rgba(239, 68, 68, 0.4);
-	}
-	50% {
-		transform: scale(1.1);
-		text-shadow: 0 0 15px rgba(239, 68, 68, 1), 0 0 25px rgba(239, 68, 68, 0.8), 0 0 35px rgba(239, 68, 68, 0.6);
-	}
-}
-
-/* Percentage-based column widths - this approach worked before */
-#listingsTable {
-	table-layout: fixed !important;
-	width: 100% !important;
-}
-
-#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { 
-	width: 8% !important; 
-} /* Checkbox */
-
-#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { 
-	width: 35% !important; 
-} /* Community */
-
-#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { 
-	width: 32% !important; 
-} /* Rent Range */
-
-#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { 
-	width: 25% !important; 
-} /* Commission */
+/* Optimize column widths for listings table */
+#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 220px; min-width: 200px; } /* Community */
+#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 140px; min-width: 120px; } /* Market */
+#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 140px; min-width: 120px; } /* Rent Range */
+#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Beds/Baths */
+#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 120px; min-width: 100px; } /* Commission */
+#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 140px; min-width: 120px; } /* Interested Leads */
+#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 160px; min-width: 140px; } /* Last Updated */
 .data-table thead th { 
   background: #1e293b; 
   text-align: left; 
@@ -380,10 +325,6 @@ body {
 }
 
 
-/* ========================================
-   BUTTONS & INTERACTIVE ELEMENTS
-   ======================================== */
-
 /* Build Showcase Button */
 .btn-success {
   background: linear-gradient(135deg, #22c55e, #16a34a);
@@ -417,7 +358,42 @@ body {
   margin: 0;
 }
 
-/* Removed conflicting CSS rules */
+/* Listings table layout - AGGRESSIVE FIX */
+#listingsTable {
+  table-layout: fixed !important;
+  width: 100% !important;
+}
+
+/* Checkbox column styling - FORCE NARROW */
+#listingsTable th:first-child,
+#listingsTable td:first-child {
+  width: 25px !important;
+  min-width: 25px !important;
+  max-width: 25px !important;
+  padding: 4px 8px !important;
+  text-align: center !important;
+  white-space: nowrap !important;
+  box-sizing: border-box !important;
+}
+
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  width: auto !important;
+}
+
+#listingsTable th:nth-child(3),
+#listingsTable td:nth-child(3) {
+  width: 120px !important;
+}
+
+#listingsTable th:nth-child(4),
+#listingsTable td:nth-child(4) {
+  width: 100px !important;
+}
+
+#listingsTable th:first-child {
+  border-right: none !important;
+}
 
 /* PUMI Label Styling */
 .pumi-label {
@@ -619,9 +595,10 @@ body {
   display: inline-block; 
 }
 
-/* Removed unused .select styles */
+.select { padding: 6px 8px; border: 1px solid #d0d5dd; border-radius: 6px; background: #fff; }
 
-/* Removed unused pagination styles */
+.pagination { display: flex; align-items: center; gap: 10px; padding: 12px 16px; }
+.pagination button { padding: 8px 10px; border: 1px solid #d0d5dd; background: #fff; border-radius: 8px; cursor: pointer; }
 
 .drawer { position: fixed; top: 0; right: 0; width: 420px; max-width: 100%; height: 100vh; background: #fff; border-left: 1px solid #e4e7ec; box-shadow: -10px 0 30px rgba(0,0,0,0.08); display: flex; flex-direction: column; z-index: 1000; }
 .drawer-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e4e7ec; background: #f8fbff; }
@@ -653,25 +630,21 @@ body {
 .field input, .field textarea, .field select { width: 100%; padding: 8px 10px; border: 1px solid #d0d5dd; border-radius: 8px; }
 .field .value { font-weight: 600; }
 
-/* ========================================
-   MODALS & OVERLAYS
-   ======================================== */
-
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
 .modal-card { background: #fff; width: 900px; max-width: 100%; border-radius: 12px; border: 1px solid #e4e7ec; overflow: hidden; }
 .modal-header { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid #e4e7ec; }
 .modal-actions { display: flex; align-items: center; gap: 12px; }
 .modal-sticky-header {
-  position: sticky;
-  top: 0;
-  background: #f8fbff;
+	position: sticky;
+	top: 0;
+	background: #f8fbff;
 	padding: 24px;
-  border-bottom: 1px solid #e4e7ec;
-  display: flex;
+	border-bottom: 1px solid #e4e7ec;
+	display: flex;
 	align-items: flex-start;
 	gap: 24px;
-  justify-content: space-between;
-  z-index: 10;
+	justify-content: space-between;
+	z-index: 10;
 }
 
 /* Showcase controls layout */
@@ -704,9 +677,9 @@ body {
 }
 
 .selection-count {
-  font-size: 14px;
+	font-size: 14px;
 	color: #6b7280;
-  font-weight: 500;
+	font-weight: 500;
 	text-align: right;
 }
 
@@ -726,15 +699,7 @@ body {
 	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 .modal-body { padding: 16px; max-height: 60vh; overflow: auto; }
-
-/* Consolidated modal-footer - removed duplicate */
-.modal-footer { 
-  padding: 20px 24px; 
-  border-top: 1px solid #e5e7eb; 
-  display: flex; 
-  gap: 12px; 
-  justify-content: flex-end; 
-}
+.modal-footer { padding: 12px 16px; border-top: 1px solid #e4e7ec; display: flex; gap: 10px; justify-content: flex-end; }
 
 /* Showcase Button Styles */
 .showcase-btn {
@@ -1315,38 +1280,108 @@ body {
 	height: 16px;
 }
 
-/* Removed unused .primary styles */
+.primary { background: #0b5; border: 1px solid #0a4; color: #fff; padding: 8px 14px; border-radius: 10px; cursor: pointer; }
+.primary:disabled { background: #a7f3d0; border-color: #86efac; cursor: not-allowed; }
 
 .form-row { display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px; }
 .form-row input, .form-row textarea { padding: 8px 10px; border: 1px solid #d0d5dd; border-radius: 8px; }
 
 .match-item { border: 1px solid #e4e7ec; border-radius: 10px; padding: 12px; margin-bottom: 10px; display: grid; grid-template-columns: 28px 1fr auto; gap: 12px; }
 .match-title { font-weight: 700; }
-/* Removed unused .subtle styles */
+.subtle { color: #667085; font-size: 12px; }
 
-/* Removed unused .toast styles */
+.toast { position: fixed; bottom: 20px; right: 20px; background: #111827; color: #fff; padding: 10px 14px; border-radius: 10px; box-shadow: 0 10px 20px rgba(0,0,0,0.2); }
 
-/* Removed unused public styles */
-/* Removed unused .public-card styles */
+.public-wrap { margin: 16px; background: #fff; border: 1px solid #e4e7ec; border-radius: 12px; overflow: hidden; }
+.public-header { padding: 16px; border-bottom: 1px solid #e4e7ec; }
+.public-banner { background: #ecfdf5; color: #065f46; border: 1px solid #a7f3d0; padding: 8px 10px; border-radius: 8px; display: inline-block; }
+.public-body { padding: 16px; }
+.public-card { 
+  border: 1px solid var(--rule); 
+  border-radius: 12px; 
+  padding: 16px; 
+  margin-bottom: 12px; 
+  background: var(--panel);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
 
-/* Removed unused .action-btn styles */
-/* Removed unused .action-btn variants */
+.action-btn { 
+  padding: 8px 12px; 
+  border: 2px solid var(--rule); 
+  background: #fff; 
+  border-radius: 8px; 
+  cursor: pointer; 
+  font-size: 12px; 
+  font-weight: 600;
+  margin-right: 6px; 
+  transition: all 0.2s ease;
+}
+.action-btn:hover { 
+  background: #f8fafc; 
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.action-btn.danger { 
+  color: var(--danger); 
+  border-color: #fca5a5; 
+}
+.action-btn.danger:hover { 
+  background: #fef2f2; 
+}
 
-/* Removed unused .stats-grid styles */
-/* Removed unused .stat-card styles */
+.stats-grid { 
+  display: grid; 
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); 
+  gap: 16px; 
+  margin-bottom: 20px; 
+}
+.stat-card { 
+  background: var(--panel); 
+  border: 1px solid var(--rule); 
+  border-radius: 12px; 
+  padding: 20px; 
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+.stat-card .label { 
+  font-size: 12px; 
+  color: var(--muted); 
+  margin-bottom: 8px; 
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.stat-card .value { 
+  font-size: 28px; 
+  font-weight: 800; 
+  color: var(--brand); 
+}
 
-/* Map Layout - aligned with search bar, minimal gap */
+/* Map Layout */
 .listings-layout { 
   display: grid; 
   grid-template-columns: 35% 65%; 
-  gap: 4px; /* Minimal gap */
-  margin: 0 24px 24px; /* Match filters margin for perfect alignment */
-  height: calc(100vh - 150px);
-  max-height: 900px;
+  gap: 20px; 
+  margin: 0 24px 24px;
+  height: calc(100vh - 150px); /* Increased height by ~10% (was 200px, now 150px) */
+  max-height: 900px; /* Increased max height by ~10% (was 800px, now 900px) */
 }
 
 
-/* Removed conflicting column width constraints */
+/* Column width constraints for listings table */
+#listingsTable th:nth-child(1),
+#listingsTable td:nth-child(1) {
+  width: 50%;
+}
+
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  width: 30%;
+}
+
+#listingsTable th:nth-child(3),
+#listingsTable td:nth-child(3) {
+  width: 20%;
+}
 
 /* Custom scrollbar for listings table */
 .listings-table-container::-webkit-scrollbar {
@@ -2100,10 +2135,6 @@ body {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* ========================================
-   UTILITIES & RESPONSIVE DESIGN
-   ======================================== */
-
 @media (max-width: 1100px) {
   .listings-layout { 
     grid-template-columns: 1fr; 
@@ -2438,113 +2469,6 @@ body {
 	.progress-step-label {
 		font-size: 9px;
 		max-width: 60px;
-	}
-	
-	/* Admin responsive */
-	.admin-content {
-		padding: 16px;
-	}
-	
-	.section-header {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 16px;
-	}
-	
-	.audit-entry {
-		flex-direction: column;
-		align-items: flex-start;
-		gap: 8px;
-	}
-	
-	.audit-timestamp {
-		margin-left: 0;
-	}
-	
-	/* Main content spacing */
-	main#appRoot {
-		padding-top: 10px;
-	}
-	
-	/* Bug flag mobile */
-	.bug-flag {
-		width: 45px;
-		height: 45px;
-		font-size: 20px;
-		right: 15px;
-	}
-	
-	/* Header mobile layout */
-	.app-header {
-		flex-wrap: wrap;
-		padding: 10px 15px;
-		gap: 10px;
-		min-height: auto;
-	}
-	
-	/* Brand mobile */
-	.brand {
-		flex-shrink: 0;
-	}
-	
-	.brand-logo {
-		height: 28px;
-		max-width: 120px;
-	}
-	
-	/* Navigation mobile - horizontal scroll */
-	.main-nav {
-		overflow-x: auto;
-		overflow-y: hidden;
-		scrollbar-width: none; /* Firefox */
-		-ms-overflow-style: none; /* IE/Edge */
-		flex-wrap: nowrap;
-		gap: 16px;
-		padding: 0 8px;
-	}
-	
-	.main-nav::-webkit-scrollbar {
-		display: none; /* Chrome/Safari */
-	}
-	
-	.nav-link {
-		flex-shrink: 0;
-		white-space: nowrap;
-		padding: 8px 12px;
-		font-size: 14px;
-	}
-	
-	/* Role switch mobile */
-	.role-switch {
-		flex-shrink: 0;
-	}
-	
-	.role-switch select {
-		font-size: 12px;
-		padding: 4px 8px;
-	}
-	
-	/* Touch-friendly buttons */
-	.btn {
-		min-height: 44px;
-		padding: 12px 16px;
-		font-size: 16px;
-	}
-	
-	/* Modal mobile */
-	.modal-card {
-		margin: 20px;
-		max-height: 90vh;
-		overflow-y: auto;
-	}
-	
-	/* Table horizontal scroll */
-	.data-table {
-		overflow-x: auto;
-	}
-	
-	input, select, textarea {
-		font-size: 16px; /* Prevents zoom on iOS */
 	}
 	
 	/* Removed lead-data-table responsive styles */
@@ -3026,7 +2950,21 @@ body {
 	color: var(--muted);
 }
 
-/* Removed duplicate responsive design - consolidated above */
+/* Responsive Design */
+@media (max-width: 768px) {
+	.progress-leads-container {
+		grid-template-columns: 1fr;
+	}
+	
+	.progress-card {
+		padding: 16px;
+	}
+	
+	.progress-step-label {
+		font-size: 10px;
+		max-width: 60px;
+	}
+}
 
 /* Admin Page Styles */
 .admin-content {
@@ -3214,13 +3152,41 @@ body {
 	color: #7c3aed;
 }
 
-/* Removed duplicate modal-footer rule - consolidated above */
+.modal-footer {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 20px 24px;
+	border-top: 1px solid #e5e7eb;
+	background: #f8fafc;
+}
 
 .field label input[type="checkbox"] {
 	margin-right: 8px;
 }
 
-/* Removed duplicate responsive admin - consolidated above */
+/* Responsive Admin */
+@media (max-width: 768px) {
+	.admin-content {
+		padding: 16px;
+	}
+	
+	.section-header {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 16px;
+	}
+	
+	.audit-entry {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 8px;
+	}
+	
+	.audit-timestamp {
+		margin-left: 0;
+	}
+}
 
 /* Desktop responsive scaling for Admin page */
 @media (min-width: 769px) {
@@ -3499,7 +3465,12 @@ main#appRoot {
 	margin-top: 0;
 }
 
-/* Removed duplicate mobile content spacing - consolidated above */
+/* Mobile content spacing */
+@media (max-width: 768px) {
+	main#appRoot {
+		padding-top: 10px;
+	}
+}
 
 /* ===== BUG TRACKER STYLES ===== */
 
@@ -3677,375 +3648,95 @@ main#appRoot {
 	color: #475569;
 }
 
-/* Removed duplicate mobile bug flag - consolidated above */
+/* Mobile bug flag */
+@media (max-width: 768px) {
+	.bug-flag {
+		width: 45px;
+		height: 45px;
+		font-size: 20px;
+		right: 15px;
+	}
+}
 
 /* ===== MINIMAL MOBILE FIXES ===== */
 
-/* Removed duplicate minimal mobile fixes - consolidated above */
+/* Only essential mobile improvements - no layout changes */
+@media (max-width: 768px) {
+	/* Header mobile layout */
+	.app-header {
+		flex-wrap: wrap;
+		padding: 10px 15px;
+		gap: 10px;
+		min-height: auto;
+	}
+	
+	/* Brand mobile */
+	.brand {
+		flex-shrink: 0;
+	}
+	
+	.brand-logo {
+		height: 28px;
+		max-width: 120px;
+	}
+	
+	/* Navigation mobile - horizontal scroll */
+	.main-nav {
+		overflow-x: auto;
+		overflow-y: hidden;
+		flex-wrap: nowrap;
+		gap: 16px;
+		padding: 0 10px;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none; /* Firefox */
+		-ms-overflow-style: none; /* IE/Edge */
+	}
+	
+	.main-nav::-webkit-scrollbar {
+		display: none; /* Chrome/Safari */
+	}
+	
+	.nav-link {
+		flex-shrink: 0;
+		white-space: nowrap;
+		padding: 8px 12px;
+		font-size: 14px;
+	}
+	
+	/* Role switch mobile */
+	.role-switch {
+		flex-shrink: 0;
+		font-size: 12px;
+		padding: 6px 12px;
+	}
+	
+	.role-switch select {
+		font-size: 12px;
+		padding: 4px 8px;
+	}
+	
+	/* Touch-friendly buttons */
+	.btn {
+		min-height: 44px;
+		padding: 12px 16px;
+		font-size: 16px;
+	}
+	
+	/* Form inputs mobile */
+	input, select, textarea {
+		font-size: 16px; /* Prevents zoom on iOS */
+	}
+	
+	/* Modal mobile */
+	.modal-card {
+		margin: 20px;
+		max-height: 90vh;
+		overflow-y: auto;
+	}
+	
+	/* Table horizontal scroll */
+	.data-table {
+		overflow-x: auto;
+	}
+}
 
-
- 
- / *   A u t h e n t i c a t i o n   S t y l e s   * / 
- 
- . u s e r - i n f o - b a r   { 
- 
- 	 b a c k g r o u n d :   l i n e a r - g r a d i e n t ( 1 3 5 d e g ,   # 6 6 7 e e a   0 % ,   # 7 6 4 b a 2   1 0 0 % ) ; 
- 
- 	 c o l o r :   w h i t e ; 
- 
- 	 p a d d i n g :   1 0 p x   2 0 p x ; 
- 
- 	 d i s p l a y :   f l e x ; 
- 
- 	 j u s t i f y - c o n t e n t :   s p a c e - b e t w e e n ; 
- 
- 	 a l i g n - i t e m s :   c e n t e r ; 
- 
- 	 b o x - s h a d o w :   0   2 p x   4 p x   r g b a ( 0 , 0 , 0 , 0 . 1 ) ; 
- 
- } 
- 
- 
- 
- . u s e r - i n f o - c o n t e n t   { 
- 
- 	 d i s p l a y :   f l e x ; 
- 
- 	 a l i g n - i t e m s :   c e n t e r ; 
- 
- 	 g a p :   1 5 p x ; 
- 
- } 
- 
- 
- 
- . u s e r - r o l e   { 
- 
- 	 b a c k g r o u n d :   r g b a ( 2 5 5 , 2 5 5 , 2 5 5 , 0 . 2 ) ; 
- 
- 	 p a d d i n g :   4 p x   8 p x ; 
- 
- 	 b o r d e r - r a d i u s :   1 2 p x ; 
- 
- 	 f o n t - s i z e :   1 2 p x ; 
- 
- 	 f o n t - w e i g h t :   5 0 0 ; 
- 
- 	 t e x t - t r a n s f o r m :   u p p e r c a s e ; 
- 
- } 
- 
- 
- 
- . b t n . s m a l l   { 
- 
- 	 p a d d i n g :   6 p x   1 2 p x ; 
- 
- 	 f o n t - s i z e :   1 2 p x ; 
- 
- } 
- 
- 
- 
- / *   M o d a l   S t y l e s   f o r   A u t h   * / 
- 
- . m o d a l   { 
- 
- 	 p o s i t i o n :   f i x e d ; 
- 
- 	 t o p :   0 ; 
- 
- 	 l e f t :   0 ; 
- 
- 	 w i d t h :   1 0 0 % ; 
- 
- 	 h e i g h t :   1 0 0 % ; 
- 
- 	 b a c k g r o u n d :   r g b a ( 0 , 0 , 0 , 0 . 7 ) ; 
- 
- 	 d i s p l a y :   f l e x ; 
- 
- 	 j u s t i f y - c o n t e n t :   c e n t e r ; 
- 
- 	 a l i g n - i t e m s :   c e n t e r ; 
- 
- 	 z - i n d e x :   1 0 0 0 0 ; 
- 
- } 
- 
- 
- 
- . m o d a l - c a r d   { 
- 
- 	 b a c k g r o u n d :   w h i t e ; 
- 
- 	 b o r d e r - r a d i u s :   8 p x ; 
- 
- 	 b o x - s h a d o w :   0   1 0 p x   3 0 p x   r g b a ( 0 , 0 , 0 , 0 . 3 ) ; 
- 
- 	 m a x - w i d t h :   4 0 0 p x ; 
- 
- 	 w i d t h :   9 0 % ; 
- 
- 	 m a x - h e i g h t :   9 0 v h ; 
- 
- 	 o v e r f l o w - y :   a u t o ; 
- 
- } 
- 
- 
- 
- . m o d a l - h e a d e r   { 
- 
- 	 p a d d i n g :   2 0 p x   2 0 p x   0   2 0 p x ; 
- 
- 	 d i s p l a y :   f l e x ; 
- 
- 	 j u s t i f y - c o n t e n t :   s p a c e - b e t w e e n ; 
- 
- 	 a l i g n - i t e m s :   c e n t e r ; 
- 
- 	 b o r d e r - b o t t o m :   1 p x   s o l i d   # e e e ; 
- 
- 	 p a d d i n g - b o t t o m :   1 5 p x ; 
- 
- 	 m a r g i n - b o t t o m :   2 0 p x ; 
- 
- } 
- 
- 
- 
- . m o d a l - h e a d e r   h 3   { 
- 
- 	 m a r g i n :   0 ; 
- 
- 	 c o l o r :   # 3 3 3 ; 
- 
- 	 f o n t - s i z e :   2 0 p x ; 
- 
- } 
- 
- 
- 
- . c l o s e - b t n   { 
- 
- 	 b a c k g r o u n d :   n o n e ; 
- 
- 	 b o r d e r :   n o n e ; 
- 
- 	 f o n t - s i z e :   2 4 p x ; 
- 
- 	 c o l o r :   # 9 9 9 ; 
- 
- 	 c u r s o r :   p o i n t e r ; 
- 
- 	 p a d d i n g :   0 ; 
- 
- 	 w i d t h :   3 0 p x ; 
- 
- 	 h e i g h t :   3 0 p x ; 
- 
- 	 d i s p l a y :   f l e x ; 
- 
- 	 a l i g n - i t e m s :   c e n t e r ; 
- 
- 	 j u s t i f y - c o n t e n t :   c e n t e r ; 
- 
- } 
- 
- 
- 
- . c l o s e - b t n : h o v e r   { 
- 
- 	 c o l o r :   # 3 3 3 ; 
- 
- } 
- 
- 
- 
- . m o d a l - b o d y   { 
- 
- 	 p a d d i n g :   0   2 0 p x   2 0 p x   2 0 p x ; 
- 
- } 
- 
- 
- 
- . f i e l d   { 
- 
- 	 m a r g i n - b o t t o m :   1 5 p x ; 
- 
- } 
- 
- 
- 
- . f i e l d   l a b e l   { 
- 
- 	 d i s p l a y :   b l o c k ; 
- 
- 	 m a r g i n - b o t t o m :   5 p x ; 
- 
- 	 c o l o r :   # 3 3 3 ; 
- 
- 	 f o n t - w e i g h t :   5 0 0 ; 
- 
- } 
- 
- 
- 
- . f i e l d   i n p u t , 
- 
- . f i e l d   s e l e c t   { 
- 
- 	 w i d t h :   1 0 0 % ; 
- 
- 	 p a d d i n g :   1 0 p x ; 
- 
- 	 b o r d e r :   1 p x   s o l i d   # d d d ; 
- 
- 	 b o r d e r - r a d i u s :   4 p x ; 
- 
- 	 f o n t - s i z e :   1 4 p x ; 
- 
- 	 b o x - s i z i n g :   b o r d e r - b o x ; 
- 
- } 
- 
- 
- 
- . f i e l d   i n p u t : f o c u s , 
- 
- . f i e l d   s e l e c t : f o c u s   { 
- 
- 	 o u t l i n e :   n o n e ; 
- 
- 	 b o r d e r - c o l o r :   # 0 0 7 b f f ; 
- 
- 	 b o x - s h a d o w :   0   0   0   2 p x   r g b a ( 0 , 1 2 3 , 2 5 5 , 0 . 2 5 ) ; 
- 
- } 
- 
- 
- 
- . f i e l d   b u t t o n   { 
- 
- 	 w i d t h :   1 0 0 % ; 
- 
- 	 p a d d i n g :   1 2 p x ; 
- 
- 	 b a c k g r o u n d :   # 0 0 7 b f f ; 
- 
- 	 c o l o r :   w h i t e ; 
- 
- 	 b o r d e r :   n o n e ; 
- 
- 	 b o r d e r - r a d i u s :   4 p x ; 
- 
- 	 f o n t - s i z e :   1 6 p x ; 
- 
- 	 f o n t - w e i g h t :   5 0 0 ; 
- 
- 	 c u r s o r :   p o i n t e r ; 
- 
- 	 t r a n s i t i o n :   b a c k g r o u n d - c o l o r   0 . 2 s ; 
- 
- } 
- 
- 
- 
- . f i e l d   b u t t o n : h o v e r   { 
- 
- 	 b a c k g r o u n d :   # 0 0 5 6 b 3 ; 
- 
- } 
- 
- 
- 
- . f i e l d   b u t t o n : d i s a b l e d   { 
- 
- 	 b a c k g r o u n d :   # c c c ; 
- 
- 	 c u r s o r :   n o t - a l l o w e d ; 
- 
- } 
- 
- 
- 
- / *   A g e n t   S e l e c t   D r o p d o w n   S t y l e s   * / 
- . a g e n t - s e l e c t   { 
- w i d t h :   1 0 0 % ; 
- p a d d i n g :   8 p x   1 2 p x ; 
- b o r d e r :   1 p x   s o l i d   # d d d ; 
- b o r d e r - r a d i u s :   6 p x ; 
- b a c k g r o u n d :   w h i t e ; 
- f o n t - s i z e :   1 4 p x ; 
- c o l o r :   # 3 3 3 ; 
- t r a n s i t i o n :   a l l   0 . 2 s   e a s e ; 
- c u r s o r :   p o i n t e r ; 
- } 
- 
- . a g e n t - s e l e c t : f o c u s   { 
- o u t l i n e :   n o n e ; 
- b o r d e r - c o l o r :   # 0 0 7 b f f ; 
- b o x - s h a d o w :   0   0   0   2 p x   r g b a ( 0 ,   1 2 3 ,   2 5 5 ,   0 . 2 5 ) ; 
- } 
- 
- . a g e n t - s e l e c t : h o v e r   { 
- b o r d e r - c o l o r :   # 0 0 7 b f f ; 
- } 
- 
- . a g e n t - n a m e   { 
- c o l o r :   # 6 6 6 ; 
- f o n t - s i z e :   1 4 p x ; 
- } 
- 
- . a g e n t - n a m e . u n a s s i g n e d   { 
- c o l o r :   # d c 3 5 4 5 ; 
- f o n t - w e i g h t :   5 0 0 ; 
- f o n t - s t y l e :   i t a l i c ; 
- } 
- 
- / *   E n h a n c e d   d r o p d o w n   s t y l i n g   * / 
- . a g e n t - s e l e c t   o p t i o n   { 
- p a d d i n g :   8 p x   1 2 p x ; 
- f o n t - s i z e :   1 4 p x ; 
- } 
- 
- . a g e n t - s e l e c t   o p t i o n : f i r s t - c h i l d   { 
- c o l o r :   # d c 3 5 4 5 ; 
- f o n t - w e i g h t :   5 0 0 ; 
- f o n t - s t y l e :   i t a l i c ; 
- } 
- 
- 
- 
-
- / *   B r i g h t   r e d   g l o w   f o r   u n a s s i g n e d   d r o p d o w n s   -   S T R O N G   V E R S I O N   * / 
- . a g e n t - s e l e c t : h a s ( o p t i o n : f i r s t - c h i l d : c h e c k e d )   { 
- b o r d e r :   3 p x   s o l i d   # f f 0 0 0 0   ! i m p o r t a n t ; 
- b o x - s h a d o w :   0   0   2 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   1 ) ,   0   0   4 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 6 ) ,   0   0   6 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 3 )   ! i m p o r t a n t ; 
- b a c k g r o u n d - c o l o r :   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 1 )   ! i m p o r t a n t ; 
- a n i m a t i o n :   r e d P u l s e   2 s   i n f i n i t e   ! i m p o r t a n t ; 
- } 
- 
- / *   A l t e r n a t i v e   a p p r o a c h   f o r   b r o w s e r s   t h a t   d o n ' t   s u p p o r t   : h a s ( )   * / 
- . a g e n t - s e l e c t . u n a s s i g n e d   { 
- b o r d e r :   3 p x   s o l i d   # f f 0 0 0 0   ! i m p o r t a n t ; 
- b o x - s h a d o w :   0   0   2 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   1 ) ,   0   0   4 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 6 ) ,   0   0   6 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 3 )   ! i m p o r t a n t ; 
- b a c k g r o u n d - c o l o r :   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 1 )   ! i m p o r t a n t ; 
- a n i m a t i o n :   r e d P u l s e   2 s   i n f i n i t e   ! i m p o r t a n t ; 
- } 
- 
- / *   R e d   p u l s e   a n i m a t i o n   * / 
- @ k e y f r a m e s   r e d P u l s e   { 
- 0 %   {   b o x - s h a d o w :   0   0   2 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   1 ) ,   0   0   4 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 6 ) ,   0   0   6 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 3 ) ;   } 
- 5 0 %   {   b o x - s h a d o w :   0   0   3 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   1 ) ,   0   0   6 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 8 ) ,   0   0   9 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 5 ) ;   } 
- 1 0 0 %   {   b o x - s h a d o w :   0   0   2 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   1 ) ,   0   0   4 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 6 ) ,   0   0   6 0 p x   r g b a ( 2 5 5 ,   0 ,   0 ,   0 . 3 ) ;   } 
- }  
- 
- 
- / *   S I M P L E   T E S T   -   T h i s   s h o u l d   m a k e   A L L   a g e n t   s e l e c t s   r e d   * / 
- . a g e n t - s e l e c t   { 
- b o r d e r :   5 p x   s o l i d   r e d   ! i m p o r t a n t ; 
- }  
- 
