@@ -111,7 +111,7 @@
 </head>
 <body>
 	<h1>🧪 TRE CRM Module Tests</h1>
-	
+
 	<div class="test-section">
 		<h2>Helper Functions Test</h2>
 		<div id="helperTests"></div>
@@ -124,6 +124,18 @@
 		<h2>Validator Functions Test</h2>
 		<div id="validatorTests"></div>
 		<button onclick="testValidators()">Run Validator Tests</button>
+	</div>
+
+	<div class="test-section">
+		<h2>State Management Test</h2>
+		<div id="stateTests"></div>
+		<button onclick="testState()">Run State Tests</button>
+	</div>
+
+	<div class="test-section">
+		<h2>Mock Data Test</h2>
+		<div id="mockDataTests"></div>
+		<button onclick="testMockData()">Run Mock Data Tests</button>
 	</div>
 
 	<!-- Test Modal -->
@@ -139,10 +151,14 @@
 		// Import modules
 		import * as helpers from './src/utils/helpers.js';
 		import * as validators from './src/utils/validators.js';
+		import * as stateModule from './src/state/state.js';
+		import * as mockData from './src/state/mockData.js';
 
 		// Make functions available globally for onclick handlers
 		window.helpers = helpers;
 		window.validators = validators;
+		window.stateModule = stateModule;
+		window.mockData = mockData;
 
 		// Helper Tests
 		window.testHelpers = function() {
@@ -335,10 +351,249 @@
 			helpers.hideModal('testModal');
 		};
 
+		// State Tests
+		window.testState = function() {
+			const results = [];
+			const container = document.getElementById('stateTests');
+
+			// Test getState
+			const currentState = stateModule.getState();
+			results.push({
+				name: 'getState',
+				pass: currentState !== null && typeof currentState === 'object',
+				message: `getState() returns object: ${currentState !== null}`
+			});
+
+			// Test initial state values
+			results.push({
+				name: 'Initial role',
+				pass: currentState.role === 'manager',
+				message: `Initial role = "${currentState.role}"`
+			});
+
+			results.push({
+				name: 'Initial page',
+				pass: currentState.currentPage === 'leads',
+				message: `Initial page = "${currentState.currentPage}"`
+			});
+
+			// Test updateState
+			stateModule.updateState({ currentPage: 'agents' });
+			results.push({
+				name: 'updateState',
+				pass: currentState.currentPage === 'agents',
+				message: `updateState({currentPage: 'agents'}) = "${currentState.currentPage}"`
+			});
+
+			// Test updateSort
+			stateModule.updateSort('name', 'asc');
+			results.push({
+				name: 'updateSort',
+				pass: currentState.sort.key === 'name' && currentState.sort.dir === 'asc',
+				message: `updateSort('name', 'asc') = {key: "${currentState.sort.key}", dir: "${currentState.sort.dir}"}`
+			});
+
+			// Test updatePagination
+			stateModule.updatePagination(5, 20);
+			results.push({
+				name: 'updatePagination',
+				pass: currentState.page === 5 && currentState.pageSize === 20,
+				message: `updatePagination(5, 20) = {page: ${currentState.page}, pageSize: ${currentState.pageSize}}`
+			});
+
+			// Test selectLead
+			stateModule.selectLead('lead_123');
+			results.push({
+				name: 'selectLead',
+				pass: currentState.selectedLeadId === 'lead_123',
+				message: `selectLead('lead_123') = "${currentState.selectedLeadId}"`
+			});
+
+			// Test selectAgent
+			stateModule.selectAgent('agent_456');
+			results.push({
+				name: 'selectAgent',
+				pass: currentState.selectedAgentId === 'agent_456',
+				message: `selectAgent('agent_456') = "${currentState.selectedAgentId}"`
+			});
+
+			// Test selectedMatches
+			stateModule.addSelectedMatch('match_1');
+			stateModule.addSelectedMatch('match_2');
+			results.push({
+				name: 'addSelectedMatch',
+				pass: currentState.selectedMatches.has('match_1') && currentState.selectedMatches.has('match_2'),
+				message: `Added 2 matches, size = ${currentState.selectedMatches.size}`
+			});
+
+			stateModule.removeSelectedMatch('match_1');
+			results.push({
+				name: 'removeSelectedMatch',
+				pass: !currentState.selectedMatches.has('match_1') && currentState.selectedMatches.has('match_2'),
+				message: `Removed match_1, size = ${currentState.selectedMatches.size}`
+			});
+
+			// Test updateFilters
+			stateModule.updateFilters({ status: 'active', search: 'test' });
+			results.push({
+				name: 'updateFilters',
+				pass: currentState.filters.status === 'active' && currentState.filters.search === 'test',
+				message: `updateFilters() = {status: "${currentState.filters.status}", search: "${currentState.filters.search}"}`
+			});
+
+			// Test resetState
+			stateModule.resetState();
+			results.push({
+				name: 'resetState',
+				pass: currentState.currentPage === 'leads' && currentState.page === 1,
+				message: `resetState() restored defaults`
+			});
+
+			// Display results
+			container.innerHTML = results.map(r => `
+				<div class="test-result ${r.pass ? 'pass' : 'fail'}">
+					${r.pass ? '✅' : '❌'} ${r.message}
+				</div>
+			`).join('');
+		};
+
+		// Mock Data Tests
+		window.testMockData = function() {
+			const results = [];
+			const container = document.getElementById('mockDataTests');
+
+			// Test mockAgents
+			results.push({
+				name: 'mockAgents exists',
+				pass: Array.isArray(mockData.mockAgents),
+				message: `mockAgents is array: ${Array.isArray(mockData.mockAgents)}`
+			});
+
+			results.push({
+				name: 'mockAgents count',
+				pass: mockData.mockAgents.length === 5,
+				message: `mockAgents.length = ${mockData.mockAgents.length} (expected 5)`
+			});
+
+			results.push({
+				name: 'mockAgents structure',
+				pass: mockData.mockAgents[0].id && mockData.mockAgents[0].name && mockData.mockAgents[0].email,
+				message: `First agent: ${mockData.mockAgents[0].name} (${mockData.mockAgents[0].email})`
+			});
+
+			// Test mockLeads
+			results.push({
+				name: 'mockLeads exists',
+				pass: Array.isArray(mockData.mockLeads),
+				message: `mockLeads is array: ${Array.isArray(mockData.mockLeads)}`
+			});
+
+			results.push({
+				name: 'mockLeads count',
+				pass: mockData.mockLeads.length === 37,
+				message: `mockLeads.length = ${mockData.mockLeads.length} (expected 37)`
+			});
+
+			results.push({
+				name: 'mockLeads structure',
+				pass: mockData.mockLeads[0].id && mockData.mockLeads[0].name && mockData.mockLeads[0].email,
+				message: `First lead: ${mockData.mockLeads[0].name} (${mockData.mockLeads[0].email})`
+			});
+
+			// Test mockProperties
+			results.push({
+				name: 'mockProperties exists',
+				pass: Array.isArray(mockData.mockProperties),
+				message: `mockProperties is array: ${Array.isArray(mockData.mockProperties)}`
+			});
+
+			results.push({
+				name: 'mockProperties count',
+				pass: mockData.mockProperties.length === 50,
+				message: `mockProperties.length = ${mockData.mockProperties.length} (expected 50)`
+			});
+
+			results.push({
+				name: 'mockProperties structure',
+				pass: mockData.mockProperties[0].id && mockData.mockProperties[0].name && mockData.mockProperties[0].market,
+				message: `First property: ${mockData.mockProperties[0].name} in ${mockData.mockProperties[0].market}`
+			});
+
+			// Test mockSpecials
+			results.push({
+				name: 'mockSpecials exists',
+				pass: Array.isArray(mockData.mockSpecials),
+				message: `mockSpecials is array: ${Array.isArray(mockData.mockSpecials)}`
+			});
+
+			results.push({
+				name: 'mockSpecials count',
+				pass: mockData.mockSpecials.length === 4,
+				message: `mockSpecials.length = ${mockData.mockSpecials.length} (expected 4)`
+			});
+
+			// Test mockBugs
+			results.push({
+				name: 'mockBugs exists',
+				pass: Array.isArray(mockData.mockBugs),
+				message: `mockBugs is array: ${Array.isArray(mockData.mockBugs)}`
+			});
+
+			results.push({
+				name: 'mockBugs count',
+				pass: mockData.mockBugs.length === 3,
+				message: `mockBugs.length = ${mockData.mockBugs.length} (expected 3)`
+			});
+
+			// Test mockDocumentSteps
+			results.push({
+				name: 'mockDocumentSteps exists',
+				pass: Array.isArray(mockData.mockDocumentSteps),
+				message: `mockDocumentSteps is array: ${Array.isArray(mockData.mockDocumentSteps)}`
+			});
+
+			results.push({
+				name: 'mockDocumentSteps count',
+				pass: mockData.mockDocumentSteps.length === 5,
+				message: `mockDocumentSteps.length = ${mockData.mockDocumentSteps.length} (expected 5)`
+			});
+
+			// Test mockInterestedLeads
+			results.push({
+				name: 'mockInterestedLeads exists',
+				pass: typeof mockData.mockInterestedLeads === 'object',
+				message: `mockInterestedLeads is object: ${typeof mockData.mockInterestedLeads === 'object'}`
+			});
+
+			results.push({
+				name: 'mockInterestedLeads has data',
+				pass: mockData.mockInterestedLeads['prop_1'] && Array.isArray(mockData.mockInterestedLeads['prop_1']),
+				message: `mockInterestedLeads['prop_1'] has ${mockData.mockInterestedLeads['prop_1']?.length || 0} leads`
+			});
+
+			// Test helper function
+			const testPrefs = { beds: 2, baths: 1, budget_max: 1500 };
+			const summary = mockData.prefsSummary(testPrefs);
+			results.push({
+				name: 'prefsSummary helper',
+				pass: summary.includes('2bed') && summary.includes('1bath') && summary.includes('1500'),
+				message: `prefsSummary() = "${summary}"`
+			});
+
+			// Display results
+			container.innerHTML = results.map(r => `
+				<div class="test-result ${r.pass ? 'pass' : 'fail'}">
+					${r.pass ? '✅' : '❌'} ${r.message}
+				</div>
+			`).join('');
+		};
+
 		// Auto-run tests on load
 		console.log('✅ Modules loaded successfully!');
 		console.log('Helpers:', Object.keys(helpers));
 		console.log('Validators:', Object.keys(validators));
+		console.log('State:', Object.keys(stateModule));
+		console.log('Mock Data:', Object.keys(mockData));
 	</script>
 </body>
 </html>
