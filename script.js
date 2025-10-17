@@ -9,7 +9,20 @@ function formatDate(iso) {
 
 // Agent Landing Page Functions - defined globally
 function generateLandingPageUrl(agentId) {
-	return `${window.location.origin}/landing.html?agent=${agentId}`;
+	// Get agent data to create a clean URL
+	const agent = mockAgents.find(a => a.id === agentId);
+	if (!agent) {
+		return `${window.location.origin}/landing.html?agent=${agentId}`;
+	}
+	
+	// Create a clean URL slug from agent name
+	const agentSlug = agent.name.toLowerCase()
+		.replace(/\s+/g, '-')           // Replace spaces with hyphens
+		.replace(/[^a-z0-9-]/g, '')     // Remove special characters
+		.replace(/-+/g, '-')            // Replace multiple hyphens with single
+		.replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+	
+	return `${window.location.origin}/agent/${agentSlug}`;
 }
 
 function showAgentLandingPage(agentId) {
