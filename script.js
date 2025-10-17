@@ -6800,6 +6800,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	// Expose routing function to global scope
 	window.route = route;
 	console.log('🔧 Route function exposed to window.route:', typeof window.route);
+})();
 
 // Global function for updating sort headers
 function updateSortHeaders(tableId) {
@@ -7596,4 +7597,32 @@ async function saveNewAgent() {
 		}
 	});
 
-})();
+// Global function for updating sort headers
+function updateSortHeaders(tableId) {
+	console.log('updateSortHeaders called with tableId:', tableId);
+	const table = document.getElementById(tableId);
+	if (!table) {
+		console.log('Table not found:', tableId);
+		return;
+	}
+	
+	const currentState = window.state || { sort: { key: null, dir: null } };
+	const headers = table.querySelectorAll('th[data-sort]');
+	
+	headers.forEach(header => {
+		const sortKey = header.getAttribute('data-sort');
+		const isActive = currentState.sort.key === sortKey;
+		const isAsc = isActive && currentState.sort.dir === 'asc';
+		const isDesc = isActive && currentState.sort.dir === 'desc';
+		
+		// Remove existing sort indicators
+		header.classList.remove('sort-asc', 'sort-desc');
+		
+		// Add appropriate sort indicator
+		if (isAsc) {
+			header.classList.add('sort-asc');
+		} else if (isDesc) {
+			header.classList.add('sort-desc');
+		}
+	});
+}
