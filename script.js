@@ -2953,7 +2953,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			await renderListings();
 		} catch (error) {
 			console.error('❌ Error creating listing:', error);
-			toast(`Error creating listing: ${error.message}`, 'error');
+			console.error('Error details:', JSON.stringify(error, null, 2));
+			const errorMsg = error.message || error.msg || 'Unknown error';
+			toast(`Error creating listing: ${errorMsg}`, 'error');
 		}
 	}
 
