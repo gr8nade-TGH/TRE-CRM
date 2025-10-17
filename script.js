@@ -15,8 +15,8 @@ function generateLandingPageUrl(agentId) {
 		return `${window.location.origin}/landing.html?agent=${agentId}`;
 	}
 	
-	// Create a clean URL slug from agent name
-	const agentSlug = agent.name.toLowerCase()
+	// Use existing slug if available, otherwise create one
+	const agentSlug = agent.slug || agent.name.toLowerCase()
 		.replace(/\s+/g, '-')           // Replace spaces with hyphens
 		.replace(/[^a-z0-9-]/g, '')     // Remove special characters
 		.replace(/-+/g, '-')            // Replace multiple hyphens with single
@@ -710,6 +710,7 @@ const mockAuditLog = [
 			name: 'Alex Agent', 
 			email: 'alex@example.com', 
 			phone: '555-0101',
+			slug: 'alex-agent',
 			active: true,
 			hireDate: '2023-01-15',
 			licenseNumber: 'TR123456',
@@ -721,6 +722,7 @@ const mockAuditLog = [
 			name: 'Bailey Broker', 
 			email: 'bailey@example.com', 
 			phone: '555-0102',
+			slug: 'bailey-broker',
 			active: true,
 			hireDate: '2022-08-22',
 			licenseNumber: 'TR789012',
@@ -732,6 +734,7 @@ const mockAuditLog = [
 			name: 'Casey Consultant', 
 			email: 'casey@example.com', 
 			phone: '555-0103',
+			slug: 'casey-consultant',
 			active: true,
 			hireDate: '2023-03-10',
 			licenseNumber: 'TR345678',
@@ -743,6 +746,7 @@ const mockAuditLog = [
 			name: 'Dana Director', 
 			email: 'dana@example.com', 
 			phone: '555-0104',
+			slug: 'dana-director',
 			active: true,
 			hireDate: '2021-11-05',
 			licenseNumber: 'TR901234',
@@ -5823,11 +5827,19 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 							
 							// If this is an agent, also add them to mockAgents for landing page functionality
 							if (userData.role === 'agent') {
+								// Create URL slug from agent name
+								const agentSlug = userData.name.toLowerCase()
+									.replace(/\s+/g, '-')           // Replace spaces with hyphens
+									.replace(/[^a-z0-9-]/g, '')     // Remove special characters
+									.replace(/-+/g, '-')            // Replace multiple hyphens with single
+									.replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+								
 								const newAgent = {
 									id: 'agent_' + Date.now(),
 									name: userData.name,
 									email: userData.email,
 									phone: '', // Will be filled in later
+									slug: agentSlug,
 									active: true,
 									created_at: new Date().toISOString()
 								};

@@ -299,19 +299,44 @@
 	</div>
 
 	<script>
-		// Agent mapping - in production, this would come from an API
-		const agentMap = {
-			'alex-agent': { id: 'agent_1', name: 'Alex Agent', email: 'alex@example.com' },
-			'sarah-smith': { id: 'agent_2', name: 'Sarah Smith', email: 'sarah@example.com' },
-			'mike-johnson': { id: 'agent_3', name: 'Mike Johnson', email: 'mike@example.com' }
-		};
-		
 		// Get agent slug from URL path
 		const pathParts = window.location.pathname.split('/');
 		const agentSlug = pathParts[pathParts.length - 1];
 		
+		// Function to create URL slug from agent name
+		function createAgentSlug(name) {
+			return name.toLowerCase()
+				.replace(/\s+/g, '-')           // Replace spaces with hyphens
+				.replace(/[^a-z0-9-]/g, '')     // Remove special characters
+				.replace(/-+/g, '-')            // Replace multiple hyphens with single
+				.replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+		}
+		
+		// Function to find agent by slug
+		async function findAgentBySlug(slug) {
+			try {
+				// Try to fetch from API first
+				const response = await fetch(`https://tre-crm.vercel.app/api/agents/slug/${slug}`);
+				if (response.ok) {
+					return await response.json();
+				}
+			} catch (error) {
+				console.log('API not available, using fallback data');
+			}
+			
+			// Fallback to hardcoded data for now
+			const fallbackAgents = [
+				{ id: 'agent_1', name: 'Alex Agent', email: 'alex@example.com' },
+				{ id: 'agent_2', name: 'Sarah Smith', email: 'sarah@example.com' },
+				{ id: 'agent_3', name: 'Mike Johnson', email: 'mike@example.com' }
+			];
+			
+			// Find agent by matching slug
+			return fallbackAgents.find(agent => createAgentSlug(agent.name) === slug);
+		}
+		
 		// Find agent by slug
-		const agent = agentMap[agentSlug];
+		const agent = await findAgentBySlug(agentSlug);
 		
 		if (agent) {
 			// Update page title and content
