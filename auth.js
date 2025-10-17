@@ -213,13 +213,13 @@ function showMainApp(user) {
 	document.getElementById('mainAppContent').style.display = 'block';
 	
 	// Update user info in header
-	const userEmail = document.getElementById('userEmail');
-	const userRole = document.getElementById('userRole');
-	
+	const userEmail = document.getElementById('headerUserEmail');
+	const userRole = document.getElementById('headerUserRole');
+
 	if (userEmail) {
 		userEmail.textContent = user.email;
 	}
-	
+
 	if (userRole) {
 		const role = user.user_metadata?.role || 'agent';
 		userRole.textContent = role.replace('_', ' ');
