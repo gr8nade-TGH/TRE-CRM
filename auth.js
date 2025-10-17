@@ -13,6 +13,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 				console.log('Session expires at:', new Date(session.expires_at * 1000));
 				// User is logged in - show main app
 				showMainApp(session.user);
+				// Handle initial route after auth
+				if (window.router) {
+					window.router.handleInitialRoute();
+				}
 			} else {
 				console.log('❌ No active session, showing branded portal');
 				console.log('Session was:', session);
@@ -60,6 +64,10 @@ document.addEventListener('DOMContentLoaded', async function() {
 						document.body.classList.remove('modal-open');
 						showMainApp(session.user);
 						document.getElementById('loginModal').style.display = 'none';
+						// Handle initial route after login
+						if (window.router) {
+							window.router.handleInitialRoute();
+						}
 					} else {
 						throw new Error('No session found after login');
 					}

@@ -17,7 +17,7 @@ class AgentsManager {
     
     init() {
         // Register route handler
-        registerRoute('agents', () => this.renderAgents());
+        registerRoute('agents', this.renderAgents.bind(this));
         
         // Set up event listeners
         this.setupEventListeners();

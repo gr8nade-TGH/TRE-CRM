@@ -17,7 +17,12 @@ class Router {
         // Set up hash change listener
         window.addEventListener('hashchange', () => this.handleRoute());
         
-        // Handle initial route
+        // Don't handle initial route immediately - wait for auth
+        // this.handleRoute();
+    }
+    
+    // Method to handle initial route after auth is complete
+    handleInitialRoute() {
         this.handleRoute();
     }
     
@@ -126,6 +131,9 @@ class Router {
 
 // Create router instance
 const router = new Router();
+
+// Make router globally available for auth.js
+window.router = router;
 
 // Export router instance
 export default router;

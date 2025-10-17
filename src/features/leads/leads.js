@@ -17,7 +17,7 @@ class LeadsManager {
     
     init() {
         // Register route handler
-        registerRoute('leads', () => this.renderLeads());
+        registerRoute('leads', this.renderLeads.bind(this));
         
         // Set up event listeners
         this.setupEventListeners();

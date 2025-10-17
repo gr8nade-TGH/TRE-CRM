@@ -16,7 +16,7 @@ class AdminManager {
     
     init() {
         // Register route handler
-        registerRoute('admin', () => this.renderAdmin());
+        registerRoute('admin', this.renderAdmin.bind(this));
         
         // Set up event listeners
         this.setupEventListeners();

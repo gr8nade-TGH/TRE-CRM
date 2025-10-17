@@ -17,7 +17,7 @@ class ListingsManager {
     
     init() {
         // Register route handler
-        registerRoute('listings', () => this.renderListings());
+        registerRoute('listings', this.renderListings.bind(this));
         
         // Set up event listeners
         this.setupEventListeners();
