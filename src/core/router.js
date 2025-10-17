@@ -23,7 +23,9 @@ class Router {
     
     // Register a route handler
     register(route, handler) {
+        console.log('🔧 Router: Registering route', route);
         this.routes.set(route, handler);
+        console.log('🔧 Router: Total routes registered:', this.routes.size);
     }
     
     // Navigate to a route
@@ -97,8 +99,10 @@ class Router {
     
     // Execute route handler
     executeRouteHandler(page, params) {
+        console.log('🔧 Router: Available routes:', Array.from(this.routes.keys()));
         const handler = this.routes.get(page);
         if (handler) {
+            console.log('🔧 Router: Found handler for', page);
             try {
                 handler(params);
             } catch (error) {
