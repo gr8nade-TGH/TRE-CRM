@@ -2902,6 +2902,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			const amenities = amenitiesInput ? amenitiesInput.split(',').map(a => a.trim()).filter(a => a) : [];
 
 			// Create property data
+			const now = new Date().toISOString();
 			const propertyData = {
 				id: `prop_${Date.now()}`,
 				// New schema fields
@@ -2917,13 +2918,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				commission_pct: commission,
 				amenities: amenities,
 				is_pumi: isPUMI,
-				last_updated: lastUpdated || new Date().toISOString(),
+				last_updated: lastUpdated || now,
 				contact_email: contactEmail || null,
 				leasing_link: leasingLink || null,
 				map_lat: mapLat ? parseFloat(mapLat) : null,
 				map_lng: mapLng ? parseFloat(mapLng) : null,
 				created_by: state.userId,
-				// Old schema fields (for backward compatibility until migration runs)
+				created_at: now,
+				updated_at: now,
+				// Old schema fields (for backward compatibility)
 				name: communityName,
 				address: streetAddress
 			};
