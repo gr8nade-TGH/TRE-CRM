@@ -6448,7 +6448,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	};
 
 		// Event delegation for expand buttons (works for both manager and agent views)
-		document.addEventListener('click', (e) => {
+		document.addEventListener('click', async (e) => {
 			console.log('Click detected on:', e.target);
 			console.log('Target classList:', e.target.classList);
 			console.log('Target parent:', e.target.parentElement);
@@ -6800,7 +6800,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	// Expose routing function to global scope
 	window.route = route;
 	console.log('🔧 Route function exposed to window.route:', typeof window.route);
-})();
 
 // Global function for updating sort headers
 function updateSortHeaders(tableId) {
@@ -7413,7 +7412,7 @@ async function saveNewAgent() {
 			licenseNumber: formData.get('licenseNumber') || '',
 			hireDate: formData.get('hireDate') || new Date().toISOString().split('T')[0],
 			notes: formData.get('notes') || '',
-			sendInvitation: formData.has('sendInvitation')
+			sendInvitation: document.getElementById('agentSendInvitation').checked
 		};
 		
 		// Get selected specialties
@@ -7575,25 +7574,26 @@ async function saveNewAgent() {
 		console.error('Error creating agent:', error);
 		toast('Error creating agent: ' + error.message, 'error');
 	}
-}
 
-// Listing management event listeners moved to main click handler above
+	// Listing management event listeners moved to main click handler above
 
-// CSV Upload Area Event Listeners
-document.addEventListener('DOMContentLoaded', function() {
-	const uploadArea = document.getElementById('csvUploadArea');
-	const fileInput = document.getElementById('csvFileInput');
-	
-	if (uploadArea && fileInput) {
-		// Click to browse
-		uploadArea.addEventListener('click', () => fileInput.click());
+	// CSV Upload Area Event Listeners
+	document.addEventListener('DOMContentLoaded', function() {
+		const uploadArea = document.getElementById('csvUploadArea');
+		const fileInput = document.getElementById('csvFileInput');
 		
-		// File input change
-		fileInput.addEventListener('change', handleFileSelect);
-		
-		// Drag and drop
-		uploadArea.addEventListener('dragover', handleDragOver);
-		uploadArea.addEventListener('dragleave', handleDragLeave);
-		uploadArea.addEventListener('drop', handleDrop);
-	}
-});
+		if (uploadArea && fileInput) {
+			// Click to browse
+			uploadArea.addEventListener('click', () => fileInput.click());
+			
+			// File input change
+			fileInput.addEventListener('change', handleFileSelect);
+			
+			// Drag and drop
+			uploadArea.addEventListener('dragover', handleDragOver);
+			uploadArea.addEventListener('dragleave', handleDragLeave);
+			uploadArea.addEventListener('drop', handleDrop);
+		}
+	});
+
+})();
