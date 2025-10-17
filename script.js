@@ -4006,8 +4006,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Delete each property
 			for (const id of selectedIds) {
 				console.log('Deleting property:', id);
-				await SupabaseAPI.deleteProperty(id);
+				const result = await SupabaseAPI.deleteProperty(id);
+				console.log('Delete result for', id, ':', result);
 			}
+
+			console.log('All deletions complete. Refreshing listings...');
 
 			// Show success message
 			toast(`${selectedIds.length} listing(s) deleted permanently`, 'success');
@@ -4015,9 +4018,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Clear selections and refresh
 			checkboxes.forEach(cb => cb.checked = false);
 			updateBulkActionsBar();
+
+			console.log('Calling renderListings()...');
 			await renderListings();
+			console.log('renderListings() complete');
 		} catch (error) {
 			console.error('Error deleting listings:', error);
+			console.error('Error stack:', error.stack);
 			toast(`Error: ${error.message}`, 'error');
 		}
 	}

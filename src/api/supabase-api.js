@@ -268,17 +268,21 @@ export async function updateProperty(id, propertyData) {
 export async function deleteProperty(id) {
     const supabase = getSupabase();
 
-    const { error } = await supabase
+    console.log('🗑️ deleteProperty called with id:', id);
+
+    const { data, error } = await supabase
         .from('properties')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .select();
 
     if (error) {
-        console.error('Error deleting property:', error);
+        console.error('❌ Error deleting property:', error);
         throw error;
     }
 
-    return { success: true };
+    console.log('✅ Property deleted successfully:', data);
+    return { success: true, data };
 }
 
 /**
