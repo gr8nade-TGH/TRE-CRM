@@ -4897,28 +4897,43 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		});
 
 		// Update role visibility for bugs nav
-		document.getElementById('roleSelect').addEventListener('change', (e) => {
-			const bugsNavLink = document.getElementById('bugsNavLink');
-			if (bugsNavLink) {
-				if (e.target.value === 'agent') {
-					bugsNavLink.style.display = 'none';
-				} else {
-					bugsNavLink.style.display = 'block';
+		const roleSelect = document.getElementById('roleSelect');
+		if (roleSelect) {
+			roleSelect.addEventListener('change', (e) => {
+				const bugsNavLink = document.getElementById('bugsNavLink');
+				if (bugsNavLink) {
+					if (e.target.value === 'agent') {
+						bugsNavLink.style.display = 'none';
+					} else {
+						bugsNavLink.style.display = 'block';
+					}
 				}
-			}
-		});
+			});
+		}
 
 		// Add event listeners for listing edit modal
-		document.getElementById('closeListingEdit').addEventListener('click', closeListingEditModal);
-		document.getElementById('cancelListingEdit').addEventListener('click', closeListingEditModal);
-		document.getElementById('saveListingEdit').addEventListener('click', saveListingEdit);
-		
-		// Close modal when clicking outside
-		document.getElementById('listingEditModal').addEventListener('click', (e) => {
-			if (e.target.id === 'listingEditModal') {
-				closeListingEditModal();
-			}
-		});
+		const closeListingEdit = document.getElementById('closeListingEdit');
+		const cancelListingEdit = document.getElementById('cancelListingEdit');
+		const saveListingEditBtn = document.getElementById('saveListingEdit');
+		const listingEditModal = document.getElementById('listingEditModal');
+
+		if (closeListingEdit) {
+			closeListingEdit.addEventListener('click', closeListingEditModal);
+		}
+		if (cancelListingEdit) {
+			cancelListingEdit.addEventListener('click', closeListingEditModal);
+		}
+		if (saveListingEditBtn) {
+			saveListingEditBtn.addEventListener('click', saveListingEdit);
+		}
+		if (listingEditModal) {
+			// Close modal when clicking outside
+			listingEditModal.addEventListener('click', (e) => {
+				if (e.target.id === 'listingEditModal') {
+					closeListingEditModal();
+				}
+			});
+		}
 
 		// Routing will be initialized by initializeApp() after authentication
 	});
