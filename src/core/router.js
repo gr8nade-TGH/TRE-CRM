@@ -109,7 +109,9 @@ class Router {
         if (handler) {
             console.log('🔧 Router: Found handler for', page);
             try {
+                console.log('🔧 Router: Executing handler for', page);
                 handler(params);
+                console.log('🔧 Router: Handler executed for', page);
             } catch (error) {
                 console.error('🔧 Router: Error executing route handler', error);
             }
