@@ -41,7 +41,7 @@ class Router {
         const parts = hash.split('/').filter(p => p); // Remove empty strings
         const [page, ...params] = parts.length ? parts : [ROUTES.LEADS];
         
-        console.log('🔧 Router: Handling route', page, params);
+        console.log('🔧 Router: Hash:', hash, 'Parts:', parts, 'Page:', page, 'Params:', params);
         
         // Update state
         update({
