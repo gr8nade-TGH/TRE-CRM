@@ -2748,14 +2748,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	function addMarker(prop) {
+		// Skip if no valid coordinates
+		if (!prop.lat || !prop.lng) {
+			console.warn('Skipping marker for', prop.name, '- no coordinates');
+			return;
+		}
+
 		const isSelected = selectedProperty && selectedProperty.id === prop.id;
 
-			// Create popup content
+			// Create popup content with safe fallbacks
+			const rentMin = prop.rent_min || prop.rent_range_min || 0;
+			const rentMax = prop.rent_max || prop.rent_range_max || 0;
+			const bedsMin = prop.beds_min || 0;
+			const bedsMax = prop.beds_max || 0;
+			const bathsMin = prop.baths_min || 0;
+			const bathsMax = prop.baths_max || 0;
+
 			const popupContent = `
 				<div class="mapbox-popup">
-			<strong>${prop.name}</strong><br>
-			${prop.address}<br>
-			<span class="subtle">$${prop.rent_min.toLocaleString()} - $${prop.rent_max.toLocaleString()} · ${prop.beds_min}-${prop.beds_max} bd / ${prop.baths_min}-${prop.baths_max} ba</span>
+			<strong>${prop.name || prop.community_name || 'Unknown'}</strong><br>
+			${prop.address || prop.street_address || ''}<br>
+			<span class="subtle">$${rentMin.toLocaleString()} - $${rentMax.toLocaleString()} · ${bedsMin}-${bedsMax} bd / ${bathsMin}-${bathsMax} ba</span>
 				</div>
 			`;
 
@@ -2938,15 +2951,22 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.log('✅ Property created:', newProperty);
 
 			// If there's a note, create it
-			if (noteContent) {
+			if (noteContent && state.userId) {
 				const noteData = {
 					property_id: newProperty.id,
 					content: noteContent,
 					author_id: state.userId,
-					author_name: state.userName || 'Unknown'
+					author_name: state.userName || state.userEmail || 'Unknown'
 				};
-				await SupabaseAPI.createPropertyNote(noteData);
-				console.log('✅ Property note created');
+				try {
+					await SupabaseAPI.createPropertyNote(noteData);
+					console.log('✅ Property note created');
+				} catch (noteError) {
+					console.error('❌ Error creating note (continuing anyway):', noteError);
+					// Don't fail the whole operation if note creation fails
+				}
+			} else if (noteContent && !state.userId) {
+				console.warn('⚠️ Cannot create note: user ID not available');
 			}
 
 			toast('Listing created successfully!', 'success');
@@ -3236,12 +3256,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.log('Map exists, clearing markers and adding new ones');
 			clearMarkers();
 
-			// Add markers directly
+			// Add markers directly (only for properties with valid coordinates)
 			if (filtered.length > 0) {
-				console.log('Adding', filtered.length, 'markers to map');
-				filtered.forEach(prop => {
+				const validProps = filtered.filter(prop => prop.lat && prop.lng);
+				console.log('Adding', validProps.length, 'markers to map (out of', filtered.length, 'total properties)');
+				validProps.forEach(prop => {
 					console.log('Adding marker for:', prop.name, 'at', prop.lng, prop.lat);
-					addMarker(prop);
+					try {
+						addMarker(prop);
+					} catch (error) {
+						console.error('Error adding marker for', prop.name, ':', error);
+					}
 				});
 			}
 		} else {
