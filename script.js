@@ -4336,27 +4336,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 						await changeUserPassword(userId, newPassword);
 						toast('Password updated successfully');
 					} else {
-						// Fallback to mock data
-						const user = mockUsers.find(u => u.id === userId);
-						if (user) {
-							// Add to audit log
-							mockAuditLog.unshift({
-								id: `audit_${Date.now()}`,
-								action: 'password_changed',
-								user_id: userId,
-								user_name: user.name,
-								user_email: user.email,
-								performed_by: 'user_1',
-								performed_by_name: 'John Smith',
-								timestamp: new Date().toISOString(),
-								details: 'Password updated'
-							});
-
-							renderAuditLog();
-							toast('Password updated successfully');
-						}
+						// Note: Mock data fallback removed - using real Supabase users only
+						console.log('Password change not implemented for mock users');
+						toast('Password change only available for real users', 'error');
 					}
-					
+
 					hideModal('passwordModal');
 					document.getElementById('newPassword').value = '';
 					document.getElementById('confirmNewPassword').value = '';
@@ -5275,14 +5259,15 @@ async function renderAdmin() {
 }
 
 function renderUsersTable() {
-	console.log('renderUsersTable called, realUsers:', realUsers?.length || 0, 'mockUsers:', mockUsers?.length || 0);
+	console.log('renderUsersTable called, realUsers:', realUsers?.length || 0);
 	const tbody = document.getElementById('usersTbody');
 	if (!tbody) {
 		console.log('usersTbody not found');
 		return;
 	}
-	
-	let users = realUsers.length > 0 ? [...realUsers] : [...(mockUsers || [])];
+
+	// Use real users from Supabase (no mock data fallback)
+	let users = realUsers.length > 0 ? [...realUsers] : [];
 	console.log('Users to render:', users.length);
 	
 	// Apply sorting if active
@@ -5375,8 +5360,9 @@ function renderUsersTable() {
 function renderAuditLog() {
 	const auditLog = document.getElementById('auditLog');
 	if (!auditLog) return;
-	
-	const logs = realAuditLog.length > 0 ? realAuditLog : mockAuditLog || [];
+
+	// Use real audit log from Supabase (no mock data fallback)
+	const logs = realAuditLog.length > 0 ? realAuditLog : [];
 	auditLog.innerHTML = logs.map(entry => {
 		const actionIcons = {
 			user_created: '👤',
@@ -5406,7 +5392,8 @@ function renderAuditLog() {
 
 function editUser(userId) {
 	console.log('editUser called with:', userId);
-	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
+	// Use real users from Supabase (no mock data fallback)
+	const users = realUsers.length > 0 ? realUsers : [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found:', userId);
@@ -5430,7 +5417,8 @@ function editUser(userId) {
 
 function changePassword(userId) {
 	console.log('changePassword called with:', userId);
-	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
+	// Use real users from Supabase (no mock data fallback)
+	const users = realUsers.length > 0 ? realUsers : [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found for password change:', userId);
@@ -5443,7 +5431,8 @@ function changePassword(userId) {
 
 async function deleteUser(userId) {
 	console.log('deleteUser called with:', userId);
-	const users = realUsers.length > 0 ? realUsers : mockUsers || [];
+	// Use real users from Supabase (no mock data fallback)
+	const users = realUsers.length > 0 ? realUsers : [];
 	const user = users.find(u => u.id === userId);
 	if (!user) {
 		console.log('User not found for deletion:', userId);
@@ -5461,21 +5450,10 @@ async function deleteUser(userId) {
 				const userIndex = users.findIndex(u => u.id === userId);
 				if (userIndex > -1) {
 					users.splice(userIndex, 1);
-					
-					// Add to audit log
-					const auditLogs = mockAuditLog || [];
-					auditLogs.unshift({
-						id: `audit_${Date.now()}`,
-						action: 'user_deleted',
-						user_id: userId,
-						user_name: user.name,
-						user_email: user.email,
-						performed_by: 'user_1', // Current user
-						performed_by_name: 'John Smith', // Current user name
-						timestamp: new Date().toISOString(),
-						details: `User ${user.name} deleted`
-					});
-					
+
+					// Note: Audit log functionality removed for mock users
+					// Real audit log is handled by Supabase
+
 					renderUsersTable();
 					renderAuditLog();
 					toast('User deleted successfully');
