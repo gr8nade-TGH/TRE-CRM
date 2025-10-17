@@ -63,19 +63,19 @@ class Router {
     
     // Hide all page elements
     hideAllPages() {
-        document.querySelectorAll('.page').forEach(page => {
+        document.querySelectorAll('.route-view').forEach(page => {
             page.classList.add('hidden');
         });
     }
     
     // Show specific page
     showPage(page) {
-        const pageElement = document.getElementById(page);
+        const pageElement = document.getElementById(page + 'View');
         if (pageElement) {
             pageElement.classList.remove('hidden');
             console.log('🔧 Router: Showing page', page);
         } else {
-            console.warn('🔧 Router: Page element not found', page);
+            console.warn('🔧 Router: Page element not found', page + 'View');
         }
     }
     

@@ -209,7 +209,7 @@ class App {
     
     showMainApp() {
         const loginPortal = document.getElementById('loginPortal');
-        const mainApp = document.getElementById('mainApp');
+        const mainApp = document.getElementById('mainAppContent');
         
         if (loginPortal) loginPortal.style.display = 'none';
         if (mainApp) mainApp.style.display = 'block';
