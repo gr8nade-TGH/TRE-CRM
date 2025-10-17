@@ -3978,8 +3978,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	async function bulkDeleteListings() {
+		console.log('bulkDeleteListings called!');
 		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
 		const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
+
+		console.log('Selected IDs for deletion:', selectedIds);
 
 		if (selectedIds.length === 0) {
 			toast('No listings selected', 'error');
@@ -3988,11 +3991,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		const confirmed = confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE ${selectedIds.length} listing(s)?\n\nThis action CANNOT be undone. The listings will be gone forever.`);
 
+		console.log('First confirmation:', confirmed);
 		if (!confirmed) return;
 
 		// Double confirmation for safety
 		const doubleConfirmed = confirm(`This is your final confirmation. Delete ${selectedIds.length} listing(s) permanently?`);
 
+		console.log('Second confirmation:', doubleConfirmed);
 		if (!doubleConfirmed) return;
 
 		try {
@@ -4000,6 +4005,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 			// Delete each property
 			for (const id of selectedIds) {
+				console.log('Deleting property:', id);
 				await SupabaseAPI.deleteProperty(id);
 			}
 
@@ -5589,11 +5595,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
 	const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 
+	console.log('Setting up bulk action listeners...');
+	console.log('bulkMarkUnavailableBtn:', bulkMarkUnavailableBtn);
+	console.log('bulkDeleteBtn:', bulkDeleteBtn);
+
 	if (bulkMarkUnavailableBtn) {
 		bulkMarkUnavailableBtn.addEventListener('click', bulkMarkAsUnavailable);
+		console.log('✅ Mark as Unavailable listener added');
 	}
 	if (bulkDeleteBtn) {
 		bulkDeleteBtn.addEventListener('click', bulkDeleteListings);
+		console.log('✅ Delete Forever listener added');
 	}
 
 	// Expose state to global scope
