@@ -409,6 +409,41 @@
 			font-family: monospace;
 		}
 		
+		/* Checkbox Group Styles */
+		.checkbox-group {
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+			gap: 8px;
+			margin-top: 8px;
+		}
+		
+		.checkbox-group label {
+			display: flex;
+			align-items: center;
+			font-size: 14px;
+			font-weight: normal;
+			cursor: pointer;
+			padding: 4px 0;
+		}
+		
+		.checkbox-group input[type="checkbox"] {
+			margin-right: 8px;
+			transform: scale(1.1);
+		}
+		
+		.checkbox-label {
+			display: flex;
+			align-items: center;
+			font-size: 14px;
+			font-weight: normal;
+			cursor: pointer;
+		}
+		
+		.checkbox-label input[type="checkbox"] {
+			margin-right: 8px;
+			transform: scale(1.1);
+		}
+		
 		/* Comment Icon Styles */
 		.comment-icon {
 			background: none;
@@ -2252,6 +2287,90 @@
 			<div class="modal-footer">
 				<button type="button" class="btn btn-secondary" data-modal="csvUploadModal">Cancel</button>
 				<button type="button" class="btn btn-primary" id="processCsvBtn" disabled>Process CSV</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Add Agent Modal -->
+	<div id="addAgentModal" class="modal hidden">
+		<div class="modal-content">
+			<div class="modal-header">
+				<h2>Add New Agent</h2>
+				<span class="close" data-modal="addAgentModal">&times;</span>
+			</div>
+			<div class="modal-body">
+				<form id="addAgentForm">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="agentName">Full Name *</label>
+							<input type="text" id="agentName" name="name" required>
+						</div>
+						<div class="form-group">
+							<label for="agentEmail">Email Address *</label>
+							<input type="email" id="agentEmail" name="email" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="agentPhone">Phone Number</label>
+							<input type="tel" id="agentPhone" name="phone">
+						</div>
+						<div class="form-group">
+							<label for="agentRole">Role *</label>
+							<select id="agentRole" name="role" required>
+								<option value="agent">Agent</option>
+								<option value="manager">Manager</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="agentPassword">Password *</label>
+							<input type="password" id="agentPassword" name="password" required minlength="6">
+						</div>
+						<div class="form-group">
+							<label for="agentLicense">License Number</label>
+							<input type="text" id="agentLicense" name="licenseNumber" placeholder="e.g., TR123456">
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="agentSpecialties">Specialties</label>
+						<div class="checkbox-group">
+							<label><input type="checkbox" name="specialties" value="Residential"> Residential</label>
+							<label><input type="checkbox" name="specialties" value="Commercial"> Commercial</label>
+							<label><input type="checkbox" name="specialties" value="Luxury"> Luxury</label>
+							<label><input type="checkbox" name="specialties" value="Investment"> Investment</label>
+							<label><input type="checkbox" name="specialties" value="Rental"> Rental</label>
+							<label><input type="checkbox" name="specialties" value="Student Housing"> Student Housing</label>
+							<label><input type="checkbox" name="specialties" value="New Construction"> New Construction</label>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="agentHireDate">Hire Date</label>
+							<input type="date" id="agentHireDate" name="hireDate">
+						</div>
+						<div class="form-group">
+							<label for="agentNotes">Notes</label>
+							<textarea id="agentNotes" name="notes" rows="3" placeholder="Additional notes about this agent..."></textarea>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label class="checkbox-label">
+							<input type="checkbox" id="sendInvitation" name="sendInvitation" checked>
+							Send email invitation with login credentials
+						</label>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button type="button" class="btn btn-secondary" data-modal="addAgentModal">Cancel</button>
+				<button type="button" class="btn btn-primary" id="saveAgentBtn">Add Agent</button>
 			</div>
 		</div>
 	</div>

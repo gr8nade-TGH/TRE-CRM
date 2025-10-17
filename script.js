@@ -563,7 +563,7 @@ async function deleteSpecialAPI(specialId) {
 }
 
 // Mock data - defined globally
-const mockUsers = [
+window.mockUsers = [
 	{
 		id: 'user_1',
 		name: 'John Smith',
@@ -5691,7 +5691,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const addAgentBtnEl = document.getElementById('addAgentBtn');
 		if (addAgentBtnEl) {
 			addAgentBtnEl.addEventListener('click', ()=>{
-				toast('Add new agent (mock action)');
+				// Check permissions - only managers and super users can add agents
+				if (state.role === 'agent') {
+					toast('You do not have permission to add agents', 'error');
+					return;
+				}
+				
+				// Set default hire date to today
+				document.getElementById('agentHireDate').value = new Date().toISOString().split('T')[0];
+				
+				// Show the modal
+				showModal('addAgentModal');
 			});
 		}
 
@@ -5859,10 +5869,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 						// Use mock data
 						if (userId) {
 							// Update mock user
-							const userIndex = mockUsers.findIndex(u => u.id === userId);
+							const userIndex = window.mockUsers.findIndex(u => u.id === userId);
 							if (userIndex !== -1) {
-								mockUsers[userIndex] = {
-									...mockUsers[userIndex],
+								window.mockUsers[userIndex] = {
+									...window.mockUsers[userIndex],
 									name: userData.name,
 									email: userData.email,
 									role: userData.role,
@@ -5881,7 +5891,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								created_at: new Date().toISOString(),
 								created_by: 'system'
 							};
-							mockUsers.unshift(newUser);
+							window.mockUsers.unshift(newUser);
 							
 							// If this is an agent, also add them to mockAgents
 							if (userData.role === 'agent') {
@@ -5955,7 +5965,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 						toast('Password updated successfully');
 					} else {
 						// Fallback to mock data
-						const user = mockUsers.find(u => u.id === userId);
+						const user = window.mockUsers.find(u => u.id === userId);
 						if (user) {
 							// Add to audit log
 							mockAuditLog.unshift({
@@ -6542,6 +6552,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				const leadId = expandBtn.getAttribute('data-lead-id');
 				console.log('Lead ID:', leadId);
 				toggleLeadTable(leadId);
+			}
+			
+			// Check if clicked element is save agent button
+			if (e.target.id === 'saveAgentBtn') {
+				console.log('Save agent button clicked!');
+				e.preventDefault();
+				e.stopPropagation();
+				await saveNewAgent();
+				return;
 			}
 		});
 
@@ -7376,6 +7395,186 @@ function processCsvFile(file) {
 	};
 	
 	reader.readAsText(file);
+}
+
+// Agent management functions
+async function saveNewAgent() {
+	try {
+		const form = document.getElementById('addAgentForm');
+		const formData = new FormData(form);
+		
+		// Get form data
+		const agentData = {
+			name: formData.get('name'),
+			email: formData.get('email'),
+			phone: formData.get('phone') || '',
+			role: formData.get('role'),
+			password: formData.get('password'),
+			licenseNumber: formData.get('licenseNumber') || '',
+			hireDate: formData.get('hireDate') || new Date().toISOString().split('T')[0],
+			notes: formData.get('notes') || '',
+			sendInvitation: formData.has('sendInvitation')
+		};
+		
+		// Get selected specialties
+		const specialties = [];
+		formData.getAll('specialties').forEach(specialty => {
+			specialties.push(specialty);
+		});
+		agentData.specialties = specialties;
+		
+		// Validate required fields
+		if (!agentData.name || !agentData.email || !agentData.role || !agentData.password) {
+			toast('Please fill in all required fields', 'error');
+			return;
+		}
+		
+		// Validate email format
+		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+		if (!emailRegex.test(agentData.email)) {
+			toast('Please enter a valid email address', 'error');
+			return;
+		}
+		
+		// Validate password length
+		if (agentData.password.length < 6) {
+			toast('Password must be at least 6 characters long', 'error');
+			return;
+		}
+		
+		// Check if email already exists
+		const existingUser = window.mockUsers.find(user => user.email === agentData.email);
+		if (existingUser) {
+			toast('An agent with this email already exists', 'error');
+			return;
+		}
+		
+		// Create agent ID and slug
+		let agentId = 'agent_' + Date.now();
+		const agentSlug = agentData.name.toLowerCase()
+			.replace(/\s+/g, '-')           // Replace spaces with hyphens
+			.replace(/[^a-z0-9-]/g, '')     // Remove special characters
+			.replace(/-+/g, '-')            // Replace multiple hyphens with single
+			.replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+		
+		// Create user data for Supabase
+		const userData = {
+			id: agentId,
+			name: agentData.name,
+			email: agentData.email,
+			role: agentData.role,
+			status: agentData.sendInvitation ? 'invited' : 'active',
+			created_at: new Date().toISOString(),
+			created_by: state.agentId || 'system',
+			last_login: null,
+			raw_user_meta_data: {
+				phone: agentData.phone,
+				license_number: agentData.licenseNumber,
+				specialties: agentData.specialties,
+				hire_date: agentData.hireDate,
+				notes: agentData.notes,
+				slug: agentSlug
+			}
+		};
+		
+		// Try to create user in Supabase first
+		let supabaseUser = null;
+		try {
+			if (window.supabaseClient) {
+				console.log('Creating user in Supabase...');
+				
+				// Create user in Supabase Auth
+				const { data: authData, error: authError } = await window.supabaseClient.auth.admin.createUser({
+					email: agentData.email,
+					password: agentData.password,
+					user_metadata: userData.raw_user_meta_data
+				});
+				
+				if (authError) {
+					console.error('Supabase auth error:', authError);
+					throw authError;
+				}
+				
+				// Update user data with Supabase auth ID
+				userData.id = authData.user.id;
+				agentId = authData.user.id;
+				
+				// Insert user into users table
+				const { data: userDataResult, error: userError } = await window.supabaseClient
+					.from('users')
+					.insert([userData])
+					.select()
+					.single();
+				
+				if (userError) {
+					console.error('Supabase user insert error:', userError);
+					throw userError;
+				}
+				
+				supabaseUser = userDataResult;
+				console.log('✅ User created in Supabase:', supabaseUser);
+			}
+		} catch (error) {
+			console.error('Supabase creation failed, falling back to mock data:', error);
+			// Fall through to mock data creation
+		}
+		
+		// Add to mock data (either as fallback or for local development)
+		if (!supabaseUser) {
+			window.mockUsers.unshift(userData);
+			localStorage.setItem('treMockUsers', JSON.stringify(window.mockUsers));
+		}
+		
+		// Add to mockAgents for landing page functionality
+		const newAgent = {
+			id: agentId,
+			name: agentData.name,
+			email: agentData.email,
+			phone: agentData.phone,
+			slug: agentSlug,
+			active: true,
+			hireDate: agentData.hireDate,
+			licenseNumber: agentData.licenseNumber,
+			specialties: agentData.specialties,
+			notes: agentData.notes
+		};
+		
+		window.mockAgents.unshift(newAgent);
+		localStorage.setItem('treMockAgents', JSON.stringify(window.mockAgents));
+		
+		// Generate landing page URL
+		const landingPageUrl = `${window.location.origin}/agent/${agentSlug}`;
+		
+		// Show success message
+		let successMessage = `Agent "${agentData.name}" created successfully!`;
+		if (agentData.sendInvitation) {
+			successMessage += ` Landing page: ${landingPageUrl}`;
+		}
+		toast(successMessage, 'success');
+		
+		// Close modal and reset form
+		hideModal('addAgentModal');
+		form.reset();
+		
+		// Refresh agents table if we're on the agents page
+		if (state.currentPage === 'agents') {
+			await renderAgents();
+		}
+		
+		// Log audit event
+		console.log('Agent created:', {
+			agentId,
+			agentName: agentData.name,
+			agentEmail: agentData.email,
+			landingPageUrl,
+			createdBy: state.agentId || 'system',
+			timestamp: new Date().toISOString()
+		});
+		
+	} catch (error) {
+		console.error('Error creating agent:', error);
+		toast('Error creating agent: ' + error.message, 'error');
+	}
 }
 
 // Listing management event listeners moved to main click handler above
