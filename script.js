@@ -10,7 +10,7 @@ function formatDate(iso) {
 // Agent Landing Page Functions - defined globally
 function generateLandingPageUrl(agentId) {
 	// Get agent data to create a clean URL
-	const agent = mockAgents.find(a => a.id === agentId);
+	const agent = window.mockAgents.find(a => a.id === agentId);
 	if (!agent) {
 		return `${window.location.origin}/landing.html?agent=${agentId}`;
 	}
@@ -27,7 +27,7 @@ function generateLandingPageUrl(agentId) {
 
 function showAgentLandingPage(agentId) {
 	console.log('showAgentLandingPage called with agentId:', agentId);
-	const agent = mockAgents.find(a => a.id === agentId);
+	const agent = window.mockAgents.find(a => a.id === agentId);
 	if (!agent) {
 		console.error('Agent not found:', agentId);
 		// Redirect to leads page if agent not found
@@ -60,7 +60,7 @@ function showAgentLandingPage(agentId) {
 }
 
 function generateAgentLandingPage(agentId) {
-	const agent = mockAgents.find(a => a.id === agentId);
+	const agent = window.mockAgents.find(a => a.id === agentId);
 	if (!agent) {
 		return '<div>Agent not found</div>';
 	}
@@ -704,7 +704,7 @@ const mockAuditLog = [
 	let selectedProperty = null;
 
 	// ---- Mock Data ----
-	const mockAgents = [
+	window.mockAgents = [
 		{ 
 			id: 'agent_1', 
 			name: 'Alex Agent', 
@@ -833,7 +833,7 @@ const mockAuditLog = [
 		return new Date(past).toISOString();
 	}
 
-	const mockLeads = Array.from({ length: 37 }).map((_, i) => {
+	window.mockLeads = Array.from({ length: 37 }).map((_, i) => {
 		const id = `lead_${i+1}`;
 		const assigned = i % 2 === 0 ? 'agent_1' : (i % 3 === 0 ? 'agent_2' : null);
 		const foundBy = i % 4 === 0 ? 'agent_2' : 'agent_3';
