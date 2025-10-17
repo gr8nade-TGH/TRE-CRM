@@ -27,6 +27,29 @@ import {
 	validateForm
 } from './src/utils/validators.js';
 
+// Import state management
+import {
+	state,
+	getState,
+	updateState,
+	resetState,
+	updateFilters,
+	updateListingsFilters,
+	updateSort,
+	updatePagination,
+	selectLead,
+	selectAgent,
+	addSelectedMatch,
+	removeSelectedMatch,
+	clearSelectedMatches,
+	setCurrentMatches,
+	addShowcase,
+	removeShowcase,
+	getShowcase,
+	updatePublicBanner,
+	navigateToPage
+} from './src/state/state.js';
+
 // ============================================================================
 // GLOBAL FUNCTIONS (Keep for backward compatibility)
 // ============================================================================
@@ -306,36 +329,8 @@ const mockAuditLog = [
 
 (function() {
 	// ---- State ----
-	const state = {
-		role: 'manager',
-		agentId: 'agent_1',
-		currentPage: 'leads',
-		page: 1,
-		pageSize: 10,
-		sort: { key: 'submitted_at', dir: 'desc' },
-		search: '',
-		selectedLeadId: null,
-		selectedAgentId: null,
-		selectedMatches: new Set(),
-		currentMatches: [],
-		showcases: {}, // id -> showcase
-		publicBanner: 'Earn a $200 gift card when you lease through us.',
-		filters: {
-			search: '',
-			status: 'all',
-			fromDate: '',
-			toDate: ''
-		},
-		listingsFilters: {
-			search: '',
-			market: 'all',
-			minPrice: '',
-			maxPrice: '',
-			beds: 'any',
-			commission: '0',
-			amenities: 'any'
-		}
-	};
+	// Note: State is now imported from src/state/state.js
+	// The imported 'state' object is used throughout this file
 
 	// ---- Global Variables ----
 	let map;
