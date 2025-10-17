@@ -2901,9 +2901,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Parse amenities
 			const amenities = amenitiesInput ? amenitiesInput.split(',').map(a => a.trim()).filter(a => a) : [];
 
-			// Create property data (using only new schema fields)
+			// Create property data
 			const propertyData = {
 				id: `prop_${Date.now()}`,
+				// New schema fields
 				community_name: communityName,
 				street_address: streetAddress,
 				city: market,
@@ -2921,7 +2922,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				leasing_link: leasingLink || null,
 				map_lat: mapLat ? parseFloat(mapLat) : null,
 				map_lng: mapLng ? parseFloat(mapLng) : null,
-				created_by: state.userId
+				created_by: state.userId,
+				// Old schema fields (for backward compatibility until migration runs)
+				name: communityName,
+				address: streetAddress
 			};
 
 			console.log('Creating property:', propertyData);
