@@ -3245,6 +3245,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			const rentMax = prop.rent_range_max || prop.rent_max;
 			const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
 			const isPUMI = prop.is_pumi || prop.isPUMI;
+			const markedForReview = prop.mark_for_review || prop.markForReview;
 
 			tr.innerHTML = `
 				<td><input type="checkbox" class="listing-checkbox" data-listing-id="${prop.id}"></td>
@@ -3252,7 +3253,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					<div class="lead-name">
 						${communityName}
 						${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
-						${prop.markForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
+						${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
 					</div>
 					<div class="subtle mono">${address}</div>
 					<div class="community-details">
@@ -5297,6 +5298,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const closeListingEdit = document.getElementById('closeListingEdit');
 		const cancelListingEdit = document.getElementById('cancelListingEdit');
 		const saveListingEditBtn = document.getElementById('saveListingEdit');
+		const deleteListingBtn = document.getElementById('deleteListingBtn');
 		const listingEditModal = document.getElementById('listingEditModal');
 
 		if (closeListingEdit) {
@@ -5307,6 +5309,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 		if (saveListingEditBtn) {
 			saveListingEditBtn.addEventListener('click', saveListingEdit);
+		}
+		if (deleteListingBtn) {
+			deleteListingBtn.addEventListener('click', deleteListing);
 		}
 		if (listingEditModal) {
 			// Close modal when clicking outside
@@ -5361,7 +5366,17 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		document.getElementById('editSpecials').value = property.specials_text || '';
 		document.getElementById('editBonus').value = property.bonus_text || '';
 		document.getElementById('editIsPUMI').checked = property.is_pumi || property.isPUMI || false;
-		document.getElementById('editMarkForReview').checked = property.markForReview || false;
+		document.getElementById('editMarkForReview').checked = property.mark_for_review || property.markForReview || false;
+
+		// Show/hide delete button based on role
+		const deleteBtn = document.getElementById('deleteListingBtn');
+		if (deleteBtn) {
+			if (state.role === 'manager' || state.role === 'super_user') {
+				deleteBtn.style.display = 'block';
+			} else {
+				deleteBtn.style.display = 'none';
+			}
+		}
 
 		// Store the current property for saving
 		window.currentEditingProperty = property;
@@ -5373,6 +5388,35 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	function closeListingEditModal() {
 		hideModal('listingEditModal');
 		window.currentEditingProperty = null;
+	}
+
+	async function deleteListing() {
+		const property = window.currentEditingProperty;
+		if (!property) return;
+
+		// Confirm deletion
+		const propertyName = property.name || property.community_name;
+		const confirmed = confirm(`Are you sure you want to delete "${propertyName}"? This action cannot be undone.`);
+
+		if (!confirmed) return;
+
+		try {
+			console.log('Deleting property:', property.id);
+
+			// Delete from Supabase
+			await SupabaseAPI.deleteProperty(property.id);
+
+			// Show success message
+			toast(`Listing "${propertyName}" deleted successfully!`, 'success');
+
+			// Close modal and refresh display
+			closeListingEditModal();
+			await renderListings();
+		} catch (error) {
+			console.error('Error deleting listing:', error);
+			console.error('Error details:', JSON.stringify(error, null, 2));
+			toast(`Error deleting listing: ${error.message}`, 'error');
+		}
 	}
 
 	async function saveListingEdit() {
@@ -5394,6 +5438,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				leasing_link: document.getElementById('editWebsite').value,
 				amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
 				is_pumi: document.getElementById('editIsPUMI').checked,
+				mark_for_review: document.getElementById('editMarkForReview').checked,
 				updated_at: new Date().toISOString()
 			};
 
