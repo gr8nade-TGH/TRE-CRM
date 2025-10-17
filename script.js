@@ -5520,38 +5520,33 @@ async function createUser(userData) {
 	try {
 		console.log('Creating user with Supabase:', userData);
 
-		// Use Supabase signUp to create the user
-		// This works with the anon key and creates an auth user
-		const { data, error } = await window.supabase.auth.signUp({
-			email: userData.email,
-			password: userData.password,
-			options: {
-				data: {
-					name: userData.name,
-					role: userData.role
-				},
-				emailRedirectTo: window.location.origin
-			}
+		// Call our serverless function to create the user
+		// This uses the service role key on the backend
+		const response = await fetch('/api/create-user', {
+			method: 'POST',
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify({
+				email: userData.email,
+				password: userData.password,
+				name: userData.name,
+				role: userData.role
+			})
 		});
 
-		if (error) {
-			throw error;
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || 'Failed to create user');
 		}
 
-		if (!data.user) {
-			throw new Error('No user returned from signup');
-		}
-
-		console.log('✅ User created in Supabase auth:', data.user);
-
-		// Note: The user is created but needs email confirmation by default
-		// To auto-confirm, we need to disable email confirmation in Supabase settings
-		// Or use the Admin API with service role key (requires backend)
+		const result = await response.json();
+		console.log('✅ User created successfully:', result.user);
 
 		// Refresh the users table
 		await renderUsersTable();
 
-		return data.user;
+		return result.user;
 	} catch (error) {
 		console.error('Error creating user:', error);
 		throw error;
