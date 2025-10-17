@@ -2857,6 +2857,38 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		});
 	}
 
+	// ---- Geocoding Helper ----
+	async function geocodeAddress(address, city, zipCode) {
+		try {
+			// Build full address string
+			const fullAddress = `${address}, ${city}, TX ${zipCode}`;
+			const encodedAddress = encodeURIComponent(fullAddress);
+
+			// Use Mapbox Geocoding API
+			const response = await fetch(
+				`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg&limit=1`
+			);
+
+			if (!response.ok) {
+				throw new Error('Geocoding failed');
+			}
+
+			const data = await response.json();
+
+			if (data.features && data.features.length > 0) {
+				const [lng, lat] = data.features[0].center;
+				console.log('✅ Geocoded address:', fullAddress, 'to', lat, lng);
+				return { lat, lng };
+			} else {
+				console.warn('⚠️ No geocoding results for:', fullAddress);
+				return null;
+			}
+		} catch (error) {
+			console.error('❌ Geocoding error:', error);
+			return null;
+		}
+	}
+
 	// ---- Add Listing Modal Functions ----
 	function openAddListingModal() {
 		const form = document.getElementById('addListingForm');
@@ -2914,6 +2946,22 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			// Parse amenities
 			const amenities = amenitiesInput ? amenitiesInput.split(',').map(a => a.trim()).filter(a => a) : [];
 
+			// Geocode address if lat/lng not provided
+			let lat = mapLat ? parseFloat(mapLat) : null;
+			let lng = mapLng ? parseFloat(mapLng) : null;
+
+			if (!lat || !lng) {
+				console.log('🗺️ Geocoding address...');
+				const coords = await geocodeAddress(streetAddress, market, zipCode);
+				if (coords) {
+					lat = coords.lat;
+					lng = coords.lng;
+					toast('Address geocoded successfully!', 'success');
+				} else {
+					toast('Warning: Could not geocode address. Property will not appear on map.', 'warning');
+				}
+			}
+
 			// Create property data
 			const now = new Date().toISOString();
 			const propertyData = {
@@ -2934,9 +2982,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				last_updated: lastUpdated || now,
 				contact_email: contactEmail || null,
 				leasing_link: leasingLink || null,
-				map_lat: mapLat ? parseFloat(mapLat) : null,
-				map_lng: mapLng ? parseFloat(mapLng) : null,
-				created_by: state.userId,
+				map_lat: lat,
+				map_lng: lng,
+				created_by: state.agentId,
 				created_at: now,
 				updated_at: now,
 				// Old schema fields (for backward compatibility)
@@ -2951,12 +2999,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			console.log('✅ Property created:', newProperty);
 
 			// If there's a note, create it
-			if (noteContent && state.userId) {
+			if (noteContent && state.agentId) {
+				const authorName = window.currentUser?.user_metadata?.name ||
+								   window.currentUser?.email ||
+								   'Unknown';
 				const noteData = {
 					property_id: newProperty.id,
 					content: noteContent,
-					author_id: state.userId,
-					author_name: state.userName || state.userEmail || 'Unknown'
+					author_id: state.agentId,
+					author_name: authorName
 				};
 				try {
 					await SupabaseAPI.createPropertyNote(noteData);
@@ -2965,7 +3016,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					console.error('❌ Error creating note (continuing anyway):', noteError);
 					// Don't fail the whole operation if note creation fails
 				}
-			} else if (noteContent && !state.userId) {
+			} else if (noteContent && !state.agentId) {
 				console.warn('⚠️ Cannot create note: user ID not available');
 			}
 
@@ -5302,41 +5353,55 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		window.currentEditingProperty = null;
 	}
 
-	function saveListingEdit() {
+	async function saveListingEdit() {
 		const property = window.currentEditingProperty;
 		if (!property) return;
 
-		// Get form data
-		const formData = {
-			name: document.getElementById('editPropertyName').value,
-			address: document.getElementById('editAddress').value,
-			market: document.getElementById('editMarket').value,
-			phone: document.getElementById('editPhone').value,
-			rent_min: parseInt(document.getElementById('editRentMin').value),
-			rent_max: parseInt(document.getElementById('editRentMax').value),
-			beds_min: parseInt(document.getElementById('editBedsMin').value),
-			beds_max: parseInt(document.getElementById('editBedsMax').value),
-			baths_min: parseFloat(document.getElementById('editBathsMin').value),
-			baths_max: parseFloat(document.getElementById('editBathsMax').value),
-			escort_pct: parseFloat(document.getElementById('editEscortPct').value),
-			send_pct: parseFloat(document.getElementById('editSendPct').value),
-			website: document.getElementById('editWebsite').value,
-			amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
-			specials_text: document.getElementById('editSpecials').value,
-			bonus_text: document.getElementById('editBonus').value,
-			isPUMI: document.getElementById('editIsPUMI').checked,
-			markForReview: document.getElementById('editMarkForReview').checked
-		};
+		try {
+			// Get form data
+			const formData = {
+				name: document.getElementById('editPropertyName').value,
+				community_name: document.getElementById('editPropertyName').value,
+				address: document.getElementById('editAddress').value,
+				street_address: document.getElementById('editAddress').value,
+				market: document.getElementById('editMarket').value,
+				city: document.getElementById('editMarket').value,
+				phone: document.getElementById('editPhone').value,
+				rent_min: parseInt(document.getElementById('editRentMin').value),
+				rent_max: parseInt(document.getElementById('editRentMax').value),
+				rent_range_min: parseInt(document.getElementById('editRentMin').value),
+				rent_range_max: parseInt(document.getElementById('editRentMax').value),
+				beds_min: parseInt(document.getElementById('editBedsMin').value),
+				beds_max: parseInt(document.getElementById('editBedsMax').value),
+				baths_min: parseFloat(document.getElementById('editBathsMin').value),
+				baths_max: parseFloat(document.getElementById('editBathsMax').value),
+				escort_pct: parseFloat(document.getElementById('editEscortPct').value),
+				send_pct: parseFloat(document.getElementById('editSendPct').value),
+				commission_pct: Math.max(parseFloat(document.getElementById('editEscortPct').value), parseFloat(document.getElementById('editSendPct').value)),
+				website: document.getElementById('editWebsite').value,
+				leasing_link: document.getElementById('editWebsite').value,
+				amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
+				specials_text: document.getElementById('editSpecials').value,
+				bonus_text: document.getElementById('editBonus').value,
+				isPUMI: document.getElementById('editIsPUMI').checked,
+				is_pumi: document.getElementById('editIsPUMI').checked,
+				markForReview: document.getElementById('editMarkForReview').checked,
+				updated_at: new Date().toISOString()
+			};
 
-		// Update the property object
-		Object.assign(property, formData);
+			// Update in Supabase
+			await SupabaseAPI.updateProperty(property.id, formData);
 
-		// Show success message
-		toast(`Listing "${property.name}" updated successfully!`);
+			// Show success message
+			toast(`Listing "${formData.name}" updated successfully!`, 'success');
 
-		// Close modal and refresh display
-		closeListingEditModal();
-		renderListings();
+			// Close modal and refresh display
+			closeListingEditModal();
+			await renderListings();
+		} catch (error) {
+			console.error('Error updating listing:', error);
+			toast(`Error updating listing: ${error.message}`, 'error');
+		}
 	}
 
 	// Initialize health status for all leads
