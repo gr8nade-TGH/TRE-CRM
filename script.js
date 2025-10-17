@@ -4094,6 +4094,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	function route(){
+		// Protect routes - require authentication
+		if (!window.isAuthenticated || !window.isAuthenticated()) {
+			console.log('⚠️ Not authenticated, cannot route');
+			return;
+		}
+
 		const hash = location.hash.slice(1);
 		// public showcase route: #/sc_xxxxxx
 		if (hash.startsWith('/sc_')){
@@ -4171,12 +4177,37 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		updateBugFlagVisibility();
 	}
 
-	// ---- Events ----
-	document.addEventListener('DOMContentLoaded', () => {
+	// ---- App Initialization (called by auth.js after login) ----
+	window.initializeApp = function() {
+		console.log('🚀 Initializing app...');
+
+		// Update state from authenticated user
+		if (window.currentUser) {
+			const role = window.getUserRole();
+			const userId = window.getUserId();
+
+			state.role = role;
+			state.agentId = userId;
+
+			console.log('✅ App initialized with role:', role, 'userId:', userId);
+		}
+
 		// Initialize nav visibility based on current role
+		updateNavVisibility();
+
+		// Initialize routing
+		initializeRouting();
+
+		// Load initial page
+		const hash = window.location.hash || '#/leads';
+		router(hash);
+	};
+
+	// Update navigation visibility based on role
+	function updateNavVisibility() {
 		const agentsNavLink = document.getElementById('agentsNavLink');
 		const adminNavLink = document.getElementById('adminNavLink');
-		
+
 		if (agentsNavLink) {
 			if (state.role === 'agent') {
 				agentsNavLink.style.display = 'none';
@@ -4184,7 +4215,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				agentsNavLink.style.display = 'block';
 			}
 		}
-		
+
 		if (adminNavLink) {
 			if (state.role === 'agent') {
 				adminNavLink.style.display = 'none';
@@ -4192,6 +4223,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				adminNavLink.style.display = 'block';
 			}
 		}
+	}
+
+	// ---- Events ----
+	document.addEventListener('DOMContentLoaded', () => {
+		// Don't initialize app here - wait for auth.js to call initializeApp()
+		console.log('DOM loaded, waiting for authentication...');
 		
 		// role select
 		document.getElementById('roleSelect').addEventListener('change', (e)=>{
@@ -5337,11 +5374,26 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			}
 		});
 
-		// initial route
-		if (!location.hash) location.hash = '/leads';
-		route();
-		window.addEventListener('hashchange', route);
+		// Routing will be initialized by initializeApp() after authentication
 	});
+
+	// Initialize routing (called by initializeApp after auth)
+	function initializeRouting() {
+		console.log('🔀 Initializing routing...');
+
+		// Set initial route if none exists
+		if (!location.hash) {
+			location.hash = '/leads';
+		}
+
+		// Route to current hash
+		route();
+
+		// Listen for hash changes
+		window.addEventListener('hashchange', route);
+
+		console.log('✅ Routing initialized');
+	}
 
 	// ---- Listing Edit Modal ----
 	function openListingEditModal(property) {

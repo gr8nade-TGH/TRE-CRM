@@ -9,6 +9,7 @@
 		crossorigin="anonymous"
 	></script>
 	<link rel="stylesheet" href="styles.css" />
+	<link rel="stylesheet" href="auth-styles.css" />
 
 	<!-- Supabase JS Client -->
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -39,6 +40,57 @@
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
 </head>
 <body>
+	<!-- Login Portal (shown when not authenticated) -->
+	<div id="loginPortal" class="login-portal" style="display: none;">
+		<div class="login-container">
+			<div class="login-card">
+				<div class="login-header">
+					<img src="images/tre_logo_black_bg.png" alt="TRE Logo" class="login-logo">
+					<h1>TRE CRM</h1>
+					<p>Texas Relocation Experts</p>
+				</div>
+
+				<form id="loginForm" class="login-form">
+					<div class="form-group">
+						<label for="loginEmail">Email</label>
+						<input
+							type="email"
+							id="loginEmail"
+							name="email"
+							required
+							autocomplete="email"
+							placeholder="your.email@tre.com"
+						>
+					</div>
+
+					<div class="form-group">
+						<label for="loginPassword">Password</label>
+						<input
+							type="password"
+							id="loginPassword"
+							name="password"
+							required
+							autocomplete="current-password"
+							placeholder="Enter your password"
+						>
+					</div>
+
+					<div id="loginError" class="error-message" style="display: none;"></div>
+
+					<button type="submit" class="btn btn-primary btn-block">
+						Sign In
+					</button>
+				</form>
+
+				<div class="login-footer">
+					<p>Need an account? Contact your administrator.</p>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Main App Content (shown when authenticated) -->
+	<div id="mainAppContent" style="display: none;">
 	<header class="app-header">
 		<div class="brand">
 			<span class="brand-text">TRE CRM</span>
@@ -54,12 +106,12 @@
 			<a href="#/bugs" class="nav-link" data-page="bugs" id="bugsNavLink">🐛</a>
 		</nav>
 		
-		<div class="role-switch">
-			<label for="roleSelect">Role:</label>
-			<select id="roleSelect">
-				<option value="manager">Manager</option>
-				<option value="agent">Agent</option>
-			</select>
+		<div class="header-actions">
+			<div class="user-info">
+				<span id="userEmail"></span>
+				<span id="userRole" class="role-badge"></span>
+			</div>
+			<button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
 		</div>
 	</header>
 
@@ -1101,11 +1153,14 @@
 		</div>
 	</div>
 
+	</div><!-- End mainAppContent -->
+
 	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 	<script>
 		// Mapbox configuration
 		mapboxgl.accessToken = 'pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg';
 	</script>
+	<script src="auth.js"></script>
 	<script type="module" src="script.js"></script>
 </body>
 </html>
