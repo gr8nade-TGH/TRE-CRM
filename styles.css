@@ -1364,12 +1364,23 @@ body {
   transform: translateY(-1px);
   box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.action-btn.danger { 
-  color: var(--danger); 
-  border-color: #fca5a5; 
+.action-btn.danger {
+  color: var(--danger);
+  border-color: #fca5a5;
 }
-.action-btn.danger:hover { 
-  background: #fef2f2; 
+.action-btn.danger:hover {
+  background: #fef2f2;
+}
+.action-btn.secondary {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  color: #475569;
+  font-size: 13px;
+  padding: 6px 12px;
+}
+.action-btn.secondary:hover {
+  background: #e2e8f0;
+  border-color: #94a3b8;
 }
 
 .stats-grid { 

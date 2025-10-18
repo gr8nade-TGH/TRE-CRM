@@ -2668,8 +2668,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		agentsToRender.forEach(agent => {
 			const stats = getAgentStats(agent.id);
-			// Generate landing page URL
-			const landingUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}landing.html?agent=${encodeURIComponent(agent.email)}`;
+			// Generate landing page URL with agent slug (name-based)
+			const agentSlug = agent.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+			const landingUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}landing/${agentSlug}`;
 
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
@@ -2682,8 +2683,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
 				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
 				<td>
-					<button class="icon-btn" data-view-landing="${landingUrl}" title="View Landing Page" style="margin-right: 8px;">🔗</button>
-					<button class="icon-btn" data-copy-landing="${landingUrl}" title="Copy Link">📋</button>
+					<button class="action-btn secondary" data-view-landing="${landingUrl}" title="View Landing Page" style="margin-right: 8px;">
+						<span style="margin-right: 4px;">🌐</span> View Page
+					</button>
+					<button class="action-btn secondary" data-copy-landing="${landingUrl}" title="Copy Landing Page URL">
+						<span style="margin-right: 4px;">📋</span> Copy Link
+					</button>
 				</td>
 				<td>
 					<button class="action-btn" data-remove="${agent.id}">Remove Agent</button>
