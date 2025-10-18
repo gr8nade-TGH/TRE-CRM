@@ -19,38 +19,43 @@ function getSupabase() {
  */
 export async function getLeads({ role, agentId, search, sortKey, sortDir, page = 1, pageSize = 10, filters = {} }) {
     const supabase = getSupabase();
-    
+
+    console.log('🔍 getLeads called with:', { role, agentId, search, sortKey, sortDir, page, pageSize, filters });
+
     // Start query
     let query = supabase
         .from('leads')
         .select('*', { count: 'exact' });
-    
+
     // Filter by agent if role is agent
     if (role === 'agent' && agentId) {
+        console.log('🔍 Filtering for agent:', agentId);
         query = query.or(`assigned_agent_id.eq.${agentId},found_by_agent_id.eq.${agentId}`);
+    } else {
+        console.log('🔍 Not filtering by agent (role is manager or no agentId)');
     }
-    
+
     // Apply status filter
     if (filters.status && filters.status !== 'all') {
         query = query.eq('health_status', filters.status);
     }
-    
+
     // Apply date filters
     if (filters.fromDate) {
         query = query.gte('submitted_at', filters.fromDate);
     }
-    
+
     if (filters.toDate) {
         const toDate = new Date(filters.toDate);
         toDate.setHours(23, 59, 59, 999);
         query = query.lte('submitted_at', toDate.toISOString());
     }
-    
+
     // Apply search filter
     if (search) {
         query = query.or(`name.ilike.%${search}%,email.ilike.%${search}%,phone.ilike.%${search}%`);
     }
-    
+
     // Apply sorting
     if (sortKey && sortDir && sortDir !== 'none') {
         query = query.order(sortKey, { ascending: sortDir === 'asc' });
@@ -58,19 +63,24 @@ export async function getLeads({ role, agentId, search, sortKey, sortDir, page =
         // Default sort by submitted_at desc
         query = query.order('submitted_at', { ascending: false });
     }
-    
+
     // Apply pagination
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
-    
+
+    console.log('🔍 Executing query...');
     const { data, error, count } = await query;
-    
+
     if (error) {
-        console.error('Error fetching leads:', error);
+        console.error('❌ Error fetching leads:', error);
+        console.error('Error details:', JSON.stringify(error, null, 2));
         throw error;
     }
-    
+
+    console.log('✅ Query successful! Found', count, 'total leads, returning', data?.length, 'items');
+    console.log('📋 Lead data:', data);
+
     return {
         items: data || [],
         total: count || 0
