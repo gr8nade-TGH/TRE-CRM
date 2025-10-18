@@ -1003,7 +1003,7 @@
 
 	<!-- Add Lead Modal -->
 	<div id="addLeadModal" class="modal hidden">
-		<div class="modal-card">
+		<div class="modal-card" style="max-width: 900px;">
 			<div class="modal-header">
 				<h3>Add New Lead</h3>
 				<button id="closeAddLeadModal" class="icon-btn" aria-label="Close">×</button>
@@ -1019,11 +1019,97 @@
 							<label for="leadEmail">Email *</label>
 							<input type="email" id="leadEmail" required>
 						</div>
-					</div>
-					<div class="form-row">
 						<div class="field">
 							<label for="leadPhone">Phone *</label>
 							<input type="tel" id="leadPhone" required>
+						</div>
+					</div>
+
+					<div class="form-row">
+						<div class="field">
+							<label for="leadBestTime">Best Time to Call</label>
+							<select id="leadBestTime">
+								<option value="">Select</option>
+								<option value="morning">Morning (8AM-12PM)</option>
+								<option value="afternoon">Afternoon (12PM-5PM)</option>
+								<option value="evening">Evening (5PM-8PM)</option>
+								<option value="anytime">Anytime</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="leadBedrooms"># of Bedrooms</label>
+							<select id="leadBedrooms">
+								<option value="">Select</option>
+								<option value="studio">Studio</option>
+								<option value="1">1 Bedroom</option>
+								<option value="2">2 Bedrooms</option>
+								<option value="3">3 Bedrooms</option>
+								<option value="4">4 Bedrooms</option>
+								<option value="5+">5+ Bedrooms</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="leadBathrooms"># of Bathrooms</label>
+							<select id="leadBathrooms">
+								<option value="">Select</option>
+								<option value="1">1 Bathroom</option>
+								<option value="1.5">1.5 Bathrooms</option>
+								<option value="2">2 Bathrooms</option>
+								<option value="2.5">2.5 Bathrooms</option>
+								<option value="3">3 Bathrooms</option>
+								<option value="3+">3+ Bathrooms</option>
+							</select>
+						</div>
+					</div>
+
+					<div class="form-row">
+						<div class="field">
+							<label for="leadPriceRange">Price Range</label>
+							<select id="leadPriceRange">
+								<option value="">Select</option>
+								<option value="under-1000">Under $1,000</option>
+								<option value="1000-1500">$1,000 - $1,500</option>
+								<option value="1500-2000">$1,500 - $2,000</option>
+								<option value="2000-2500">$2,000 - $2,500</option>
+								<option value="2500-3000">$2,500 - $3,000</option>
+								<option value="3000-4000">$3,000 - $4,000</option>
+								<option value="4000+">$4,000+</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="leadAreaOfTown">Area of Town</label>
+							<select id="leadAreaOfTown">
+								<option value="">Select</option>
+								<option value="downtown">Downtown</option>
+								<option value="north-side">North Side</option>
+								<option value="south-side">South Side</option>
+								<option value="east-side">East Side</option>
+								<option value="west-side">West Side</option>
+								<option value="northwest">Northwest</option>
+								<option value="northeast">Northeast</option>
+								<option value="southwest">Southwest</option>
+								<option value="southeast">Southeast</option>
+								<option value="suburbs">Suburbs</option>
+								<option value="flexible">Flexible</option>
+							</select>
+						</div>
+						<div class="field">
+							<label for="leadMoveInDate">Target Move-in Date</label>
+							<input type="date" id="leadMoveInDate">
+						</div>
+					</div>
+
+					<div class="form-row">
+						<div class="field">
+							<label for="leadCreditHistory">Credit History</label>
+							<select id="leadCreditHistory">
+								<option value="">Select</option>
+								<option value="excellent">Excellent (750+)</option>
+								<option value="good">Good (700-749)</option>
+								<option value="fair">Fair (650-699)</option>
+								<option value="poor">Poor (Below 650)</option>
+								<option value="no-credit">No Credit History</option>
+							</select>
 						</div>
 						<div class="field">
 							<label for="leadStatus">Status</label>
@@ -1037,19 +1123,22 @@
 								<option value="closed_lost">Closed Lost</option>
 							</select>
 						</div>
-					</div>
-					<div class="form-row">
 						<div class="field">
 							<label for="leadHealth">Health Status</label>
 							<select id="leadHealth">
+								<option value="new">New</option>
 								<option value="green">Green</option>
 								<option value="yellow">Yellow</option>
 								<option value="red">Red</option>
 							</select>
 						</div>
+					</div>
+
+					<div class="form-row">
 						<div class="field">
 							<label for="leadSource">Source</label>
 							<select id="leadSource">
+								<option value="landing_page">Landing Page</option>
 								<option value="website">Website</option>
 								<option value="referral">Referral</option>
 								<option value="cold_call">Cold Call</option>
@@ -1059,13 +1148,15 @@
 							</select>
 						</div>
 					</div>
+
 					<div class="field">
-						<label for="leadNotes">Notes</label>
-						<textarea id="leadNotes" rows="3" placeholder="Any additional notes about this lead..."></textarea>
+						<label for="leadComments">Lease Term / Special Requirements / Comments</label>
+						<textarea id="leadComments" rows="3" placeholder="Any specific requirements or comments..."></textarea>
 					</div>
+
 					<div class="field">
-						<label for="leadPreferences">Property Preferences</label>
-						<textarea id="leadPreferences" rows="2" placeholder="Bedrooms, bathrooms, price range, location preferences..."></textarea>
+						<label for="leadNotes">Internal Notes</label>
+						<textarea id="leadNotes" rows="2" placeholder="Any additional notes about this lead (internal use only)..."></textarea>
 					</div>
 				</form>
 			</div>

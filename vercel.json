@@ -6,7 +6,7 @@
     },
     {
       "source": "/landing/:agent",
-      "destination": "/landing.html"
+      "destination": "/landing.html?agent=$1"
     }
   ]
 }

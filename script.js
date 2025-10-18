@@ -74,7 +74,7 @@ import * as SupabaseAPI from './src/api/supabase-api.js';
 // accessible globally for functions that expect them in global scope
 
 // Add Lead functionality
-function saveNewLead() {
+async function saveNewLead() {
 	const name = document.getElementById('leadName').value.trim();
 	const email = document.getElementById('leadEmail').value.trim();
 	const phone = document.getElementById('leadPhone').value.trim();
@@ -82,7 +82,16 @@ function saveNewLead() {
 	const health = document.getElementById('leadHealth').value;
 	const source = document.getElementById('leadSource').value;
 	const notes = document.getElementById('leadNotes').value.trim();
-	const preferences = document.getElementById('leadPreferences').value.trim();
+
+	// New fields from landing page
+	const bestTime = document.getElementById('leadBestTime').value;
+	const bedrooms = document.getElementById('leadBedrooms').value;
+	const bathrooms = document.getElementById('leadBathrooms').value;
+	const priceRange = document.getElementById('leadPriceRange').value;
+	const areaOfTown = document.getElementById('leadAreaOfTown').value;
+	const moveInDate = document.getElementById('leadMoveInDate').value;
+	const creditHistory = document.getElementById('leadCreditHistory').value;
+	const comments = document.getElementById('leadComments').value.trim();
 
 	// Validation
 	if (!name || !email || !phone) {
@@ -90,15 +99,20 @@ function saveNewLead() {
 		return;
 	}
 
-	// Check for duplicates
-	if (checkDuplicateLead(email, phone)) {
-		toast('A lead with this email or phone number already exists', 'error');
-		return;
-	}
+	// Build preferences object
+	const preferences = {
+		bedrooms: bedrooms,
+		bathrooms: bathrooms,
+		priceRange: priceRange,
+		areaOfTown: areaOfTown,
+		moveInDate: moveInDate,
+		creditHistory: creditHistory,
+		bestTimeToCall: bestTime,
+		comments: comments
+	};
 
-	// Create new lead
+	// Create new lead object for Supabase
 	const newLead = {
-		id: 'lead_' + Date.now(),
 		name: name,
 		email: email,
 		phone: phone,
@@ -106,21 +120,37 @@ function saveNewLead() {
 		health_status: health,
 		source: source,
 		notes: notes,
-		preferences: preferences,
+		preferences: JSON.stringify(preferences),
+		assigned_agent_id: state.agentId || null,
+		found_by_agent_id: state.agentId || null,
+		submitted_at: new Date().toISOString(),
 		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString(),
-		agent_id: state.currentAgent || 'agent_1' // Default agent
+		updated_at: new Date().toISOString()
 	};
 
-	// Add to mock data
-	if (USE_MOCK_DATA) {
-		mockLeads.push(newLead);
-		renderLeads();
+	try {
+		// Insert into Supabase
+		const { data, error } = await window.supabase
+			.from('leads')
+			.insert([newLead])
+			.select();
+
+		if (error) {
+			console.error('❌ Error creating lead:', error);
+			toast('Error adding lead: ' + error.message, 'error');
+			return;
+		}
+
+		console.log('✅ Lead created:', data);
 		toast('Lead added successfully!', 'success');
 		hideModal('addLeadModal');
-	} else {
-		// In production, this would call the API
-		createLeadAPI(newLead);
+
+		// Refresh leads table
+		await renderLeads();
+
+	} catch (error) {
+		console.error('❌ Error saving lead:', error);
+		toast('Error adding lead. Please try again.', 'error');
 	}
 }
 
