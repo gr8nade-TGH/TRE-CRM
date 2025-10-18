@@ -22,24 +22,33 @@ function randomDate(daysBack = 30) {
  * @returns {string} HTML string with styled tags
  */
 export function prefsSummary(p) {
-	if (!p) return '<span class="pref-tag">No preferences</span>';
+	if (!p) return '<span class="pref-tag" style="background: #f3f4f6; color: #6b7280;">No preferences</span>';
 
 	const tags = [];
 
-	// Beds tag
-	if (p.beds) {
-		tags.push(`<span class="pref-tag beds">🛏️ ${p.beds} ${p.beds === 1 ? 'Bed' : 'Beds'}</span>`);
+	// Beds tag - check multiple possible field names
+	const beds = p.beds || p.bedrooms || p.bed_count;
+	if (beds) {
+		tags.push(`<span class="pref-tag beds">🛏️ ${beds} ${beds === 1 ? 'Bed' : 'Beds'}</span>`);
 	}
 
-	// Baths tag
-	if (p.baths) {
-		tags.push(`<span class="pref-tag baths">🚿 ${p.baths} ${p.baths === 1 ? 'Bath' : 'Baths'}</span>`);
+	// Baths tag - check multiple possible field names
+	const baths = p.baths || p.bathrooms || p.bath_count;
+	if (baths) {
+		tags.push(`<span class="pref-tag baths">🚿 ${baths} ${baths === 1 ? 'Bath' : 'Baths'}</span>`);
 	}
 
-	// Budget tag
-	const price = p.budget_max ? `<$${p.budget_max}/mo` : (p.budget ? `$${p.budget}/mo` : '');
+	// Budget tag - check multiple possible field names
+	const budgetMax = p.budget_max || p.max_budget || p.budgetMax;
+	const budget = p.budget || p.min_budget || p.budgetMin;
+	const price = budgetMax ? `<$${budgetMax}/mo` : (budget ? `$${budget}/mo` : '');
 	if (price) {
 		tags.push(`<span class="pref-tag budget">💰 ${price}</span>`);
+	}
+
+	// If no tags, show a placeholder
+	if (tags.length === 0) {
+		return '<span class="pref-tag" style="background: #f3f4f6; color: #6b7280;">No preferences</span>';
 	}
 
 	return `<div class="pref-tags">${tags.join('')}</div>`;

@@ -834,16 +834,16 @@ body {
 
 /* Showcase Button Styles */
 .showcase-btn {
-	display: inline-flex;
+	display: inline-flex !important;
 	align-items: center;
 	gap: 6px;
 	font-weight: 600;
-	padding: 8px 16px;
+	padding: 8px 16px !important;
 	border-radius: 8px;
 	transition: all 0.2s ease;
-	background: linear-gradient(135deg, #2563eb, #1d4ed8);
+	background: linear-gradient(135deg, #2563eb, #1d4ed8) !important;
 	color: #ffffff !important;
-	border: 2px solid #1d4ed8;
+	border: 2px solid #1d4ed8 !important;
 	box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 	position: relative;
 	overflow: hidden;
@@ -853,6 +853,10 @@ body {
 
 .showcase-btn * {
 	color: #ffffff !important;
+}
+
+.showcase-btn svg {
+	fill: #ffffff !important;
 }
 
 .showcase-btn:hover:not(:disabled) {
