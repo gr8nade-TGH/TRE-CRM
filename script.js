@@ -4367,21 +4367,36 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 	function updateBulkActionsBar() {
 		const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
-		const bulkActionsBar = document.getElementById('bulkActionsBar');
 		const bulkActionsCount = document.getElementById('bulkActionsCount');
+		const buildShowcaseBtn = document.getElementById('buildShowcaseBtn');
 		const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
 		const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 
-		if (!bulkActionsBar) return;
+		// Update count display
+		if (bulkActionsCount) {
+			if (selectedCount > 0) {
+				bulkActionsCount.textContent = `${selectedCount} selected`;
+				bulkActionsCount.style.display = 'inline-flex';
+			} else {
+				bulkActionsCount.textContent = '';
+				bulkActionsCount.style.display = 'none';
+			}
+		}
 
-		// Show/hide bulk actions bar based on selection and role
+		// Enable/disable buttons based on selection
+		const hasSelection = selectedCount > 0;
 		const isManagerOrSuperUser = state.role === 'manager' || state.role === 'super_user';
 
-		if (selectedCount > 0 && isManagerOrSuperUser) {
-			bulkActionsBar.classList.remove('hidden');
-			bulkActionsCount.textContent = `${selectedCount} selected`;
-		} else {
-			bulkActionsBar.classList.add('hidden');
+		if (buildShowcaseBtn) {
+			buildShowcaseBtn.disabled = !hasSelection;
+		}
+
+		if (bulkMarkUnavailableBtn) {
+			bulkMarkUnavailableBtn.disabled = !hasSelection || !isManagerOrSuperUser;
+		}
+
+		if (bulkDeleteBtn) {
+			bulkDeleteBtn.disabled = !hasSelection || !isManagerOrSuperUser;
 		}
 	}
 
