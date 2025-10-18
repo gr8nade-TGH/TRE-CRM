@@ -1505,10 +1505,10 @@ async function deleteSpecialAPI(specialId) {
 				${notesCount > 0 ? `<span style="font-size: 0.75rem; color: ${noteColor};">${notesCount}</span>` : ''}
 			</span>`;
 
-			// Activity log icon
+			// Activity log icon (clock/history icon)
 			const activityIcon = `<span class="activity-icon" data-lead-id="${lead.id}" style="cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center;" title="View activity log">
 				<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
-					<path d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"/>
+					<path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
 				</svg>
 			</span>`;
 
@@ -3477,6 +3477,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								</svg>
 								<span>${prop.notesCount || ''}</span>
 							</div>
+							<div class="activity-count" data-property-id="${prop.id}" data-property-name="${communityName}" title="View activity log" style="cursor: pointer;">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
+									<path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+								</svg>
+							</div>
 						</div>
 						<div class="last-updated">Updated: ${formatDate(prop.pricing_last_updated || prop.last_updated)}</div>
 					</div>
@@ -3513,6 +3518,20 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					console.log('Property Name:', prop.name);
 					e.stopPropagation();
 					openInterestedLeads(prop.id, prop.name);
+				});
+			}
+
+			// Add activity count click handler
+			const activityCount = tr.querySelector('.activity-count');
+			if (activityCount) {
+				activityCount.addEventListener('click', (e) => {
+					console.log('=== ACTIVITY ICON CLICKED ===');
+					console.log('Property ID:', prop.id);
+					console.log('Property Name:', prop.name);
+					e.stopPropagation();
+					const propertyId = e.currentTarget.dataset.propertyId;
+					const propertyName = e.currentTarget.dataset.propertyName;
+					openActivityLogModal(propertyId, 'property', propertyName);
 				});
 			}
 
