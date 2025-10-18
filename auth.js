@@ -14,9 +14,17 @@ document.addEventListener('DOMContentLoaded', async function() {
 	await waitForSupabase();
 	
 	try {
+		// Verify Supabase client is properly initialized
+		if (!window.supabase || !window.supabase.auth) {
+			console.error('❌ Supabase client or auth not available');
+			console.log('window.supabase:', window.supabase);
+			showLoginPortal();
+			return;
+		}
+
 		// Check for existing session
 		const { data: { session }, error } = await window.supabase.auth.getSession();
-		
+
 		if (error) {
 			console.error('Session check error:', error);
 			showLoginPortal();

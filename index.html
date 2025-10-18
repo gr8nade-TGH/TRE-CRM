@@ -20,17 +20,17 @@
 
 		// Wait for Supabase library to load, then create client
 		(function initSupabase() {
-			// Check if the supabase library is loaded (window.supabase from CDN)
-			if (window.supabase && window.supabase.createClient) {
-				// Already initialized
+			// Check if client is already initialized (has auth property)
+			if (window.supabase && window.supabase.auth) {
 				console.log('✅ Supabase client already initialized');
 				return;
 			}
 
-			// Check if the library object exists
+			// Check if the library object exists (from CDN)
 			if (typeof supabase !== 'undefined' && supabase.createClient) {
 				window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-				console.log('✅ Supabase client initialized');
+				console.log('✅ Supabase client initialized:', window.supabase);
+				console.log('✅ Supabase auth available:', !!window.supabase.auth);
 			} else {
 				console.log('⏳ Waiting for Supabase library to load...');
 				setTimeout(initSupabase, 50);
@@ -39,8 +39,8 @@
 
 		// Helper function to get current session
 		window.getCurrentSession = async function() {
-			if (!window.supabase) {
-				console.error('Supabase client not initialized');
+			if (!window.supabase || !window.supabase.auth) {
+				console.error('Supabase client not initialized or auth not available');
 				return null;
 			}
 			const { data: { session }, error } = await window.supabase.auth.getSession();
