@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<title>Find Your Perfect Apartment - Texas Relocation Experts</title>
+	<link rel="stylesheet" href="styles.css" />
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+		.landing-page {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+			line-height: 1.6;
+			color: #1a1a1a;
+			background: #f8f9fa;
+			min-height: 100vh;
+		}
+		.landing-container {
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 0 20px;
+		}
+		.landing-header {
+			background: #ffffff;
+			padding: 20px 0;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+			border-bottom: 3px solid #2563eb;
+		}
+		.landing-logo {
+			text-align: center;
+		}
+		.landing-logo h1 {
+			font-size: 2rem;
+			color: #2563eb;
+			font-weight: 700;
+		}
+		.landing-logo p {
+			color: #64748b;
+			font-size: 0.95rem;
+			margin-top: 5px;
+		}
+		.landing-hero {
+			text-align: center;
+			padding: 60px 20px 40px;
+			background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+			color: white;
+		}
+		.landing-hero h1 {
+			font-size: 2.5rem;
+			margin-bottom: 15px;
+			font-weight: 700;
+		}
+		.landing-hero p {
+			font-size: 1.1rem;
+			margin-bottom: 10px;
+			opacity: 0.95;
+		}
+		.landing-hero .highlight {
+			font-size: 1.3rem;
+			font-weight: 600;
+			margin: 20px 0;
+		}
+		.landing-form {
+			background: white;
+			padding: 40px;
+			border-radius: 12px;
+			box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+			margin: -30px auto 60px;
+			max-width: 900px;
+			position: relative;
+		}
+		.form-header {
+			text-align: center;
+			margin-bottom: 30px;
+			padding-bottom: 20px;
+			border-bottom: 2px solid #e5e7eb;
+		}
+		.form-header h2 {
+			color: #1e40af;
+			font-size: 1.5rem;
+			margin-bottom: 10px;
+		}
+		.form-header p {
+			color: #64748b;
+			font-style: italic;
+		}
+		.form-group {
+			margin-bottom: 20px;
+		}
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: 600;
+			color: #1f2937;
+			font-size: 0.95rem;
+		}
+		.form-group input,
+		.form-group select,
+		.form-group textarea {
+			width: 100%;
+			padding: 12px 16px;
+			border: 2px solid #e5e7eb;
+			border-radius: 8px;
+			font-size: 16px;
+			transition: all 0.2s ease;
+			box-sizing: border-box;
+			font-family: inherit;
+		}
+		.form-group input:focus,
+		.form-group select:focus,
+		.form-group textarea:focus {
+			outline: none;
+			border-color: #2563eb;
+			box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+		}
+		.form-row {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+		.submit-btn {
+			background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+			color: white;
+			padding: 16px 32px;
+			border: none;
+			border-radius: 8px;
+			font-size: 18px;
+			font-weight: 600;
+			cursor: pointer;
+			width: 100%;
+			transition: all 0.3s ease;
+			margin-top: 10px;
+		}
+		.submit-btn:hover {
+			transform: translateY(-2px);
+			box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+		}
+		.submit-btn:disabled {
+			opacity: 0.6;
+			cursor: not-allowed;
+			transform: none;
+		}
+		.landing-footer {
+			background: #1f2937;
+			color: #e5e7eb;
+			padding: 40px 0;
+			text-align: center;
+			margin-top: 60px;
+		}
+		.landing-footer p {
+			margin: 10px 0;
+			color: #9ca3af;
+		}
+		@media (max-width: 768px) {
+			.form-row {
+				grid-template-columns: 1fr;
+			}
+			.landing-hero h1 {
+				font-size: 1.8rem;
+			}
+			.landing-form {
+				padding: 30px 20px;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="landing-page">
+		<div class="landing-header">
+			<div class="landing-container">
+				<div class="landing-logo">
+					<h1>Texas Relocation Experts</h1>
+					<p>Your Trusted Partner in Finding the Perfect Home</p>
+				</div>
+			</div>
+		</div>
+
+		<div class="landing-hero">
+			<div class="landing-container">
+				<h1>Schedule an Appointment</h1>
+				<p id="agentName" style="font-size: 1.4rem; font-weight: 600; margin: 20px 0;">Loading agent information...</p>
+				<p class="highlight">Are you ready for your new apartment? GREAT!!</p>
+				<p>Please fill out the form below and I'll be in contact with you TODAY!</p>
+			</div>
+		</div>
+
+		<div class="landing-container">
+			<div class="landing-form">
+				<div class="form-header">
+					<h2>Tell Us About Your Dream Home</h2>
+					<p id="agentContact" style="margin: 10px 0; color: #2563eb; font-weight: 600; font-size: 1.05rem;"></p>
+					<p style="color: #64748b;">Fields marked with an * are required</p>
+				</div>
+				
+				<form id="leadForm">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="name">Name: *</label>
+							<input type="text" id="name" name="name" required>
+						</div>
+						<div class="form-group">
+							<label for="phone">Phone: *</label>
+							<input type="tel" id="phone" name="phone" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="email">Email: *</label>
+							<input type="email" id="email" name="email" required>
+						</div>
+						<div class="form-group">
+							<label for="bestTime">Best time to call you: *</label>
+							<select id="bestTime" name="bestTime" required>
+								<option value="">Select</option>
+								<option value="morning">Morning (8AM-12PM)</option>
+								<option value="afternoon">Afternoon (12PM-5PM)</option>
+								<option value="evening">Evening (5PM-8PM)</option>
+								<option value="anytime">Anytime</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="bedrooms"># of Bedrooms: *</label>
+							<select id="bedrooms" name="bedrooms" required>
+								<option value="">Select</option>
+								<option value="studio">Studio</option>
+								<option value="1">1 Bedroom</option>
+								<option value="2">2 Bedrooms</option>
+								<option value="3">3 Bedrooms</option>
+								<option value="4">4 Bedrooms</option>
+								<option value="5+">5+ Bedrooms</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="bathrooms"># of Bathrooms: *</label>
+							<select id="bathrooms" name="bathrooms" required>
+								<option value="">Select</option>
+								<option value="1">1 Bathroom</option>
+								<option value="1.5">1.5 Bathrooms</option>
+								<option value="2">2 Bathrooms</option>
+								<option value="2.5">2.5 Bathrooms</option>
+								<option value="3">3 Bathrooms</option>
+								<option value="3+">3+ Bathrooms</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="priceRange">Price Range: *</label>
+							<select id="priceRange" name="priceRange" required>
+								<option value="">Select</option>
+								<option value="under-1000">Under $1,000</option>
+								<option value="1000-1500">$1,000 - $1,500</option>
+								<option value="1500-2000">$1,500 - $2,000</option>
+								<option value="2000-2500">$2,000 - $2,500</option>
+								<option value="2500-3000">$2,500 - $3,000</option>
+								<option value="3000-4000">$3,000 - $4,000</option>
+								<option value="4000+">$4,000+</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="areaOfTown">Area of Town: *</label>
+							<select id="areaOfTown" name="areaOfTown" required>
+								<option value="">Select</option>
+								<option value="downtown">Downtown</option>
+								<option value="north-side">North Side</option>
+								<option value="south-side">South Side</option>
+								<option value="east-side">East Side</option>
+								<option value="west-side">West Side</option>
+								<option value="northwest">Northwest</option>
+								<option value="northeast">Northeast</option>
+								<option value="southwest">Southwest</option>
+								<option value="southeast">Southeast</option>
+								<option value="suburbs">Suburbs</option>
+								<option value="flexible">Flexible</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="moveInDate">Target move in Date: *</label>
+							<input type="date" id="moveInDate" name="moveInDate" required>
+						</div>
+						<div class="form-group">
+							<label for="creditHistory">Credit History: *</label>
+							<select id="creditHistory" name="creditHistory" required>
+								<option value="">Select</option>
+								<option value="excellent">Excellent (750+)</option>
+								<option value="good">Good (700-749)</option>
+								<option value="fair">Fair (650-699)</option>
+								<option value="poor">Poor (Below 650)</option>
+								<option value="no-credit">No Credit History</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="comments">Lease Term / Special Requirements / Comments / Desired Neighborhoods:</label>
+						<textarea id="comments" name="comments" rows="4" placeholder="Any specific requirements or comments..."></textarea>
+					</div>
+					
+					<button type="submit" class="submit-btn">Submit My Information</button>
+				</form>
+			</div>
+		</div>
+		
+		<div class="landing-footer">
+			<div class="landing-container">
+				<h2 style="color: #fff; font-size: 1.5rem; margin-bottom: 10px;">Texas Relocation Experts</h2>
+				<p>&copy; 2025 Texas Relocation Experts. All rights reserved.</p>
+				<p style="margin-top: 15px; font-size: 0.9rem;">Helping you find your perfect home in Texas</p>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Initialize Supabase client
+		const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+		const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA';
+
+		// Wait for Supabase library to load
+		let supabase;
+		(function initSupabase() {
+			if (typeof window.supabase !== 'undefined' && window.supabase.createClient) {
+				// Create a separate client that doesn't persist sessions
+				// This prevents conflicts with the main app's authenticated session
+				supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+					auth: {
+						persistSession: false,
+						autoRefreshToken: false,
+						detectSessionInUrl: false
+					}
+				});
+				console.log('✅ Supabase client initialized on landing page (anonymous mode)');
+			} else {
+				console.log('⏳ Waiting for Supabase library...');
+				setTimeout(initSupabase, 50);
+			}
+		})();
+
+		// Get agent identifier from URL - support multiple formats:
+		// 1. Path-based: /landing/john-smith (production with Vercel rewrites)
+		// 2. Query-based: landing.html?agent=john-smith (local development)
+		// 3. Direct file: landing.html (fallback)
+
+		const urlParams = new URLSearchParams(window.location.search);
+		const queryAgent = urlParams.get('agent');
+		const pathParts = window.location.pathname.split('/').filter(p => p); // Remove empty strings
+
+		// Find 'landing' in path and get the next part
+		let pathAgent = null;
+		const landingIndex = pathParts.findIndex(p => p === 'landing' || p === 'landing.html');
+		if (landingIndex >= 0 && landingIndex < pathParts.length - 1) {
+			pathAgent = pathParts[landingIndex + 1];
+			// Remove .html extension if present
+			if (pathAgent.endsWith('.html')) {
+				pathAgent = null;
+			}
+		}
+
+		// Use query param first, then path
+		const agentIdentifier = queryAgent || pathAgent;
+
+		console.log('🔍 Full URL:', window.location.href);
+		console.log('🔍 Path parts:', pathParts);
+		console.log('🔍 Query agent:', queryAgent);
+		console.log('🔍 Path agent:', pathAgent);
+		console.log('🔍 Agent identifier:', agentIdentifier);
+
+		// Fetch agent info from Supabase using identifier (slug or email)
+		async function loadAgentInfo() {
+			if (!agentIdentifier) {
+				console.error('❌ No agent identifier found in URL');
+				document.getElementById('agentName').textContent = 'Error: No agent specified in URL';
+				document.getElementById('agentName').style.color = '#dc2626';
+				return null;
+			}
+
+			try {
+				// Fetch all users (we'll filter for agents in JavaScript to avoid enum issues)
+				const { data: users, error } = await supabase
+					.from('users')
+					.select('*');
+
+				if (error) {
+					console.error('❌ Supabase query error:', error);
+					console.error('Error details:', JSON.stringify(error, null, 2));
+					throw error;
+				}
+
+				console.log('📋 Found users:', users ? users.length : 0);
+				console.log('📋 Users data:', users);
+
+				if (!users || users.length === 0) {
+					console.error('❌ No users found in database');
+					document.getElementById('agentName').textContent = 'Error: No users available';
+					document.getElementById('agentName').style.color = '#dc2626';
+					return null;
+				}
+
+				// Filter for agents in JavaScript (role could be 'agent', 'AGENT', or other enum values)
+				const agents = users.filter(u => {
+					const roleStr = String(u.role).toLowerCase();
+					return roleStr === 'agent' || roleStr === 'AGENT';
+				});
+
+				console.log('📋 Filtered agents:', agents.length);
+
+				if (agents.length === 0) {
+					console.error('❌ No agents found in database');
+					console.error('Available users:', users.map(u => ({ name: u.name, role: u.role })));
+					document.getElementById('agentName').textContent = 'Error: No agents available';
+					document.getElementById('agentName').style.color = '#dc2626';
+					return null;
+				}
+
+				// Find agent by matching slug OR email
+				const agent = agents.find(a => {
+					const slug = a.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+					const emailMatch = a.email.toLowerCase() === agentIdentifier.toLowerCase();
+					const slugMatch = slug === agentIdentifier.toLowerCase();
+
+					console.log(`  Checking ${a.name}: slug="${slug}", email="${a.email}", match=${emailMatch || slugMatch}`);
+
+					return emailMatch || slugMatch;
+				});
+
+				if (agent) {
+					console.log('✅ Found agent:', agent.name, '(', agent.email, ')');
+					document.getElementById('agentName').textContent = `Your Agent: ${agent.name}`;
+					document.getElementById('agentName').style.color = '#fff';
+
+					// Update form header with agent contact info
+					const contactInfo = `Working with ${agent.name} • ${agent.phone || agent.email}`;
+					document.getElementById('agentContact').textContent = contactInfo;
+
+					return agent;
+				} else {
+					console.error('❌ No agent found for identifier:', agentIdentifier);
+					console.error('Available agents:', agents.map(a => ({
+						name: a.name,
+						email: a.email,
+						slug: a.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+					})));
+					document.getElementById('agentName').textContent = `Error: Agent "${agentIdentifier}" not found`;
+					document.getElementById('agentName').style.color = '#dc2626';
+				}
+			} catch (error) {
+				console.error('❌ Error loading agent:', error);
+				console.error('Error message:', error.message);
+				console.error('Error stack:', error.stack);
+				document.getElementById('agentName').textContent = 'Error loading agent information';
+				document.getElementById('agentName').style.color = '#dc2626';
+			}
+
+			return null;
+		}
+
+		// Load agent info on page load
+		let currentAgent = null;
+		loadAgentInfo().then(agent => {
+			currentAgent = agent;
+		});
+
+		// Handle form submission
+		document.getElementById('leadForm').addEventListener('submit', async function(e) {
+			e.preventDefault();
+
+			if (!currentAgent) {
+				alert('Unable to identify agent. Please contact us directly.');
+				return;
+			}
+
+			const submitBtn = this.querySelector('button[type="submit"]');
+			submitBtn.disabled = true;
+			submitBtn.textContent = 'Submitting...';
+
+			const formData = new FormData(this);
+
+			// Build preferences object
+			const preferences = {
+				bedrooms: formData.get('bedrooms'),
+				bathrooms: formData.get('bathrooms'),
+				priceRange: formData.get('priceRange'),
+				areaOfTown: formData.get('areaOfTown'),
+				moveInDate: formData.get('moveInDate'),
+				creditHistory: formData.get('creditHistory'),
+				bestTimeToCall: formData.get('bestTime'),
+				comments: formData.get('comments')
+			};
+
+			const leadData = {
+				name: formData.get('name'),
+				phone: formData.get('phone'),
+				email: formData.get('email'),
+				preferences: JSON.stringify(preferences),
+				source: 'landing_page',
+				assigned_agent_id: currentAgent.id, // Use agent's ID (UUID), not email
+				found_by_agent_id: currentAgent.id, // Use agent's ID (UUID), not email
+				submitted_at: new Date().toISOString(),
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString()
+			};
+
+			console.log('📤 Submitting lead:', leadData);
+
+			try {
+				const { data, error } = await supabase
+					.from('leads')
+					.insert([leadData])
+					.select();
+
+				if (error) {
+					console.error('❌ Supabase error:', error);
+					throw error;
+				}
+
+				console.log('✅ Lead created successfully:', data);
+
+				// Success!
+				alert('Thank you! We\'ll be in touch with you TODAY!');
+				this.reset();
+
+			} catch (error) {
+				console.error('❌ Error submitting form:', error);
+				alert('Thank you for your interest! We\'ll contact you soon.');
+				this.reset();
+			} finally {
+				submitBtn.disabled = false;
+				submitBtn.textContent = 'Submit My Information';
+			}
+		});
+	</script>
+</body>
+</html>
+

@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/agent/:slug",
+      "destination": "/agent.html"
+    },
+    {
+      "source": "/landing/:agent",
+      "destination": "/landing.html"
+    }
+  ]
+}

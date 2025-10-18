@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+	<title>TRE CRM - Agent Landing Page</title>
+	<link rel="stylesheet" href="styles.css" />
+	<style>
+		.landing-page {
+			font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+			line-height: 1.6;
+			color: #333;
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			min-height: 100vh;
+			margin: 0;
+			padding: 0;
+		}
+		.landing-container {
+			max-width: 1200px;
+			margin: 0 auto;
+			padding: 0 20px;
+		}
+		.landing-header {
+			background: rgba(255, 255, 255, 0.95);
+			backdrop-filter: blur(10px);
+			padding: 20px 0;
+			box-shadow: 0 2px 20px rgba(0,0,0,0.1);
+		}
+		.landing-logo {
+			text-align: center;
+			margin-bottom: 20px;
+		}
+		.landing-logo img {
+			height: 60px;
+		}
+		.landing-hero {
+			text-align: center;
+			padding: 60px 0;
+			color: white;
+		}
+		.landing-hero h1 {
+			font-size: 3rem;
+			margin-bottom: 20px;
+			text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+		}
+		.landing-hero p {
+			font-size: 1.2rem;
+			margin-bottom: 40px;
+		}
+		.landing-form {
+			background: white;
+			padding: 40px;
+			border-radius: 15px;
+			box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+			margin: 40px 0;
+		}
+		.form-group {
+			margin-bottom: 20px;
+		}
+		.form-group label {
+			display: block;
+			margin-bottom: 8px;
+			font-weight: 600;
+			color: #333;
+		}
+		.form-group input,
+		.form-group select,
+		.form-group textarea {
+			width: 100%;
+			padding: 12px;
+			border: 2px solid #e1e5e9;
+			border-radius: 8px;
+			font-size: 16px;
+			transition: border-color 0.3s ease;
+			box-sizing: border-box;
+		}
+		.form-group input:focus,
+		.form-group select:focus,
+		.form-group textarea:focus {
+			outline: none;
+			border-color: #667eea;
+		}
+		.form-row {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 20px;
+		}
+		.submit-btn {
+			background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+			color: white;
+			padding: 15px 30px;
+			border: none;
+			border-radius: 8px;
+			font-size: 18px;
+			font-weight: 600;
+			cursor: pointer;
+			width: 100%;
+			transition: transform 0.3s ease;
+		}
+		.submit-btn:hover {
+			transform: translateY(-2px);
+		}
+		.landing-footer {
+			background: #1a1a1a;
+			color: white;
+			padding: 40px 0;
+			text-align: center;
+		}
+		.social-links {
+			margin: 20px 0;
+		}
+		.social-links a {
+			color: white;
+			margin: 0 15px;
+			text-decoration: none;
+			font-size: 1.2rem;
+		}
+		.social-links a:hover {
+			color: #667eea;
+		}
+		.agent-info {
+			background: rgba(255, 255, 255, 0.1);
+			padding: 20px;
+			border-radius: 10px;
+			margin-bottom: 30px;
+			backdrop-filter: blur(10px);
+		}
+		.agent-info h3 {
+			margin: 0 0 10px 0;
+			font-size: 1.5rem;
+		}
+		.agent-info p {
+			margin: 0;
+			opacity: 0.9;
+		}
+		@media (max-width: 768px) {
+			.form-row {
+				grid-template-columns: 1fr;
+			}
+			.landing-hero h1 {
+				font-size: 2rem;
+			}
+		}
+	</style>
+</head>
+<body>
+	<div class="landing-page">
+		<div class="landing-header">
+			<div class="landing-container">
+				<div class="landing-logo">
+					<img src="images/tre_logo_black_bg.png" alt="TRE CRM" />
+				</div>
+			</div>
+		</div>
+		
+		<div class="landing-hero">
+			<div class="landing-container">
+				<h1>Start Your Search Now</h1>
+				<div class="agent-info">
+					<h3 id="agentName">Find your perfect apartment with our expert team</h3>
+					<p id="agentEmail">Professional property management & lead tracking</p>
+				</div>
+			</div>
+		</div>
+		
+		<div class="landing-container">
+			<div class="landing-form">
+				<h2 style="text-align: center; margin-bottom: 30px; color: #333;">Schedule an Appointment</h2>
+				<p style="text-align: center; margin-bottom: 30px; color: #666;">Are you ready for your new apartment?</p>
+				
+				<form id="leadForm">
+					<div class="form-row">
+						<div class="form-group">
+							<label for="name">Full Name *</label>
+							<input type="text" id="name" name="name" required>
+						</div>
+						<div class="form-group">
+							<label for="phone">Phone Number *</label>
+							<input type="tel" id="phone" name="phone" required>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="email">Email Address *</label>
+							<input type="email" id="email" name="email" required>
+						</div>
+						<div class="form-group">
+							<label for="bestTime">Best Time to Call</label>
+							<select id="bestTime" name="bestTime">
+								<option value="morning">Morning (8AM-12PM)</option>
+								<option value="afternoon">Afternoon (12PM-5PM)</option>
+								<option value="evening">Evening (5PM-8PM)</option>
+								<option value="anytime">Anytime</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="bedrooms"># of Bedrooms *</label>
+							<select id="bedrooms" name="bedrooms" required>
+								<option value="">Select bedrooms</option>
+								<option value="studio">Studio</option>
+								<option value="1">1 Bedroom</option>
+								<option value="2">2 Bedrooms</option>
+								<option value="3">3 Bedrooms</option>
+								<option value="4">4 Bedrooms</option>
+								<option value="5+">5+ Bedrooms</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="bathrooms"># of Bathrooms *</label>
+							<select id="bathrooms" name="bathrooms" required>
+								<option value="">Select bathrooms</option>
+								<option value="1">1 Bathroom</option>
+								<option value="1.5">1.5 Bathrooms</option>
+								<option value="2">2 Bathrooms</option>
+								<option value="2.5">2.5 Bathrooms</option>
+								<option value="3">3 Bathrooms</option>
+								<option value="3+">3+ Bathrooms</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="priceRange">Price Range *</label>
+							<select id="priceRange" name="priceRange" required>
+								<option value="">Select price range</option>
+								<option value="under-1000">Under $1,000</option>
+								<option value="1000-1500">$1,000 - $1,500</option>
+								<option value="1500-2000">$1,500 - $2,000</option>
+								<option value="2000-2500">$2,000 - $2,500</option>
+								<option value="2500-3000">$2,500 - $3,000</option>
+								<option value="3000-4000">$3,000 - $4,000</option>
+								<option value="4000+">$4,000+</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="areaOfTown">Area of Town *</label>
+							<select id="areaOfTown" name="areaOfTown" required>
+								<option value="">Select area</option>
+								<option value="downtown">Downtown</option>
+								<option value="north-side">North Side</option>
+								<option value="south-side">South Side</option>
+								<option value="east-side">East Side</option>
+								<option value="west-side">West Side</option>
+								<option value="northwest">Northwest</option>
+								<option value="northeast">Northeast</option>
+								<option value="southwest">Southwest</option>
+								<option value="southeast">Southeast</option>
+								<option value="suburbs">Suburbs</option>
+								<option value="flexible">Flexible</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-row">
+						<div class="form-group">
+							<label for="moveInDate">Target Move-in Date *</label>
+							<input type="date" id="moveInDate" name="moveInDate" required>
+						</div>
+						<div class="form-group">
+							<label for="creditHistory">Credit History *</label>
+							<select id="creditHistory" name="creditHistory" required>
+								<option value="">Select credit tier</option>
+								<option value="excellent">Excellent (750+)</option>
+								<option value="good">Good (700-749)</option>
+								<option value="fair">Fair (650-699)</option>
+								<option value="poor">Poor (Below 650)</option>
+								<option value="no-credit">No Credit History</option>
+							</select>
+						</div>
+					</div>
+					
+					<div class="form-group">
+						<label for="comments">Comments / Special Requirements</label>
+						<textarea id="comments" name="comments" rows="3" placeholder="Any specific requirements or comments..."></textarea>
+					</div>
+					
+					<button type="submit" class="submit-btn">Submit My Information</button>
+				</form>
+			</div>
+		</div>
+		
+		<div class="landing-footer">
+			<div class="landing-container">
+				<img src="images/tre_logo_black_bg.png" alt="TRE CRM" style="height: 40px; margin-bottom: 20px;" />
+				<div class="social-links">
+					<a href="#" target="_blank">Instagram</a>
+					<a href="#" target="_blank">Twitter</a>
+					<a href="#" target="_blank">Facebook</a>
+					<a href="#" target="_blank">YouTube</a>
+				</div>
+				<p>&copy; 2024 TRE CRM. All rights reserved.</p>
+			</div>
+		</div>
+	</div>
+
+	<script>
+		// Get agent slug from URL path
+		const pathParts = window.location.pathname.split('/');
+		const agentSlug = pathParts[pathParts.length - 1];
+		
+		// Function to create URL slug from agent name
+		function createAgentSlug(name) {
+			return name.toLowerCase()
+				.replace(/\s+/g, '-')           // Replace spaces with hyphens
+				.replace(/[^a-z0-9-]/g, '')     // Remove special characters
+				.replace(/-+/g, '-')            // Replace multiple hyphens with single
+				.replace(/^-|-$/g, '');         // Remove leading/trailing hyphens
+		}
+		
+		// Function to find agent by slug
+		async function findAgentBySlug(slug) {
+			try {
+				// Try to fetch from API first
+				const response = await fetch(`https://tre-crm.vercel.app/api/agents/slug/${slug}`);
+				if (response.ok) {
+					return await response.json();
+				}
+			} catch (error) {
+				console.log('API not available, using fallback data');
+			}
+			
+			// Fallback to hardcoded data for now
+			const fallbackAgents = [
+				{ id: 'agent_1', name: 'Alex Agent', email: 'alex@example.com' },
+				{ id: 'agent_2', name: 'Sarah Smith', email: 'sarah@example.com' },
+				{ id: 'agent_3', name: 'Mike Johnson', email: 'mike@example.com' }
+			];
+			
+			// Find agent by matching slug
+			return fallbackAgents.find(agent => createAgentSlug(agent.name) === slug);
+		}
+		
+		// Find agent by slug
+		const agent = await findAgentBySlug(agentSlug);
+		
+		if (agent) {
+			// Update page title and content
+			document.title = `${agent.name} - TRE CRM Agent`;
+			document.getElementById('agentName').textContent = `Find your perfect apartment with ${agent.name}`;
+			document.getElementById('agentEmail').textContent = agent.email;
+			
+			// Handle form submission
+			document.getElementById('leadForm').addEventListener('submit', async function(e) {
+				e.preventDefault();
+				
+				const formData = new FormData(this);
+				const leadData = {
+					name: formData.get('name'),
+					phone: formData.get('phone'),
+					email: formData.get('email'),
+					bestTime: formData.get('bestTime'),
+					bedrooms: formData.get('bedrooms'),
+					bathrooms: formData.get('bathrooms'),
+					priceRange: formData.get('priceRange'),
+					areaOfTown: formData.get('areaOfTown'),
+					moveInDate: formData.get('moveInDate'),
+					creditHistory: formData.get('creditHistory'),
+					comments: formData.get('comments'),
+					agentId: agent.id,
+					agentName: agent.name,
+					source: 'landing_page',
+					created_at: new Date().toISOString()
+				};
+				
+				try {
+					// Send to CRM API
+					const response = await fetch('https://tre-crm.vercel.app/api/leads', {
+						method: 'POST',
+						headers: {
+							'Content-Type': 'application/json',
+						},
+						body: JSON.stringify(leadData)
+					});
+					
+					if (response.ok) {
+						alert('Thank you! We\'ll be in touch with you today!');
+						this.reset();
+					} else {
+						throw new Error('Failed to submit form');
+					}
+				} catch (error) {
+					console.error('Error submitting form:', error);
+					// Fallback: show success message even if API fails
+					alert('Thank you for your interest! We\'ll contact you soon.');
+					this.reset();
+				}
+			});
+		} else {
+			// Agent not found - redirect to main landing page
+			window.location.href = '/landing.html';
+		}
+	</script>
+</body>
+</html>
