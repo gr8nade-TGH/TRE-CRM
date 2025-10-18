@@ -26,22 +26,38 @@ export function prefsSummary(p) {
 
 	const tags = [];
 
-	// Beds tag - check multiple possible field names
-	const beds = p.beds || p.bedrooms || p.bed_count;
+	// Beds tag - check multiple possible field names (bedrooms is from landing page, beds is from mock data)
+	const beds = p.bedrooms || p.beds || p.bed_count;
 	if (beds) {
 		tags.push(`<span class="pref-tag beds">🛏️ ${beds} ${beds === 1 ? 'Bed' : 'Beds'}</span>`);
 	}
 
-	// Baths tag - check multiple possible field names
-	const baths = p.baths || p.bathrooms || p.bath_count;
+	// Baths tag - check multiple possible field names (bathrooms is from landing page, baths is from mock data)
+	const baths = p.bathrooms || p.baths || p.bath_count;
 	if (baths) {
 		tags.push(`<span class="pref-tag baths">🚿 ${baths} ${baths === 1 ? 'Bath' : 'Baths'}</span>`);
 	}
 
 	// Budget tag - check multiple possible field names
-	const budgetMax = p.budget_max || p.max_budget || p.budgetMax;
-	const budget = p.budget || p.min_budget || p.budgetMin;
-	const price = budgetMax ? `<$${budgetMax}/mo` : (budget ? `$${budget}/mo` : '');
+	// priceRange is from landing page (e.g., "1500-2000")
+	// budget_max/budget_min is from mock data
+	let price = '';
+	if (p.priceRange) {
+		// Handle "1500-2000" format from landing page
+		const parts = p.priceRange.split('-');
+		if (parts.length === 2) {
+			price = `$${parts[0]}-${parts[1]}/mo`;
+		} else {
+			price = `$${p.priceRange}/mo`;
+		}
+	} else if (p.budget_max || p.max_budget || p.budgetMax) {
+		const budgetMax = p.budget_max || p.max_budget || p.budgetMax;
+		price = `<$${budgetMax}/mo`;
+	} else if (p.budget || p.min_budget || p.budgetMin) {
+		const budget = p.budget || p.min_budget || p.budgetMin;
+		price = `$${budget}/mo`;
+	}
+
 	if (price) {
 		tags.push(`<span class="pref-tag budget">💰 ${price}</span>`);
 	}

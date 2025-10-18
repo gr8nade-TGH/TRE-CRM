@@ -1522,7 +1522,7 @@ async function deleteSpecialAPI(specialId) {
 				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
-					${prefsSummary(lead.prefs)}
+					${prefsSummary(lead.preferences || lead.prefs)}
 				</td>
 				<td><button class="action-btn showcase-btn" data-matches="${lead.id}" title="View Top Listing Matches">
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
