@@ -3191,13 +3191,22 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 
 		try {
+			// Use window.currentUser.email as author_id (matches users table)
+			const authorId = window.currentUser?.email;
+			const authorName = window.currentUser?.user_metadata?.name ||
+			                   window.currentUser?.email ||
+			                   'Unknown User';
+
+			if (!authorId) {
+				toast('User not authenticated', 'error');
+				return;
+			}
+
 			const noteData = {
 				lead_id: currentLeadForNotes,
 				content: content,
-				author_id: state.agentId,
-				author_name: window.currentUser?.name || 'Unknown User',
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString()
+				author_id: authorId,  // Use email, not UUID
+				author_name: authorName
 			};
 
 			await SupabaseAPI.createLeadNote(noteData);
