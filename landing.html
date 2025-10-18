@@ -368,11 +368,10 @@
 			}
 
 			try {
-				// Fetch all agents (remove active filter to avoid RLS issues)
-				const { data: agents, error } = await supabase
+				// Fetch all users (we'll filter for agents in JavaScript to avoid enum issues)
+				const { data: users, error } = await supabase
 					.from('users')
-					.select('*')
-					.eq('role', 'agent');
+					.select('*');
 
 				if (error) {
 					console.error('❌ Supabase query error:', error);
@@ -380,11 +379,27 @@
 					throw error;
 				}
 
-				console.log('📋 Found agents:', agents ? agents.length : 0);
-				console.log('📋 Agents data:', agents);
+				console.log('📋 Found users:', users ? users.length : 0);
+				console.log('📋 Users data:', users);
 
-				if (!agents || agents.length === 0) {
+				if (!users || users.length === 0) {
+					console.error('❌ No users found in database');
+					document.getElementById('agentName').textContent = 'Error: No users available';
+					document.getElementById('agentName').style.color = '#dc2626';
+					return null;
+				}
+
+				// Filter for agents in JavaScript (role could be 'agent', 'AGENT', or other enum values)
+				const agents = users.filter(u => {
+					const roleStr = String(u.role).toLowerCase();
+					return roleStr === 'agent' || roleStr === 'AGENT';
+				});
+
+				console.log('📋 Filtered agents:', agents.length);
+
+				if (agents.length === 0) {
 					console.error('❌ No agents found in database');
+					console.error('Available users:', users.map(u => ({ name: u.name, role: u.role })));
 					document.getElementById('agentName').textContent = 'Error: No agents available';
 					document.getElementById('agentName').style.color = '#dc2626';
 					return null;
