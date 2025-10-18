@@ -182,7 +182,7 @@
 		<div class="landing-hero">
 			<div class="landing-container">
 				<h1>Schedule an Appointment</h1>
-				<p id="agentName">Choose a time that best suits you and we'll make it happen!</p>
+				<p id="agentName" style="font-size: 1.4rem; font-weight: 600; margin: 20px 0;">Loading agent information...</p>
 				<p class="highlight">Are you ready for your new apartment? GREAT!!</p>
 				<p>Please fill out the form below and I'll be in contact with you TODAY!</p>
 			</div>
@@ -192,7 +192,8 @@
 			<div class="landing-form">
 				<div class="form-header">
 					<h2>Tell Us About Your Dream Home</h2>
-					<p>Fields marked with an * are required</p>
+					<p id="agentContact" style="margin: 10px 0; color: #2563eb; font-weight: 600; font-size: 1.05rem;"></p>
+					<p style="color: #64748b;">Fields marked with an * are required</p>
 				</div>
 				
 				<form id="leadForm">
@@ -328,43 +329,73 @@
 
 		const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-		// Get agent slug from URL path (e.g., /landing/john-smith)
+		// Get agent identifier from URL - support both formats:
+		// 1. Path-based: /landing/john-smith (production with Vercel rewrites)
+		// 2. Query-based: landing.html?agent=john-smith (local development)
+		const urlParams = new URLSearchParams(window.location.search);
+		const queryAgent = urlParams.get('agent');
 		const pathParts = window.location.pathname.split('/');
-		const agentSlug = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2];
+		const pathAgent = pathParts[pathParts.length - 1];
 
-		console.log('🔍 Agent slug from URL:', agentSlug);
+		// Use query param if available, otherwise use path
+		const agentIdentifier = queryAgent || (pathAgent && pathAgent !== 'landing.html' && pathAgent !== 'landing' ? pathAgent : null);
 
-		// Fetch agent info from Supabase using slug
+		console.log('🔍 Full URL:', window.location.href);
+		console.log('🔍 Query agent:', queryAgent);
+		console.log('🔍 Path agent:', pathAgent);
+		console.log('🔍 Agent identifier:', agentIdentifier);
+
+		// Fetch agent info from Supabase using identifier (slug or email)
 		async function loadAgentInfo() {
-			if (!agentSlug || agentSlug === 'landing' || agentSlug.includes('.html')) {
-				console.warn('⚠️ No valid agent slug found in URL');
+			if (!agentIdentifier) {
+				console.error('❌ No agent identifier found in URL');
+				document.getElementById('agentName').textContent = 'Error: No agent specified in URL';
+				document.getElementById('agentName').style.color = '#dc2626';
 				return null;
 			}
 
 			try {
-				// Fetch all agents and find matching slug
+				// Fetch all agents
 				const { data: agents, error } = await supabase
 					.from('users')
 					.select('*')
-					.eq('role', 'agent');
+					.eq('role', 'agent')
+					.eq('active', true);
 
 				if (error) throw error;
 
-				// Find agent by matching slug
+				console.log('📋 Found agents:', agents.length);
+
+				// Find agent by matching slug OR email
 				const agent = agents.find(a => {
 					const slug = a.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-					return slug === agentSlug;
+					const emailMatch = a.email.toLowerCase() === agentIdentifier.toLowerCase();
+					const slugMatch = slug === agentIdentifier.toLowerCase();
+
+					console.log(`  Checking ${a.name}: slug="${slug}", email="${a.email}", match=${emailMatch || slugMatch}`);
+
+					return emailMatch || slugMatch;
 				});
 
 				if (agent) {
-					console.log('✅ Found agent:', agent.name);
-					document.getElementById('agentName').textContent = `Find your perfect apartment with ${agent.name}!`;
+					console.log('✅ Found agent:', agent.name, '(', agent.email, ')');
+					document.getElementById('agentName').textContent = `Your Agent: ${agent.name}`;
+					document.getElementById('agentName').style.color = '#fff';
+
+					// Update form header with agent contact info
+					const contactInfo = `Working with ${agent.name} • ${agent.phone || agent.email}`;
+					document.getElementById('agentContact').textContent = contactInfo;
+
 					return agent;
 				} else {
-					console.warn('⚠️ No agent found for slug:', agentSlug);
+					console.error('❌ No agent found for identifier:', agentIdentifier);
+					document.getElementById('agentName').textContent = `Error: Agent "${agentIdentifier}" not found`;
+					document.getElementById('agentName').style.color = '#dc2626';
 				}
 			} catch (error) {
 				console.error('❌ Error loading agent:', error);
+				document.getElementById('agentName').textContent = 'Error loading agent information';
+				document.getElementById('agentName').style.color = '#dc2626';
 			}
 
 			return null;
