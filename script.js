@@ -1073,6 +1073,15 @@ async function deleteSpecialAPI(specialId) {
 		},
 
 		async assignLead(id, agent_id) {
+			if (!USE_MOCK_DATA) {
+				// Use real Supabase data
+				console.log('✅ Using Supabase to assign lead');
+				return await SupabaseAPI.updateLead(id, {
+					assigned_agent_id: agent_id,
+					updated_at: new Date().toISOString()
+				});
+			}
+
 			const response = await fetch(`${API_BASE}/leads/${id}/assign`, {
 				method: 'PUT',
 				headers: { 'Content-Type': 'application/json' },
@@ -1490,7 +1499,19 @@ async function deleteSpecialAPI(specialId) {
 		});
 		console.log('API returned:', { items, total }); // Debug
 		tbody.innerHTML = '';
+
+		// Fetch notes counts for all leads (if using Supabase)
+		const notesCountsPromises = !USE_MOCK_DATA ? items.map(lead =>
+			SupabaseAPI.getLeadNotesCount(lead.id).then(count => ({ leadId: lead.id, count }))
+		) : [];
+		const notesCounts = !USE_MOCK_DATA ? await Promise.all(notesCountsPromises) : [];
+		const notesCountMap = {};
+		notesCounts.forEach(({ leadId, count }) => {
+			notesCountMap[leadId] = count;
+		});
+
 		items.forEach(lead => {
+			const notesCount = notesCountMap[lead.id] || 0;
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 				<td>
@@ -1520,8 +1541,23 @@ async function deleteSpecialAPI(specialId) {
 				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
 				</td>
+				<td>
+					${notesCount > 0 ? `
+						<span class="notes-icon" data-lead-id="${lead.id}" data-lead-name="${lead.name}" style="cursor: pointer; font-size: 20px; color: #fbbf24;" title="${notesCount} comment(s)">
+							📝
+						</span>
+					` : ''}
+				</td>
 			`;
 			tbody.appendChild(tr);
+		});
+
+		// Add click listeners for notes icons
+		document.querySelectorAll('.notes-icon').forEach(icon => {
+			icon.addEventListener('click', (e) => {
+				const leadId = e.target.dataset.leadId;
+				openLeadDetailsModal(leadId);
+			});
 		});
 
 		// Debug: Check if health buttons exist
@@ -3107,6 +3143,77 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 	}
 
+	// ---- Lead Notes Functions ----
+	async function loadLeadNotes(leadId) {
+		if (USE_MOCK_DATA) {
+			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
+			return;
+		}
+
+		try {
+			const notes = await SupabaseAPI.getLeadNotes(leadId);
+			const notesContainer = document.getElementById('leadNotesContent');
+
+			if (!notes || notes.length === 0) {
+				notesContainer.innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
+				return;
+			}
+
+			notesContainer.innerHTML = notes.map(note => `
+				<div class="note-item" style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #3b82f6;">
+					<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+						<strong style="color: #1f2937;">${note.author_name}</strong>
+						<span class="subtle mono" style="font-size: 12px;">${formatDate(note.created_at)}</span>
+					</div>
+					<div style="color: #4b5563;">${note.content}</div>
+				</div>
+			`).join('');
+		} catch (error) {
+			console.error('Error loading lead notes:', error);
+			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
+		}
+	}
+
+	async function saveLeadNote() {
+		const noteInput = document.getElementById('newLeadNote');
+		const content = noteInput.value.trim();
+
+		if (!content) {
+			toast('Please enter a comment', 'error');
+			return;
+		}
+
+		if (!currentLeadForNotes) {
+			toast('No lead selected', 'error');
+			return;
+		}
+
+		if (USE_MOCK_DATA) {
+			toast('Notes feature requires Supabase connection', 'error');
+			return;
+		}
+
+		try {
+			const noteData = {
+				lead_id: currentLeadForNotes,
+				content: content,
+				author_id: state.agentId,
+				author_name: window.currentUser?.name || 'Unknown User',
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString()
+			};
+
+			await SupabaseAPI.createLeadNote(noteData);
+			noteInput.value = '';
+			await loadLeadNotes(currentLeadForNotes);
+			await renderLeads(); // Refresh to update note icon
+			toast('Comment added successfully!', 'success');
+		} catch (error) {
+			console.error('Error saving lead note:', error);
+			toast('Error saving comment', 'error');
+		}
+	}
+
 	// ---- Property Notes Modal Functions ----
 	let currentPropertyForNotes = null;
 
@@ -3436,38 +3543,85 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 	}
 
-	// ---- Drawer ----
-	async function openDrawer(leadId){
+	// ---- Lead Details Modal (Center-aligned) ----
+	let currentLeadForNotes = null;
+
+	async function openLeadDetailsModal(leadId){
 		state.selectedLeadId = leadId;
+		currentLeadForNotes = leadId;
+
 		const lead = await api.getLead(leadId);
-		const c = document.getElementById('drawerContent');
-		const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || '—';
+		const c = document.getElementById('leadDetailsContent');
+
+		// Get agent names
+		const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || 'Unknown';
+		const assignedTo = mockAgents.find(a => a.id === lead.assigned_agent_id)?.name || 'Unassigned';
+
+		// Parse preferences (handle both JSON string and object)
+		let prefs = lead.preferences || lead.prefs || {};
+		if (typeof prefs === 'string') {
+			try {
+				prefs = JSON.parse(prefs);
+			} catch (e) {
+				console.error('Error parsing preferences:', e);
+				prefs = {};
+			}
+		}
+
 		c.innerHTML = `
-			<div class="field"><label>Lead</label><div class="value">${lead.name}</div></div>
-			<div class="field"><label>Contact</label><div class="value">${lead.email} · ${lead.phone}</div></div>
-			<div class="field"><label>Submitted at</label><div class="value mono">${formatDate(lead.submitted_at)}</div></div>
-			<div class="field"><label>Agent who found lead</label><div class="value">${foundBy}</div></div>
-			<hr />
-			<div class="field"><label>Market</label><div class="value">${lead.prefs.market}</div></div>
-			<div class="field"><label>Neighborhoods</label><div class="value">${lead.prefs.neighborhoods.join(', ')}</div></div>
-			<div class="field"><label>Budget</label><div class="value">$${lead.prefs.budget_min} - $${lead.prefs.budget_max}</div></div>
-			<div class="field"><label>Beds/Baths</label><div class="value">${lead.prefs.beds} / ${lead.prefs.baths}</div></div>
-			<div class="field"><label>Move in</label><div class="value">${lead.prefs.move_in}</div></div>
-			<div class="field"><label>Pets</label><div class="value">${lead.prefs.pets}</div></div>
-			<div class="field"><label>Parking</label><div class="value">${lead.prefs.parking}</div></div>
-			<div class="field"><label>Sqft</label><div class="value">${lead.prefs.sqft_min} - ${lead.prefs.sqft_max}</div></div>
-			<div class="field"><label>Amenities</label><div class="value">${lead.prefs.amenities.join(', ')}</div></div>
-			<div class="field"><label>Credit tier</label><div class="value">${lead.prefs.credit_tier}</div></div>
-			<div class="field"><label>Background</label><div class="value">${lead.prefs.background}</div></div>
-			<div class="field"><label>Notes</label><div class="value">${lead.prefs.notes}</div></div>
-			${state.role==='manager' ? `<div class="field"><label>Assign to</label>${renderAgentSelect(await api.getLead(leadId))}</div>` : ''}
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+				<div>
+					<h4 style="margin-top: 0; color: #3b82f6;">📋 Contact Information</h4>
+					<div class="field"><label>Name</label><div class="value">${lead.name || '—'}</div></div>
+					<div class="field"><label>Email</label><div class="value">${lead.email || '—'}</div></div>
+					<div class="field"><label>Phone</label><div class="value">${lead.phone || '—'}</div></div>
+					<div class="field"><label>Best Time to Call</label><div class="value">${prefs.bestTimeToCall || prefs.best_time_to_call || '—'}</div></div>
+					<div class="field"><label>Submitted</label><div class="value mono">${formatDate(lead.submitted_at || lead.created_at)}</div></div>
+				</div>
+				<div>
+					<h4 style="margin-top: 0; color: #3b82f6;">👥 Agent Information</h4>
+					<div class="field"><label>Found By Agent</label><div class="value" style="font-weight: 600; color: #10b981;">${foundBy}</div></div>
+					<div class="field"><label>Currently Assigned To</label><div class="value">${state.role==='manager' ? renderAgentSelect(lead) : assignedTo}</div></div>
+					<div class="field"><label>Health Status</label><div class="value">${renderHealthStatus(lead.health_status, lead)}</div></div>
+					<div class="field"><label>Source</label><div class="value">${lead.source || '—'}</div></div>
+				</div>
+			</div>
+			<hr style="margin: 20px 0;">
+			<h4 style="margin-top: 0; color: #3b82f6;">🏠 Preferences</h4>
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+				<div>
+					<div class="field"><label>Bedrooms</label><div class="value">${prefs.bedrooms || prefs.beds || '—'}</div></div>
+					<div class="field"><label>Bathrooms</label><div class="value">${prefs.bathrooms || prefs.baths || '—'}</div></div>
+					<div class="field"><label>Budget</label><div class="value">${prefs.priceRange || prefs.price_range || (prefs.budget_min && prefs.budget_max ? `$${prefs.budget_min} - $${prefs.budget_max}` : '—')}</div></div>
+					<div class="field"><label>Area of Town</label><div class="value">${prefs.areaOfTown || prefs.area_of_town || (prefs.neighborhoods ? prefs.neighborhoods.join(', ') : '—')}</div></div>
+				</div>
+				<div>
+					<div class="field"><label>Move-in Date</label><div class="value">${prefs.moveInDate || prefs.move_in_date || prefs.move_in || '—'}</div></div>
+					<div class="field"><label>Credit History</label><div class="value">${prefs.creditHistory || prefs.credit_history || prefs.credit_tier || '—'}</div></div>
+					<div class="field"><label>Comments</label><div class="value">${prefs.comments || prefs.notes || '—'}</div></div>
+				</div>
+			</div>
 		`;
-		show(document.getElementById('leadDrawer'));
+
+		// Load notes
+		await loadLeadNotes(leadId);
+
+		showModal('leadDetailsModal');
+	}
+
+	function closeLeadDetailsModal(){
+		console.log('closeLeadDetailsModal called');
+		hideModal('leadDetailsModal');
+		currentLeadForNotes = null;
+	}
+
+	// Legacy function for backward compatibility
+	async function openDrawer(leadId){
+		await openLeadDetailsModal(leadId);
 	}
 
 	function closeDrawer(){
-		console.log('closeDrawer called'); // Debug
-		hide(document.getElementById('leadDrawer'));
+		closeLeadDetailsModal();
 	}
 
 	// ---- Agent Drawer ----
@@ -4558,19 +4712,29 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			});
 		}
 
-		// drawer close
-		const closeDrawerEl = document.getElementById('closeDrawer');
-		if (closeDrawerEl) {
-			closeDrawerEl.addEventListener('click', closeDrawer);
+		// Lead details modal close buttons
+		const closeLeadDetailsEl = document.getElementById('closeLeadDetails');
+		if (closeLeadDetailsEl) {
+			closeLeadDetailsEl.addEventListener('click', closeLeadDetailsModal);
+		}
+		const closeLeadDetailsFooterEl = document.getElementById('closeLeadDetailsFooter');
+		if (closeLeadDetailsFooterEl) {
+			closeLeadDetailsFooterEl.addEventListener('click', closeLeadDetailsModal);
 		}
 
-		// Close drawer on escape key
+		// Save lead note button
+		const saveLeadNoteBtnEl = document.getElementById('saveLeadNoteBtn');
+		if (saveLeadNoteBtnEl) {
+			saveLeadNoteBtnEl.addEventListener('click', saveLeadNote);
+		}
+
+		// Close modals on escape key
 		document.addEventListener('keydown', (e) => {
 			if (e.key === 'Escape') {
-				const leadDrawer = document.getElementById('leadDrawer');
+				const leadModal = document.getElementById('leadDetailsModal');
 				const agentDrawer = document.getElementById('agentDrawer');
-				if (leadDrawer && !leadDrawer.classList.contains('hidden')) {
-					closeDrawer();
+				if (leadModal && !leadModal.classList.contains('hidden')) {
+					closeLeadDetailsModal();
 				}
 				if (agentDrawer && !agentDrawer.classList.contains('hidden')) {
 					closeAgentDrawer();
@@ -4601,12 +4765,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		if (closeAgentDrawerEl) {
 			closeAgentDrawerEl.addEventListener('click', closeAgentDrawer);
 		}
-		// drawer internal assignment
-		const leadDrawerEl = document.getElementById('leadDrawer');
-		if (leadDrawerEl) {
-			leadDrawerEl.addEventListener('change', async (e)=>{
+		// Lead details modal internal assignment
+		const leadDetailsModalEl = document.getElementById('leadDetailsModal');
+		if (leadDetailsModalEl) {
+			leadDetailsModalEl.addEventListener('change', async (e)=>{
 				const sel = e.target.closest('select[data-assign]');
-				if (sel){ await api.assignLead(state.selectedLeadId, sel.value || null); toast('Lead assignment updated'); renderLeads(); }
+				if (sel){
+					await api.assignLead(state.selectedLeadId, sel.value || null);
+					toast('Lead assignment updated');
+					renderLeads();
+				}
 			});
 		}
 

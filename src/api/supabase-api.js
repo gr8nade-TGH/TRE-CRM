@@ -296,6 +296,59 @@ export async function deleteProperty(id) {
 }
 
 /**
+ * Lead Notes API
+ */
+export async function getLeadNotes(leadId) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('lead_notes')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching lead notes:', error);
+        throw error;
+    }
+
+    return data || [];
+}
+
+export async function createLeadNote(noteData) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('lead_notes')
+        .insert([noteData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error creating lead note:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function getLeadNotesCount(leadId) {
+    const supabase = getSupabase();
+
+    const { count, error } = await supabase
+        .from('lead_notes')
+        .select('*', { count: 'exact', head: true })
+        .eq('lead_id', leadId);
+
+    if (error) {
+        console.error('Error fetching lead notes count:', error);
+        return 0;
+    }
+
+    return count || 0;
+}
+
+/**
  * Property Notes API
  */
 export async function getPropertyNotes(propertyId) {

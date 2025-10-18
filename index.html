@@ -187,6 +187,7 @@
 							<th>Preference Summary</th>
 							<th>Top Listing Options</th>
 							<th data-sort="assigned_agent_id" class="sortable">Agent Assigned <span class="sort-icon">↕</span></th>
+							<th>Notes</th>
 						</tr>
 					</thead>
 					<tbody id="leadsTbody">
@@ -556,16 +557,35 @@
 		</section>
 	</main>
 
-	<!-- Lead Details Drawer -->
-	<aside id="leadDrawer" class="drawer hidden">
-		<div class="drawer-header">
-			<h2>Lead Details</h2>
-			<button id="closeDrawer" class="icon-btn" aria-label="Close" title="Close">×</button>
+	<!-- Lead Details Modal (Center-aligned) -->
+	<div id="leadDetailsModal" class="modal hidden">
+		<div class="modal-card large">
+			<div class="modal-header">
+				<h3>👤 Lead Details</h3>
+				<button id="closeLeadDetails" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="leadDetailsContent">
+					<!-- Lead details will be populated here -->
+				</div>
+				<hr style="margin: 20px 0;">
+				<div id="leadNotesSection">
+					<h4 style="margin-top: 0; color: #3b82f6;">📝 TRE Internal Comments</h4>
+					<div id="leadNotesContent" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+						<!-- Notes will be populated here -->
+					</div>
+					<div class="field">
+						<label for="newLeadNote">Add New Comment</label>
+						<textarea id="newLeadNote" rows="3" placeholder="Type your internal comment here..."></textarea>
+					</div>
+					<button id="saveLeadNoteBtn" class="btn btn-primary" style="margin-top: 10px;">Add Comment</button>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="closeLeadDetailsFooter" class="btn btn-secondary">Close</button>
+			</div>
 		</div>
-		<div class="drawer-content" id="drawerContent">
-			<!-- details injected -->
-		</div>
-	</aside>
+	</div>
 
 	<!-- Agent Details Drawer -->
 	<aside id="agentDrawer" class="drawer hidden">

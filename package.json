@@ -16,6 +16,7 @@
   "author": "TRE",
   "license": "ISC",
   "dependencies": {
+    "@supabase/supabase-js": "^2.75.1",
     "pg": "^8.16.3"
   }
 }
