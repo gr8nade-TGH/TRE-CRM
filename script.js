@@ -2668,6 +2668,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 		agentsToRender.forEach(agent => {
 			const stats = getAgentStats(agent.id);
+			// Generate landing page URL
+			const landingUrl = `${window.location.origin}${window.location.pathname.replace('index.html', '')}landing.html?agent=${encodeURIComponent(agent.email)}`;
+
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 				<td data-sort="name">
@@ -2678,6 +2681,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				<td><button class="icon-btn" data-view-agent="${agent.id}" title="View">👁️</button></td>
 				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
 				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
+				<td>
+					<button class="icon-btn" data-view-landing="${landingUrl}" title="View Landing Page" style="margin-right: 8px;">🔗</button>
+					<button class="icon-btn" data-copy-landing="${landingUrl}" title="Copy Link">📋</button>
+				</td>
 				<td>
 					<button class="action-btn" data-remove="${agent.id}">Remove Agent</button>
 					<button class="action-btn" data-edit="${agent.id}">Change Info</button>
@@ -4372,6 +4379,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 				const view = e.target.closest('button[data-view-agent]');
 				if (view){ openAgentDrawer(view.dataset.viewAgent); return; }
+
+				// Handle view landing page button
+				const viewLanding = e.target.closest('button[data-view-landing]');
+				if (viewLanding) {
+					window.open(viewLanding.dataset.viewLanding, '_blank');
+					return;
+				}
+
+				// Handle copy landing page link button
+				const copyLanding = e.target.closest('button[data-copy-landing]');
+				if (copyLanding) {
+					const url = copyLanding.dataset.copyLanding;
+					navigator.clipboard.writeText(url).then(() => {
+						toast('Landing page link copied to clipboard!', 'success');
+					}).catch(err => {
+						console.error('Failed to copy:', err);
+						toast('Failed to copy link', 'error');
+					});
+					return;
+				}
+
 				const remove = e.target.closest('button[data-remove]');
 				if (remove){
 					if (confirm('Are you sure you want to remove this agent?')) {
