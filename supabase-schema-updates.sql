@@ -55,7 +55,7 @@ CREATE POLICY "Users can insert notes for their assigned leads" ON public.lead_n
         EXISTS (
             SELECT 1 FROM public.users
             WHERE users.id = auth.uid()::text
-            AND users.role IN ('MANAGER', 'SUPER_USER', 'manager', 'super_user')
+            AND users.role IN ('MANAGER', 'SUPER_USER')
         )
         OR
         -- Agents can add notes to their assigned leads
