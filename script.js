@@ -52,7 +52,7 @@ import {
 
 // Import mock data (TEMPORARY - will be removed in Phase 2B)
 import {
-	mockAgents,
+	mockAgents as mockAgentsOriginal,
 	mockLeads,
 	mockDocumentSteps,
 	mockDocumentStatuses,
@@ -288,6 +288,9 @@ async function deleteSpecialAPI(specialId) {
 	// ---- Mock Data ----
 	// Note: All mock data (mockAgents, mockLeads, mockProperties, etc.) is imported from src/state/mockData.js
 	// prefsSummary and randomDate helper functions are also imported from there
+
+	// Real agents loaded from Supabase (replaces mockAgents)
+	let mockAgents = mockAgentsOriginal; // Start with mock data, will be replaced with real data
 
 	// ---- Utilities ----
 	// Note: formatDate, showModal, hideModal, toast, show, hide are now imported from helpers.js
@@ -4314,8 +4317,26 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		updateBugFlagVisibility();
 	}
 
+	// ---- Load Real Agents from Supabase ----
+	async function loadAgents() {
+		if (USE_MOCK_DATA) {
+			console.log('📋 Using mock agents data');
+			return;
+		}
+
+		try {
+			console.log('📋 Loading real agents from Supabase...');
+			const agents = await SupabaseAPI.getAgents();
+			mockAgents = agents; // Replace mock data with real data
+			console.log('✅ Loaded', agents.length, 'agents from Supabase');
+		} catch (error) {
+			console.error('❌ Error loading agents:', error);
+			console.log('⚠️ Falling back to mock agents data');
+		}
+	}
+
 	// ---- App Initialization (called by auth.js after login) ----
-	window.initializeApp = function() {
+	window.initializeApp = async function() {
 		console.log('🚀 Initializing app...');
 
 		// Update state from authenticated user
@@ -4328,6 +4349,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 			console.log('✅ App initialized with role:', role, 'userId:', userId);
 		}
+
+		// Load real agents from Supabase
+		await loadAgents();
 
 		// Initialize nav visibility based on current role
 		updateNavVisibility();
