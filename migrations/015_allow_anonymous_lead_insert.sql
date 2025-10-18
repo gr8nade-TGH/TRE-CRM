@@ -6,6 +6,7 @@ DROP POLICY IF EXISTS "Anonymous users can insert leads" ON public.leads;
 DROP POLICY IF EXISTS "Agents can insert leads" ON public.leads;
 DROP POLICY IF EXISTS "Managers can insert leads" ON public.leads;
 DROP POLICY IF EXISTS "Users can insert leads" ON public.leads;
+DROP POLICY IF EXISTS "Anyone can insert leads" ON public.leads;
 
 -- Create a single INSERT policy that allows both authenticated users AND anonymous users
 CREATE POLICY "Anyone can insert leads" ON public.leads
