@@ -17,14 +17,32 @@ function randomDate(daysBack = 30) {
 }
 
 /**
- * Helper function to create preferences summary
+ * Helper function to create preferences summary with clean tags
  * @param {Object} p - Preferences object
- * @returns {string} Summary string
+ * @returns {string} HTML string with styled tags
  */
 export function prefsSummary(p) {
-	if (!p) return '';
+	if (!p) return '<span class="pref-tag">No preferences</span>';
+
+	const tags = [];
+
+	// Beds tag
+	if (p.beds) {
+		tags.push(`<span class="pref-tag beds">🛏️ ${p.beds} ${p.beds === 1 ? 'Bed' : 'Beds'}</span>`);
+	}
+
+	// Baths tag
+	if (p.baths) {
+		tags.push(`<span class="pref-tag baths">🚿 ${p.baths} ${p.baths === 1 ? 'Bath' : 'Baths'}</span>`);
+	}
+
+	// Budget tag
 	const price = p.budget_max ? `<$${p.budget_max}/mo` : (p.budget ? `$${p.budget}/mo` : '');
-	return `${p.beds || '?'}bed/${p.baths || '?'}bath ${price}`;
+	if (price) {
+		tags.push(`<span class="pref-tag budget">💰 ${price}</span>`);
+	}
+
+	return `<div class="pref-tags">${tags.join('')}</div>`;
 }
 
 // ============================================================================

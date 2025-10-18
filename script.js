@@ -1494,10 +1494,11 @@ async function deleteSpecialAPI(specialId) {
 
 		items.forEach(lead => {
 			const notesCount = notesCountMap[lead.id] || 0;
-			// Always show note icon: gray if no notes, yellow if notes exist
+			// Always show note icon: gray if no notes, yellow with pulse if notes exist
 			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
 			const noteTitle = notesCount > 0 ? `${notesCount} comment(s)` : 'Add a comment';
-			const notesIcon = `<span class="notes-icon" data-lead-id="${lead.id}" style="cursor: pointer; font-size: 16px; color: ${noteColor}; margin-left: 8px;" title="${noteTitle}">📝</span>`;
+			const hasNotesClass = notesCount > 0 ? 'has-notes' : '';
+			const notesIcon = `<span class="notes-icon ${hasNotesClass}" data-lead-id="${lead.id}" style="cursor: pointer; font-size: 16px; color: ${noteColor}; margin-left: 8px;" title="${noteTitle}">📝</span>`;
 
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
@@ -1509,21 +1510,13 @@ async function deleteSpecialAPI(specialId) {
 				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
-					<span class="badge-dot"><span class="dot"></span>${prefsSummary(lead.prefs)}</span>
+					${prefsSummary(lead.prefs)}
 				</td>
-				<td><button class="icon-btn showcase-btn" data-matches="${lead.id}" title="Top Listing Options">
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-						<path d="M9 9h6v6H9z"/>
-						<path d="M9 3v6"/>
-						<path d="M9 15v6"/>
-						<path d="M15 3v6"/>
-						<path d="M15 15v6"/>
-						<path d="M3 9h6"/>
-						<path d="M15 9h6"/>
-						<path d="M3 15h6"/>
-						<path d="M15 15h6"/>
+				<td><button class="action-btn showcase-btn" data-matches="${lead.id}" title="View Top Listing Matches">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
+						<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
 					</svg>
+					Matches
 				</button></td>
 				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
@@ -3454,7 +3447,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								</svg>
 								<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
 							</div>
-							<div class="notes-count" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount > 0 ? prop.notesCount + ' note(s)' : 'Add a note'}" style="cursor: pointer;">
+							<div class="notes-count ${prop.notesCount > 0 ? 'has-notes' : ''}" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount > 0 ? prop.notesCount + ' note(s)' : 'Add a note'}" style="cursor: pointer;">
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: ${prop.notesCount > 0 ? '#fbbf24' : '#9ca3af'};">
 									<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
 								</svg>
