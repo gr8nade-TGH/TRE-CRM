@@ -1494,7 +1494,10 @@ async function deleteSpecialAPI(specialId) {
 
 		items.forEach(lead => {
 			const notesCount = notesCountMap[lead.id] || 0;
-			const notesIcon = notesCount > 0 ? `<span class="notes-icon" data-lead-id="${lead.id}" style="cursor: pointer; font-size: 16px; color: #fbbf24; margin-left: 8px;" title="${notesCount} comment(s)">📝</span>` : '';
+			// Always show note icon: gray if no notes, yellow if notes exist
+			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
+			const noteTitle = notesCount > 0 ? `${notesCount} comment(s)` : 'Add a comment';
+			const notesIcon = `<span class="notes-icon" data-lead-id="${lead.id}" style="cursor: pointer; font-size: 16px; color: ${noteColor}; margin-left: 8px;" title="${noteTitle}">📝</span>`;
 
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
@@ -3451,14 +3454,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 								</svg>
 								<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
 							</div>
-							${prop.notesCount > 0 ? `
-								<div class="notes-count" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount} note(s)" style="cursor: pointer;">
-									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #3b82f6;">
-										<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
-									</svg>
-									<span>${prop.notesCount}</span>
-								</div>
-							` : ''}
+							<div class="notes-count" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount > 0 ? prop.notesCount + ' note(s)' : 'Add a note'}" style="cursor: pointer;">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: ${prop.notesCount > 0 ? '#fbbf24' : '#9ca3af'};">
+									<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
+								</svg>
+								<span>${prop.notesCount || ''}</span>
+							</div>
 						</div>
 						<div class="last-updated">Updated: ${formatDate(prop.pricing_last_updated || prop.last_updated)}</div>
 					</div>
