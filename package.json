@@ -7,8 +7,8 @@
   "scripts": {
     "migrate": "node run-migration-automated.js",
     "check-db": "node check-supabase-schema.js",
-    "lint": "eslint script.js",
-    "lint:fix": "eslint script.js --fix",
+    "lint": "npx eslint script.js",
+    "lint:fix": "npx eslint script.js --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
