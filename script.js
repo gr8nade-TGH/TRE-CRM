@@ -3197,6 +3197,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			                   window.currentUser?.email ||
 			                   'Unknown User';
 
+			console.log('🔍 DEBUG - Attempting to save lead note:');
+			console.log('  - Author ID (email):', authorId);
+			console.log('  - Author Name:', authorName);
+			console.log('  - Lead ID:', currentLeadForNotes);
+			console.log('  - window.currentUser:', window.currentUser);
+
 			if (!authorId) {
 				toast('User not authenticated', 'error');
 				return;
@@ -3209,13 +3215,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				author_name: authorName
 			};
 
+			console.log('📝 Note data to insert:', noteData);
+
 			await SupabaseAPI.createLeadNote(noteData);
 			noteInput.value = '';
 			await loadLeadNotes(currentLeadForNotes);
 			await renderLeads(); // Refresh to update note icon
 			toast('Comment added successfully!', 'success');
 		} catch (error) {
-			console.error('Error saving lead note:', error);
+			console.error('❌ Error saving lead note:', error);
+			console.error('❌ Error details:', error.message, error.code, error.details);
 			toast('Error saving comment', 'error');
 		}
 	}
