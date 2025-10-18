@@ -1512,13 +1512,15 @@ async function deleteSpecialAPI(specialId) {
 
 		items.forEach(lead => {
 			const notesCount = notesCountMap[lead.id] || 0;
+			const notesIcon = notesCount > 0 ? `<span class="notes-icon" data-lead-id="${lead.id}" style="cursor: pointer; font-size: 16px; color: #fbbf24; margin-left: 8px;" title="${notesCount} comment(s)">📝</span>` : '';
+
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 				<td>
-					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
+					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>${notesIcon}
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
-				<td><button class="action-btn secondary" data-view="${lead.id}" title="View Details">View</button></td>
+				<td><button class="action-btn secondary" data-view="${lead.id}" title="View/Edit Details">View/Edit</button></td>
 				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
@@ -1541,13 +1543,6 @@ async function deleteSpecialAPI(specialId) {
 				<td data-sort="assigned_agent_id">
 					${state.role === 'manager' ? renderAgentSelect(lead) : renderAgentReadOnly(lead)}
 				</td>
-				<td>
-					${notesCount > 0 ? `
-						<span class="notes-icon" data-lead-id="${lead.id}" data-lead-name="${lead.name}" style="cursor: pointer; font-size: 20px; color: #fbbf24;" title="${notesCount} comment(s)">
-							📝
-						</span>
-					` : ''}
-				</td>
 			`;
 			tbody.appendChild(tr);
 		});
@@ -1555,6 +1550,8 @@ async function deleteSpecialAPI(specialId) {
 		// Add click listeners for notes icons
 		document.querySelectorAll('.notes-icon').forEach(icon => {
 			icon.addEventListener('click', (e) => {
+				e.preventDefault();
+				e.stopPropagation();
 				const leadId = e.target.dataset.leadId;
 				openLeadDetailsModal(leadId);
 			});
@@ -3582,7 +3579,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					<h4 style="margin-top: 0; color: #3b82f6;">👥 Agent Information</h4>
 					<div class="field"><label>Found By Agent</label><div class="value" style="font-weight: 600; color: #10b981;">${foundBy}</div></div>
 					<div class="field"><label>Currently Assigned To</label><div class="value">${state.role==='manager' ? renderAgentSelect(lead) : assignedTo}</div></div>
-					<div class="field"><label>Health Status</label><div class="value">${renderHealthStatus(lead.health_status, lead)}</div></div>
 					<div class="field"><label>Source</label><div class="value">${lead.source || '—'}</div></div>
 				</div>
 			</div>
