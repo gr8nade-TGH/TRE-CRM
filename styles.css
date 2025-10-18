@@ -36,6 +36,47 @@
   animation: notePulse 2s ease-in-out infinite;
 }
 
+/* Notes Icon Hover */
+.notes-icon {
+  display: inline-flex;
+  transition: all 0.2s ease;
+}
+
+.notes-icon:hover {
+  transform: scale(1.15);
+}
+
+.notes-icon:hover svg {
+  color: #fbbf24 !important;
+}
+
+/* Activity Log Icon */
+.activity-icon {
+  display: inline-block;
+  transition: all 0.2s ease;
+}
+
+.activity-icon:hover {
+  transform: scale(1.15);
+}
+
+.activity-icon:hover svg {
+  color: #3b82f6 !important;
+}
+
+/* Activity Item */
+.activity-item {
+  transition: background 0.2s ease;
+}
+
+.activity-item:hover {
+  background: #f9fafb;
+}
+
+.activity-item:last-child {
+  border-bottom: none !important;
+}
+
 .notes-icon,
 .notes-count {
   display: inline-block;

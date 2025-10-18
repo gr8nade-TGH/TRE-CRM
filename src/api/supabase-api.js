@@ -334,6 +334,26 @@ export async function createLeadNote(noteData) {
     }
 
     console.log('✅ createLeadNote returning:', data);
+
+    // Log activity
+    try {
+        await createLeadActivity({
+            lead_id: noteData.lead_id,
+            activity_type: 'note_added',
+            description: 'Added internal note',
+            metadata: {
+                note_id: data.id,
+                note_preview: noteData.content.substring(0, 100),
+                note_length: noteData.content.length
+            },
+            performed_by: noteData.author_id,
+            performed_by_name: noteData.author_name
+        });
+    } catch (activityError) {
+        console.error('⚠️ Failed to log note activity:', activityError);
+        // Don't throw - note was created successfully
+    }
+
     return data;
 }
 
@@ -467,6 +487,25 @@ export async function createPropertyNote(noteData) {
     if (error) {
         console.error('Error creating property note:', error);
         throw error;
+    }
+
+    // Log activity
+    try {
+        await createPropertyActivity({
+            property_id: noteData.property_id,
+            activity_type: 'note_added',
+            description: 'Added property note',
+            metadata: {
+                note_id: data.id,
+                note_preview: noteData.content.substring(0, 100),
+                note_length: noteData.content.length
+            },
+            performed_by: noteData.author_id,
+            performed_by_name: noteData.author_name
+        });
+    } catch (activityError) {
+        console.error('⚠️ Failed to log property note activity:', activityError);
+        // Don't throw - note was created successfully
     }
 
     return data;

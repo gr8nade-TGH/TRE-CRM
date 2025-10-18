@@ -1498,12 +1498,24 @@ async function deleteSpecialAPI(specialId) {
 			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
 			const noteTitle = notesCount > 0 ? `${notesCount} comment(s)` : 'Add a comment';
 			const hasNotesClass = notesCount > 0 ? 'has-notes' : '';
-			const notesIcon = `<span class="notes-icon ${hasNotesClass}" data-lead-id="${lead.id}" style="cursor: pointer; font-size: 16px; color: ${noteColor}; margin-left: 8px;" title="${noteTitle}">📝</span>`;
+			const notesIcon = `<span class="notes-icon ${hasNotesClass}" data-lead-id="${lead.id}" style="cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center; gap: 4px;" title="${noteTitle}">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: ${noteColor};">
+					<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
+				</svg>
+				${notesCount > 0 ? `<span style="font-size: 0.75rem; color: ${noteColor};">${notesCount}</span>` : ''}
+			</span>`;
+
+			// Activity log icon
+			const activityIcon = `<span class="activity-icon" data-lead-id="${lead.id}" style="cursor: pointer; margin-left: 8px; display: inline-flex; align-items: center;" title="View activity log">
+				<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
+					<path d="M13,9H18.5L13,3.5V9M6,2H14L20,8V20A2,2 0 0,1 18,22H6C4.89,22 4,21.1 4,20V4C4,2.89 4.89,2 6,2M15,18V16H6V18H15M18,14V12H6V14H18Z"/>
+				</svg>
+			</span>`;
 
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 				<td>
-					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>${notesIcon}
+					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>${notesIcon}${activityIcon}
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
 				<td><button class="action-btn secondary" data-view="${lead.id}" title="View/Edit Details">View/Edit</button></td>
@@ -1530,10 +1542,22 @@ async function deleteSpecialAPI(specialId) {
 			icon.addEventListener('click', async (e) => {
 				e.preventDefault();
 				e.stopPropagation();
-				const leadId = e.target.dataset.leadId;
+				const leadId = e.target.closest('.notes-icon').dataset.leadId;
 				// Get lead name for modal title
 				const lead = await api.getLead(leadId);
 				openLeadNotesModal(leadId, lead.name);
+			});
+		});
+
+		// Add click listeners for activity log icons
+		document.querySelectorAll('.activity-icon').forEach(icon => {
+			icon.addEventListener('click', async (e) => {
+				e.preventDefault();
+				e.stopPropagation();
+				const leadId = e.target.closest('.activity-icon').dataset.leadId;
+				// Get lead name for modal title
+				const lead = await api.getLead(leadId);
+				openActivityLogModal(leadId, 'lead', lead.name);
 			});
 		});
 
@@ -3639,6 +3663,134 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		currentLeadForNotes = null;
 	}
 
+	// ---- Activity Log Modal ----
+	async function openActivityLogModal(entityId, entityType, entityName) {
+		console.log('🔵 openActivityLogModal called:', { entityId, entityType, entityName });
+
+		try {
+			// Fetch activities based on entity type
+			const activities = entityType === 'lead'
+				? await SupabaseAPI.getLeadActivities(entityId)
+				: await SupabaseAPI.getPropertyActivities(entityId);
+
+			console.log('✅ Activities fetched:', activities);
+
+			// Set modal title
+			const title = entityType === 'lead' ? `Lead Activity Log: ${entityName}` : `Property Activity Log: ${entityName}`;
+			document.getElementById('activityLogTitle').textContent = `📋 ${title}`;
+
+			// Render activities
+			const content = renderActivityLog(activities);
+			document.getElementById('activityLogContent').innerHTML = content;
+
+			showModal('activityLogModal');
+		} catch (error) {
+			console.error('❌ Error opening activity log:', error);
+			toast('Failed to load activity log', 'error');
+		}
+	}
+
+	function closeActivityLogModal() {
+		hideModal('activityLogModal');
+	}
+
+	function renderActivityLog(activities) {
+		if (!activities || activities.length === 0) {
+			return '<p class="subtle" style="text-align: center; padding: 40px;">No activities recorded yet</p>';
+		}
+
+		return activities.map(activity => {
+			const icon = getActivityIcon(activity.activity_type);
+			const timeAgo = formatTimeAgo(activity.created_at);
+
+			return `
+				<div class="activity-item" style="padding: 16px; border-bottom: 1px solid #e4e7ec;">
+					<div style="display: flex; align-items: start; gap: 12px;">
+						<span style="font-size: 24px;">${icon}</span>
+						<div style="flex: 1;">
+							<div style="font-weight: 600; color: #1a202c;">${activity.description}</div>
+							<div style="font-size: 0.875rem; color: #6b7280; margin-top: 4px;">
+								${activity.performed_by_name || 'System'} · ${timeAgo}
+							</div>
+							${renderActivityMetadata(activity)}
+						</div>
+					</div>
+				</div>
+			`;
+		}).join('');
+	}
+
+	function getActivityIcon(activityType) {
+		const icons = {
+			'created': '✨',
+			'assigned': '👤',
+			'health_changed': '⚠️',
+			'note_added': '📝',
+			'updated': '✏️',
+			'showcase_sent': '📧',
+			'showcase_responded': '💬',
+			'pumi_changed': '⭐',
+			'pricing_updated': '💰'
+		};
+		return icons[activityType] || '📋';
+	}
+
+	function renderActivityMetadata(activity) {
+		if (!activity.metadata) return '';
+
+		const metadata = activity.metadata;
+		let html = '<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 0.875rem;">';
+
+		// Render based on activity type
+		if (activity.activity_type === 'assigned' && metadata.new_agent_name) {
+			html += `<div>Assigned to: <strong>${metadata.new_agent_name}</strong></div>`;
+			if (metadata.previous_agent_name) {
+				html += `<div>Previously: ${metadata.previous_agent_name}</div>`;
+			}
+		}
+
+		if (activity.activity_type === 'health_changed') {
+			html += `<div>Status: ${metadata.previous_status} → ${metadata.new_status}</div>`;
+			if (metadata.previous_score !== undefined && metadata.new_score !== undefined) {
+				html += `<div>Score: ${metadata.previous_score} → ${metadata.new_score}</div>`;
+			}
+		}
+
+		if (activity.activity_type === 'showcase_sent' && metadata.property_count) {
+			html += `<div>${metadata.property_count} properties sent</div>`;
+			if (metadata.landing_page_url) {
+				html += `<div><a href="${metadata.landing_page_url}" target="_blank" style="color: #3b82f6;">View Showcase</a></div>`;
+			}
+		}
+
+		if (activity.activity_type === 'updated' && metadata.fields_changed) {
+			const fields = metadata.fields_changed.filter(f => f);
+			if (fields.length > 0) {
+				html += `<div>Fields changed: ${fields.join(', ')}</div>`;
+			}
+		}
+
+		if (activity.activity_type === 'note_added' && metadata.note_preview) {
+			html += `<div style="font-style: italic;">"${metadata.note_preview}${metadata.note_length > 100 ? '...' : ''}"</div>`;
+		}
+
+		html += '</div>';
+		return html;
+	}
+
+	function formatTimeAgo(timestamp) {
+		const now = new Date();
+		const then = new Date(timestamp);
+		const seconds = Math.floor((now - then) / 1000);
+
+		if (seconds < 60) return 'Just now';
+		if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+		if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+		if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+
+		return then.toLocaleDateString();
+	}
+
 	async function loadLeadNotesInModal(leadId, isStandalone = false) {
 		console.log('🔵 loadLeadNotesInModal called with leadId:', leadId, 'isStandalone:', isStandalone);
 
@@ -4794,6 +4946,16 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const cancelLeadNotesEl = document.getElementById('cancelLeadNotes');
 		if (cancelLeadNotesEl) {
 			cancelLeadNotesEl.addEventListener('click', closeLeadNotesModal);
+		}
+
+		// Activity log modal buttons
+		const closeActivityLogEl = document.getElementById('closeActivityLog');
+		if (closeActivityLogEl) {
+			closeActivityLogEl.addEventListener('click', closeActivityLogModal);
+		}
+		const closeActivityLogBtnEl = document.getElementById('closeActivityLogBtn');
+		if (closeActivityLogBtnEl) {
+			closeActivityLogBtnEl.addEventListener('click', closeActivityLogModal);
 		}
 
 		// Lead Details Modal save button (embedded notes)
