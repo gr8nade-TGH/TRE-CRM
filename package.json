@@ -1,11 +1,14 @@
 {
   "name": "tre-crm",
   "version": "1.0.0",
+  "type": "module",
   "description": "Texas Relocation Experts CRM Application",
   "main": "script.js",
   "scripts": {
     "migrate": "node run-migration-automated.js",
     "check-db": "node check-supabase-schema.js",
+    "lint": "eslint script.js",
+    "lint:fix": "eslint script.js --fix",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
@@ -18,5 +21,9 @@
   "dependencies": {
     "@supabase/supabase-js": "^2.75.1",
     "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.38.0",
+    "globals": "^16.4.0"
   }
 }
