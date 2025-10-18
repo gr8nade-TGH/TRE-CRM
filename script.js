@@ -9,63 +9,43 @@ import {
 	hideModal,
 	toast,
 	show,
-	hide,
-	formatCurrency,
-	formatPhone,
-	capitalize,
-	truncate,
-	isEmpty,
-	generateId,
-	deepClone
+	hide
 } from './src/utils/helpers.js';
-
-// Import validators
-import {
-	isValidEmail,
-	isValidPhone,
-	isRequired,
-	validateForm
-} from './src/utils/validators.js';
 
 // Import state management
 import {
-	state,
-	getState,
-	updateState,
-	resetState,
-	updateFilters,
-	updateListingsFilters,
-	updateSort,
-	updatePagination,
-	selectLead,
-	selectAgent,
-	addSelectedMatch,
-	removeSelectedMatch,
-	clearSelectedMatches,
-	setCurrentMatches,
-	addShowcase,
-	removeShowcase,
-	getShowcase,
-	updatePublicBanner,
-	navigateToPage
+	state
 } from './src/state/state.js';
 
 // Import mock data (TEMPORARY - will be removed in Phase 2B)
 import {
 	mockAgents as mockAgentsOriginal,
 	mockLeads,
-	mockDocumentSteps,
-	mockDocumentStatuses,
-	mockClosedLeads,
 	mockInterestedLeads,
 	mockProperties,
 	mockSpecials,
 	mockBugs,
+	mockDocumentStatuses,
+	mockClosedLeads,
 	prefsSummary
 } from './src/state/mockData.js';
 
 // Import Supabase API (for real data)
 import * as SupabaseAPI from './src/api/supabase-api.js';
+
+// ============================================================================
+// GLOBAL CONFIGURATION
+// ============================================================================
+const USE_MOCK_DATA = false; // ✅ NOW USING REAL SUPABASE DATA!
+const API_BASE = null; // Not using REST API, using Supabase directly
+
+// Global variables (loaded from external scripts)
+/* global mapboxgl */
+
+// Forward declarations for functions defined later (to avoid hoisting issues)
+ 
+let api, renderLeads, renderSpecials;
+ 
 
 // ============================================================================
 // GLOBAL FUNCTIONS (Keep for backward compatibility)
@@ -154,6 +134,8 @@ async function saveNewLead() {
 	}
 }
 
+// Unused legacy functions - kept for backward compatibility
+/* eslint-disable no-unused-vars */
 function checkDuplicateLead(email, phone) {
 	const existingLeads = USE_MOCK_DATA ? mockLeads : state.leads || [];
 
@@ -182,6 +164,7 @@ async function createLeadAPI(lead) {
 		toast('Error adding lead: ' + error.message, 'error');
 	}
 }
+/* eslint-enable no-unused-vars */
 
 // Add Special functionality
 function saveNewSpecial() {
@@ -910,7 +893,7 @@ async function deleteSpecialAPI(specialId) {
 		}
 
 		const r = anchor.getBoundingClientRect();
-		let top = r.bottom + 10;
+		const top = r.bottom + 10;
 		let left = r.left - 12;
 		if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
 		if (left < 8) left = 8;
@@ -944,8 +927,7 @@ async function deleteSpecialAPI(specialId) {
 
 	// ---- Real API Layer ----
 	// Use Supabase for data storage
-	const API_BASE = null; // Not using REST API, using Supabase directly
-	const USE_MOCK_DATA = false; // ✅ NOW USING REAL SUPABASE DATA!
+	// Note: USE_MOCK_DATA and API_BASE are now defined at the top of the file
 
 	// Helper function to handle API responses
 	async function handleResponse(response) {
@@ -956,7 +938,7 @@ async function deleteSpecialAPI(specialId) {
 		return response.json();
 	}
 
-	const api = {
+	api = {
 		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters = {} }){
 			if (!USE_MOCK_DATA) {
 				// Use real Supabase data
@@ -1483,7 +1465,7 @@ async function deleteSpecialAPI(specialId) {
 	};
 
 	// ---- Rendering: Leads Table ----
-	async function renderLeads(){
+	renderLeads = async function(){
 		console.log('renderLeads called'); // Debug
 		const tbody = document.getElementById('leadsTbody');
 		console.log('tbody element:', tbody); // Debug
@@ -1982,7 +1964,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
 				`;
 
-			case 3: // Guest Card Sent
+			case 3: { // Guest Card Sent
 				const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName)}&agent=${encodeURIComponent(lead.agentName)}&property=${encodeURIComponent(lead.showcase.selections.join(','))}&date=${encodeURIComponent(formatDate(lead.lastUpdated))}&agentPhone=210-391-4044&phoneNumber=210-579-6189&moveInDate=ASAP&bedrooms=${lead.property.bedrooms}&bathrooms=${lead.property.bathrooms}&priceRange=${lead.property.rent}&agentNotes=Guest card sent for property tour scheduling`;
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
@@ -1992,6 +1974,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Status:</strong> Guest card prepared and sent to properties</div>
 					<a href="${guestCardUrl}" target="_blank" class="modal-link">View Filled Guest Card →</a>
 				`;
+			}
 
 			case 4: // Property Selected
 				return `
@@ -2162,7 +2145,7 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Rendering: Specials Table ----
-	async function renderSpecials(){
+	renderSpecials = async function(){
 		console.log('renderSpecials called');
 		const tbody = document.getElementById('specialsTbody');
 		if (!tbody) return;
@@ -2308,7 +2291,7 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 
 		// Get current user context
-		const currentUser = getCurrentUser();
+		const currentUser = window.currentUser;
 		const currentPage = getCurrentPageName();
 
 		const bugData = {
@@ -2705,7 +2688,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		tbody.innerHTML = '';
 
 		// Apply sorting if active
-		let agentsToRender = [...mockAgents];
+		const agentsToRender = [...mockAgents];
 		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
 			agentsToRender.sort((a, b) => {
 				const statsA = getAgentStats(a.id);
@@ -6185,7 +6168,7 @@ function renderUsersTable() {
 	}
 
 	// Use real users from Supabase (no mock data fallback)
-	let users = realUsers.length > 0 ? [...realUsers] : [];
+	const users = realUsers.length > 0 ? [...realUsers] : [];
 	console.log('Users to render:', users.length);
 
 	// Apply sorting if active
