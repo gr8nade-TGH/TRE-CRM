@@ -3157,8 +3157,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	async function saveLeadNote() {
+		console.log('🔵 saveLeadNote called');
+		console.log('currentLeadForNotes:', currentLeadForNotes);
+
 		const noteInput = document.getElementById('newLeadNote');
 		const content = noteInput.value.trim();
+		console.log('Note content:', content);
 
 		if (!content) {
 			toast('Please enter a comment', 'error');
@@ -4779,7 +4783,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 		const saveLeadNoteBtnEl = document.getElementById('saveLeadNoteBtn');
 		if (saveLeadNoteBtnEl) {
-			saveLeadNoteBtnEl.addEventListener('click', saveLeadNote);
+			console.log('✅ Attaching click listener to saveLeadNoteBtn');
+			saveLeadNoteBtnEl.addEventListener('click', () => {
+				console.log('🟢 saveLeadNoteBtn clicked!');
+				saveLeadNote();
+			});
+		} else {
+			console.log('❌ saveLeadNoteBtn not found');
 		}
 
 		// Close modals on escape key
