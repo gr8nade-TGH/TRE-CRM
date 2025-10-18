@@ -3156,11 +3156,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		}
 	}
 
-	async function saveLeadNote() {
-		console.log('🔵 saveLeadNote called');
+	async function saveLeadNote(isStandalone = false) {
+		console.log('🔵 saveLeadNote called, isStandalone:', isStandalone);
 		console.log('currentLeadForNotes:', currentLeadForNotes);
 
-		const noteInput = document.getElementById('newLeadNote');
+		const inputId = isStandalone ? 'standaloneNewLeadNote' : 'newLeadNote';
+		const noteInput = document.getElementById(inputId);
 		const content = noteInput.value.trim();
 		console.log('Note content:', content);
 
@@ -3210,7 +3211,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 			// Reload notes in the modal
 			console.log('🔄 Reloading notes in modal...');
-			await loadLeadNotesInModal(currentLeadForNotes);
+			await loadLeadNotesInModal(currentLeadForNotes, isStandalone);
 
 			// Refresh leads table to update note icon
 			console.log('🔄 Refreshing leads table...');
@@ -3630,11 +3631,11 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		// Set modal title
 		document.getElementById('leadNotesTitle').textContent = `📝 Notes: ${leadName}`;
 
-		// Load notes
-		await loadLeadNotesInModal(leadId);
+		// Load notes (standalone modal)
+		await loadLeadNotesInModal(leadId, true);
 
 		// Clear input
-		document.getElementById('newLeadNote').value = '';
+		document.getElementById('standaloneNewLeadNote').value = '';
 
 		showModal('leadNotesModal');
 	}
@@ -3644,11 +3645,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		currentLeadForNotes = null;
 	}
 
-	async function loadLeadNotesInModal(leadId) {
-		console.log('🔵 loadLeadNotesInModal called with leadId:', leadId);
+	async function loadLeadNotesInModal(leadId, isStandalone = false) {
+		console.log('🔵 loadLeadNotesInModal called with leadId:', leadId, 'isStandalone:', isStandalone);
+
+		// Use different element IDs based on which modal is open
+		const contentId = isStandalone ? 'standaloneLeadNotesContent' : 'leadNotesContent';
 
 		if (USE_MOCK_DATA) {
-			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle">Notes feature requires Supabase connection</p>';
+			document.getElementById(contentId).innerHTML = '<p class="subtle">Notes feature requires Supabase connection</p>';
 			return;
 		}
 
@@ -3657,7 +3661,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			const notes = await SupabaseAPI.getLeadNotes(leadId);
 			console.log('📥 Received notes:', notes);
 
-			const notesContainer = document.getElementById('leadNotesContent');
+			const notesContainer = document.getElementById(contentId);
 
 			if (!notes || notes.length === 0) {
 				console.log('ℹ️ No notes found for this lead');
@@ -3677,7 +3681,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			`).join('');
 		} catch (error) {
 			console.error('❌ Error loading lead notes:', error);
-			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
+			document.getElementById(contentId).innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
 		}
 	}
 
@@ -4797,15 +4801,29 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		if (cancelLeadNotesEl) {
 			cancelLeadNotesEl.addEventListener('click', closeLeadNotesModal);
 		}
+
+		// Lead Details Modal save button (embedded notes)
 		const saveLeadNoteBtnEl = document.getElementById('saveLeadNoteBtn');
 		if (saveLeadNoteBtnEl) {
-			console.log('✅ Attaching click listener to saveLeadNoteBtn');
+			console.log('✅ Attaching click listener to saveLeadNoteBtn (embedded)');
 			saveLeadNoteBtnEl.addEventListener('click', () => {
-				console.log('🟢 saveLeadNoteBtn clicked!');
-				saveLeadNote();
+				console.log('🟢 saveLeadNoteBtn clicked (embedded)!');
+				saveLeadNote(false);  // Not standalone
 			});
 		} else {
 			console.log('❌ saveLeadNoteBtn not found');
+		}
+
+		// Standalone Lead Notes Modal save button
+		const standaloneSaveLeadNoteBtnEl = document.getElementById('standaloneSaveLeadNoteBtn');
+		if (standaloneSaveLeadNoteBtnEl) {
+			console.log('✅ Attaching click listener to standaloneSaveLeadNoteBtn');
+			standaloneSaveLeadNoteBtnEl.addEventListener('click', () => {
+				console.log('🟢 standaloneSaveLeadNoteBtn clicked!');
+				saveLeadNote(true);  // Standalone
+			});
+		} else {
+			console.log('❌ standaloneSaveLeadNoteBtn not found');
 		}
 
 		// Close modals on escape key
