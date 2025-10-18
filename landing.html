@@ -778,12 +778,9 @@
 
 				if (agent) {
 					console.log('✅ Found agent:', agent.name, '(', agent.email, ')');
-					document.getElementById('agentName').textContent = `Your Agent: ${agent.name}`;
-					document.getElementById('agentName').style.color = '#fff';
 
-					// Update form header with agent contact info
-					const contactInfo = `Working with ${agent.name} • ${agent.phone || agent.email}`;
-					document.getElementById('agentContact').textContent = contactInfo;
+					// Note: agentName, agentPhoto, and contact buttons are updated in the .then() callback below
+					// This is just for the hero section (which we removed)
 
 					return agent;
 				} else {
