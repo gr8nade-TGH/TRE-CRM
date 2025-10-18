@@ -12,7 +12,7 @@
 	<link rel="stylesheet" href="auth-styles.css" />
 
 	<!-- Supabase JS Client -->
-	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
 	<script>
 		// Initialize Supabase client
 		const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
@@ -20,7 +20,15 @@
 
 		// Wait for Supabase library to load, then create client
 		(function initSupabase() {
-			if (typeof supabase !== 'undefined') {
+			// Check if the supabase library is loaded (window.supabase from CDN)
+			if (window.supabase && window.supabase.createClient) {
+				// Already initialized
+				console.log('✅ Supabase client already initialized');
+				return;
+			}
+
+			// Check if the library object exists
+			if (typeof supabase !== 'undefined' && supabase.createClient) {
 				window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 				console.log('✅ Supabase client initialized');
 			} else {
@@ -31,6 +39,10 @@
 
 		// Helper function to get current session
 		window.getCurrentSession = async function() {
+			if (!window.supabase) {
+				console.error('Supabase client not initialized');
+				return null;
+			}
 			const { data: { session }, error } = await window.supabase.auth.getSession();
 			if (error) {
 				console.error('Error getting session:', error);

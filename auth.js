@@ -70,13 +70,19 @@ document.addEventListener('DOMContentLoaded', async function() {
  */
 async function waitForSupabase() {
 	let attempts = 0;
-	while (!window.supabase && attempts < 50) {
+	const maxAttempts = 100; // Increased from 50 to 100 (10 seconds total)
+
+	while (!window.supabase && attempts < maxAttempts) {
+		console.log(`⏳ Waiting for Supabase... (attempt ${attempts + 1}/${maxAttempts})`);
 		await new Promise(resolve => setTimeout(resolve, 100));
 		attempts++;
 	}
+
 	if (!window.supabase) {
-		throw new Error('Supabase client failed to load');
+		console.error('❌ Supabase client failed to load after', maxAttempts * 100, 'ms');
+		throw new Error('Supabase client failed to load. Please refresh the page.');
 	}
+
 	console.log('✅ Supabase client ready');
 }
 
