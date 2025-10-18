@@ -16,7 +16,7 @@
 			font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 			line-height: 1.6;
 			color: #1a1a1a;
-			background: #f8f9fa;
+			background: linear-gradient(to bottom, #f8f9fa 0%, #e9ecef 100%);
 			min-height: 100vh;
 		}
 		.landing-container {
@@ -28,14 +28,14 @@
 			background: #ffffff;
 			padding: 20px 0;
 			box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-			border-bottom: 3px solid #2563eb;
+			border-bottom: 3px solid #bf0a30;
 		}
 		.landing-logo {
 			text-align: center;
 		}
 		.landing-logo h1 {
 			font-size: 2rem;
-			color: #2563eb;
+			color: #bf0a30;
 			font-weight: 700;
 		}
 		.landing-logo p {
@@ -46,33 +46,229 @@
 		.landing-hero {
 			text-align: center;
 			padding: 60px 20px 40px;
-			background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
+			background: linear-gradient(135deg, #bf0a30 0%, #8b0000 100%);
 			color: white;
+			position: relative;
+			overflow: hidden;
+		}
+		.landing-hero::before {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 0;
+			right: 0;
+			bottom: 0;
+			background: url('data:image/svg+xml,<svg width="100" height="100" xmlns="http://www.w3.org/2000/svg"><rect fill="rgba(255,255,255,0.03)" width="50" height="50"/><rect fill="rgba(255,255,255,0.03)" x="50" y="50" width="50" height="50"/></svg>');
+			opacity: 0.5;
+		}
+		.landing-hero > * {
+			position: relative;
+			z-index: 1;
 		}
 		.landing-hero h1 {
-			font-size: 2.5rem;
+			font-size: 2.8rem;
 			margin-bottom: 15px;
 			font-weight: 700;
+			text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
 		}
 		.landing-hero p {
-			font-size: 1.1rem;
+			font-size: 1.2rem;
 			margin-bottom: 10px;
 			opacity: 0.95;
 		}
 		.landing-hero .highlight {
-			font-size: 1.3rem;
+			font-size: 1.4rem;
 			font-weight: 600;
 			margin: 20px 0;
+			background: rgba(255,255,255,0.1);
+			padding: 15px 30px;
+			border-radius: 50px;
+			display: inline-block;
 		}
+
+		/* Agent Section */
+		.agent-section {
+			background: white;
+			padding: 40px;
+			border-radius: 12px;
+			box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+			margin: -30px auto 30px;
+			max-width: 900px;
+			display: flex;
+			align-items: center;
+			gap: 30px;
+		}
+		.agent-photo {
+			width: 150px;
+			height: 150px;
+			border-radius: 50%;
+			background: linear-gradient(135deg, #bf0a30 0%, #8b0000 100%);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-size: 4rem;
+			color: white;
+			flex-shrink: 0;
+			box-shadow: 0 4px 15px rgba(191, 10, 48, 0.3);
+		}
+		.agent-info {
+			flex: 1;
+		}
+		.agent-info h2 {
+			color: #bf0a30;
+			font-size: 1.8rem;
+			margin-bottom: 10px;
+		}
+		.agent-info .agent-title {
+			color: #64748b;
+			font-size: 1.1rem;
+			margin-bottom: 15px;
+			font-weight: 500;
+		}
+		.agent-info .agent-bio {
+			color: #1f2937;
+			line-height: 1.7;
+			margin-bottom: 15px;
+		}
+		.agent-contact-buttons {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+		.contact-btn {
+			padding: 10px 20px;
+			border-radius: 8px;
+			border: none;
+			font-weight: 600;
+			cursor: pointer;
+			transition: all 0.3s ease;
+			text-decoration: none;
+			display: inline-flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.contact-btn.primary {
+			background: #bf0a30;
+			color: white;
+		}
+		.contact-btn.primary:hover {
+			background: #8b0000;
+			transform: translateY(-2px);
+		}
+		.contact-btn.secondary {
+			background: #e9ecef;
+			color: #1f2937;
+		}
+		.contact-btn.secondary:hover {
+			background: #dee2e6;
+		}
+
+		/* Trust Signals */
+		.trust-signals {
+			max-width: 900px;
+			margin: 0 auto 40px;
+			display: grid;
+			grid-template-columns: repeat(3, 1fr);
+			gap: 20px;
+		}
+		.trust-card {
+			background: white;
+			padding: 25px;
+			border-radius: 12px;
+			text-align: center;
+			box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+		}
+		.trust-card .icon {
+			font-size: 2.5rem;
+			margin-bottom: 10px;
+		}
+		.trust-card .number {
+			font-size: 2rem;
+			font-weight: 700;
+			color: #bf0a30;
+			margin-bottom: 5px;
+		}
+		.trust-card .label {
+			color: #64748b;
+			font-size: 0.95rem;
+		}
+
+		/* Form Styles */
 		.landing-form {
 			background: white;
 			padding: 40px;
 			border-radius: 12px;
 			box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-			margin: -30px auto 60px;
+			margin: 0 auto 60px;
 			max-width: 900px;
 			position: relative;
 		}
+
+		/* Progress Indicator */
+		.progress-indicator {
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 40px;
+			position: relative;
+		}
+		.progress-indicator::before {
+			content: '';
+			position: absolute;
+			top: 20px;
+			left: 0;
+			right: 0;
+			height: 3px;
+			background: #e5e7eb;
+			z-index: 0;
+		}
+		.progress-line {
+			position: absolute;
+			top: 20px;
+			left: 0;
+			height: 3px;
+			background: #bf0a30;
+			transition: width 0.3s ease;
+			z-index: 1;
+		}
+		.progress-step {
+			flex: 1;
+			text-align: center;
+			position: relative;
+			z-index: 2;
+		}
+		.progress-step-circle {
+			width: 40px;
+			height: 40px;
+			border-radius: 50%;
+			background: white;
+			border: 3px solid #e5e7eb;
+			margin: 0 auto 10px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			font-weight: 700;
+			transition: all 0.3s ease;
+		}
+		.progress-step.active .progress-step-circle {
+			border-color: #bf0a30;
+			background: #bf0a30;
+			color: white;
+		}
+		.progress-step.completed .progress-step-circle {
+			border-color: #10b981;
+			background: #10b981;
+			color: white;
+		}
+		.progress-step-label {
+			font-size: 0.9rem;
+			color: #64748b;
+			font-weight: 500;
+		}
+		.progress-step.active .progress-step-label {
+			color: #bf0a30;
+			font-weight: 600;
+		}
+
 		.form-header {
 			text-align: center;
 			margin-bottom: 30px;
@@ -80,7 +276,7 @@
 			border-bottom: 2px solid #e5e7eb;
 		}
 		.form-header h2 {
-			color: #1e40af;
+			color: #bf0a30;
 			font-size: 1.5rem;
 			margin-bottom: 10px;
 		}
@@ -88,6 +284,20 @@
 			color: #64748b;
 			font-style: italic;
 		}
+
+		/* Form Steps */
+		.form-step {
+			display: none;
+		}
+		.form-step.active {
+			display: block;
+			animation: fadeIn 0.3s ease;
+		}
+		@keyframes fadeIn {
+			from { opacity: 0; transform: translateY(10px); }
+			to { opacity: 1; transform: translateY(0); }
+		}
+
 		.form-group {
 			margin-bottom: 20px;
 		}
@@ -97,6 +307,12 @@
 			font-weight: 600;
 			color: #1f2937;
 			font-size: 0.95rem;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+		.form-group label .icon {
+			font-size: 1.1rem;
 		}
 		.form-group input,
 		.form-group select,
@@ -114,36 +330,56 @@
 		.form-group select:focus,
 		.form-group textarea:focus {
 			outline: none;
-			border-color: #2563eb;
-			box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+			border-color: #bf0a30;
+			box-shadow: 0 0 0 3px rgba(191, 10, 48, 0.1);
+		}
+		.form-group input:valid:not(:placeholder-shown),
+		.form-group select:valid {
+			border-color: #10b981;
 		}
 		.form-row {
 			display: grid;
 			grid-template-columns: 1fr 1fr;
 			gap: 20px;
 		}
-		.submit-btn {
-			background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);
-			color: white;
+
+		/* Form Navigation Buttons */
+		.form-navigation {
+			display: flex;
+			gap: 15px;
+			margin-top: 30px;
+		}
+		.form-btn {
+			flex: 1;
 			padding: 16px 32px;
 			border: none;
 			border-radius: 8px;
 			font-size: 18px;
 			font-weight: 600;
 			cursor: pointer;
-			width: 100%;
 			transition: all 0.3s ease;
-			margin-top: 10px;
 		}
-		.submit-btn:hover {
+		.form-btn.primary {
+			background: linear-gradient(135deg, #bf0a30 0%, #8b0000 100%);
+			color: white;
+		}
+		.form-btn.primary:hover:not(:disabled) {
 			transform: translateY(-2px);
-			box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+			box-shadow: 0 8px 20px rgba(191, 10, 48, 0.3);
 		}
-		.submit-btn:disabled {
+		.form-btn.secondary {
+			background: #e9ecef;
+			color: #1f2937;
+		}
+		.form-btn.secondary:hover {
+			background: #dee2e6;
+		}
+		.form-btn:disabled {
 			opacity: 0.6;
 			cursor: not-allowed;
 			transform: none;
 		}
+
 		.landing-footer {
 			background: #1f2937;
 			color: #e5e7eb;
@@ -155,15 +391,46 @@
 			margin: 10px 0;
 			color: #9ca3af;
 		}
+
+		/* Mobile Styles */
 		@media (max-width: 768px) {
 			.form-row {
 				grid-template-columns: 1fr;
 			}
 			.landing-hero h1 {
-				font-size: 1.8rem;
+				font-size: 2rem;
+			}
+			.landing-hero .highlight {
+				font-size: 1.1rem;
+				padding: 12px 20px;
 			}
 			.landing-form {
 				padding: 30px 20px;
+			}
+			.agent-section {
+				flex-direction: column;
+				text-align: center;
+				padding: 30px 20px;
+			}
+			.agent-photo {
+				width: 120px;
+				height: 120px;
+				font-size: 3rem;
+			}
+			.agent-contact-buttons {
+				justify-content: center;
+			}
+			.trust-signals {
+				grid-template-columns: 1fr;
+				gap: 15px;
+			}
+			.progress-step-label {
+				font-size: 0.75rem;
+			}
+			.progress-step-circle {
+				width: 35px;
+				height: 35px;
+				font-size: 0.9rem;
 			}
 		}
 	</style>
@@ -181,134 +448,209 @@
 
 		<div class="landing-hero">
 			<div class="landing-container">
-				<h1>Schedule an Appointment</h1>
-				<p id="agentName" style="font-size: 1.4rem; font-weight: 600; margin: 20px 0;">Loading agent information...</p>
-				<p class="highlight">Are you ready for your new apartment? GREAT!!</p>
-				<p>Please fill out the form below and I'll be in contact with you TODAY!</p>
+				<h1>Find Your Perfect Texas Home</h1>
+				<p class="highlight">🏠 Let's Find Your Dream Apartment Together!</p>
+				<p>Fill out the quick form below and get personalized apartment recommendations TODAY!</p>
 			</div>
 		</div>
 
 		<div class="landing-container">
-			<div class="landing-form">
-				<div class="form-header">
-					<h2>Tell Us About Your Dream Home</h2>
-					<p id="agentContact" style="margin: 10px 0; color: #2563eb; font-weight: 600; font-size: 1.05rem;"></p>
-					<p style="color: #64748b;">Fields marked with an * are required</p>
+			<!-- Agent Section -->
+			<div class="agent-section">
+				<div class="agent-photo" id="agentPhoto">
+					👤
 				</div>
-				
+				<div class="agent-info">
+					<h2 id="agentName">Loading agent information...</h2>
+					<p class="agent-title">Texas Relocation Specialist</p>
+					<p class="agent-bio" id="agentBio">
+						Hi! I'm here to help you find the perfect apartment in Texas. With years of experience and access to exclusive listings, I'll make your relocation smooth and stress-free. Let's find your new home together!
+					</p>
+					<div class="agent-contact-buttons">
+						<a href="#" class="contact-btn primary" id="agentCallBtn">
+							📞 Call Me Now
+						</a>
+						<a href="#" class="contact-btn secondary" id="agentTextBtn">
+							💬 Send a Text
+						</a>
+					</div>
+				</div>
+			</div>
+
+			<!-- Trust Signals -->
+			<div class="trust-signals">
+				<div class="trust-card">
+					<div class="icon">⭐</div>
+					<div class="number">500+</div>
+					<div class="label">Happy Residents</div>
+				</div>
+				<div class="trust-card">
+					<div class="icon">⚡</div>
+					<div class="number">< 2 Hrs</div>
+					<div class="label">Avg Response Time</div>
+				</div>
+				<div class="trust-card">
+					<div class="icon">🏆</div>
+					<div class="number">5+ Years</div>
+					<div class="label">Experience</div>
+				</div>
+			</div>
+			<div class="landing-form">
+				<!-- Progress Indicator -->
+				<div class="progress-indicator">
+					<div class="progress-line" id="progressLine" style="width: 33.33%;"></div>
+					<div class="progress-step active" data-step="1">
+						<div class="progress-step-circle">1</div>
+						<div class="progress-step-label">Contact Info</div>
+					</div>
+					<div class="progress-step" data-step="2">
+						<div class="progress-step-circle">2</div>
+						<div class="progress-step-label">Preferences</div>
+					</div>
+					<div class="progress-step" data-step="3">
+						<div class="progress-step-circle">3</div>
+						<div class="progress-step-label">Details</div>
+					</div>
+				</div>
+
+				<div class="form-header">
+					<h2 id="formTitle">Let's Get Started!</h2>
+					<p style="color: #64748b;">Step <span id="currentStep">1</span> of 3</p>
+				</div>
+
 				<form id="leadForm">
-					<div class="form-row">
-						<div class="form-group">
-							<label for="name">Name: *</label>
-							<input type="text" id="name" name="name" required>
+					<!-- Step 1: Contact Information -->
+					<div class="form-step active" data-step="1">
+						<div class="form-row">
+							<div class="form-group">
+								<label for="name"><span class="icon">👤</span> Full Name *</label>
+								<input type="text" id="name" name="name" placeholder="John Doe" required>
+							</div>
+							<div class="form-group">
+								<label for="phone"><span class="icon">📱</span> Phone Number *</label>
+								<input type="tel" id="phone" name="phone" placeholder="(555) 123-4567" required>
+							</div>
 						</div>
-						<div class="form-group">
-							<label for="phone">Phone: *</label>
-							<input type="tel" id="phone" name="phone" required>
-						</div>
-					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="email">Email: *</label>
-							<input type="email" id="email" name="email" required>
-						</div>
-						<div class="form-group">
-							<label for="bestTime">Best time to call you: *</label>
-							<select id="bestTime" name="bestTime" required>
-								<option value="">Select</option>
-								<option value="morning">Morning (8AM-12PM)</option>
-								<option value="afternoon">Afternoon (12PM-5PM)</option>
-								<option value="evening">Evening (5PM-8PM)</option>
-								<option value="anytime">Anytime</option>
-							</select>
-						</div>
-					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="bedrooms"># of Bedrooms: *</label>
-							<select id="bedrooms" name="bedrooms" required>
-								<option value="">Select</option>
-								<option value="studio">Studio</option>
-								<option value="1">1 Bedroom</option>
-								<option value="2">2 Bedrooms</option>
-								<option value="3">3 Bedrooms</option>
-								<option value="4">4 Bedrooms</option>
-								<option value="5+">5+ Bedrooms</option>
-							</select>
-						</div>
-						<div class="form-group">
-							<label for="bathrooms"># of Bathrooms: *</label>
-							<select id="bathrooms" name="bathrooms" required>
-								<option value="">Select</option>
-								<option value="1">1 Bathroom</option>
-								<option value="1.5">1.5 Bathrooms</option>
-								<option value="2">2 Bathrooms</option>
-								<option value="2.5">2.5 Bathrooms</option>
-								<option value="3">3 Bathrooms</option>
-								<option value="3+">3+ Bathrooms</option>
-							</select>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label for="email"><span class="icon">📧</span> Email Address *</label>
+								<input type="email" id="email" name="email" placeholder="john@example.com" required>
+							</div>
+							<div class="form-group">
+								<label for="bestTime"><span class="icon">⏰</span> Best Time to Call *</label>
+								<select id="bestTime" name="bestTime" required>
+									<option value="">Select a time</option>
+									<option value="morning">Morning (8AM-12PM)</option>
+									<option value="afternoon">Afternoon (12PM-5PM)</option>
+									<option value="evening">Evening (5PM-8PM)</option>
+									<option value="anytime">Anytime</option>
+								</select>
+							</div>
 						</div>
 					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="priceRange">Price Range: *</label>
-							<select id="priceRange" name="priceRange" required>
-								<option value="">Select</option>
-								<option value="under-1000">Under $1,000</option>
-								<option value="1000-1500">$1,000 - $1,500</option>
-								<option value="1500-2000">$1,500 - $2,000</option>
-								<option value="2000-2500">$2,000 - $2,500</option>
-								<option value="2500-3000">$2,500 - $3,000</option>
-								<option value="3000-4000">$3,000 - $4,000</option>
-								<option value="4000+">$4,000+</option>
-							</select>
+
+					<!-- Step 2: Apartment Preferences -->
+					<div class="form-step" data-step="2">
+						<div class="form-row">
+							<div class="form-group">
+								<label for="bedrooms"><span class="icon">🛏️</span> Bedrooms *</label>
+								<select id="bedrooms" name="bedrooms" required>
+									<option value="">Select</option>
+									<option value="studio">Studio</option>
+									<option value="1">1 Bedroom</option>
+									<option value="2">2 Bedrooms</option>
+									<option value="3">3 Bedrooms</option>
+									<option value="4">4 Bedrooms</option>
+									<option value="5+">5+ Bedrooms</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="bathrooms"><span class="icon">🚿</span> Bathrooms *</label>
+								<select id="bathrooms" name="bathrooms" required>
+									<option value="">Select</option>
+									<option value="1">1 Bathroom</option>
+									<option value="1.5">1.5 Bathrooms</option>
+									<option value="2">2 Bathrooms</option>
+									<option value="2.5">2.5 Bathrooms</option>
+									<option value="3">3 Bathrooms</option>
+									<option value="3+">3+ Bathrooms</option>
+								</select>
+							</div>
 						</div>
-						<div class="form-group">
-							<label for="areaOfTown">Area of Town: *</label>
-							<select id="areaOfTown" name="areaOfTown" required>
-								<option value="">Select</option>
-								<option value="downtown">Downtown</option>
-								<option value="north-side">North Side</option>
-								<option value="south-side">South Side</option>
-								<option value="east-side">East Side</option>
-								<option value="west-side">West Side</option>
-								<option value="northwest">Northwest</option>
-								<option value="northeast">Northeast</option>
-								<option value="southwest">Southwest</option>
-								<option value="southeast">Southeast</option>
-								<option value="suburbs">Suburbs</option>
-								<option value="flexible">Flexible</option>
-							</select>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label for="priceRange"><span class="icon">💰</span> Monthly Budget *</label>
+								<select id="priceRange" name="priceRange" required>
+									<option value="">Select your budget</option>
+									<option value="under-1000">Under $1,000</option>
+									<option value="1000-1500">$1,000 - $1,500</option>
+									<option value="1500-2000">$1,500 - $2,000</option>
+									<option value="2000-2500">$2,000 - $2,500</option>
+									<option value="2500-3000">$2,500 - $3,000</option>
+									<option value="3000-4000">$3,000 - $4,000</option>
+									<option value="4000+">$4,000+</option>
+								</select>
+							</div>
+							<div class="form-group">
+								<label for="areaOfTown"><span class="icon">📍</span> Preferred Area *</label>
+								<select id="areaOfTown" name="areaOfTown" required>
+									<option value="">Select an area</option>
+									<option value="downtown">Downtown</option>
+									<option value="north-side">North Side</option>
+									<option value="south-side">South Side</option>
+									<option value="east-side">East Side</option>
+									<option value="west-side">West Side</option>
+									<option value="northwest">Northwest</option>
+									<option value="northeast">Northeast</option>
+									<option value="southwest">Southwest</option>
+									<option value="southeast">Southeast</option>
+									<option value="suburbs">Suburbs</option>
+									<option value="flexible">Flexible</option>
+								</select>
+							</div>
 						</div>
 					</div>
-					
-					<div class="form-row">
-						<div class="form-group">
-							<label for="moveInDate">Target move in Date: *</label>
-							<input type="date" id="moveInDate" name="moveInDate" required>
-						</div>
-						<div class="form-group">
-							<label for="creditHistory">Credit History: *</label>
+
+					<!-- Step 3: Timeline & Details -->
+					<div class="form-step" data-step="3">
+						<div class="form-row">
+							<div class="form-group">
+								<label for="moveInDate"><span class="icon">📅</span> Move-In Date *</label>
+								<input type="date" id="moveInDate" name="moveInDate" required>
+							</div>
+							<div class="form-group">
+								<label for="creditHistory"><span class="icon">💳</span> Credit History *</label>
 							<select id="creditHistory" name="creditHistory" required>
-								<option value="">Select</option>
-								<option value="excellent">Excellent (750+)</option>
-								<option value="good">Good (700-749)</option>
-								<option value="fair">Fair (650-699)</option>
-								<option value="poor">Poor (Below 650)</option>
-								<option value="no-credit">No Credit History</option>
-							</select>
+									<option value="">Select your credit range</option>
+									<option value="excellent">Excellent (750+)</option>
+									<option value="good">Good (700-749)</option>
+									<option value="fair">Fair (650-699)</option>
+									<option value="poor">Poor (Below 650)</option>
+									<option value="no-credit">No Credit History</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="comments"><span class="icon">📝</span> Additional Comments</label>
+							<textarea id="comments" name="comments" rows="4" placeholder="Lease term preferences, special requirements, desired neighborhoods, pet information, etc..."></textarea>
 						</div>
 					</div>
-					
-					<div class="form-group">
-						<label for="comments">Lease Term / Special Requirements / Comments / Desired Neighborhoods:</label>
-						<textarea id="comments" name="comments" rows="4" placeholder="Any specific requirements or comments..."></textarea>
+
+					<!-- Form Navigation -->
+					<div class="form-navigation">
+						<button type="button" class="form-btn secondary" id="prevBtn" style="display: none;">
+							← Previous
+						</button>
+						<button type="button" class="form-btn primary" id="nextBtn">
+							Next →
+						</button>
+						<button type="submit" class="form-btn primary" id="submitBtn" style="display: none;">
+							🚀 Submit My Information
+						</button>
 					</div>
-					
-					<button type="submit" class="submit-btn">Submit My Information</button>
 				</form>
 			</div>
 		</div>
@@ -469,7 +811,116 @@
 		let currentAgent = null;
 		loadAgentInfo().then(agent => {
 			currentAgent = agent;
+			if (agent) {
+				// Update agent section
+				document.getElementById('agentName').textContent = agent.name;
+				document.getElementById('agentPhoto').textContent = agent.name.charAt(0).toUpperCase();
+
+				// Update contact buttons
+				const callBtn = document.getElementById('agentCallBtn');
+				const textBtn = document.getElementById('agentTextBtn');
+
+				if (agent.phone) {
+					callBtn.href = `tel:${agent.phone}`;
+					textBtn.href = `sms:${agent.phone}`;
+				} else {
+					callBtn.style.display = 'none';
+					textBtn.style.display = 'none';
+				}
+			}
 		});
+
+		// Multi-step form logic
+		let currentStep = 1;
+		const totalSteps = 3;
+
+		const formSteps = document.querySelectorAll('.form-step');
+		const progressSteps = document.querySelectorAll('.progress-step');
+		const progressLine = document.getElementById('progressLine');
+		const prevBtn = document.getElementById('prevBtn');
+		const nextBtn = document.getElementById('nextBtn');
+		const submitBtn = document.getElementById('submitBtn');
+		const formTitle = document.getElementById('formTitle');
+		const currentStepSpan = document.getElementById('currentStep');
+
+		const stepTitles = [
+			"Let's Get Started!",
+			"Tell Us Your Preferences",
+			"Almost Done!"
+		];
+
+		function updateFormStep() {
+			// Update form steps visibility
+			formSteps.forEach((step, index) => {
+				if (index + 1 === currentStep) {
+					step.classList.add('active');
+				} else {
+					step.classList.remove('active');
+				}
+			});
+
+			// Update progress indicator
+			progressSteps.forEach((step, index) => {
+				if (index + 1 < currentStep) {
+					step.classList.add('completed');
+					step.classList.remove('active');
+				} else if (index + 1 === currentStep) {
+					step.classList.add('active');
+					step.classList.remove('completed');
+				} else {
+					step.classList.remove('active', 'completed');
+				}
+			});
+
+			// Update progress line
+			const progressPercent = ((currentStep - 1) / (totalSteps - 1)) * 100;
+			progressLine.style.width = `${progressPercent}%`;
+
+			// Update title and step number
+			formTitle.textContent = stepTitles[currentStep - 1];
+			currentStepSpan.textContent = currentStep;
+
+			// Update button visibility
+			prevBtn.style.display = currentStep === 1 ? 'none' : 'block';
+			nextBtn.style.display = currentStep === totalSteps ? 'none' : 'block';
+			submitBtn.style.display = currentStep === totalSteps ? 'block' : 'none';
+		}
+
+		function validateCurrentStep() {
+			const currentStepEl = document.querySelector(`.form-step[data-step="${currentStep}"]`);
+			const requiredFields = currentStepEl.querySelectorAll('[required]');
+
+			for (let field of requiredFields) {
+				if (!field.value || field.value === '') {
+					field.focus();
+					return false;
+				}
+			}
+			return true;
+		}
+
+		nextBtn.addEventListener('click', () => {
+			if (validateCurrentStep()) {
+				if (currentStep < totalSteps) {
+					currentStep++;
+					updateFormStep();
+					window.scrollTo({ top: 0, behavior: 'smooth' });
+				}
+			} else {
+				alert('Please fill in all required fields before continuing.');
+			}
+		});
+
+		prevBtn.addEventListener('click', () => {
+			if (currentStep > 1) {
+				currentStep--;
+				updateFormStep();
+				window.scrollTo({ top: 0, behavior: 'smooth' });
+			}
+		});
+
+		// Initialize form
+		updateFormStep();
 
 		// Handle form submission
 		document.getElementById('leadForm').addEventListener('submit', async function(e) {
@@ -480,9 +931,9 @@
 				return;
 			}
 
-			const submitBtn = this.querySelector('button[type="submit"]');
-			submitBtn.disabled = true;
-			submitBtn.textContent = 'Submitting...';
+			const submitButton = document.getElementById('submitBtn');
+			submitButton.disabled = true;
+			submitButton.innerHTML = '⏳ Submitting...';
 
 			const formData = new FormData(this);
 
@@ -527,16 +978,20 @@
 				console.log('✅ Lead created successfully:', data);
 
 				// Success!
-				alert('Thank you! We\'ll be in touch with you TODAY!');
+				alert('🎉 Thank you! We\'ll be in touch with you TODAY!');
 				this.reset();
+				currentStep = 1;
+				updateFormStep();
 
 			} catch (error) {
 				console.error('❌ Error submitting form:', error);
 				alert('Thank you for your interest! We\'ll contact you soon.');
 				this.reset();
+				currentStep = 1;
+				updateFormStep();
 			} finally {
-				submitBtn.disabled = false;
-				submitBtn.textContent = 'Submit My Information';
+				submitButton.disabled = false;
+				submitButton.innerHTML = '🚀 Submit My Information';
 			}
 		});
 	</script>
