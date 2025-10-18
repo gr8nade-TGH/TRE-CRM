@@ -368,16 +368,27 @@
 			}
 
 			try {
-				// Fetch all agents
+				// Fetch all agents (remove active filter to avoid RLS issues)
 				const { data: agents, error } = await supabase
 					.from('users')
 					.select('*')
-					.eq('role', 'agent')
-					.eq('active', true);
+					.eq('role', 'agent');
 
-				if (error) throw error;
+				if (error) {
+					console.error('❌ Supabase query error:', error);
+					console.error('Error details:', JSON.stringify(error, null, 2));
+					throw error;
+				}
 
-				console.log('📋 Found agents:', agents.length);
+				console.log('📋 Found agents:', agents ? agents.length : 0);
+				console.log('📋 Agents data:', agents);
+
+				if (!agents || agents.length === 0) {
+					console.error('❌ No agents found in database');
+					document.getElementById('agentName').textContent = 'Error: No agents available';
+					document.getElementById('agentName').style.color = '#dc2626';
+					return null;
+				}
 
 				// Find agent by matching slug OR email
 				const agent = agents.find(a => {
@@ -402,11 +413,18 @@
 					return agent;
 				} else {
 					console.error('❌ No agent found for identifier:', agentIdentifier);
+					console.error('Available agents:', agents.map(a => ({
+						name: a.name,
+						email: a.email,
+						slug: a.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+					})));
 					document.getElementById('agentName').textContent = `Error: Agent "${agentIdentifier}" not found`;
 					document.getElementById('agentName').style.color = '#dc2626';
 				}
 			} catch (error) {
 				console.error('❌ Error loading agent:', error);
+				console.error('Error message:', error.message);
+				console.error('Error stack:', error.stack);
 				document.getElementById('agentName').textContent = 'Error loading agent information';
 				document.getElementById('agentName').style.color = '#dc2626';
 			}
