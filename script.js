@@ -1549,11 +1549,13 @@ async function deleteSpecialAPI(specialId) {
 
 		// Add click listeners for notes icons
 		document.querySelectorAll('.notes-icon').forEach(icon => {
-			icon.addEventListener('click', (e) => {
+			icon.addEventListener('click', async (e) => {
 				e.preventDefault();
 				e.stopPropagation();
 				const leadId = e.target.dataset.leadId;
-				openLeadDetailsModal(leadId);
+				// Get lead name for modal title
+				const lead = await api.getLead(leadId);
+				openLeadNotesModal(leadId, lead.name);
 			});
 		});
 
@@ -3197,12 +3199,6 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			                   window.currentUser?.email ||
 			                   'Unknown User';
 
-			console.log('🔍 DEBUG - Attempting to save lead note:');
-			console.log('  - Author ID (email):', authorId);
-			console.log('  - Author Name:', authorName);
-			console.log('  - Lead ID:', currentLeadForNotes);
-			console.log('  - window.currentUser:', window.currentUser);
-
 			if (!authorId) {
 				toast('User not authenticated', 'error');
 				return;
@@ -3215,16 +3211,18 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				author_name: authorName
 			};
 
-			console.log('📝 Note data to insert:', noteData);
-
 			await SupabaseAPI.createLeadNote(noteData);
 			noteInput.value = '';
-			await loadLeadNotes(currentLeadForNotes);
-			await renderLeads(); // Refresh to update note icon
+
+			// Reload notes in the modal
+			await loadLeadNotesInModal(currentLeadForNotes);
+
+			// Refresh leads table to update note icon
+			await renderLeads();
+
 			toast('Comment added successfully!', 'success');
 		} catch (error) {
-			console.error('❌ Error saving lead note:', error);
-			console.error('❌ Error details:', error.message, error.code, error.details);
+			console.error('Error saving lead note:', error);
 			toast('Error saving comment', 'error');
 		}
 	}
@@ -3627,6 +3625,57 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		console.log('closeLeadDetailsModal called');
 		hideModal('leadDetailsModal');
 		currentLeadForNotes = null;
+	}
+
+	// ---- Lead Notes Modal ----
+	async function openLeadNotesModal(leadId, leadName) {
+		currentLeadForNotes = leadId;
+
+		// Set modal title
+		document.getElementById('leadNotesTitle').textContent = `📝 Notes: ${leadName}`;
+
+		// Load notes
+		await loadLeadNotesInModal(leadId);
+
+		// Clear input
+		document.getElementById('newLeadNote').value = '';
+
+		showModal('leadNotesModal');
+	}
+
+	function closeLeadNotesModal() {
+		hideModal('leadNotesModal');
+		currentLeadForNotes = null;
+	}
+
+	async function loadLeadNotesInModal(leadId) {
+		if (USE_MOCK_DATA) {
+			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle">Notes feature requires Supabase connection</p>';
+			return;
+		}
+
+		try {
+			const notes = await SupabaseAPI.getLeadNotes(leadId);
+			const notesContainer = document.getElementById('leadNotesContent');
+
+			if (!notes || notes.length === 0) {
+				notesContainer.innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
+				return;
+			}
+
+			notesContainer.innerHTML = notes.map(note => `
+				<div class="note-item" style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #3b82f6;">
+					<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+						<strong style="color: #1f2937;">${note.author_name}</strong>
+						<span class="subtle mono" style="font-size: 12px;">${formatDate(note.created_at)}</span>
+					</div>
+					<div style="color: #4b5563;">${note.content}</div>
+				</div>
+			`).join('');
+		} catch (error) {
+			console.error('Error loading lead notes:', error);
+			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
+		}
 	}
 
 	// Legacy function for backward compatibility
@@ -4736,7 +4785,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			closeLeadDetailsFooterEl.addEventListener('click', closeLeadDetailsModal);
 		}
 
-		// Save lead note button
+		// Lead notes modal buttons
+		const closeLeadNotesEl = document.getElementById('closeLeadNotes');
+		if (closeLeadNotesEl) {
+			closeLeadNotesEl.addEventListener('click', closeLeadNotesModal);
+		}
+		const cancelLeadNotesEl = document.getElementById('cancelLeadNotes');
+		if (cancelLeadNotesEl) {
+			cancelLeadNotesEl.addEventListener('click', closeLeadNotesModal);
+		}
 		const saveLeadNoteBtnEl = document.getElementById('saveLeadNoteBtn');
 		if (saveLeadNoteBtnEl) {
 			saveLeadNoteBtnEl.addEventListener('click', saveLeadNote);

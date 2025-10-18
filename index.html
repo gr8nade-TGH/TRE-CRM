@@ -1334,6 +1334,29 @@
 		</div>
 	</div>
 
+	<!-- Lead Notes Modal -->
+	<div id="leadNotesModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3 id="leadNotesTitle">📝 Notes: Lead Name</h3>
+				<button id="closeLeadNotes" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="leadNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+					<!-- Notes will be populated here -->
+				</div>
+				<div class="field">
+					<label for="newLeadNote">Add New Note</label>
+					<textarea id="newLeadNote" rows="3" placeholder="Type your note here..."></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveLeadNoteBtn" class="btn btn-primary">Add Note</button>
+				<button id="cancelLeadNotes" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Add Listing Modal -->
 	<div id="addListingModal" class="modal hidden">
 		<div class="modal-card large">
