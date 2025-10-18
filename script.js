@@ -1054,6 +1054,13 @@ async function deleteSpecialAPI(specialId) {
 		},
 
 		async getLead(id) {
+			if (!USE_MOCK_DATA) {
+				// Use real Supabase data
+				console.log('✅ Using Supabase for getLead');
+				return await SupabaseAPI.getLead(id);
+			}
+
+			// Fallback to mock data
 			if (USE_MOCK_DATA) {
 				return mockLeads.find(lead => lead.id === id) || mockLeads[0];
 			}
@@ -1487,7 +1494,7 @@ async function deleteSpecialAPI(specialId) {
 					<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>
 					<div class="subtle mono">${lead.email} · ${lead.phone}</div>
 				</td>
-				<td><button class="icon-btn" data-view="${lead.id}" title="View">👁️</button></td>
+				<td><button class="action-btn secondary" data-view="${lead.id}" title="View Details">View</button></td>
 				<td data-sort="health_status">${renderHealthStatus(lead.health_status, lead)}</td>
 				<td class="mono" data-sort="submitted_at">${formatDate(lead.submitted_at)}</td>
 				<td class="mono">
@@ -2710,7 +2717,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					<div class="subtle mono">${agent.email} · ${agent.phone}</div>
 					${!agent.active ? '<span class="subtle" style="color: #dc2626;">Inactive</span>' : ''}
 				</td>
-				<td><button class="icon-btn" data-view-agent="${agent.id}" title="View">👁️</button></td>
+				<td><button class="action-btn secondary" data-view-agent="${agent.id}" title="View Details">View</button></td>
 				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
 				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
 				<td>
