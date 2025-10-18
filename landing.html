@@ -329,18 +329,31 @@
 
 		const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-		// Get agent identifier from URL - support both formats:
+		// Get agent identifier from URL - support multiple formats:
 		// 1. Path-based: /landing/john-smith (production with Vercel rewrites)
 		// 2. Query-based: landing.html?agent=john-smith (local development)
+		// 3. Direct file: landing.html (fallback)
+
 		const urlParams = new URLSearchParams(window.location.search);
 		const queryAgent = urlParams.get('agent');
-		const pathParts = window.location.pathname.split('/');
-		const pathAgent = pathParts[pathParts.length - 1];
+		const pathParts = window.location.pathname.split('/').filter(p => p); // Remove empty strings
 
-		// Use query param if available, otherwise use path
-		const agentIdentifier = queryAgent || (pathAgent && pathAgent !== 'landing.html' && pathAgent !== 'landing' ? pathAgent : null);
+		// Find 'landing' in path and get the next part
+		let pathAgent = null;
+		const landingIndex = pathParts.findIndex(p => p === 'landing' || p === 'landing.html');
+		if (landingIndex >= 0 && landingIndex < pathParts.length - 1) {
+			pathAgent = pathParts[landingIndex + 1];
+			// Remove .html extension if present
+			if (pathAgent.endsWith('.html')) {
+				pathAgent = null;
+			}
+		}
+
+		// Use query param first, then path
+		const agentIdentifier = queryAgent || pathAgent;
 
 		console.log('🔍 Full URL:', window.location.href);
+		console.log('🔍 Path parts:', pathParts);
 		console.log('🔍 Query agent:', queryAgent);
 		console.log('🔍 Path agent:', pathAgent);
 		console.log('🔍 Agent identifier:', agentIdentifier);
