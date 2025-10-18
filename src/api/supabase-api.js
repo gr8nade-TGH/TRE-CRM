@@ -299,6 +299,7 @@ export async function deleteProperty(id) {
  * Lead Notes API
  */
 export async function getLeadNotes(leadId) {
+    console.log('🔵 getLeadNotes called with leadId:', leadId);
     const supabase = getSupabase();
 
     const { data, error } = await supabase
@@ -308,14 +309,16 @@ export async function getLeadNotes(leadId) {
         .order('created_at', { ascending: false });
 
     if (error) {
-        console.error('Error fetching lead notes:', error);
+        console.error('❌ Error fetching lead notes:', error);
         throw error;
     }
 
+    console.log('✅ getLeadNotes returning:', data);
     return data || [];
 }
 
 export async function createLeadNote(noteData) {
+    console.log('🔵 createLeadNote called with:', noteData);
     const supabase = getSupabase();
 
     const { data, error } = await supabase
@@ -325,10 +328,12 @@ export async function createLeadNote(noteData) {
         .single();
 
     if (error) {
-        console.error('Error creating lead note:', error);
+        console.error('❌ Error creating lead note:', error);
+        console.error('Error details:', error);
         throw error;
     }
 
+    console.log('✅ createLeadNote returning:', data);
     return data;
 }
 

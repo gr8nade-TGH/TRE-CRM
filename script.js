@@ -3186,6 +3186,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			                   window.currentUser?.email ||
 			                   'Unknown User';
 
+			console.log('👤 Current user:', window.currentUser);
+			console.log('📧 Author ID:', authorId);
+			console.log('👨 Author Name:', authorName);
+
 			if (!authorId) {
 				toast('User not authenticated', 'error');
 				return;
@@ -3198,18 +3202,23 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				author_name: authorName
 			};
 
-			await SupabaseAPI.createLeadNote(noteData);
+			console.log('💾 Saving note data:', noteData);
+			const result = await SupabaseAPI.createLeadNote(noteData);
+			console.log('✅ Note saved successfully:', result);
+
 			noteInput.value = '';
 
 			// Reload notes in the modal
+			console.log('🔄 Reloading notes in modal...');
 			await loadLeadNotesInModal(currentLeadForNotes);
 
 			// Refresh leads table to update note icon
+			console.log('🔄 Refreshing leads table...');
 			await renderLeads();
 
 			toast('Comment added successfully!', 'success');
 		} catch (error) {
-			console.error('Error saving lead note:', error);
+			console.error('❌ Error saving lead note:', error);
 			toast('Error saving comment', 'error');
 		}
 	}
@@ -3636,20 +3645,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	async function loadLeadNotesInModal(leadId) {
+		console.log('🔵 loadLeadNotesInModal called with leadId:', leadId);
+
 		if (USE_MOCK_DATA) {
 			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle">Notes feature requires Supabase connection</p>';
 			return;
 		}
 
 		try {
+			console.log('📡 Fetching notes from Supabase...');
 			const notes = await SupabaseAPI.getLeadNotes(leadId);
+			console.log('📥 Received notes:', notes);
+
 			const notesContainer = document.getElementById('leadNotesContent');
 
 			if (!notes || notes.length === 0) {
+				console.log('ℹ️ No notes found for this lead');
 				notesContainer.innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
 				return;
 			}
 
+			console.log(`✅ Displaying ${notes.length} notes`);
 			notesContainer.innerHTML = notes.map(note => `
 				<div class="note-item" style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #3b82f6;">
 					<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
@@ -3660,7 +3676,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				</div>
 			`).join('');
 		} catch (error) {
-			console.error('Error loading lead notes:', error);
+			console.error('❌ Error loading lead notes:', error);
 			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
 		}
 	}
