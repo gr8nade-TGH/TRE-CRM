@@ -1493,6 +1493,9 @@ async function deleteSpecialAPI(specialId) {
 		});
 
 		items.forEach(lead => {
+			// Debug: Log preferences for each lead
+			console.log(`Lead ${lead.name} preferences:`, lead.preferences, 'Type:', typeof lead.preferences);
+
 			const notesCount = notesCountMap[lead.id] || 0;
 			// Always show note icon: gray if no notes, yellow with pulse if notes exist
 			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
