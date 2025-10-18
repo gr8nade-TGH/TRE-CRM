@@ -354,6 +354,88 @@ export async function getLeadNotesCount(leadId) {
 }
 
 /**
+ * Lead Activities API
+ */
+export async function getLeadActivities(leadId) {
+    console.log('🔵 getLeadActivities called with leadId:', leadId);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('lead_activities')
+        .select('*')
+        .eq('lead_id', leadId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('❌ Error fetching lead activities:', error);
+        throw error;
+    }
+
+    console.log('✅ getLeadActivities returning:', data);
+    return data || [];
+}
+
+export async function createLeadActivity(activityData) {
+    console.log('🔵 createLeadActivity called with:', activityData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('lead_activities')
+        .insert([activityData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating lead activity:', error);
+        throw error;
+    }
+
+    console.log('✅ createLeadActivity returning:', data);
+    return data;
+}
+
+/**
+ * Property Activities API
+ */
+export async function getPropertyActivities(propertyId) {
+    console.log('🔵 getPropertyActivities called with propertyId:', propertyId);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('property_activities')
+        .select('*')
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('❌ Error fetching property activities:', error);
+        throw error;
+    }
+
+    console.log('✅ getPropertyActivities returning:', data);
+    return data || [];
+}
+
+export async function createPropertyActivity(activityData) {
+    console.log('🔵 createPropertyActivity called with:', activityData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('property_activities')
+        .insert([activityData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating property activity:', error);
+        throw error;
+    }
+
+    console.log('✅ createPropertyActivity returning:', data);
+    return data;
+}
+
+/**
  * Property Notes API
  */
 export async function getPropertyNotes(propertyId) {
