@@ -974,6 +974,52 @@
 
 				console.log('✅ Lead created successfully:', data);
 
+				// Log the lead creation activity
+				// Use the lead_id field (e.g., "lead_fndx-..."), not the UUID id
+				const leadId = data[0].lead_id || data[0].id;
+				console.log('🔍 Lead ID for activity logging:', leadId);
+
+				const activityData = {
+					lead_id: leadId,
+					activity_type: 'lead_created',
+					description: 'Lead submitted via landing page',
+					metadata: {
+						source: 'landing_page',
+						initial_status: 'new',
+						agent_id: currentAgent.id,
+						agent_name: currentAgent.name,
+						form_data: {
+							preferences: preferences,
+							best_time_to_call: formData.get('bestTime')
+						}
+					},
+					performed_by: null,
+					performed_by_name: currentAgent.name
+				};
+
+				console.log('📝 Activity data to insert:', JSON.stringify(activityData, null, 2));
+
+				try {
+					const { data: activityResult, error: activityError } = await supabase
+						.from('lead_activities')
+						.insert([activityData]);
+
+					console.log('📊 Activity insert response:', { activityResult, activityError });
+
+					if (activityError) {
+						console.error('❌ Activity insert error:', activityError);
+						console.error('❌ Error code:', activityError.code);
+						console.error('❌ Error message:', activityError.message);
+						console.error('❌ Error details:', activityError.details);
+						console.error('❌ Error hint:', activityError.hint);
+					} else {
+						console.log('✅ Activity logged successfully!');
+					}
+				} catch (activityError) {
+					console.error('⚠️ Failed to log activity (exception):', activityError);
+					console.error('⚠️ Exception stack:', activityError.stack);
+				}
+
 				// Success!
 				alert('🎉 Thank you! We\'ll be in touch with you TODAY!');
 				this.reset();
