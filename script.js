@@ -600,17 +600,26 @@ async function deleteSpecialAPI(specialId) {
 		if (lead.health_status === 'closed') {
 			return [
 				`🎉 Lead successfully closed!`,
-				`📄 Final step: ${currentStep}`,
+				`📄 Final step: ${currentStepLabel}`,
 				`📅 Closed on: ${formatDate(lead.closed_at || lead.last_activity_at)}`,
-				`⭐ Final health score: ${lead.health_score}/100`
+				`✅ Status: Successfully completed`
 			];
 		}
 
+		if (lead.health_status === 'lost') {
+			return [
+				`❌ Lead lost`,
+				`📄 Last step: ${currentStepLabel}`,
+				`📅 Lost on: ${formatDate(lead.lost_at || lead.last_activity_at)}`,
+				`💭 Reason: ${lead.loss_reason || 'No reason provided'}`
+			];
+		}
+
+		// Default fallback
 		return [
-			`❌ Lead lost`,
-			`📄 Last step: ${currentStep}`,
-			`📅 Lost on: ${formatDate(lead.lost_at || lead.last_activity_at)}`,
-			`💭 Reason: ${lead.loss_reason || 'No reason provided'}`
+			`ℹ️ Lead status: ${lead.health_status || 'Unknown'}`,
+			`📄 Current step: ${currentStepLabel}`,
+			`📅 Last activity: ${timeDisplay} ago`
 		];
 	}
 
