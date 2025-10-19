@@ -2080,16 +2080,116 @@ function createLeadTable(lead, isExpanded = false) {
 					<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
 				`;
 
-			case 4: { // Guest Card Sent
-				const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName)}&agent=${encodeURIComponent(lead.agentName)}&property=${encodeURIComponent(lead.showcase.selections.join(','))}&date=${encodeURIComponent(formatDate(lead.lastUpdated))}&agentPhone=210-391-4044&phoneNumber=210-579-6189&moveInDate=ASAP&bedrooms=${lead.property.bedrooms}&bathrooms=${lead.property.bathrooms}&priceRange=${lead.property.rent}&agentNotes=Guest card sent for property tour scheduling`;
-				return `
-					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
-					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
-					<div class="modal-details"><strong>Properties:</strong> ${lead.showcase.selections.join(', ')}</div>
-					<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-					<div class="modal-details"><strong>Status:</strong> Guest card prepared and sent to properties</div>
-					<a href="${guestCardUrl}" target="_blank" class="modal-link">View Filled Guest Card →</a>
-				`;
+			case 4: { // Guest Card Sent / Send Guest Card
+				// Check if this step is completed or needs action
+				const guestCardActivities = await SupabaseAPI.getLeadActivities(lead.id);
+				const guestCardSent = guestCardActivities.find(a => a.activity_type === 'guest_card_sent');
+
+				if (guestCardSent) {
+					// Step is completed - show sent details
+					const metadata = guestCardSent.metadata || {};
+					const properties = metadata.properties || [];
+					const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName || lead.name)}`;
+
+					return `
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-details"><strong>Agent:</strong> ${guestCardSent.performed_by_name || 'Unknown'}</div>
+						<div class="modal-details"><strong>Properties:</strong> ${properties.map(p => p.name).join(', ')}</div>
+						<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(guestCardSent.created_at)}</div>
+						<div class="modal-details"><strong>Status:</strong> ✅ Guest cards sent to all properties</div>
+						<a href="${guestCardUrl}" target="_blank" class="modal-link">View Guest Card →</a>
+					`;
+				} else {
+					// Step needs action - show preview/send interface
+					// Get showcase response to know which properties were selected
+					const showcaseResponse = guestCardActivities.find(a => a.activity_type === 'showcase_response');
+
+					if (!showcaseResponse) {
+						return `
+							<div class="modal-warning">⚠️ No showcase response found. Lead must respond to showcase first.</div>
+						`;
+					}
+
+					const responseMetadata = showcaseResponse.metadata || {};
+					const selectedProperties = responseMetadata.selected_properties || [];
+
+					if (selectedProperties.length === 0) {
+						return `
+							<div class="modal-warning">⚠️ No properties selected by lead.</div>
+						`;
+					}
+
+					// Fetch property details and check for contact info
+					let propertiesHTML = '';
+					for (const propSelection of selectedProperties) {
+						try {
+							// Get property details
+							const property = await SupabaseAPI.getProperty(propSelection.property_id);
+							const hasContactInfo = property.contact_email || property.contact_phone;
+							const tourDate = propSelection.tour_date || 'Not specified';
+
+							propertiesHTML += `
+								<div class="guest-card-property" data-property-id="${property.id}">
+									<div class="property-header">
+										<h4>${property.community_name || property.name}</h4>
+										${hasContactInfo ?
+											'<span class="contact-status-badge contact-ok">✓ Contact Info Available</span>' :
+											'<span class="contact-status-badge contact-missing">⚠️ Missing Contact Info</span>'
+										}
+									</div>
+									<div class="property-details">
+										<div><strong>Address:</strong> ${property.street_address}</div>
+										<div><strong>Tour Date:</strong> ${tourDate}</div>
+										${hasContactInfo ? `
+											<div><strong>Contact:</strong> ${property.contact_name || 'N/A'}</div>
+											<div><strong>Email:</strong> ${property.contact_email || 'N/A'}</div>
+											<div><strong>Phone:</strong> ${property.contact_phone || 'N/A'}</div>
+											<div><strong>Office Hours:</strong> ${property.office_hours || 'N/A'}</div>
+										` : `
+											<div class="missing-contact-warning">
+												<p>⚠️ Contact information is required before sending guest card.</p>
+												<button class="btn btn-primary add-contact-btn" data-property-id="${property.id}" data-community-name="${property.community_name || property.name}">
+													📞 Add Contact Info
+												</button>
+											</div>
+										`}
+									</div>
+									${hasContactInfo ? `
+										<div class="property-actions">
+											<button class="btn btn-outline preview-guest-card-btn" data-property-id="${property.id}">
+												👁️ Preview Guest Card
+											</button>
+											<button class="btn btn-primary send-guest-card-btn" data-property-id="${property.id}" data-lead-id="${lead.id}">
+												📤 Send Guest Card
+											</button>
+										</div>
+									` : ''}
+								</div>
+							`;
+						} catch (error) {
+							console.error('Error fetching property:', error);
+							propertiesHTML += `
+								<div class="guest-card-property error">
+									<p>Error loading property details</p>
+								</div>
+							`;
+						}
+					}
+
+					return `
+						<div class="guest-card-workflow">
+							<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+							<div class="modal-details"><strong>Selected Properties:</strong> ${selectedProperties.length}</div>
+							<div class="modal-section">
+								<h3>Review & Send Guest Cards</h3>
+								<p class="help-text">Review each property and send guest cards individually. Contact information is required for each property.</p>
+							</div>
+							<div class="properties-list">
+								${propertiesHTML}
+							</div>
+						</div>
+					`;
+				}
 			}
 
 			case 5: // Property Selected
@@ -2173,6 +2273,87 @@ function createLeadTable(lead, isExpanded = false) {
 		try {
 			const modalContent = await getStepModalContent(lead, step);
 			content.innerHTML = modalContent;
+
+			// Add event listeners for guest card workflow buttons (Step 4)
+			if (step.id === 4) {
+				// Add Contact Info buttons
+				content.querySelectorAll('.add-contact-btn').forEach(btn => {
+					btn.addEventListener('click', async (e) => {
+						const propertyId = e.target.dataset.propertyId;
+						const communityName = e.target.dataset.communityName;
+
+						// Open the property contact modal with pre-filled property
+						const property = await SupabaseAPI.getProperty(propertyId);
+						document.getElementById('contactPropertySelect').value = communityName;
+						document.getElementById('contactName').value = property.contact_name || '';
+						document.getElementById('contactEmail').value = property.contact_email || '';
+						document.getElementById('contactPhone').value = property.contact_phone || '';
+						document.getElementById('contactOfficeHours').value = property.office_hours || '';
+						document.getElementById('contactNotes').value = property.contact_notes || '';
+
+						// Disable property dropdown (can't change property when editing)
+						document.getElementById('contactPropertySelect').disabled = true;
+
+						// Show the modal
+						showModal('addPropertyContactModal');
+
+						// After saving, refresh the guest card modal
+						const saveBtn = document.getElementById('savePropertyContactBtn');
+						const refreshHandler = async () => {
+							// Re-enable dropdown
+							document.getElementById('contactPropertySelect').disabled = false;
+							// Refresh the step modal
+							await showStepDetails(lead, step);
+							// Remove this handler
+							saveBtn.removeEventListener('click', refreshHandler);
+						};
+						saveBtn.addEventListener('click', refreshHandler);
+					});
+				});
+
+				// Preview Guest Card buttons
+				content.querySelectorAll('.preview-guest-card-btn').forEach(btn => {
+					btn.addEventListener('click', async (e) => {
+						const propertyId = e.target.dataset.propertyId;
+						const property = await SupabaseAPI.getProperty(propertyId);
+						const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName || lead.name)}&property=${encodeURIComponent(property.community_name || property.name)}`;
+						window.open(guestCardUrl, '_blank');
+					});
+				});
+
+				// Send Guest Card buttons
+				content.querySelectorAll('.send-guest-card-btn').forEach(btn => {
+					btn.addEventListener('click', async (e) => {
+						const propertyId = e.target.dataset.propertyId;
+						const leadId = e.target.dataset.leadId;
+
+						try {
+							const property = await SupabaseAPI.getProperty(propertyId);
+
+							// Log the guest card sent activity
+							await SupabaseAPI.logLeadActivity({
+								lead_id: leadId,
+								activity_type: 'guest_card_sent',
+								description: `Guest card sent to ${property.community_name || property.name}`,
+								metadata: {
+									property_id: propertyId,
+									property_name: property.community_name || property.name,
+									contact_email: property.contact_email,
+									contact_phone: property.contact_phone
+								}
+							});
+
+							toast(`✅ Guest card sent to ${property.community_name || property.name}!`, 'success');
+
+							// Refresh the modal to show updated status
+							await showStepDetails(lead, step);
+						} catch (error) {
+							console.error('Error sending guest card:', error);
+							toast('Error sending guest card. Please try again.', 'error');
+						}
+					});
+				});
+			}
 		} catch (error) {
 			console.error('Error loading step details:', error);
 			content.innerHTML = '<div class="modal-error">Error loading details. Please try again.</div>';

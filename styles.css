@@ -3148,6 +3148,132 @@ body {
 
 .email-placeholder em {
 	display: block;
+}
+
+/* Guest Card Workflow Styles */
+.guest-card-workflow {
+	max-width: 100%;
+}
+
+.guest-card-workflow .help-text {
+	color: var(--subtle);
+	font-size: 13px;
+	margin-top: 8px;
+	font-style: italic;
+}
+
+.properties-list {
+	margin-top: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.guest-card-property {
+	border: 2px solid var(--rule);
+	border-radius: 8px;
+	padding: 16px;
+	background: white;
+	transition: border-color 0.2s ease;
+}
+
+.guest-card-property:hover {
+	border-color: var(--brand);
+}
+
+.guest-card-property.error {
+	border-color: #dc2626;
+	background: #fef2f2;
+	color: #dc2626;
+}
+
+.property-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 12px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--rule);
+}
+
+.property-header h4 {
+	margin: 0;
+	font-size: 16px;
+	color: var(--brand);
+	font-weight: 600;
+}
+
+.contact-status-badge {
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.contact-status-badge.contact-ok {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.contact-status-badge.contact-missing {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.property-details {
+	margin: 12px 0;
+	font-size: 14px;
+}
+
+.property-details > div {
+	padding: 6px 0;
+	color: var(--ink);
+}
+
+.property-details strong {
+	color: var(--brand);
+	margin-right: 8px;
+	min-width: 120px;
+	display: inline-block;
+}
+
+.missing-contact-warning {
+	margin-top: 12px;
+	padding: 12px;
+	background: #fef3c7;
+	border: 1px solid #f59e0b;
+	border-radius: 6px;
+}
+
+.missing-contact-warning p {
+	margin: 0 0 12px 0;
+	color: #92400e;
+	font-weight: 500;
+}
+
+.property-actions {
+	margin-top: 16px;
+	padding-top: 16px;
+	border-top: 1px solid var(--rule);
+	display: flex;
+	gap: 12px;
+	justify-content: flex-end;
+}
+
+.property-actions .btn {
+	flex: 0 0 auto;
+	min-width: 160px;
+}
+
+.modal-warning {
+	padding: 20px;
+	background: #fef3c7;
+	border: 2px solid #f59e0b;
+	border-radius: 8px;
+	color: #92400e;
+	font-weight: 500;
+	text-align: center;
+}
 	font-weight: 600;
 	margin-bottom: 8px;
 	font-size: 14px;
