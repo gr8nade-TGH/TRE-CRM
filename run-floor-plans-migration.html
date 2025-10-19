@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Run Floor Plans Migration</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            max-width: 900px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #153e7a;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #153e7a;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        button:hover {
+            background: #0f2d5c;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            background: #10b981;
+        }
+        .success:hover {
+            background: #059669;
+        }
+        .danger {
+            background: #ef4444;
+        }
+        .danger:hover {
+            background: #dc2626;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f9fafb;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .info {
+            background: #dbeafe;
+            border: 1px solid #3b82f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 10px;
+            background: #f9fafb;
+            border-left: 3px solid #153e7a;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏢 Floor Plans & Units Migration</h1>
+        <p class="subtitle">Migration 023: Creates floor_plans and units tables for hierarchical property structure</p>
+
+        <div class="info">
+            <strong>📋 What this migration does:</strong>
+            <ul>
+                <li>Creates <code>floor_plans</code> table (Property → Floor Plans)</li>
+                <li>Creates <code>units</code> table (Floor Plans → Units)</li>
+                <li>Adds fields to <code>properties</code> table (description, phone, verification, etc.)</li>
+                <li>Sets up indexes, triggers, and RLS policies</li>
+                <li>Creates helper functions for availability calculations</li>
+            </ul>
+        </div>
+
+        <div class="warning">
+            <strong>⚠️ Important:</strong> This migration creates new tables and modifies the properties table. Make sure you have a backup before running!
+        </div>
+
+        <div class="step">
+            <strong>Step 1:</strong> Click "Run Migration" to execute the SQL
+        </div>
+
+        <button id="runBtn" onclick="runMigration()">▶️ Run Migration</button>
+        <button id="checkBtn" onclick="checkTables()" class="success">✓ Check Tables</button>
+        <button id="sampleBtn" onclick="insertSampleData()" disabled>📝 Insert Sample Data</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabase = supabase;
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
+            output.textContent += `[${timestamp}] ${prefix} ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        window.runMigration = async function() {
+            const btn = document.getElementById('runBtn');
+            const output = document.getElementById('output');
+            output.textContent = '';
+            btn.disabled = true;
+
+            log('Starting migration 023...');
+
+            try {
+                // Read the migration file
+                const response = await fetch('./migrations/023_floor_plans_and_units.sql');
+                const sql = await response.text();
+
+                log('Migration file loaded successfully');
+                log('Executing SQL...');
+
+                // Execute the migration
+                const { data, error } = await supabase.rpc('exec_sql', { sql_query: sql });
+
+                if (error) {
+                    // If exec_sql doesn't exist, we need to run it manually in Supabase dashboard
+                    log('⚠️ Cannot execute SQL directly from browser', 'error');
+                    log('Please run this migration in Supabase SQL Editor:', 'info');
+                    log('1. Go to https://supabase.com/dashboard/project/mevirooooypfjbsrmzrk/sql', 'info');
+                    log('2. Copy the contents of migrations/023_floor_plans_and_units.sql', 'info');
+                    log('3. Paste and run in the SQL editor', 'info');
+                    log('4. Come back here and click "Check Tables"', 'info');
+                } else {
+                    log('Migration executed successfully!', 'success');
+                    log('Tables created: floor_plans, units', 'success');
+                    log('Properties table updated with new fields', 'success');
+                    document.getElementById('sampleBtn').disabled = false;
+                }
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.checkTables = async function() {
+            const output = document.getElementById('output');
+            output.textContent = '';
+            log('Checking database tables...');
+
+            try {
+                // Check floor_plans table
+                const { data: floorPlans, error: fpError } = await supabase
+                    .from('floor_plans')
+                    .select('*')
+                    .limit(1);
+
+                if (fpError) {
+                    log('❌ floor_plans table not found or error: ' + fpError.message, 'error');
+                } else {
+                    log('✅ floor_plans table exists', 'success');
+                }
+
+                // Check units table
+                const { data: units, error: unitsError } = await supabase
+                    .from('units')
+                    .select('*')
+                    .limit(1);
+
+                if (unitsError) {
+                    log('❌ units table not found or error: ' + unitsError.message, 'error');
+                } else {
+                    log('✅ units table exists', 'success');
+                }
+
+                // Check properties table for new fields
+                const { data: props, error: propsError } = await supabase
+                    .from('properties')
+                    .select('description, phone, last_refreshed_at, is_verified, neighborhood')
+                    .limit(1);
+
+                if (propsError) {
+                    log('❌ Properties table missing new fields: ' + propsError.message, 'error');
+                } else {
+                    log('✅ Properties table has new fields', 'success');
+                }
+
+                if (!fpError && !unitsError && !propsError) {
+                    log('\n🎉 Migration successful! All tables ready.', 'success');
+                    document.getElementById('sampleBtn').disabled = false;
+                }
+            } catch (error) {
+                log(`Error checking tables: ${error.message}`, 'error');
+            }
+        };
+
+        window.insertSampleData = async function() {
+            const btn = document.getElementById('sampleBtn');
+            btn.disabled = true;
+            log('\nInserting sample data...');
+
+            try {
+                // Get first property
+                const { data: properties, error: propError } = await supabase
+                    .from('properties')
+                    .select('*')
+                    .limit(1);
+
+                if (propError || !properties || properties.length === 0) {
+                    log('No properties found. Please add a property first.', 'error');
+                    return;
+                }
+
+                const property = properties[0];
+                log(`Using property: ${property.community_name || property.name}`);
+
+                // Insert sample floor plans
+                const floorPlans = [
+                    {
+                        property_id: property.id,
+                        name: '1x1 Classic',
+                        beds: 1,
+                        baths: 1.0,
+                        sqft: 650,
+                        market_rent: 1500,
+                        starting_at: 1350,
+                        has_concession: true,
+                        concession_type: 'free_weeks',
+                        concession_value: '2 weeks free',
+                        concession_description: 'Get 2 weeks free on 12-month lease',
+                        units_available: 3,
+                        soonest_available: new Date().toISOString().split('T')[0]
+                    },
+                    {
+                        property_id: property.id,
+                        name: '2x2 Deluxe',
+                        beds: 2,
+                        baths: 2.0,
+                        sqft: 950,
+                        market_rent: 2100,
+                        starting_at: 2100,
+                        has_concession: false,
+                        units_available: 2,
+                        soonest_available: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+                    }
+                ];
+
+                const { data: insertedPlans, error: fpInsertError } = await supabase
+                    .from('floor_plans')
+                    .insert(floorPlans)
+                    .select();
+
+                if (fpInsertError) {
+                    log(`Error inserting floor plans: ${fpInsertError.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Inserted ${insertedPlans.length} floor plans`, 'success');
+
+                // Insert sample units for first floor plan
+                const units = [
+                    {
+                        floor_plan_id: insertedPlans[0].id,
+                        property_id: property.id,
+                        unit_number: '101',
+                        floor: 1,
+                        available_from: new Date().toISOString().split('T')[0],
+                        is_available: true,
+                        status: 'available'
+                    },
+                    {
+                        floor_plan_id: insertedPlans[0].id,
+                        property_id: property.id,
+                        unit_number: '205',
+                        floor: 2,
+                        available_from: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+                        is_available: true,
+                        status: 'available'
+                    }
+                ];
+
+                const { data: insertedUnits, error: unitsInsertError } = await supabase
+                    .from('units')
+                    .insert(units)
+                    .select();
+
+                if (unitsInsertError) {
+                    log(`Error inserting units: ${unitsInsertError.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Inserted ${insertedUnits.length} units`, 'success');
+                log('\n🎉 Sample data inserted successfully!', 'success');
+                log('You can now test the new Listings page structure.', 'info');
+
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        log('Ready to run migration. Click "Run Migration" to start.');
+    </script>
+</body>
+</html>
+
