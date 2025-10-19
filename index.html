@@ -217,7 +217,8 @@
 					<thead>
 						<tr>
 							<th data-sort="name" class="sortable">Agent Name <span class="sort-icon">↕</span></th>
-							<th>View Details</th>
+							<th>View/Edit</th>
+							<th data-sort="leads_generated" class="sortable">Leads Generated <span class="sort-icon">↕</span></th>
 							<th data-sort="leads_assigned" class="sortable">Leads Assigned <span class="sort-icon">↕</span></th>
 							<th data-sort="leads_closed" class="sortable">Leads Closed (90d) <span class="sort-icon">↕</span></th>
 							<th>Landing Page</th>
@@ -589,6 +590,25 @@
 			<!-- details injected -->
 		</div>
 	</aside>
+
+	<!-- Agent Edit Modal (Center-aligned) -->
+	<div id="agentEditModal" class="modal hidden">
+		<div class="modal-card large">
+			<div class="modal-header">
+				<h3>👤 Agent Details</h3>
+				<button id="closeAgentEdit" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="agentEditContent">
+					<!-- Agent details will be populated here -->
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveAgentBtn" class="btn btn-primary">Save Changes</button>
+				<button id="closeAgentEditFooter" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
 
 	<!-- Matches Modal -->
 	<div id="matchesModal" class="modal hidden">

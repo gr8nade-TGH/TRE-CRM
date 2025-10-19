@@ -106,18 +106,37 @@ export async function getLead(id) {
 
 export async function createLead(leadData) {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('leads')
         .insert([leadData])
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error creating lead:', error);
         throw error;
     }
-    
+
+    // Log the lead creation activity
+    try {
+        await createLeadActivity({
+            lead_id: data.id,
+            activity_type: 'lead_created',
+            description: `Lead submitted via ${leadData.source || 'unknown source'}`,
+            metadata: {
+                source: leadData.source,
+                initial_status: data.health_status || 'new',
+                assigned_to: leadData.assigned_agent_id
+            },
+            performed_by: leadData.assigned_agent_id || leadData.found_by_agent_id,
+            performed_by_name: null // Will be populated by trigger if needed
+        });
+    } catch (activityError) {
+        console.error('⚠️ Failed to log lead creation activity:', activityError);
+        // Don't throw - lead was created successfully
+    }
+
     return data;
 }
 

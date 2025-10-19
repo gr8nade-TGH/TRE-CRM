@@ -910,6 +910,7 @@ async function deleteSpecialAPI(specialId) {
 	// ---- Agent Statistics ----
 	function getAgentStats(agentId) {
 		const assignedLeads = mockLeads.filter(l => l.assigned_agent_id === agentId);
+		const generatedLeads = mockLeads.filter(l => l.found_by_agent_id === agentId);
 		const now = new Date();
 		const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
@@ -920,6 +921,7 @@ async function deleteSpecialAPI(specialId) {
 		});
 
 		return {
+			generated: generatedLeads.length,
 			assigned: assignedLeads.length,
 			closed: closedLeads.length
 		};
@@ -2718,6 +2720,9 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				if (state.sort.key === 'name') {
 					aVal = a.name.toLowerCase();
 					bVal = b.name.toLowerCase();
+				} else if (state.sort.key === 'leads_generated') {
+					aVal = statsA.generated;
+					bVal = statsB.generated;
 				} else if (state.sort.key === 'leads_assigned') {
 					aVal = statsA.assigned;
 					bVal = statsB.assigned;
@@ -2728,7 +2733,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					return 0;
 				}
 
-				if (state.sort.key === 'leads_assigned' || state.sort.key === 'leads_closed') {
+				if (state.sort.key === 'leads_generated' || state.sort.key === 'leads_assigned' || state.sort.key === 'leads_closed') {
 					// Numeric sorting
 					const aNum = parseInt(aVal) || 0;
 					const bNum = parseInt(bVal) || 0;
@@ -2757,8 +2762,10 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					<div class="lead-name">${agent.name}</div>
 					<div class="subtle mono">${agent.email} · ${agent.phone}</div>
 					${!agent.active ? '<span class="subtle" style="color: #dc2626;">Inactive</span>' : ''}
+					${agent.locked ? '<span class="subtle" style="color: #dc2626;">🔒 Locked</span>' : ''}
 				</td>
-				<td><button class="action-btn secondary" data-view-agent="${agent.id}" title="View Details">View</button></td>
+				<td><button class="action-btn secondary" data-view-agent="${agent.id}" title="View/Edit Details">View/Edit</button></td>
+				<td class="mono" data-sort="leads_generated">${stats.generated}</td>
 				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
 				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
 				<td>
@@ -2771,7 +2778,7 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				</td>
 				<td>
 					<button class="action-btn" data-remove="${agent.id}">Remove Agent</button>
-					<button class="action-btn" data-edit="${agent.id}">Change Info</button>
+					<button class="action-btn ${agent.locked ? 'secondary' : ''}" data-lock="${agent.id}">${agent.locked ? '🔓 Unlock' : '🔒 Lock'} Account</button>
 					<button class="action-btn" data-assign-leads="${agent.id}">Assign Leads</button>
 				</td>
 			`;
@@ -3864,18 +3871,59 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		state.selectedAgentId = agentId;
 		const agent = mockAgents.find(a => a.id === agentId);
 		const stats = getAgentStats(agentId);
-		const c = document.getElementById('agentDrawerContent');
+		const c = document.getElementById('agentEditContent');
 
 		c.innerHTML = `
-			<div class="field"><label>Agent Name</label><div class="value">${agent.name}</div></div>
-			<div class="field"><label>Contact</label><div class="value">${agent.email} · ${agent.phone}</div></div>
-			<div class="field"><label>Status</label><div class="value">${agent.active ? 'Active' : 'Inactive'}</div></div>
-			<div class="field"><label>Hire Date</label><div class="value mono">${formatDate(agent.hireDate)}</div></div>
-			<div class="field"><label>License Number</label><div class="value mono">${agent.licenseNumber}</div></div>
-			<div class="field"><label>Specialties</label><div class="value">${agent.specialties.join(', ')}</div></div>
-			<div class="field"><label>Notes</label><div class="value">${agent.notes}</div></div>
-			<hr />
+			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+				<div>
+					<h4 style="margin-top: 0; color: #3b82f6;">📋 Contact Information</h4>
+					<div class="field">
+						<label>Agent Name</label>
+						<input type="text" id="editAgentName" value="${agent.name}" />
+					</div>
+					<div class="field">
+						<label>Email</label>
+						<input type="email" id="editAgentEmail" value="${agent.email}" />
+					</div>
+					<div class="field">
+						<label>Phone</label>
+						<input type="tel" id="editAgentPhone" value="${agent.phone}" />
+					</div>
+					<div class="field">
+						<label>Status</label>
+						<select id="editAgentStatus">
+							<option value="true" ${agent.active ? 'selected' : ''}>Active</option>
+							<option value="false" ${!agent.active ? 'selected' : ''}>Inactive</option>
+						</select>
+					</div>
+				</div>
+				<div>
+					<h4 style="margin-top: 0; color: #3b82f6;">👥 Professional Information</h4>
+					<div class="field">
+						<label>Hire Date</label>
+						<input type="date" id="editAgentHireDate" value="${agent.hireDate || ''}" />
+					</div>
+					<div class="field">
+						<label>License Number</label>
+						<input type="text" id="editAgentLicense" value="${agent.licenseNumber || ''}" />
+					</div>
+					<div class="field">
+						<label>Specialties (comma-separated)</label>
+						<input type="text" id="editAgentSpecialties" value="${agent.specialties ? agent.specialties.join(', ') : ''}" />
+					</div>
+					<div class="field">
+						<label>Notes</label>
+						<textarea id="editAgentNotes" rows="3">${agent.notes || ''}</textarea>
+					</div>
+				</div>
+			</div>
+			<hr style="margin: 20px 0;">
+			<h4 style="margin-top: 0; color: #3b82f6;">📊 Statistics</h4>
 			<div class="stats-grid">
+				<div class="stat-card">
+					<div class="label">Leads Generated</div>
+					<div class="value">${stats.generated}</div>
+				</div>
 				<div class="stat-card">
 					<div class="label">Leads Assigned</div>
 					<div class="value">${stats.assigned}</div>
@@ -3886,10 +3934,37 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 				</div>
 			</div>
 		`;
-		show(document.getElementById('agentDrawer'));
+		showModal('agentEditModal');
 	}
 
 	function closeAgentDrawer(){ hide(document.getElementById('agentDrawer')); }
+
+	function closeAgentEditModal(){
+		hideModal('agentEditModal');
+		state.selectedAgentId = null;
+	}
+
+	async function saveAgentChanges() {
+		if (!state.selectedAgentId) return;
+
+		const agent = mockAgents.find(a => a.id === state.selectedAgentId);
+		if (!agent) return;
+
+		// Get values from form
+		agent.name = document.getElementById('editAgentName').value;
+		agent.email = document.getElementById('editAgentEmail').value;
+		agent.phone = document.getElementById('editAgentPhone').value;
+		agent.active = document.getElementById('editAgentStatus').value === 'true';
+		agent.hireDate = document.getElementById('editAgentHireDate').value;
+		agent.licenseNumber = document.getElementById('editAgentLicense').value;
+		agent.specialties = document.getElementById('editAgentSpecialties').value.split(',').map(s => s.trim()).filter(s => s);
+		agent.notes = document.getElementById('editAgentNotes').value;
+
+		// In a real app, this would save to the database
+		toast('Agent information updated successfully!', 'success');
+		closeAgentEditModal();
+		renderAgents();
+	}
 
 	// ---- Document Modals ----
 	function openDocumentDetails(leadId) {
@@ -4879,8 +4954,27 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					}
 					return;
 				}
-				const edit = e.target.closest('button[data-edit]');
-				if (edit){ toast('Edit agent info (mock action)'); return; }
+
+				const lock = e.target.closest('button[data-lock]');
+				if (lock){
+					const agentId = lock.dataset.lock;
+					const agent = mockAgents.find(a => a.id === agentId);
+					if (agent) {
+						const action = agent.locked ? 'unlock' : 'lock';
+						if (confirm(`Are you sure you want to ${action} this agent's account?`)) {
+							agent.locked = !agent.locked;
+							if (agent.locked) {
+								agent.active = false; // Deactivate when locked
+								toast('Agent account locked successfully', 'success');
+							} else {
+								toast('Agent account unlocked successfully', 'success');
+							}
+							renderAgents();
+						}
+					}
+					return;
+				}
+
 				const assignLeads = e.target.closest('button[data-assign-leads]');
 				if (assignLeads){ toast('Assign leads to agent (mock action)'); return; }
 			});
@@ -5052,6 +5146,20 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		const closeAgentDrawerEl = document.getElementById('closeAgentDrawer');
 		if (closeAgentDrawerEl) {
 			closeAgentDrawerEl.addEventListener('click', closeAgentDrawer);
+		}
+
+		// Agent edit modal event listeners
+		const closeAgentEditEl = document.getElementById('closeAgentEdit');
+		if (closeAgentEditEl) {
+			closeAgentEditEl.addEventListener('click', closeAgentEditModal);
+		}
+		const closeAgentEditFooterEl = document.getElementById('closeAgentEditFooter');
+		if (closeAgentEditFooterEl) {
+			closeAgentEditFooterEl.addEventListener('click', closeAgentEditModal);
+		}
+		const saveAgentBtnEl = document.getElementById('saveAgentBtn');
+		if (saveAgentBtnEl) {
+			saveAgentBtnEl.addEventListener('click', saveAgentChanges);
 		}
 		// Lead details modal internal assignment
 		const leadDetailsModalEl = document.getElementById('leadDetailsModal');

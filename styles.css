@@ -759,7 +759,8 @@ body {
 
 /* Wider showcase modals */
 #showcaseModal .modal-card,
-#buildShowcaseModal .modal-card {
+#buildShowcaseModal .modal-card,
+#matchesModal .modal-card {
   width: 1400px;
   max-width: 95%;
 }
