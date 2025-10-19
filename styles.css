@@ -3067,6 +3067,86 @@ body {
 	border-bottom: none;
 }
 
+/* Modal Loading and Error States */
+.modal-loading {
+	text-align: center;
+	padding: 40px 20px;
+	color: var(--subtle);
+	font-style: italic;
+}
+
+.modal-error {
+	text-align: center;
+	padding: 40px 20px;
+	color: #dc2626;
+	font-weight: 500;
+}
+
+/* Modal Sections */
+.modal-section {
+	margin: 20px 0;
+	padding: 16px;
+	background: var(--panel);
+	border-radius: 8px;
+	border-left: 3px solid var(--brand);
+}
+
+.modal-section strong {
+	display: block;
+	margin-bottom: 12px;
+	color: var(--brand);
+	font-size: 15px;
+}
+
+/* Preferences List */
+.preferences-list {
+	list-style: none;
+	padding: 0;
+	margin: 8px 0 0 0;
+}
+
+.preferences-list li {
+	padding: 8px 12px;
+	margin: 6px 0;
+	background: white;
+	border-radius: 6px;
+	border: 1px solid var(--rule);
+	display: flex;
+	gap: 8px;
+}
+
+.preferences-list li strong {
+	display: inline;
+	margin: 0;
+	color: var(--ink);
+	font-size: 14px;
+	min-width: 140px;
+}
+
+/* Email Placeholder */
+.email-placeholder {
+	background: #fef3c7;
+	border: 1px dashed #f59e0b;
+	border-radius: 6px;
+	padding: 16px;
+	margin-top: 8px;
+	color: #92400e;
+}
+
+.email-placeholder em {
+	display: block;
+	font-weight: 600;
+	margin-bottom: 8px;
+	font-size: 14px;
+}
+
+.email-details-placeholder {
+	font-size: 13px;
+	line-height: 1.6;
+	margin-top: 8px;
+	padding-left: 20px;
+}
+
 /* Interactive Progress Bar */
 .progress-bar-container {
 	margin: 20px 0;

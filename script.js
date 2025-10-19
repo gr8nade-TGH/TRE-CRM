@@ -1878,13 +1878,14 @@ async function deleteSpecialAPI(specialId) {
 
 	// Progress steps configuration
 	const progressSteps = [
-		{ id: 1, label: 'Showcase Sent', key: 'showcaseSent' },
-		{ id: 2, label: 'Lead Responded', key: 'leadResponded' },
-		{ id: 3, label: 'Guest Card Sent', key: 'guestCardSent' },
-		{ id: 4, label: 'Property Selected', key: 'propertySelected' },
-		{ id: 5, label: 'Lease Sent', key: 'leaseSent' },
-		{ id: 6, label: 'Lease Signed', key: 'leaseSigned' },
-		{ id: 7, label: 'Lease Finalized', key: 'leaseFinalized' }
+		{ id: 1, label: 'Lead Joined', key: 'leadJoined' },
+		{ id: 2, label: 'Showcase Sent', key: 'showcaseSent' },
+		{ id: 3, label: 'Lead Responded', key: 'leadResponded' },
+		{ id: 4, label: 'Guest Card Sent', key: 'guestCardSent' },
+		{ id: 5, label: 'Property Selected', key: 'propertySelected' },
+		{ id: 6, label: 'Lease Sent', key: 'leaseSent' },
+		{ id: 7, label: 'Lease Signed', key: 'leaseSigned' },
+		{ id: 8, label: 'Lease Finalized', key: 'leaseFinalized' }
 	];
 
 	function renderProgressTable(tbodyId, leads) {
@@ -1972,9 +1973,95 @@ function createLeadTable(lead, isExpanded = false) {
 	return table;
 }
 
-	function getStepModalContent(lead, step) {
+	async function getStepModalContent(lead, step) {
 		switch(step.id) {
-			case 1: // Showcase Sent
+			case 1: // Lead Joined
+				// Fetch the lead_created activity from database
+				try {
+					const leadData = await SupabaseAPI.getLead(lead.id);
+					const activities = await SupabaseAPI.getLeadActivities(lead.id);
+					const createdActivity = activities.find(a => a.activity_type === 'lead_created');
+
+					if (!createdActivity) {
+						return `
+							<div class="modal-details"><strong>Lead Name:</strong> ${lead.leadName || lead.name}</div>
+							<div class="modal-details"><strong>Status:</strong> Lead joined the system</div>
+							<div class="modal-details"><em>No detailed join information available</em></div>
+						`;
+					}
+
+					const metadata = createdActivity.metadata || {};
+					const formData = metadata.form_data || {};
+					const preferences = formData.preferences || leadData.preferences || {};
+
+					// Parse preferences if it's a string
+					const prefs = typeof preferences === 'string' ? JSON.parse(preferences) : preferences;
+
+					// Format the join method
+					const source = metadata.source || 'unknown';
+					const agentName = metadata.agent_name || createdActivity.performed_by_name || 'Unknown Agent';
+					const joinDate = formatDate(createdActivity.created_at);
+
+					let joinMethod = '';
+					if (source === 'landing_page') {
+						joinMethod = `Filled <strong>${agentName}</strong> landing page on ${joinDate}`;
+					} else if (source === 'manual') {
+						joinMethod = `Manually added by ${agentName} on ${joinDate}`;
+					} else {
+						joinMethod = `Joined via ${source} on ${joinDate}`;
+					}
+
+					// Build preferences display
+					let prefsHTML = '';
+					if (prefs && Object.keys(prefs).length > 0) {
+						prefsHTML = '<div class="modal-section"><strong>Preferences from form:</strong><ul class="preferences-list">';
+
+						if (prefs.bedrooms) prefsHTML += `<li><strong>Bedrooms:</strong> ${prefs.bedrooms}</li>`;
+						if (prefs.bathrooms) prefsHTML += `<li><strong>Bathrooms:</strong> ${prefs.bathrooms}</li>`;
+						if (prefs.priceRange) prefsHTML += `<li><strong>Budget:</strong> ${prefs.priceRange}</li>`;
+						if (prefs.areaOfTown) prefsHTML += `<li><strong>Area:</strong> ${prefs.areaOfTown}</li>`;
+						if (prefs.moveInDate) prefsHTML += `<li><strong>Move-in Date:</strong> ${prefs.moveInDate}</li>`;
+						if (prefs.creditHistory) prefsHTML += `<li><strong>Credit History:</strong> ${prefs.creditHistory}</li>`;
+						if (prefs.bestTimeToCall || formData.best_time_to_call) {
+							prefsHTML += `<li><strong>Best Time to Call:</strong> ${prefs.bestTimeToCall || formData.best_time_to_call}</li>`;
+						}
+						if (prefs.comments) prefsHTML += `<li><strong>Comments:</strong> ${prefs.comments}</li>`;
+
+						prefsHTML += '</ul></div>';
+					}
+
+					// Welcome email section (placeholder for Resend integration)
+					const welcomeEmailHTML = `
+						<div class="modal-section">
+							<strong>Welcome Email:</strong>
+							<div class="email-placeholder">
+								<em>📧 Email integration coming soon (Resend)</em>
+								<div class="email-details-placeholder">
+									• Welcome email will be sent automatically<br>
+									• Email status and details will appear here<br>
+									• Click to view email content and delivery status
+								</div>
+							</div>
+						</div>
+					`;
+
+					return `
+						<div class="modal-details"><strong>Lead Name:</strong> ${leadData.name}</div>
+						<div class="modal-details"><strong>Email:</strong> ${leadData.email}</div>
+						<div class="modal-details"><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</div>
+						<div class="modal-details"><strong>Join Method:</strong> ${joinMethod}</div>
+						${prefsHTML}
+						${welcomeEmailHTML}
+					`;
+				} catch (error) {
+					console.error('Error fetching lead joined details:', error);
+					return `
+						<div class="modal-details"><strong>Lead Name:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-details"><em>Error loading join details. Please try again.</em></div>
+					`;
+				}
+
+			case 2: // Showcase Sent
 				return `
 					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
 					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
@@ -1982,7 +2069,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<a href="${lead.showcase.landingPageUrl}" target="_blank" class="modal-link">View Landing Page →</a>
 				`;
 
-			case 2: // Lead Responded
+			case 3: // Lead Responded
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
 					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
@@ -1993,7 +2080,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
 				`;
 
-			case 3: { // Guest Card Sent
+			case 4: { // Guest Card Sent
 				const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName)}&agent=${encodeURIComponent(lead.agentName)}&property=${encodeURIComponent(lead.showcase.selections.join(','))}&date=${encodeURIComponent(formatDate(lead.lastUpdated))}&agentPhone=210-391-4044&phoneNumber=210-579-6189&moveInDate=ASAP&bedrooms=${lead.property.bedrooms}&bathrooms=${lead.property.bathrooms}&priceRange=${lead.property.rent}&agentNotes=Guest card sent for property tour scheduling`;
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
@@ -2005,7 +2092,7 @@ function createLeadTable(lead, isExpanded = false) {
 				`;
 			}
 
-			case 4: // Property Selected
+			case 5: // Property Selected
 				return `
 					<div class="modal-details"><strong>Property:</strong> ${lead.property.name}</div>
 					<div class="modal-details"><strong>Address:</strong> ${lead.property.address}</div>
@@ -2013,7 +2100,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<div class="modal-details"><strong>Size:</strong> ${lead.property.bedrooms}bd/${lead.property.bathrooms}ba</div>
 				`;
 
-			case 5: // Lease Sent
+			case 6: // Lease Sent
 				return `
 					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
 					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
@@ -2021,7 +2108,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="modal-link">View Lease →</a>
 				`;
 
-			case 6: // Lease Signed
+			case 7: // Lease Signed
 				return `
 					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
 					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
@@ -2029,7 +2116,7 @@ function createLeadTable(lead, isExpanded = false) {
 					<a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="modal-link">View Signed Lease →</a>
 				`;
 
-			case 7: // Lease Finalized
+			case 8: // Lease Finalized
 				return `
 					<div class="modal-details"><strong>Status:</strong> Complete</div>
 					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
@@ -2042,7 +2129,7 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 	}
 
-	function showStepDetails(lead, step) {
+	async function showStepDetails(lead, step) {
 		// Create modal if it doesn't exist
 		let modal = document.getElementById('progressModal');
 		if (!modal) {
@@ -2075,10 +2162,21 @@ function createLeadTable(lead, isExpanded = false) {
 		const content = modal.querySelector('.modal-content');
 
 		title.textContent = step.label;
-		content.innerHTML = getStepModalContent(lead, step);
+
+		// Show loading state
+		content.innerHTML = '<div class="modal-loading">Loading...</div>';
 
 		// Show modal
 		modal.classList.add('show');
+
+		// Load content asynchronously
+		try {
+			const modalContent = await getStepModalContent(lead, step);
+			content.innerHTML = modalContent;
+		} catch (error) {
+			console.error('Error loading step details:', error);
+			content.innerHTML = '<div class="modal-error">Error loading details. Please try again.</div>';
+		}
 	}
 
 	function viewLeadDetails(leadId) {
