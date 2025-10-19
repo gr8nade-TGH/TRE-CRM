@@ -559,6 +559,8 @@ async function deleteSpecialAPI(specialId) {
 		// Get current step
 		const currentStepNumber = lead.current_step || await getCurrentStepFromActivities(lead.id);
 		const currentStepLabel = getStepLabel(currentStepNumber);
+		const nextStepNumber = currentStepNumber < 8 ? currentStepNumber + 1 : null;
+		const nextStepLabel = nextStepNumber ? getStepLabel(nextStepNumber) : 'Complete';
 
 		// Format time display
 		let timeDisplay;
@@ -572,27 +574,27 @@ async function deleteSpecialAPI(specialId) {
 			return [
 				`✅ Lead is actively engaged`,
 				`📄 Current step: ${currentStepLabel}`,
-				`📅 Last activity: ${timeDisplay} ago`,
-				`💚 Status: Healthy - recent activity detected`
+				`➡️ Next step: ${nextStepLabel}`,
+				`📅 Last activity: ${timeDisplay} ago`
 			];
 		}
 
 		if (lead.health_status === 'yellow') {
 			return [
-				`⚠️ Needs attention`,
+				`⚠️ Needs attention - no activity in 36+ hours`,
 				`📄 Current step: ${currentStepLabel}`,
+				`➡️ Next step: ${nextStepLabel}`,
 				`📅 Last activity: ${timeDisplay} ago`,
-				`💛 Status: Warm - no activity in 36+ hours`,
 				`🎯 Action: Follow up with lead soon`
 			];
 		}
 
 		if (lead.health_status === 'red') {
 			return [
-				`🚨 Urgent action required`,
+				`🚨 Urgent - no activity in 72+ hours`,
 				`📄 Current step: ${currentStepLabel}`,
+				`➡️ Next step: ${nextStepLabel}`,
 				`📅 Last activity: ${timeDisplay} ago`,
-				`❤️ Status: At Risk - no activity in 72+ hours`,
 				`🔥 Action: Contact lead immediately`
 			];
 		}
@@ -601,8 +603,7 @@ async function deleteSpecialAPI(specialId) {
 			return [
 				`🎉 Lead successfully closed!`,
 				`📄 Final step: ${currentStepLabel}`,
-				`📅 Closed on: ${formatDate(lead.closed_at || lead.last_activity_at)}`,
-				`✅ Status: Successfully completed`
+				`📅 Closed on: ${formatDate(lead.closed_at || lead.last_activity_at)}`
 			];
 		}
 
@@ -617,8 +618,8 @@ async function deleteSpecialAPI(specialId) {
 
 		// Default fallback
 		return [
-			`ℹ️ Lead status: ${lead.health_status || 'Unknown'}`,
 			`📄 Current step: ${currentStepLabel}`,
+			`➡️ Next step: ${nextStepLabel}`,
 			`📅 Last activity: ${timeDisplay} ago`
 		];
 	}
@@ -1507,29 +1508,50 @@ async function deleteSpecialAPI(specialId) {
 		console.log('API returned:', { items, total }); // Debug
 		tbody.innerHTML = '';
 
-		// Fetch notes counts and current steps for all leads (if using Supabase)
-		const notesCountsPromises = !USE_MOCK_DATA ? items.map(lead =>
-			SupabaseAPI.getLeadNotesCount(lead.id).then(count => ({ leadId: lead.id, count }))
-		) : [];
-		const notesCounts = !USE_MOCK_DATA ? await Promise.all(notesCountsPromises) : [];
-		const notesCountMap = {};
-		notesCounts.forEach(({ leadId, count }) => {
-			notesCountMap[leadId] = count;
-		});
+		// Fetch notes counts and current steps for all leads in parallel (if using Supabase)
+		if (!USE_MOCK_DATA) {
+			const notesCountsPromises = items.map(lead =>
+				SupabaseAPI.getLeadNotesCount(lead.id).then(count => ({ leadId: lead.id, count }))
+			);
+			const currentStepsPromises = items.map(lead =>
+				getCurrentStepFromActivities(lead.id).then(step => ({ leadId: lead.id, step }))
+			);
 
-		// Calculate current step and health status for each lead
-		for (const lead of items) {
-			// Get current step from activities
-			if (!USE_MOCK_DATA) {
-				lead.current_step = await getCurrentStepFromActivities(lead.id);
-			}
+			const [notesCounts, currentSteps] = await Promise.all([
+				Promise.all(notesCountsPromises),
+				Promise.all(currentStepsPromises)
+			]);
 
-			// Calculate health status based on last activity
-			lead.health_status = calculateHealthStatus(lead);
+			const notesCountMap = {};
+			notesCounts.forEach(({ leadId, count }) => {
+				notesCountMap[leadId] = count;
+			});
+
+			const currentStepMap = {};
+			currentSteps.forEach(({ leadId, step }) => {
+				currentStepMap[leadId] = step;
+			});
+
+			// Apply current steps and calculate health status for each lead
+			items.forEach(lead => {
+				lead.current_step = currentStepMap[lead.id] || 1;
+				lead.health_status = calculateHealthStatus(lead);
+			});
+
+			// Store notesCountMap for later use
+			items.forEach(lead => {
+				lead._notesCount = notesCountMap[lead.id] || 0;
+			});
+		} else {
+			// Mock data path
+			items.forEach(lead => {
+				lead.health_status = calculateHealthStatus(lead);
+				lead._notesCount = 0;
+			});
 		}
 
 		items.forEach(lead => {
-			const notesCount = notesCountMap[lead.id] || 0;
+			const notesCount = lead._notesCount || 0;
 			// Always show note icon: gray if no notes, yellow with pulse if notes exist
 			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
 			const noteTitle = notesCount > 0 ? `${notesCount} comment(s)` : 'Add a comment';
