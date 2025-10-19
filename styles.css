@@ -3152,6 +3152,10 @@ body {
 	margin-bottom: 40px;
 }
 
+.properties-section:first-of-type {
+	margin-bottom: 60px; /* Extra space after Property Specials */
+}
+
 .section-header {
 	display: flex;
 	align-items: center;
@@ -3174,6 +3178,22 @@ body {
 	font-size: 12px;
 	color: var(--subtle);
 	font-style: italic;
+}
+
+.text-muted {
+	color: var(--subtle);
+	font-style: italic;
+}
+
+.no-contact-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	font-size: 11px;
+	background: #fef3c7;
+	color: #92400e;
+	border-radius: 4px;
+	margin-left: 8px;
+	font-weight: 500;
 }
 
 /* Interactive Progress Bar */
