@@ -273,6 +273,29 @@ export async function createProperty(propertyData) {
         throw error;
     }
 
+    // Log the property creation activity
+    try {
+        await createPropertyActivity({
+            property_id: data.id,
+            activity_type: 'property_created',
+            description: 'Property added to inventory',
+            metadata: {
+                method: 'manual',
+                initial_data: {
+                    name: data.name,
+                    address: data.address,
+                    rent_range: `${data.rent_range_min || 'N/A'} - ${data.rent_range_max || 'N/A'}`,
+                    is_pumi: data.is_pumi || false
+                }
+            },
+            performed_by: propertyData.created_by,
+            performed_by_name: null // Will be populated from user data if needed
+        });
+    } catch (activityError) {
+        console.error('⚠️ Failed to log property creation activity:', activityError);
+        // Don't throw - property was created successfully
+    }
+
     return data;
 }
 
