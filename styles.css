@@ -2372,6 +2372,19 @@ body {
   opacity: 0.6;
 }
 
+.btn-outline {
+  background: transparent;
+  color: var(--brand);
+  border: 1.5px solid var(--brand);
+}
+
+.btn-outline:hover:not(:disabled) {
+  background: var(--brand);
+  color: #fff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(21, 62, 122, 0.2);
+}
+
 .btn-danger {
   background: #ef4444;
   color: #fff;

@@ -6242,6 +6242,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			addListingBtn.addEventListener('click', openAddListingModal);
 		}
 
+		// Add Contact Info button (opens property contact modal)
+		const addContactInfoBtn = document.getElementById('addContactInfoBtn');
+		if (addContactInfoBtn) {
+			addContactInfoBtn.addEventListener('click', () => {
+				showModal('addPropertyContactModal');
+				document.getElementById('addPropertyContactForm').reset();
+			});
+		}
+
 		const closeAddListing = document.getElementById('closeAddListing');
 		const cancelAddListing = document.getElementById('cancelAddListing');
 		const saveListingBtn = document.getElementById('saveListingBtn');
