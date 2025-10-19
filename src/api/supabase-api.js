@@ -547,6 +547,78 @@ export async function updatePropertyContact(contactData) {
         throw error;
     }
 
+    // Log property activity
+    if (data && data.length > 0) {
+        try {
+            await logPropertyActivity({
+                property_id: data[0].id,
+                community_name: community_name,
+                activity_type: 'contact_info_updated',
+                description: `Contact information updated for ${community_name}`,
+                metadata: {
+                    contact_name,
+                    contact_email,
+                    contact_phone,
+                    office_hours,
+                    has_notes: !!contact_notes
+                }
+            });
+        } catch (activityError) {
+            console.error('Error logging property activity:', activityError);
+            // Don't throw - contact update was successful
+        }
+    }
+
+    return data;
+}
+
+export async function logPropertyActivity(activityData) {
+    const supabase = getSupabase();
+
+    const { data: userData } = await supabase.auth.getUser();
+    const userId = userData?.user?.id;
+
+    const { data, error } = await supabase
+        .from('property_activities')
+        .insert({
+            property_id: activityData.property_id,
+            community_name: activityData.community_name,
+            activity_type: activityData.activity_type,
+            description: activityData.description,
+            metadata: activityData.metadata || {},
+            performed_by: userId
+        })
+        .select();
+
+    if (error) {
+        console.error('Error logging property activity:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function getPropertyActivities(propertyId) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('property_activities')
+        .select(`
+            *,
+            user:performed_by (
+                id,
+                name,
+                email
+            )
+        `)
+        .eq('property_id', propertyId)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching property activities:', error);
+        throw error;
+    }
+
     return data;
 }
 

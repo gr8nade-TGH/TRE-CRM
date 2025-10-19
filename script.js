@@ -2484,7 +2484,7 @@ function createLeadTable(lead, isExpanded = false) {
 				contact_notes: contactNotes
 			});
 
-			toast('Property contact info saved successfully!', 'success');
+			toast('✅ Contact info saved & activity logged!', 'success');
 			hideModal('addPropertyContactModal');
 			await renderPropertyContacts();
 		} catch (error) {
