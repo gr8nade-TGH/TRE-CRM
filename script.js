@@ -5004,6 +5004,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 					return;
 				}
 			});
+
+			// Handle checkbox changes for bulk actions
+			listingsTableEl.addEventListener('change', (e)=>{
+				if (e.target.classList.contains('listing-checkbox')) {
+					console.log('Listing checkbox changed');
+					updateBulkActionsBar();
+				}
+			});
 		}
 
 		// documents table delegation
