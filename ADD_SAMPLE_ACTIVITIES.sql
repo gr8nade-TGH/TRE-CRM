@@ -15,7 +15,7 @@ DECLARE
     agent_record RECORD;
 BEGIN
     -- Get the first agent to use as the performer
-    SELECT id, full_name INTO agent_record
+    SELECT id, name INTO agent_record
     FROM public.users
     WHERE role IN ('agent', 'manager')
     LIMIT 1;
@@ -39,7 +39,7 @@ BEGIN
                 'initial_status', 'new'
             ),
             agent_record.id,
-            agent_record.full_name,
+            agent_record.name,
             lead_record.created_at
         );
 
@@ -57,7 +57,7 @@ BEGIN
                 'notes', 'Left message introducing myself and asking for callback'
             ),
             agent_record.id,
-            agent_record.full_name,
+            agent_record.name,
             lead_record.created_at + INTERVAL '1 hour'
         );
 
@@ -75,7 +75,7 @@ BEGIN
                 'subject', 'Welcome! Here are some great options for you'
             ),
             agent_record.id,
-            agent_record.full_name,
+            agent_record.name,
             lead_record.created_at + INTERVAL '2 hours'
         );
 
@@ -93,7 +93,7 @@ DECLARE
     agent_record RECORD;
 BEGIN
     -- Get the first agent to use as the performer
-    SELECT id, full_name INTO agent_record
+    SELECT id, name INTO agent_record
     FROM public.users
     WHERE role IN ('agent', 'manager')
     LIMIT 1;
@@ -118,7 +118,7 @@ BEGIN
                 'initial_status', 'available'
             ),
             agent_record.id,
-            agent_record.full_name,
+            agent_record.name,
             property_record.created_at
         );
 
@@ -135,7 +135,7 @@ BEGIN
                 'update_type', 'media'
             ),
             agent_record.id,
-            agent_record.full_name,
+            agent_record.name,
             property_record.created_at + INTERVAL '1 day'
         );
 
@@ -153,7 +153,7 @@ BEGIN
                 'reason', 'Move-in special'
             ),
             agent_record.id,
-            agent_record.full_name,
+            agent_record.name,
             property_record.created_at + INTERVAL '2 days'
         );
 
