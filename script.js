@@ -404,79 +404,89 @@ async function deleteSpecialAPI(specialId) {
 
 	// ---- Health Status System ----
 
-	// Health calculation function
+	// Health calculation function based on last activity time
 	function calculateHealthStatus(lead) {
+		// If lead is manually marked as closed or lost, respect that
+		if (lead.status === 'closed' || lead.status === 'lost') {
+			return lead.status;
+		}
+
 		const now = new Date();
-		const leadAge = now - new Date(lead.submitted_at);
-		let healthScore = 100; // Start with perfect health
 
-		// Get proper current step info
-		const currentStep = getProperCurrentStep(lead);
-		const stepHours = getStepHours(lead, currentStep);
-
-		// Time-based deductions
-		if (leadAge > 24 * 60 * 60 * 1000 && !lead.showcase_sent_at) {
-			healthScore -= 20; // No showcase sent in 24h
+		// Get the most recent activity timestamp
+		// Check both last_activity_at and updated_at
+		let lastActivityDate;
+		if (lead.last_activity_at) {
+			lastActivityDate = new Date(lead.last_activity_at);
+		} else if (lead.updated_at) {
+			lastActivityDate = new Date(lead.updated_at);
+		} else {
+			lastActivityDate = new Date(lead.created_at || lead.submitted_at);
 		}
 
-		if (lead.showcase_sent_at && leadAge > 72 * 60 * 60 * 1000 && !lead.showcase_response_at) {
-			healthScore -= 30; // No response to showcase in 72h
-		}
+		// Calculate hours since last activity
+		const hoursSinceActivity = (now - lastActivityDate) / (1000 * 60 * 60);
 
-		if (lead.lease_sent_at && leadAge > 48 * 60 * 60 * 1000 && !lead.lease_signed_at) {
-			healthScore -= 40; // Lease pending signature for 48h
-		}
+		// Health status thresholds:
+		// Green: < 36 hours since last activity
+		// Yellow: 36-72 hours since last activity
+		// Red: > 72 hours since last activity
 
-		if (leadAge > 120 * 60 * 60 * 1000 && !lead.tour_scheduled_at) {
-			healthScore -= 25; // No tour scheduled in 5 days
+		if (hoursSinceActivity < 36) {
+			return 'green';
+		} else if (hoursSinceActivity < 72) {
+			return 'yellow';
+		} else {
+			return 'red';
 		}
+	}
 
-		if (leadAge > 168 * 60 * 60 * 1000 && !lead.last_activity_at) {
-			healthScore -= 50; // No activity for 7 days
-		}
+	// Get current step from lead activities
+	async function getCurrentStepFromActivities(leadId) {
+		try {
+			const activities = await SupabaseAPI.getLeadActivities(leadId);
 
-		// Document step timing deductions (3-day rule)
-		if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
-			if (stepHours > 72) { // 3 days
-				healthScore -= 25; // Major deduction for being stuck on step
-			} else if (stepHours > 48) { // 2 days
-				healthScore -= 15; // Moderate deduction
-			} else if (stepHours > 24) { // 1 day
-				healthScore -= 5; // Minor deduction
-			}
-		}
-
-		// Event-based adjustments
-		lead.events?.forEach(event => {
-			const eventImpacts = {
-				'SHOWCASE_OPENED': 1,
-				'SHOWCASE_CLICKED': 2,
-				'TOUR_SCHEDULED': 3,
-				'LEASE_SIGNED': 5,
-				'PAYMENT_RECEIVED': 10,
-				'EMAIL_BOUNCED': -2,
-				'NO_SHOW_TOUR': -3,
-				'LEASE_DECLINED': -5,
-				'COMPETITOR_CHOSEN': -8
+			// Map activity types to step numbers
+			const stepMapping = {
+				'lead_created': 1,
+				'showcase_sent': 2,
+				'showcase_response': 3,
+				'guest_card_sent': 4,
+				'property_selected': 5,
+				'lease_sent': 6,
+				'lease_signed': 7,
+				'lease_finalized': 8
 			};
 
-			if (eventImpacts[event.type]) {
-				healthScore += eventImpacts[event.type];
-			}
-		});
+			// Find the highest step reached
+			let currentStep = 1;
+			activities.forEach(activity => {
+				const step = stepMapping[activity.activity_type];
+				if (step && step > currentStep) {
+					currentStep = step;
+				}
+			});
 
-		// Document progress bonus
-		const docProgress = getDocumentProgress(lead.id);
-		healthScore += (docProgress * 0.2); // Up to 20 points for full progress
+			return currentStep;
+		} catch (error) {
+			console.error('Error getting current step:', error);
+			return 1; // Default to step 1
+		}
+	}
 
-		// Ensure score stays within bounds
-		healthScore = Math.max(0, Math.min(100, healthScore));
-
-		// Determine final status
-		if (healthScore >= 80) return 'green';
-		if (healthScore >= 50) return 'yellow';
-		if (healthScore >= 20) return 'red';
-		return 'lost';
+	// Get step label from step number
+	function getStepLabel(stepNumber) {
+		const stepLabels = {
+			1: 'Lead Joined',
+			2: 'Showcase Sent',
+			3: 'Showcase Response',
+			4: 'Guest Card Sent',
+			5: 'Property Selected',
+			6: 'Lease Sent',
+			7: 'Lease Signed',
+			8: 'Lease Finalized'
+		};
+		return stepLabels[stepNumber] || 'Unknown';
 	}
 
 	// Get proper current step based on document progress
@@ -529,80 +539,62 @@ async function deleteSpecialAPI(specialId) {
 	}
 
 	// Dynamic health messages based on lead state
-	function getHealthMessages(lead) {
+	async function getHealthMessages(lead) {
 		const now = new Date();
-		const leadAge = now - new Date(lead.submitted_at);
-		const hoursAgo = Math.floor(leadAge / (60 * 60 * 1000));
 
-		// Get proper current step and timing
-		const currentStep = getProperCurrentStep(lead);
-		const timeOnCurrentStep = getTimeOnCurrentStep(lead);
+		// Get last activity timestamp
+		let lastActivityDate;
+		if (lead.last_activity_at) {
+			lastActivityDate = new Date(lead.last_activity_at);
+		} else if (lead.updated_at) {
+			lastActivityDate = new Date(lead.updated_at);
+		} else {
+			lastActivityDate = new Date(lead.created_at || lead.submitted_at);
+		}
+
+		const hoursSinceActivity = Math.floor((now - lastActivityDate) / (1000 * 60 * 60));
+		const daysSinceActivity = Math.floor(hoursSinceActivity / 24);
+		const remainingHours = hoursSinceActivity % 24;
+
+		// Get current step
+		const currentStepNumber = lead.current_step || await getCurrentStepFromActivities(lead.id);
+		const currentStepLabel = getStepLabel(currentStepNumber);
+
+		// Format time display
+		let timeDisplay;
+		if (daysSinceActivity > 0) {
+			timeDisplay = `${daysSinceActivity}d ${remainingHours}h`;
+		} else {
+			timeDisplay = `${hoursSinceActivity}h`;
+		}
 
 		if (lead.health_status === 'green') {
 			return [
 				`✅ Lead is actively engaged`,
-				`📄 Current step: ${currentStep}`,
-				`⏰ Time on current step: ${timeOnCurrentStep}`,
-				`📅 Last activity: ${formatTimeAgo(lead.last_activity_at)}`
+				`📄 Current step: ${currentStepLabel}`,
+				`📅 Last activity: ${timeDisplay} ago`,
+				`💚 Status: Healthy - recent activity detected`
 			];
 		}
 
 		if (lead.health_status === 'yellow') {
-			const messages = [`⚠️ Needs attention`];
-
-			messages.push(`📄 Current step: ${currentStep}`);
-			messages.push(`⏰ Time on current step: ${timeOnCurrentStep}`);
-
-			// Add step-specific warnings
-			if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
-				const stepHours = getStepHours(lead, currentStep);
-				if (stepHours > 72) { // 3 days
-					messages.push(`⏰ On ${currentStep} for ${Math.floor(stepHours/24)}d ${stepHours%24}h - needs action`);
-				}
-			}
-
-			if (!lead.showcase_sent_at && hoursAgo > 24) {
-				messages.push(`📧 No showcase sent in ${hoursAgo}h - send immediately`);
-			}
-
-			if (lead.showcase_sent_at && !lead.showcase_response_at && hoursAgo > 72) {
-				messages.push(`📞 No response to showcase in ${hoursAgo}h - follow up needed`);
-			}
-
-			if (!lead.tour_scheduled_at && hoursAgo > 120) {
-				messages.push(`📅 No tour scheduled in ${hoursAgo}h - schedule tour`);
-			}
-
-			messages.push(`🎯 Recommended action: ${getRecommendedAction(lead)}`);
-			return messages;
+			return [
+				`⚠️ Needs attention`,
+				`📄 Current step: ${currentStepLabel}`,
+				`📅 Last activity: ${timeDisplay} ago`,
+				`💛 Status: Warm - no activity in 36+ hours`,
+				`🎯 Action: Follow up with lead soon`
+			];
 		}
 
 		if (lead.health_status === 'red') {
-			const messages = [`🚨 Urgent action required`];
-
-			messages.push(`📄 Current step: ${currentStep}`);
-			messages.push(`⏰ Time on current step: ${timeOnCurrentStep}`);
-
-			// Add urgent step warnings
-			if (currentStep !== 'New Lead' && currentStep !== 'Completed') {
-				const stepHours = getStepHours(lead, currentStep);
-				if (stepHours > 72) { // 3 days
-					messages.push(`🚨 On ${currentStep} for ${Math.floor(stepHours/24)}d ${stepHours%24}h - URGENT`);
-				}
-			}
-
-			if (lead.lease_sent_at && !lead.lease_signed_at) {
-				const leaseHours = Math.floor((now - new Date(lead.lease_sent_at)) / (60 * 60 * 1000));
-				messages.push(`⏰ Lease pending signature for ${leaseHours}h`);
-			}
-
-			if (lead.showcase_sent_at && !lead.showcase_response_at) {
-				const showcaseHours = Math.floor((now - new Date(lead.showcase_sent_at)) / (60 * 60 * 1000));
-				messages.push(`📧 No response to showcase for ${showcaseHours}h`);
-			}
-
-			messages.push(`🔥 Immediate action: ${getUrgentAction(lead)}`);
-			return messages;
+			return [
+				`🚨 Urgent action required`,
+				`📄 Current step: ${currentStepLabel}`,
+				`📅 Last activity: ${timeDisplay} ago`,
+				`❤️ Status: At Risk - no activity in 72+ hours`,
+				`🔥 Action: Contact lead immediately`
+			];
 		}
 
 		if (lead.health_status === 'closed') {
@@ -877,20 +869,12 @@ async function deleteSpecialAPI(specialId) {
 
 		// Get lead ID from the button
 		const leadId = anchor.getAttribute('data-lead-id');
-		const lead = leadId ? mockLeads.find(l => l.id === leadId) : null;
 
-		console.log('Showing popover for status:', status, 'lead:', lead?.name); // Debug
+		console.log('Showing popover for status:', status, 'leadId:', leadId); // Debug
 
-		if (lead) {
-			// Use dynamic messages
-			const messages = getHealthMessages(lead);
-			popTitle.textContent = `Status — ${STATUS_LABEL[status] || status} (${lead.health_score}/100)`;
-			popList.innerHTML = messages.map(s => `<li>${s}</li>`).join('');
-		} else {
-			// Fallback to legacy messages
+		// Show loading state first
 		popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
-		popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
-		}
+		popList.innerHTML = '<li>Loading...</li>';
 
 		const r = anchor.getBoundingClientRect();
 		const top = r.bottom + 10;
@@ -900,6 +884,29 @@ async function deleteSpecialAPI(specialId) {
 		pop.style.top = `${Math.round(top)}px`;
 		pop.style.left = `${Math.round(left)}px`;
 		pop.style.display = 'block';
+
+		// Load lead data and messages asynchronously
+		if (leadId) {
+			(async () => {
+				try {
+					const lead = await SupabaseAPI.getLead(leadId);
+					if (lead) {
+						const messages = await getHealthMessages(lead);
+						popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
+						popList.innerHTML = messages.map(s => `<li>${s}</li>`).join('');
+					} else {
+						popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+					}
+				} catch (error) {
+					console.error('Error loading health messages:', error);
+					popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+				}
+			})();
+		} else {
+			// Fallback to legacy messages
+			popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+		}
+
 		console.log('Popover should be visible now'); // Debug
 	}
 
@@ -1491,7 +1498,7 @@ async function deleteSpecialAPI(specialId) {
 		console.log('API returned:', { items, total }); // Debug
 		tbody.innerHTML = '';
 
-		// Fetch notes counts for all leads (if using Supabase)
+		// Fetch notes counts and current steps for all leads (if using Supabase)
 		const notesCountsPromises = !USE_MOCK_DATA ? items.map(lead =>
 			SupabaseAPI.getLeadNotesCount(lead.id).then(count => ({ leadId: lead.id, count }))
 		) : [];
@@ -1500,6 +1507,17 @@ async function deleteSpecialAPI(specialId) {
 		notesCounts.forEach(({ leadId, count }) => {
 			notesCountMap[leadId] = count;
 		});
+
+		// Calculate current step and health status for each lead
+		for (const lead of items) {
+			// Get current step from activities
+			if (!USE_MOCK_DATA) {
+				lead.current_step = await getCurrentStepFromActivities(lead.id);
+			}
+
+			// Calculate health status based on last activity
+			lead.health_status = calculateHealthStatus(lead);
+		}
 
 		items.forEach(lead => {
 			const notesCount = notesCountMap[lead.id] || 0;
