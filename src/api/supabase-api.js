@@ -523,6 +523,33 @@ export async function updateProperty(id, propertyData, performedBy = null, perfo
     return data;
 }
 
+export async function updatePropertyContact(contactData) {
+    const supabase = getSupabase();
+
+    const { community_name, contact_name, contact_email, contact_phone, office_hours, contact_notes } = contactData;
+
+    // Update all properties with this community name
+    const { data, error } = await supabase
+        .from('properties')
+        .update({
+            contact_name,
+            contact_email,
+            contact_phone,
+            office_hours,
+            contact_notes,
+            updated_at: new Date().toISOString()
+        })
+        .eq('community_name', community_name)
+        .select();
+
+    if (error) {
+        console.error('Error updating property contact:', error);
+        throw error;
+    }
+
+    return data;
+}
+
 export async function deleteProperty(id) {
     const supabase = getSupabase();
 

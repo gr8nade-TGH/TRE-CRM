@@ -2374,6 +2374,157 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 	}
 
+	// ---- Rendering: Properties Page (Contact Info + Specials) ----
+	async function renderProperties() {
+		console.log('renderProperties called');
+		await renderPropertyContacts();
+		await renderSpecials();
+	}
+
+	async function renderPropertyContacts() {
+		console.log('renderPropertyContacts called');
+		const tbody = document.getElementById('contactsTbody');
+		if (!tbody) return;
+
+		try {
+			// Fetch all properties with contact info
+			const properties = await SupabaseAPI.getProperties({
+				role: state.role,
+				agentId: state.agentId,
+				search: '',
+				sortKey: 'community_name',
+				sortDir: 'asc',
+				page: 1,
+				pageSize: 1000,
+				filters: {}
+			});
+
+			console.log('Properties for contacts:', properties);
+			tbody.innerHTML = '';
+
+			// Group by community_name (only show unique communities)
+			const communities = new Map();
+			properties.items.forEach(prop => {
+				const communityName = prop.community_name || prop.name;
+				if (!communities.has(communityName)) {
+					communities.set(communityName, prop);
+				}
+			});
+
+			// Render each community
+			communities.forEach((property, communityName) => {
+				const tr = document.createElement('tr');
+				const hasContact = property.contact_email || property.contact_phone || property.contact_name;
+
+				tr.innerHTML = `
+					<td data-sort="community_name">
+						<div class="property-name">${communityName}</div>
+						${!hasContact ? '<div class="no-contact-badge">No contact info</div>' : ''}
+					</td>
+					<td>${property.contact_name || '<span class="text-muted">—</span>'}</td>
+					<td>${property.contact_email || '<span class="text-muted">—</span>'}</td>
+					<td>${property.contact_phone || '<span class="text-muted">—</span>'}</td>
+					<td>${property.office_hours || '<span class="text-muted">—</span>'}</td>
+					<td>
+						<div class="action-buttons">
+							<button class="icon-btn edit-contact" data-property="${property.id}" data-community="${communityName}" title="Edit Contact Info">✏️</button>
+						</div>
+					</td>
+				`;
+
+				tbody.appendChild(tr);
+			});
+
+			// Populate property dropdown in modal
+			populatePropertyDropdown(Array.from(communities.keys()));
+		} catch (error) {
+			console.error('Error loading property contacts:', error);
+			toast('Error loading property contacts. Please try again.');
+		}
+	}
+
+	function populatePropertyDropdown(communityNames) {
+		const select = document.getElementById('contactPropertySelect');
+		if (!select) return;
+
+		// Clear existing options except the first one
+		select.innerHTML = '<option value="">Select a property...</option>';
+
+		// Add community names
+		communityNames.sort().forEach(name => {
+			const option = document.createElement('option');
+			option.value = name;
+			option.textContent = name;
+			select.appendChild(option);
+		});
+	}
+
+	async function savePropertyContact() {
+		const form = document.getElementById('addPropertyContactForm');
+		if (!form.checkValidity()) {
+			form.reportValidity();
+			return;
+		}
+
+		const communityName = document.getElementById('contactPropertySelect').value;
+		const contactName = document.getElementById('contactName').value;
+		const contactEmail = document.getElementById('contactEmail').value;
+		const contactPhone = document.getElementById('contactPhone').value;
+		const officeHours = document.getElementById('contactOfficeHours').value;
+		const contactNotes = document.getElementById('contactNotes').value;
+
+		try {
+			// Update all properties with this community name
+			await SupabaseAPI.updatePropertyContact({
+				community_name: communityName,
+				contact_name: contactName,
+				contact_email: contactEmail,
+				contact_phone: contactPhone,
+				office_hours: officeHours,
+				contact_notes: contactNotes
+			});
+
+			toast('Property contact info saved successfully!', 'success');
+			hideModal('addPropertyContactModal');
+			await renderPropertyContacts();
+		} catch (error) {
+			console.error('Error saving property contact:', error);
+			toast('Error saving contact info. Please try again.', 'error');
+		}
+	}
+
+	async function editPropertyContact(propertyId, communityName) {
+		try {
+			// Fetch the property details
+			const property = await SupabaseAPI.getProperty(propertyId);
+
+			// Populate the form
+			document.getElementById('contactPropertySelect').value = communityName;
+			document.getElementById('contactName').value = property.contact_name || '';
+			document.getElementById('contactEmail').value = property.contact_email || '';
+			document.getElementById('contactPhone').value = property.contact_phone || '';
+			document.getElementById('contactOfficeHours').value = property.office_hours || '';
+			document.getElementById('contactNotes').value = property.contact_notes || '';
+
+			// Disable the property select (can't change which property)
+			document.getElementById('contactPropertySelect').disabled = true;
+
+			// Show the modal
+			showModal('addPropertyContactModal');
+
+			// Re-enable on close
+			const modal = document.getElementById('addPropertyContactModal');
+			const closeHandler = () => {
+				document.getElementById('contactPropertySelect').disabled = false;
+				modal.removeEventListener('click', closeHandler);
+			};
+			modal.addEventListener('click', closeHandler);
+		} catch (error) {
+			console.error('Error loading property contact:', error);
+			toast('Error loading contact info. Please try again.', 'error');
+		}
+	}
+
 	// ---- Rendering: Specials Table ----
 	renderSpecials = async function(){
 		console.log('renderSpecials called');
@@ -4983,11 +5134,12 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 			document.getElementById('managerDocumentsView').classList.remove('hidden');
 			document.getElementById('agentDocumentsView').classList.add('hidden');
 			renderDocuments();
-		} else if (hash === '/specials') {
-			state.currentPage = 'specials';
-			show(document.getElementById('specialsView'));
-			setRoleLabel('specials');
-			renderSpecials();
+		} else if (hash === '/properties' || hash === '/specials') {
+			// Support both /properties and /specials for backward compatibility
+			state.currentPage = 'properties';
+			show(document.getElementById('propertiesView'));
+			setRoleLabel('properties');
+			renderProperties();
 		} else if (hash === '/admin') {
 			state.currentPage = 'admin';
 			show(document.getElementById('adminView'));
@@ -5737,6 +5889,54 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		if (saveAddLeadBtn) {
 			saveAddLeadBtn.addEventListener('click', () => {
 				saveNewLead();
+			});
+		}
+
+		// Property Contact event listeners
+		const addPropertyContactBtn = document.getElementById('addPropertyContactBtn');
+		const closeAddPropertyContactModal = document.getElementById('closeAddPropertyContactModal');
+		const savePropertyContactBtn = document.getElementById('savePropertyContactBtn');
+		const cancelPropertyContactBtn = document.getElementById('cancelPropertyContactBtn');
+
+		// Add Property Contact button
+		if (addPropertyContactBtn) {
+			addPropertyContactBtn.addEventListener('click', () => {
+				showModal('addPropertyContactModal');
+				document.getElementById('addPropertyContactForm').reset();
+			});
+		}
+
+		// Close Property Contact Modal
+		if (closeAddPropertyContactModal) {
+			closeAddPropertyContactModal.addEventListener('click', () => {
+				hideModal('addPropertyContactModal');
+			});
+		}
+
+		// Cancel Add Property Contact
+		if (cancelPropertyContactBtn) {
+			cancelPropertyContactBtn.addEventListener('click', () => {
+				hideModal('addPropertyContactModal');
+			});
+		}
+
+		// Save Property Contact
+		if (savePropertyContactBtn) {
+			savePropertyContactBtn.addEventListener('click', () => {
+				savePropertyContact();
+			});
+		}
+
+		// Property Contacts table delegation (for edit buttons)
+		const contactsTable = document.getElementById('contactsTable');
+		if (contactsTable) {
+			contactsTable.addEventListener('click', async (e) => {
+				const editBtn = e.target.closest('.edit-contact');
+				if (editBtn) {
+					const propertyId = editBtn.dataset.property;
+					const communityName = editBtn.dataset.community;
+					await editPropertyContact(propertyId, communityName);
+				}
 			});
 		}
 

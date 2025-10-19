@@ -119,7 +119,7 @@
 			<a href="#/leads" class="nav-link" data-page="leads">Leads</a>
 			<a href="#/agents" class="nav-link" data-page="agents" id="agentsNavLink">Agents</a>
 			<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
-			<a href="#/specials" class="nav-link" data-page="specials">🔥</a>
+			<a href="#/properties" class="nav-link" data-page="properties">Properties</a>
 			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
 			<a href="#/admin" class="nav-link" data-page="admin" id="adminNavLink">Admin</a>
 			<a href="#/bugs" class="nav-link" data-page="bugs" id="bugsNavLink">🐛</a>
@@ -359,37 +359,77 @@
 			</div>
 		</section>
 
-		<!-- Route: #/specials -->
-		<section id="specialsView" class="route-view hidden">
+		<!-- Route: #/properties (formerly #/specials) -->
+		<section id="propertiesView" class="route-view hidden">
 			<div class="view-bar">
-				<h1>🔥 Property Specials</h1>
-				<div id="specialsRoleLabel" class="role-label"></div>
+				<h1>🏢 Properties</h1>
+				<div id="propertiesRoleLabel" class="role-label"></div>
 			</div>
 
-			<div class="table-actions">
-				<input id="specialsSearch" type="search" placeholder="Search property name or special" />
-				<button id="addSpecialBtn" class="btn btn-primary">+ Add Special</button>
+			<!-- Property Contact Info Section -->
+			<div class="properties-section">
+				<div class="section-header">
+					<h2>📞 Property Contact Information</h2>
+					<button id="addPropertyContactBtn" class="btn btn-primary">+ Add Property Contact</button>
+				</div>
+
+				<div class="table-actions">
+					<input id="contactsSearch" type="search" placeholder="Search property name" />
+				</div>
+
+				<div class="table-container">
+					<table id="contactsTable" class="data-table">
+						<thead>
+							<tr>
+								<th data-sort="community_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
+								<th>Contact Name</th>
+								<th>Email</th>
+								<th>Phone</th>
+								<th>Office Hours</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="contactsTbody">
+							<!-- Property contacts will be populated here -->
+						</tbody>
+					</table>
+				</div>
 			</div>
 
-			<div class="table-container">
-				<table id="specialsTable" class="data-table">
-					<thead>
-						<tr>
-							<th data-sort="property_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
-							<th>Current Special</th>
-							<th data-sort="commission_rate" class="sortable">Commission Rate <span class="sort-icon">↕</span></th>
-							<th data-sort="expiration_date" class="sortable">Expiration Date <span class="sort-icon">↕</span></th>
-							<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
-							<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody id="specialsTbody">
-						<!-- Specials will be populated here -->
-					</tbody>
-				</table>
+			<!-- Property Specials Section -->
+			<div class="properties-section" style="margin-top: 40px;">
+				<div class="section-header">
+					<h2>🔥 Property Specials</h2>
+					<button id="addSpecialBtn" class="btn btn-primary">+ Add Special</button>
+				</div>
+
+				<div class="table-actions">
+					<input id="specialsSearch" type="search" placeholder="Search property name or special" />
+				</div>
+
+				<div class="table-container">
+					<table id="specialsTable" class="data-table">
+						<thead>
+							<tr>
+								<th data-sort="property_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
+								<th>Current Special</th>
+								<th data-sort="commission_rate" class="sortable">Commission Rate <span class="sort-icon">↕</span></th>
+								<th data-sort="expiration_date" class="sortable">Expiration Date <span class="sort-icon">↕</span></th>
+								<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
+								<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="specialsTbody">
+							<!-- Specials will be populated here -->
+						</tbody>
+					</table>
+				</div>
 			</div>
 		</section>
+
+		<!-- Keep old specialsView ID for backward compatibility (redirect to propertiesView) -->
+		<section id="specialsView" class="route-view hidden"></section>
 
 		<!-- Route: #/documents -->
 		<section id="documentsView" class="route-view hidden">
@@ -1194,6 +1234,54 @@
 			<div class="modal-footer">
 				<button id="saveAddLeadBtn" class="btn btn-primary">Add Lead</button>
 				<button id="cancelAddLeadBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Add Property Contact Modal -->
+	<div id="addPropertyContactModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>📞 Add Property Contact Info</h3>
+				<button id="closeAddPropertyContactModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="addPropertyContactForm">
+					<div class="field">
+						<label for="contactPropertySelect">Property *</label>
+						<select id="contactPropertySelect" required>
+							<option value="">Select a property...</option>
+							<!-- Will be populated with properties -->
+						</select>
+						<small class="field-hint">Select the apartment complex (not individual units)</small>
+					</div>
+					<div class="field">
+						<label for="contactName">Contact Name</label>
+						<input type="text" id="contactName" placeholder="e.g., John Smith">
+					</div>
+					<div class="form-row">
+						<div class="field">
+							<label for="contactEmail">Contact Email</label>
+							<input type="email" id="contactEmail" placeholder="e.g., leasing@property.com">
+						</div>
+						<div class="field">
+							<label for="contactPhone">Contact Phone</label>
+							<input type="tel" id="contactPhone" placeholder="e.g., (210) 555-1234">
+						</div>
+					</div>
+					<div class="field">
+						<label for="contactOfficeHours">Office Hours</label>
+						<input type="text" id="contactOfficeHours" placeholder="e.g., Mon-Fri 9am-5pm, Sat 10am-2pm">
+					</div>
+					<div class="field">
+						<label for="contactNotes">Notes</label>
+						<textarea id="contactNotes" rows="3" placeholder="Any additional notes about contacting this property..."></textarea>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="savePropertyContactBtn" class="btn btn-primary">Save Contact Info</button>
+				<button id="cancelPropertyContactBtn" class="btn btn-secondary">Cancel</button>
 			</div>
 		</div>
 	</div>
