@@ -2257,8 +2257,60 @@ function createLeadTable(lead, isExpanded = false) {
 		document.getElementById('managerDocumentsView').classList.remove('hidden');
 		document.getElementById('agentDocumentsView').classList.add('hidden');
 
-		// Render progress table
-		renderProgressTable('documentsTbody', mockProgressLeads);
+		try {
+			// Fetch real leads from Supabase
+			const result = await SupabaseAPI.getLeads({
+				role: state.role,
+				agentId: state.agentId,
+				search: '',
+				sortKey: 'created_at',
+				sortDir: 'desc',
+				page: 1,
+				pageSize: 100,
+				filters: {}
+			});
+
+			// Transform leads to match the expected format
+			const transformedLeads = result.items.map(lead => ({
+				id: lead.id,
+				leadName: lead.name,
+				agentName: lead.agent_name || 'Unassigned',
+				agentEmail: lead.agent_email || '',
+				currentStep: lead.current_step || 1,
+				lastUpdated: lead.updated_at || lead.created_at,
+				status: lead.health_status === 'closed' ? 'completed' : 'current',
+				property: {
+					name: lead.property_name || 'Not selected',
+					address: lead.property_address || '',
+					rent: lead.property_rent || '',
+					bedrooms: lead.property_bedrooms || 0,
+					bathrooms: lead.property_bathrooms || 0
+				},
+				showcase: {
+					sent: lead.showcase_sent || false,
+					landingPageUrl: lead.showcase_url || '',
+					selections: lead.showcase_selections || [],
+					calendarDates: lead.showcase_dates || []
+				},
+				guestCard: {
+					sent: lead.guest_card_sent || false,
+					url: lead.guest_card_url || ''
+				},
+				lease: {
+					sent: lead.lease_sent || false,
+					signed: lead.lease_signed || false,
+					finalized: lead.lease_finalized || false,
+					property: lead.property_name || '',
+					apartment: lead.apartment_unit || ''
+				}
+			}));
+
+			// Render progress table with real data
+			renderProgressTable('documentsTbody', transformedLeads);
+		} catch (error) {
+			console.error('Error loading documents:', error);
+			toast('Error loading documents. Please try again.');
+		}
 	}
 
 	async function renderAgentDocuments(){
@@ -2266,9 +2318,60 @@ function createLeadTable(lead, isExpanded = false) {
 		document.getElementById('managerDocumentsView').classList.add('hidden');
 		document.getElementById('agentDocumentsView').classList.remove('hidden');
 
-		// Filter leads for agent view
-		const agentLeads = mockProgressLeads.filter(lead => lead.agentName === 'Alex Agent');
-		renderProgressTable('agentDocumentsTbody', agentLeads);
+		try {
+			// Fetch real leads from Supabase for current agent
+			const result = await SupabaseAPI.getLeads({
+				role: 'agent',
+				agentId: state.agentId,
+				search: '',
+				sortKey: 'created_at',
+				sortDir: 'desc',
+				page: 1,
+				pageSize: 100,
+				filters: {}
+			});
+
+			// Transform leads to match the expected format
+			const transformedLeads = result.items.map(lead => ({
+				id: lead.id,
+				leadName: lead.name,
+				agentName: lead.agent_name || 'Unassigned',
+				agentEmail: lead.agent_email || '',
+				currentStep: lead.current_step || 1,
+				lastUpdated: lead.updated_at || lead.created_at,
+				status: lead.health_status === 'closed' ? 'completed' : 'current',
+				property: {
+					name: lead.property_name || 'Not selected',
+					address: lead.property_address || '',
+					rent: lead.property_rent || '',
+					bedrooms: lead.property_bedrooms || 0,
+					bathrooms: lead.property_bathrooms || 0
+				},
+				showcase: {
+					sent: lead.showcase_sent || false,
+					landingPageUrl: lead.showcase_url || '',
+					selections: lead.showcase_selections || [],
+					calendarDates: lead.showcase_dates || []
+				},
+				guestCard: {
+					sent: lead.guest_card_sent || false,
+					url: lead.guest_card_url || ''
+				},
+				lease: {
+					sent: lead.lease_sent || false,
+					signed: lead.lease_signed || false,
+					finalized: lead.lease_finalized || false,
+					property: lead.property_name || '',
+					apartment: lead.apartment_unit || ''
+				}
+			}));
+
+			// Render progress table with real data
+			renderProgressTable('agentDocumentsTbody', transformedLeads);
+		} catch (error) {
+			console.error('Error loading agent documents:', error);
+			toast('Error loading documents. Please try again.');
+		}
 	}
 
 	// ---- Rendering: Specials Table ----
