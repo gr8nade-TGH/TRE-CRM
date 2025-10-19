@@ -140,134 +140,21 @@ export async function createLead(leadData) {
     return data;
 }
 
-export async function updateLead(id, leadData, performedBy = null, performedByName = null) {
+export async function updateLead(id, leadData) {
     const supabase = getSupabase();
-
-    // Get current lead data to compare changes
-    const { data: currentLead } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    // Update the lead
+    
     const { data, error } = await supabase
         .from('leads')
         .update(leadData)
         .eq('id', id)
         .select()
         .single();
-
+    
     if (error) {
         console.error('Error updating lead:', error);
         throw error;
     }
-
-    // Log activities for changes
-    try {
-        const activities = [];
-
-        // Check for agent assignment change
-        if (leadData.assigned_agent_id !== undefined &&
-            currentLead.assigned_agent_id !== leadData.assigned_agent_id) {
-
-            const isAssignment = leadData.assigned_agent_id !== null;
-            const activityType = isAssignment ? 'agent_assigned' : 'agent_unassigned';
-            const description = isAssignment
-                ? `Agent assigned: ${performedByName || 'Unknown'}`
-                : `Agent unassigned`;
-
-            activities.push(createLeadActivity({
-                lead_id: id,
-                activity_type: activityType,
-                description: description,
-                metadata: {
-                    previous_agent_id: currentLead.assigned_agent_id,
-                    new_agent_id: leadData.assigned_agent_id,
-                    changed_by: performedBy,
-                    changed_by_name: performedByName
-                },
-                performed_by: performedBy,
-                performed_by_name: performedByName
-            }));
-        }
-
-        // Check for health status change
-        if (leadData.health_status !== undefined &&
-            currentLead.health_status !== leadData.health_status) {
-
-            activities.push(createLeadActivity({
-                lead_id: id,
-                activity_type: 'health_status_changed',
-                description: `Health status changed from ${currentLead.health_status} to ${leadData.health_status}`,
-                metadata: {
-                    previous_status: currentLead.health_status,
-                    new_status: leadData.health_status,
-                    previous_score: currentLead.health_score,
-                    new_score: leadData.health_score,
-                    auto_calculated: leadData.auto_calculated || false
-                },
-                performed_by: performedBy || 'system',
-                performed_by_name: performedByName || 'Automated System'
-            }));
-        }
-
-        // Check for preferences update
-        if (leadData.preferences !== undefined &&
-            currentLead.preferences !== leadData.preferences) {
-
-            // Parse old and new preferences to detect changes
-            let oldPrefs = {};
-            let newPrefs = {};
-
-            try {
-                oldPrefs = typeof currentLead.preferences === 'string'
-                    ? JSON.parse(currentLead.preferences)
-                    : (currentLead.preferences || {});
-                newPrefs = typeof leadData.preferences === 'string'
-                    ? JSON.parse(leadData.preferences)
-                    : (leadData.preferences || {});
-            } catch (e) {
-                console.warn('Could not parse preferences for comparison');
-            }
-
-            // Detect specific changes
-            const changes = {};
-            const allKeys = new Set([...Object.keys(oldPrefs), ...Object.keys(newPrefs)]);
-
-            allKeys.forEach(key => {
-                if (JSON.stringify(oldPrefs[key]) !== JSON.stringify(newPrefs[key])) {
-                    changes[key] = {
-                        old: oldPrefs[key],
-                        new: newPrefs[key]
-                    };
-                }
-            });
-
-            if (Object.keys(changes).length > 0) {
-                activities.push(createLeadActivity({
-                    lead_id: id,
-                    activity_type: 'preferences_updated',
-                    description: 'Lead preferences updated',
-                    metadata: {
-                        changes: changes,
-                        updated_by: performedBy,
-                        updated_by_name: performedByName
-                    },
-                    performed_by: performedBy,
-                    performed_by_name: performedByName
-                }));
-            }
-        }
-
-        // Wait for all activities to be created
-        await Promise.all(activities);
-
-    } catch (activityError) {
-        console.error('⚠️ Failed to log update activity:', activityError);
-        // Don't throw - update was successful
-    }
-
+    
     return data;
 }
 
@@ -412,17 +299,9 @@ export async function createProperty(propertyData) {
     return data;
 }
 
-export async function updateProperty(id, propertyData, performedBy = null, performedByName = null) {
+export async function updateProperty(id, propertyData) {
     const supabase = getSupabase();
 
-    // Get current property data to compare changes
-    const { data: currentProperty } = await supabase
-        .from('properties')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-    // Update the property
     const { data, error } = await supabase
         .from('properties')
         .update(propertyData)
@@ -433,91 +312,6 @@ export async function updateProperty(id, propertyData, performedBy = null, perfo
     if (error) {
         console.error('Error updating property:', error);
         throw error;
-    }
-
-    // Log activities for changes
-    try {
-        const activities = [];
-        const changes = {};
-
-        // Track all field changes
-        const fieldsToTrack = [
-            'name', 'address', 'rent_range_min', 'rent_range_max',
-            'bedrooms', 'bathrooms', 'square_feet', 'amenities',
-            'description', 'contact_email', 'contact_phone'
-        ];
-
-        fieldsToTrack.forEach(field => {
-            if (propertyData[field] !== undefined &&
-                currentProperty[field] !== propertyData[field]) {
-                changes[field] = {
-                    old: currentProperty[field],
-                    new: propertyData[field]
-                };
-            }
-        });
-
-        // If there are general property changes, log them
-        if (Object.keys(changes).length > 0) {
-            activities.push(createPropertyActivity({
-                property_id: id,
-                activity_type: 'property_updated',
-                description: 'Property information updated',
-                metadata: {
-                    changes: changes,
-                    updated_by: performedBy,
-                    updated_by_name: performedByName,
-                    timestamp: new Date().toISOString()
-                },
-                performed_by: performedBy,
-                performed_by_name: performedByName
-            }));
-        }
-
-        // Check for availability change (special tracking)
-        if (propertyData.is_available !== undefined &&
-            currentProperty.is_available !== propertyData.is_available) {
-
-            activities.push(createPropertyActivity({
-                property_id: id,
-                activity_type: 'availability_changed',
-                description: `Property marked as ${propertyData.is_available ? 'available' : 'unavailable'}`,
-                metadata: {
-                    previous_status: currentProperty.is_available,
-                    new_status: propertyData.is_available,
-                    changed_by: performedBy,
-                    changed_by_name: performedByName
-                },
-                performed_by: performedBy,
-                performed_by_name: performedByName
-            }));
-        }
-
-        // Check for PUMI status change (special tracking)
-        if (propertyData.is_pumi !== undefined &&
-            currentProperty.is_pumi !== propertyData.is_pumi) {
-
-            activities.push(createPropertyActivity({
-                property_id: id,
-                activity_type: 'pumi_status_changed',
-                description: `PUMI status changed to ${propertyData.is_pumi ? 'Yes' : 'No'}`,
-                metadata: {
-                    previous_status: currentProperty.is_pumi,
-                    new_status: propertyData.is_pumi,
-                    changed_by: performedBy,
-                    changed_by_name: performedByName
-                },
-                performed_by: performedBy,
-                performed_by_name: performedByName
-            }));
-        }
-
-        // Wait for all activities to be created
-        await Promise.all(activities);
-
-    } catch (activityError) {
-        console.error('⚠️ Failed to log property update activity:', activityError);
-        // Don't throw - update was successful
     }
 
     return data;
@@ -660,135 +454,6 @@ export async function createLeadActivity(activityData) {
 
     console.log('✅ createLeadActivity returning:', data);
     return data;
-}
-
-/**
- * Inactivity Detection System
- * Checks for inactive leads and updates health status
- * Rules:
- * - 36 hours no activity → Yellow (if currently Green)
- * - 72 hours no activity → Red (if currently Yellow or Green)
- */
-export async function detectInactiveLeads() {
-    console.log('🔍 Starting inactivity detection...');
-    const supabase = getSupabase();
-
-    const now = new Date();
-    const thirtyNineSixHoursAgo = new Date(now.getTime() - 36 * 60 * 60 * 1000);
-    const seventyTwoHoursAgo = new Date(now.getTime() - 72 * 60 * 60 * 1000);
-
-    try {
-        // Get all active leads (not closed or lost)
-        const { data: leads, error: leadsError } = await supabase
-            .from('leads')
-            .select('id, health_status, health_score, last_activity_at, name, email')
-            .not('health_status', 'in', '("closed","lost")');
-
-        if (leadsError) {
-            console.error('❌ Error fetching leads:', leadsError);
-            throw leadsError;
-        }
-
-        console.log(`📊 Checking ${leads.length} active leads for inactivity...`);
-
-        const updates = [];
-
-        for (const lead of leads) {
-            const lastActivity = lead.last_activity_at ? new Date(lead.last_activity_at) : new Date(0);
-            const hoursSinceActivity = (now - lastActivity) / (1000 * 60 * 60);
-
-            // Get the last activity to check if it was an inactivity_detected event
-            const { data: lastActivityRecord } = await supabase
-                .from('lead_activities')
-                .select('activity_type, created_at')
-                .eq('lead_id', lead.id)
-                .order('created_at', { ascending: false })
-                .limit(1)
-                .single();
-
-            // Skip if last activity was an inactivity_detected event (don't count those)
-            const lastRealActivity = lastActivityRecord?.activity_type === 'inactivity_detected'
-                ? new Date(lastActivityRecord.created_at)
-                : lastActivity;
-
-            const hoursSinceRealActivity = (now - lastRealActivity) / (1000 * 60 * 60);
-
-            // Rule 1: 72+ hours → Red
-            if (hoursSinceRealActivity >= 72 && lead.health_status !== 'red') {
-                console.log(`🚨 Lead ${lead.id} (${lead.name}) - ${hoursSinceRealActivity.toFixed(1)}h inactive → RED`);
-
-                updates.push(
-                    // Create inactivity activity
-                    createLeadActivity({
-                        lead_id: lead.id,
-                        activity_type: 'inactivity_detected',
-                        description: 'No activity detected in past 72 hours - Critical',
-                        metadata: {
-                            hours_since_last_activity: Math.floor(hoursSinceRealActivity),
-                            last_activity_date: lastRealActivity.toISOString(),
-                            previous_health_status: lead.health_status,
-                            new_health_status: 'red',
-                            severity: 'critical'
-                        },
-                        performed_by: 'system',
-                        performed_by_name: 'Automated Inactivity Detection'
-                    }),
-                    // Update lead health status
-                    updateLead(lead.id, {
-                        health_status: 'red',
-                        health_score: Math.max(0, (lead.health_score || 100) - 30),
-                        health_updated_at: now.toISOString(),
-                        auto_calculated: true
-                    }, 'system', 'Automated System')
-                );
-            }
-            // Rule 2: 36+ hours → Yellow (only if currently green)
-            else if (hoursSinceRealActivity >= 36 && lead.health_status === 'green') {
-                console.log(`⚠️ Lead ${lead.id} (${lead.name}) - ${hoursSinceRealActivity.toFixed(1)}h inactive → YELLOW`);
-
-                updates.push(
-                    // Create inactivity activity
-                    createLeadActivity({
-                        lead_id: lead.id,
-                        activity_type: 'inactivity_detected',
-                        description: 'No activity detected in past 36 hours - Needs attention',
-                        metadata: {
-                            hours_since_last_activity: Math.floor(hoursSinceRealActivity),
-                            last_activity_date: lastRealActivity.toISOString(),
-                            previous_health_status: lead.health_status,
-                            new_health_status: 'yellow',
-                            severity: 'warning'
-                        },
-                        performed_by: 'system',
-                        performed_by_name: 'Automated Inactivity Detection'
-                    }),
-                    // Update lead health status
-                    updateLead(lead.id, {
-                        health_status: 'yellow',
-                        health_score: Math.max(0, (lead.health_score || 100) - 15),
-                        health_updated_at: now.toISOString(),
-                        auto_calculated: true
-                    }, 'system', 'Automated System')
-                );
-            }
-        }
-
-        // Execute all updates
-        await Promise.all(updates);
-
-        console.log(`✅ Inactivity detection complete. Processed ${updates.length / 2} leads.`);
-
-        return {
-            success: true,
-            total_leads_checked: leads.length,
-            leads_updated: updates.length / 2,
-            timestamp: now.toISOString()
-        };
-
-    } catch (error) {
-        console.error('❌ Error in inactivity detection:', error);
-        throw error;
-    }
 }
 
 /**

@@ -1060,10 +1060,17 @@ async function deleteSpecialAPI(specialId) {
 			if (!USE_MOCK_DATA) {
 				// Use real Supabase data
 				console.log('✅ Using Supabase to assign lead');
+
+				// Get current user info for activity logging
+				const userEmail = window.currentUser?.email || 'unknown';
+				const userName = window.currentUser?.user_metadata?.name ||
+								 window.currentUser?.email ||
+								 'Unknown User';
+
 				return await SupabaseAPI.updateLead(id, {
 					assigned_agent_id: agent_id,
 					updated_at: new Date().toISOString()
-				});
+				}, userEmail, userName);
 			}
 
 			const response = await fetch(`${API_BASE}/leads/${id}/assign`, {
@@ -4491,9 +4498,15 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 		try {
 			console.log('Marking listings as unavailable:', selectedIds);
 
+			// Get current user info for activity logging
+			const userEmail = window.currentUser?.email || 'unknown';
+			const userName = window.currentUser?.user_metadata?.name ||
+							 window.currentUser?.email ||
+							 'Unknown User';
+
 			// Update each property to set is_available = false
 			for (const id of selectedIds) {
-				await SupabaseAPI.updateProperty(id, { is_available: false });
+				await SupabaseAPI.updateProperty(id, { is_available: false }, userEmail, userName);
 			}
 
 			// Show success message
@@ -6226,8 +6239,14 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 
 			console.log('Saving listing with data:', formData);
 
+			// Get current user info for activity logging
+			const userEmail = window.currentUser?.email || 'unknown';
+			const userName = window.currentUser?.user_metadata?.name ||
+							 window.currentUser?.email ||
+							 'Unknown User';
+
 			// Update in Supabase
-			await SupabaseAPI.updateProperty(property.id, formData);
+			await SupabaseAPI.updateProperty(property.id, formData, userEmail, userName);
 
 			// Show success message
 			toast(`Listing "${formData.community_name}" updated successfully!`, 'success');
@@ -6718,3 +6737,31 @@ async function deleteUser(userId) {
 }
 
 // formatDate is already globally accessible
+
+// ============================================================================
+// INACTIVITY DETECTION - Manual Trigger for Testing
+// ============================================================================
+// This function can be called manually from the console or via a button
+// In production, this should be run as a scheduled job (e.g., hourly via cron)
+window.runInactivityDetection = async function() {
+	console.log('🔍 Manually triggering inactivity detection...');
+	try {
+		const result = await SupabaseAPI.detectInactiveLeads();
+		console.log('✅ Inactivity detection complete:', result);
+		toast(`Inactivity check complete: ${result.leads_updated} leads updated`, 'success');
+
+		// Refresh leads display if on leads page
+		if (state.currentPage === 'leads') {
+			await renderLeads();
+		}
+
+		return result;
+	} catch (error) {
+		console.error('❌ Error running inactivity detection:', error);
+		toast('Error running inactivity detection', 'error');
+		throw error;
+	}
+};
+
+// Expose for debugging
+console.log('💡 TIP: Run window.runInactivityDetection() to manually check for inactive leads');
