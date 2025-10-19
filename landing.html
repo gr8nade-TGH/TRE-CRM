@@ -950,7 +950,7 @@
 				name: formData.get('name'),
 				phone: formData.get('phone'),
 				email: formData.get('email'),
-				preferences: JSON.stringify(preferences),
+				preferences: preferences, // Send as object, not string - Supabase JSONB will handle it
 				source: 'landing_page',
 				assigned_agent_id: currentAgent.id, // Use agent's ID (UUID), not email
 				found_by_agent_id: currentAgent.id, // Use agent's ID (UUID), not email
