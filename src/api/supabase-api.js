@@ -598,30 +598,6 @@ export async function logPropertyActivity(activityData) {
     return data;
 }
 
-export async function getPropertyActivities(propertyId) {
-    const supabase = getSupabase();
-
-    const { data, error } = await supabase
-        .from('property_activities')
-        .select(`
-            *,
-            user:performed_by (
-                id,
-                name,
-                email
-            )
-        `)
-        .eq('property_id', propertyId)
-        .order('created_at', { ascending: false });
-
-    if (error) {
-        console.error('Error fetching property activities:', error);
-        throw error;
-    }
-
-    return data;
-}
-
 export async function deleteProperty(id) {
     const supabase = getSupabase();
 
