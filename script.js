@@ -18,13 +18,13 @@ import {
 	state
 } from './src/state/state.js';
 
-// Import mock data (TEMPORARY - will be removed in Phase 4)
+// Import mock data (TEMPORARY - will be removed when Supabase APIs are complete)
 // Note: mockAgents removed - now using real agents from Supabase users table
+// Note: mockLeads removed - now using state.leads from Supabase
+// Note: mockSpecials removed - now using real specials from Supabase
 import {
-	mockLeads,
+	mockProperties, // Still used for showcases - TODO: replace with Supabase
 	mockInterestedLeads,
-	mockProperties,
-	mockSpecials,
 	mockBugs,
 	mockDocumentStatuses,
 	mockClosedLeads,
@@ -877,8 +877,9 @@ async function deleteSpecialAPI(specialId) {
 
 	// ---- Agent Statistics ----
 	function getAgentStats(agentId) {
-		const assignedLeads = mockLeads.filter(l => l.assigned_agent_id === agentId);
-		const generatedLeads = mockLeads.filter(l => l.found_by_agent_id === agentId);
+		const leads = state.leads || [];
+		const assignedLeads = leads.filter(l => l.assigned_agent_id === agentId);
+		const generatedLeads = leads.filter(l => l.found_by_agent_id === agentId);
 		const now = new Date();
 		const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
 
@@ -1984,7 +1985,8 @@ function createLeadTable(lead, isExpanded = false) {
 		tbody.innerHTML = '';
 
 		// Get all active leads with their agent info
-		let activeLeads = mockLeads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
+		const leads = state.leads || [];
+		let activeLeads = leads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
 
 		// Apply search filter
 		if (searchTerm.trim()) {
@@ -2042,7 +2044,8 @@ function createLeadTable(lead, isExpanded = false) {
 		agentLeadsList.innerHTML = '';
 
 		// Get current agent's leads
-		const agentLeads = mockLeads.filter(l => l.assigned_agent_id === state.agentId);
+		const leads = state.leads || [];
+		const agentLeads = leads.filter(l => l.assigned_agent_id === state.agentId);
 
 		agentLeads.forEach(lead => {
 			const progress = getDocumentProgress(lead.id);
@@ -2643,7 +2646,7 @@ function createLeadTable(lead, isExpanded = false) {
 	// ---- Document Modals ----
 	function openDocumentDetails(leadId) {
 		Modals.openDocumentDetails(leadId, {
-			mockLeads,
+			mockLeads: state.leads || [],
 			mockDocumentStatuses,
 			renderDocumentSteps,
 			toast,
@@ -2832,7 +2835,7 @@ function createLeadTable(lead, isExpanded = false) {
 	async function openBuildShowcaseModal(){
 		await Modals.openBuildShowcaseModal({
 			state,
-			mockLeads,
+			mockLeads: state.leads || [],
 			getSelectedListings,
 			toast,
 			show
@@ -2846,6 +2849,7 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	function getSelectedListings(){
+		// Note: mockProperties still used for showcases - will be replaced with Supabase later
 		return Modals.getSelectedListings({
 			mockProperties
 		});
@@ -2893,7 +2897,8 @@ function createLeadTable(lead, isExpanded = false) {
 			return;
 		}
 
-		const lead = mockLeads.find(l => l.id === leadId);
+		const leads = state.leads || [];
+		const lead = leads.find(l => l.id === leadId);
 		if (!lead) {
 			toast('Lead not found', 'error');
 			return;
@@ -2989,7 +2994,8 @@ function createLeadTable(lead, isExpanded = false) {
 
 	function renderPublicShowcaseHTML({ showcaseId }){
 		const sc = state.showcases[showcaseId];
-		const lead = mockLeads.find(l => l.id === sc.lead_id);
+		const leads = state.leads || [];
+		const lead = leads.find(l => l.id === sc.lead_id);
 		const agent = realAgents.find(a => a.id === sc.agent_id);
 		const listings = sc.listing_ids.map(id => mockProperties.find(p => p.id === id));
 		const items = listings.map(item => `
@@ -3557,7 +3563,8 @@ function createLeadTable(lead, isExpanded = false) {
 				const sendBtn = document.getElementById('sendBuildShowcase');
 
 				if (leadId) {
-					const lead = mockLeads.find(l => l.id === leadId);
+					const leads = state.leads || [];
+					const lead = leads.find(l => l.id === leadId);
 					if (lead) {
 						leadNameEl.textContent = lead.name;
 						// Enable button since properties are already selected
@@ -4526,15 +4533,8 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// Initialize health status for all leads
-	function initializeHealthStatus() {
-		mockLeads.forEach(lead => {
-			const calculatedStatus = calculateHealthStatus(lead);
-			lead.health_status = calculatedStatus;
-			lead.health_updated_at = new Date().toISOString();
-		});
-		console.log('Health status initialized for all leads');
-	}
+	// initializeHealthStatus removed - was using mockLeads
+	// Health status is now calculated from real Supabase data
 
 	// Initialize health status when page loads
 	document.addEventListener('DOMContentLoaded', () => {
