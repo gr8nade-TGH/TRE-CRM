@@ -1,7 +1,7 @@
 // Lead Health Utilities
 // Functions for tracking lead health status and step progression
 
-import SupabaseAPI from '../api/supabase-api.js';
+import { getLeadActivities } from '../api/supabase-api.js';
 
 /**
  * Get current step from lead activities
@@ -10,7 +10,7 @@ import SupabaseAPI from '../api/supabase-api.js';
  */
 export async function getCurrentStepFromActivities(leadId) {
 	try {
-		const activities = await SupabaseAPI.getLeadActivities(leadId);
+		const activities = await getLeadActivities(leadId);
 
 		// Map activity types to step numbers
 		const stepMapping = {
