@@ -47,6 +47,9 @@ import * as Agents from './src/modules/agents/index.js';
 // Import Documents module
 import * as Documents from './src/modules/documents/index.js';
 
+// Import Admin module
+import * as Admin from './src/modules/admin/index.js';
+
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
@@ -6380,398 +6383,96 @@ let realUsers = [];
 let realAuditLog = [];
 
 // API functions for real data
+// ---- Admin Module Wrappers ----
 async function loadUsers() {
-	try {
-		console.log('Loading users from Supabase...');
-
-		// Call our serverless function to list users
-		const response = await fetch('/api/list-users');
-
-		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.error || 'Failed to fetch users');
-		}
-
-		const result = await response.json();
-		realUsers = result.users || [];
-		console.log('✅ Loaded users from Supabase:', realUsers.length);
-		renderUsersTable();
-	} catch (error) {
-		console.error('Error loading users:', error);
-		// Fall back to mock data on error
-		realUsers = [];
-		renderUsersTable();
-	}
+	await Admin.loadUsers({
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		renderUsersTable
+	});
 }
 
 async function loadAuditLog() {
-	// Check if we're running locally or on production
-	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-		? 'http://localhost:3001/api'
-		: null;
-
-	if (!apiBase) {
-		console.log('API_BASE not available, using mock data');
-		realAuditLog = [];
-		renderAuditLog();
-		return;
-	}
-
-	try {
-		const response = await fetch(`${apiBase}/audit-log`);
-		if (!response.ok) throw new Error('Failed to fetch audit log');
-		realAuditLog = await response.json();
-		console.log('Loaded audit log from API:', realAuditLog.length);
-		renderAuditLog();
-	} catch (error) {
-		console.error('Error loading audit log:', error);
-		throw error;
-	}
+	await Admin.loadAuditLog({
+		realAuditLog: { get value() { return realAuditLog; }, set value(v) { realAuditLog = v; } },
+		renderAuditLog
+	});
 }
 
 async function createUser(userData) {
-	try {
-		console.log('Creating user with Supabase:', userData);
-
-		// Call our serverless function to create the user
-		// This uses the service role key on the backend
-		const response = await fetch('/api/create-user', {
-			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
-			body: JSON.stringify({
-				email: userData.email,
-				password: userData.password,
-				name: userData.name,
-				role: userData.role
-			})
-		});
-
-		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.error || 'Failed to create user');
-		}
-
-		const result = await response.json();
-		console.log('✅ User created successfully:', result.user);
-
-		// Reload users from Supabase to refresh the table
-		await loadUsers();
-
-		return result.user;
-	} catch (error) {
-		console.error('Error creating user:', error);
-		throw error;
-	}
+	return await Admin.createUser(userData, {
+		loadUsers
+	});
 }
 
 async function updateUser(userId, userData) {
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
-
-		const response = await fetch(`${apiBase}/users/${userId}`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				...userData,
-				updatedBy: 'system' // In production, get from auth token
-			})
-		});
-		if (!response.ok) throw new Error('Failed to update user');
-		const updatedUser = await response.json();
-		const index = realUsers.findIndex(u => u.id === userId);
-		if (index !== -1) realUsers[index] = updatedUser;
-		renderUsersTable();
-		return updatedUser;
-	} catch (error) {
-		console.error('Error updating user:', error);
-		throw error;
-	}
+	return await Admin.updateUser(userId, userData, {
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		renderUsersTable
+	});
 }
 
 async function deleteUserFromAPI(userId) {
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
-
-		const response = await fetch(`${apiBase}/users/${userId}`, {
-			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				deletedBy: 'system' // In production, get from auth token
-			})
-		});
-		if (!response.ok) throw new Error('Failed to delete user');
-		realUsers = realUsers.filter(u => u.id !== userId);
-		renderUsersTable();
-		await loadAuditLog(); // Refresh audit log
-	} catch (error) {
-		console.error('Error deleting user:', error);
-		throw error;
-	}
+	await Admin.deleteUserFromAPI(userId, {
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		renderUsersTable,
+		loadAuditLog
+	});
 }
 
 async function changeUserPassword(userId, newPassword) {
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
-
-		const response = await fetch(`${apiBase}/users/${userId}/password`, {
-			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				newPassword,
-				updatedBy: 'system' // In production, get from auth token
-			})
-		});
-		if (!response.ok) throw new Error('Failed to change password');
-		await loadAuditLog(); // Refresh audit log
-	} catch (error) {
-		console.error('Error changing password:', error);
-		throw error;
-	}
+	await Admin.changeUserPassword(userId, newPassword, {
+		loadAuditLog
+	});
 }
 
 async function renderAdmin() {
-	const currentRole = window.state?.role || 'manager';
-	const adminRoleLabel = document.getElementById('adminRoleLabel');
-
-	if (adminRoleLabel) {
-		adminRoleLabel.textContent = `Role: ${currentRole.charAt(0).toUpperCase() + currentRole.slice(1)}`;
-	}
-
-	// Load real data from API
-	try {
-		await loadUsers();
-		await loadAuditLog();
-	} catch (error) {
-		console.error('Error loading admin data:', error);
-		// Fallback to mock data for demo
-		console.log('Using mock data for admin page');
-	}
-
-	// Always render the table (either with real data or mock data)
-	renderUsersTable();
-	renderAuditLog();
+	await Admin.renderAdmin({
+		loadUsers,
+		loadAuditLog,
+		renderUsersTable,
+		renderAuditLog
+	});
 }
 
 function renderUsersTable() {
-	console.log('renderUsersTable called, realUsers:', realUsers?.length || 0);
-	const tbody = document.getElementById('usersTbody');
-	if (!tbody) {
-		console.log('usersTbody not found');
-		return;
-	}
-
-	// Use real users from Supabase (no mock data fallback)
-	const users = realUsers.length > 0 ? [...realUsers] : [];
-	console.log('Users to render:', users.length);
-
-	// Apply sorting if active
-	const currentState = window.state || { sort: { key: null, dir: null } };
-	console.log('renderUsersTable - currentState.sort:', currentState.sort);
-	if (currentState.sort.key && currentState.sort.dir && currentState.sort.dir !== 'none') {
-		console.log('Applying sorting to users, key:', currentState.sort.key, 'dir:', currentState.sort.dir);
-		try {
-			users.sort((a, b) => {
-				let aVal, bVal;
-
-				if (currentState.sort.key === 'name') {
-					aVal = (a.name || '').toLowerCase();
-					bVal = (b.name || '').toLowerCase();
-				} else if (currentState.sort.key === 'role') {
-					aVal = a.role || '';
-					bVal = b.role || '';
-				} else if (currentState.sort.key === 'status') {
-					aVal = a.status || '';
-					bVal = b.status || '';
-				} else if (currentState.sort.key === 'created_at') {
-					aVal = new Date(a.created_at || 0);
-					bVal = new Date(b.created_at || 0);
-				} else {
-					return 0;
-				}
-
-				// Handle date sorting
-				if (currentState.sort.key === 'created_at') {
-					return currentState.sort.dir === 'asc' ? aVal - bVal : bVal - aVal;
-				} else {
-					// Text sorting
-					if (currentState.sort.dir === 'asc') {
-						return aVal.localeCompare(bVal);
-					} else {
-						return bVal.localeCompare(aVal);
-					}
-				}
-			});
-		} catch (error) {
-			console.error('Error sorting users:', error);
-		}
-	}
-
-	tbody.innerHTML = users.map(user => {
-		const createdBy = user.created_by === 'system' ? 'System' :
-			users.find(u => u.id === user.created_by)?.name || 'Unknown';
-
-		return `
-			<tr>
-				<td data-sort="${user.name}">${user.name}</td>
-				<td data-sort="${user.email}">${user.email}</td>
-				<td data-sort="${user.role}">
-					<span class="role-badge role-${user.role}">${user.role.replace('_', ' ')}</span>
-				</td>
-				<td data-sort="${user.status}">
-					<span class="user-status ${user.status}">${user.status}</span>
-				</td>
-				<td data-sort="${user.created_at}">${formatDate(user.created_at)}</td>
-				<td>
-					<div class="user-actions">
-						<button class="btn btn-secondary btn-small" onclick="editUser('${user.id}')">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
-							</svg>
-							Edit
-						</button>
-						<button class="btn btn-secondary btn-small" onclick="changePassword('${user.id}')">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/>
-							</svg>
-							Password
-						</button>
-						<button class="btn btn-danger btn-small" onclick="deleteUser('${user.id}')">
-							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
-							</svg>
-							Delete
-						</button>
-					</div>
-				</td>
-			</tr>
-		`;
-	}).join('');
-
-	// Update sort headers
-	updateSortHeaders('usersTable');
+	Admin.renderUsersTable({
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		state: window.state,
+		formatDate,
+		updateSortHeaders
+	});
 }
 
 function renderAuditLog() {
-	const auditLog = document.getElementById('auditLog');
-	if (!auditLog) return;
-
-	// Use real audit log from Supabase (no mock data fallback)
-	const logs = realAuditLog.length > 0 ? realAuditLog : [];
-	auditLog.innerHTML = logs.map(entry => {
-		const actionIcons = {
-			user_created: '👤',
-			user_updated: '✏️',
-			user_deleted: '🗑️',
-			role_changed: '🔄',
-			password_changed: '🔐'
-		};
-
-		return `
-			<div class="audit-entry">
-				<div class="audit-icon ${entry.action}">
-					${actionIcons[entry.action] || '📝'}
-				</div>
-				<div class="audit-content">
-					<div class="audit-action">${entry.details}</div>
-					<div class="audit-details">
-						User: ${entry.user_name} (${entry.user_email}) |
-						By: ${entry.performed_by_name}
-					</div>
-				</div>
-				<div class="audit-timestamp">${formatDate(entry.timestamp)}</div>
-			</div>
-		`;
-	}).join('');
+	Admin.renderAuditLog({
+		realAuditLog: { get value() { return realAuditLog; }, set value(v) { realAuditLog = v; } },
+		formatDate
+	});
 }
 
 function editUser(userId) {
-	console.log('editUser called with:', userId);
-	// Use real users from Supabase (no mock data fallback)
-	const users = realUsers.length > 0 ? realUsers : [];
-	const user = users.find(u => u.id === userId);
-	if (!user) {
-		console.log('User not found:', userId);
-		return;
-	}
-
-	document.getElementById('userModalTitle').textContent = 'Edit User';
-	document.getElementById('userName').value = user.name;
-	document.getElementById('userEmail').value = user.email;
-	document.getElementById('userRole').value = user.role.toLowerCase();
-	document.getElementById('userPassword').value = '';
-	document.getElementById('userConfirmPassword').value = '';
-	document.getElementById('userPassword').required = false;
-	document.getElementById('userConfirmPassword').required = false;
-
-	// Store user ID for update
-	document.getElementById('userModal').setAttribute('data-user-id', userId);
-
-	showModal('userModal');
+	Admin.editUser(userId, {
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		showModal
+	});
 }
 
 function changePassword(userId) {
-	console.log('changePassword called with:', userId);
-	// Use real users from Supabase (no mock data fallback)
-	const users = realUsers.length > 0 ? realUsers : [];
-	const user = users.find(u => u.id === userId);
-	if (!user) {
-		console.log('User not found for password change:', userId);
-		return;
-	}
-
-	document.getElementById('passwordModal').setAttribute('data-user-id', userId);
-	showModal('passwordModal');
+	Admin.changePassword(userId, {
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		showModal
+	});
 }
 
 async function deleteUser(userId) {
-	console.log('deleteUser called with:', userId);
-	// Use real users from Supabase (no mock data fallback)
-	const users = realUsers.length > 0 ? realUsers : [];
-	const user = users.find(u => u.id === userId);
-	if (!user) {
-		console.log('User not found for deletion:', userId);
-		return;
-	}
-
-	if (confirm(`Are you sure you want to delete ${user.name}? This action cannot be undone.`)) {
-		try {
-			if (realUsers.length > 0) {
-				// Use real API
-				await deleteUserFromAPI(userId);
-				toast('User deleted successfully');
-			} else {
-				// Fallback to mock data
-				const userIndex = users.findIndex(u => u.id === userId);
-				if (userIndex > -1) {
-					users.splice(userIndex, 1);
-
-					// Note: Audit log functionality removed for mock users
-					// Real audit log is handled by Supabase
-
-					renderUsersTable();
-					renderAuditLog();
-					toast('User deleted successfully');
-				}
-			}
-	} catch (error) {
-		console.error('Error deleting user:', error);
-		toast('Error deleting user', 'error');
-	}
-	}
+	await Admin.deleteUser(userId, {
+		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
+		deleteUserFromAPI,
+		renderUsersTable,
+		renderAuditLog,
+		toast
+	});
 }
-
-// formatDate is already globally accessible
 
 // ============================================================================
 // INACTIVITY DETECTION - Manual Trigger for Testing
