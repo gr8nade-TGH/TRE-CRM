@@ -3195,123 +3195,41 @@ function createLeadTable(lead, isExpanded = false) {
 
 	// ---- Matches Modal ----
 	async function openMatches(leadId){
-		state.selectedLeadId = leadId;
-		state.selectedMatches = new Set();
-		const lead = await api.getLead(leadId);
-		const grid = document.getElementById('listingsGrid');
-		const list = await api.getMatches(leadId, 10);
-		state.currentMatches = list;
-
-		// Update modal title and send button
-		document.getElementById('leadNameTitle2').textContent = lead.name;
-		document.getElementById('sendLeadName').textContent = lead.name;
-
-		grid.innerHTML = '';
-		list.forEach(item => {
-			const card = document.createElement('article');
-			card.className = 'listing-card';
-			card.innerHTML = `
-				<div class="listing-image">
-					<img src="${item.image_url}" alt="${item.name}" loading="lazy">
-					<div class="listing-badge">${item.effective_commission_pct}% Commission</div>
-				</div>
-				<div class="listing-content">
-					<div class="listing-header">
-						<h3 class="listing-name">${item.name}</h3>
-						<div class="listing-rating">
-							<span class="stars">★★★★☆</span>
-							<span class="rating-text">4.2</span>
-						</div>
-					</div>
-					<div class="listing-price">
-						<div class="price-amount">$${item.rent_min.toLocaleString()} - $${item.rent_max.toLocaleString()}/mo</div>
-						<div class="listing-specs">${item.beds_min}-${item.beds_max} bd • ${item.baths_min}-${item.baths_max} ba • ${item.sqft_min.toLocaleString()}-${item.sqft_max.toLocaleString()} sqft</div>
-					</div>
-					<div class="listing-features">
-						<div class="feature-tag">${item.specials_text}</div>
-						<div class="feature-tag secondary">${item.bonus_text}</div>
-					</div>
-					<div class="listing-footer">
-						<label class="listing-checkbox">
-							<input type="checkbox" class="listing-check" data-id="${item.id}">
-							<span class="checkmark"></span>
-							<span class="checkbox-text">Select Property</span>
-						</label>
-						<div class="listing-actions">
-							<button class="listing-action-btn" title="View more details">
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-									<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
-								</svg>
-							</button>
-						</div>
-					</div>
-				</div>
-			`;
-			grid.appendChild(card);
+		await Modals.openMatches(leadId, {
+			state,
+			api,
+			show,
+			updateSelectionSummary
 		});
-		updateSelectionSummary();
-		show(document.getElementById('matchesModal'));
 	}
-	function closeMatches(){ hide(document.getElementById('matchesModal')); }
+
+	function closeMatches(){
+		Modals.closeMatches({
+			hide
+		});
+	}
 
 	// ---- Email Preview Modal ----
 	async function openEmailPreview(){
-		const lead = await api.getLead(state.selectedLeadId);
-		const selectedProperties = state.currentMatches.filter(prop =>
-			state.selectedMatches.has(prop.id)
-		);
-
-		// Update email content
-		document.getElementById('previewLeadName').textContent = lead.name;
-		document.getElementById('previewAgentEmail').textContent = 'agent@trecrm.com';
-		document.getElementById('agentEmail').textContent = 'agent@trecrm.com';
-		document.getElementById('emailRecipient').textContent = `To: ${lead.email}`;
-		document.getElementById('previewAgentName').textContent = 'Your Agent';
-
-		// Render selected properties
-		const propertiesGrid = document.getElementById('previewProperties');
-		propertiesGrid.innerHTML = '';
-
-		selectedProperties.forEach(property => {
-			const card = document.createElement('div');
-			card.className = 'preview-property-card';
-			card.innerHTML = `
-				<div class="preview-property-image">
-					<img src="${property.image_url}" alt="${property.name}" loading="lazy">
-				</div>
-				<div class="preview-property-content">
-					<div class="preview-property-name">${property.name}</div>
-					<div class="preview-property-price">$${property.rent_min.toLocaleString()} - $${property.rent_max.toLocaleString()}/mo</div>
-					<div class="preview-property-specs">${property.beds_min}-${property.beds_max} bd • ${property.baths_min}-${property.baths_max} ba</div>
-				</div>
-			`;
-			propertiesGrid.appendChild(card);
+		await Modals.openEmailPreview({
+			state,
+			api,
+			closeMatches,
+			show
 		});
-
-		// Close matches modal and open email preview
-		closeMatches();
-		show(document.getElementById('emailPreviewModal'));
 	}
 
 	function closeEmailPreview(){
-		hide(document.getElementById('emailPreviewModal'));
+		Modals.closeEmailPreview({
+			hide
+		});
 	}
 
 	function previewLandingPage() {
-		// Get the selected properties from the current showcase
-		const selectedProperties = Array.from(state.selectedMatches);
-		const propertyIds = selectedProperties.join(',');
-
-		// Get current agent name (in real app, this would come from user data)
-		const agentName = 'John Smith'; // This would be dynamic in production
-
-		// Create a preview URL with sample data
-		const previewUrl = `landing.html?showcase=preview_${Date.now()}&lead=sample_lead&agent=${encodeURIComponent(agentName)}&properties=${propertyIds}`;
-
-		// Open in a new tab
-		window.open(previewUrl, '_blank');
-
-		toast('Opening landing page preview in new tab...');
+		Modals.previewLandingPage({
+			state,
+			toast
+		});
 	}
 
 	// ---- Interested Leads Modal ----
@@ -3389,197 +3307,62 @@ function createLeadTable(lead, isExpanded = false) {
 	// Global functions will be assigned at the end of the file
 
 	async function sendShowcaseEmail(){
-		const lead = await api.getLead(state.selectedLeadId);
-		const selectedProperties = state.currentMatches.filter(prop =>
-			state.selectedMatches.has(prop.id)
-		);
-		const includeReferralBonus = document.getElementById('referralBonus').checked;
-		const includeMovingBonus = document.getElementById('movingBonus').checked;
-
-		// Generate unique showcase ID for tracking
-		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-		// Create landing page URL with tracking parameters
-		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
-		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${Array.from(state.selectedMatches).join(',')}`;
-
-		// Create bonus perks text
-		let bonusPerks = '';
-		if (includeReferralBonus || includeMovingBonus) {
-			bonusPerks = '<ul style="margin: 20px 0; padding-left: 0; list-style: none;">';
-			if (includeReferralBonus) {
-				bonusPerks += '<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🎁 <strong>Referral bonus</strong> for recommending friends</li>';
-			}
-			if (includeMovingBonus) {
-				bonusPerks += '<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🚚 <strong>Moving bonus</strong> to help with relocation costs</li>';
-			}
-			bonusPerks += '</ul>';
-		}
-
-		// Create email content
-		const emailContent = {
-			to: lead.email,
-			subject: 'Top options hand picked for you',
-			html: `
-				<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-					<div style="text-align: center; padding: 20px; background: #f8fafc;">
-						<h1 style="color: #1e293b; margin-bottom: 10px;">🏠 Your Perfect Home Awaits</h1>
-						<p style="color: #64748b; font-size: 18px;">Hand-picked properties just for you by our expert team</p>
-					</div>
-
-					<div style="padding: 30px;">
-						<p style="font-size: 16px; color: #374151; margin-bottom: 20px;">Hi ${lead.name},</p>
-
-						<p style="font-size: 16px; color: #374151; margin-bottom: 20px;">We have some great fits for you! Go through me and you'll get these perks:</p>
-
-						<ul style="margin: 20px 0; padding-left: 0; list-style: none;">
-							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🎯 <strong>Exclusive access</strong> to properties before they hit the market</li>
-							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">💰 <strong>Better pricing</strong> through our direct relationships</li>
-							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">⚡ <strong>Priority scheduling</strong> for property tours</li>
-							<li style="margin-bottom: 10px; font-size: 14px; color: #4b5563;">🛡️ <strong>Expert guidance</strong> throughout your search</li>
-						</ul>
-
-						${bonusPerks}
-
-						<p style="font-size: 16px; color: #374151; margin-bottom: 30px;">Here's a list of options based on what you're looking for. Click which ones you're interested in and hit submit, and then we'll schedule you to go take a look at them!</p>
-
-						<div style="text-align: center; margin: 30px 0;">
-							<a href="${landingUrl}" style="background: #3b82f6; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: 600; display: inline-block; font-size: 16px;">View Your Personalized Property Matches</a>
-						</div>
-
-						<div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #e5e7eb; color: #4b5563; font-size: 14px;">
-							<p>Best regards,<br>Your Agent<br>TRE CRM Team</p>
-						</div>
-					</div>
-				</div>
-			`
-		};
-
-		try {
-			// Send email via API
-			await api.sendEmail(emailContent);
-
-			// Create showcase record in database
-			await api.createShowcase({
-				lead_id: lead.id,
-				agent_id: 'current-agent-id', // In real app, get from current user
-				listing_ids: Array.from(state.selectedMatches),
-				message: `Showcase sent to ${lead.name} with ${selectedProperties.length} properties`,
-				showcase_id: showcaseId,
-				landing_url: landingUrl
-			});
-
-			toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
-			closeEmailPreview();
-
-		} catch (error) {
-			console.error('Error sending showcase email:', error);
-			toast('Error sending email. Please try again.');
-		}
+		await Modals.sendShowcaseEmail({
+			state,
+			api,
+			toast,
+			closeEmailPreview
+		});
 	}
 
 	function updateSelectionSummary(){
-		const checkboxes = document.querySelectorAll('.listing-check');
-		const checked = Array.from(checkboxes).filter(cb => cb.checked);
-		const selectedCount = document.getElementById('selectedCount');
-		const sendBtn = document.getElementById('sendBtn');
-
-		selectedCount.textContent = checked.length;
-		sendBtn.disabled = checked.length === 0;
-
-		// Update state
-		state.selectedMatches.clear();
-		checked.forEach(cb => state.selectedMatches.add(cb.dataset.id));
+		Modals.updateSelectionSummary({
+			state
+		});
 	}
 
 	function updateCreateShowcaseBtn(){
-		const btn = document.getElementById('createShowcase');
-		btn.disabled = state.selectedMatches.size === 0;
+		Modals.updateCreateShowcaseBtn({
+			state
+		});
 	}
 
 	// ---- Showcase ----
 	async function openShowcasePreview(){
-		const lead = await api.getLead(state.selectedLeadId);
-		document.getElementById('showcaseTo').value = lead.email;
-		const selected = Array.from(state.selectedMatches);
-		const preview = document.getElementById('showcasePreview');
-		preview.innerHTML = selected.map(id => {
-			const item = state.currentMatches.find(x => x.id === id);
-			return `<div class="public-card"><div><strong>${item.name}</strong> — ${item.neighborhoods[0] || ''}</div><div class="subtle">$${item.rent_min} - $${item.rent_max} · ${item.beds_min}-${item.beds_max} bd / ${item.baths_min}-${item.baths_max} ba · ${item.sqft_min}-${item.sqft_max} sqft</div><div class="subtle">${item.specials_text || ''}</div></div>`;
-		}).join('');
-		show(document.getElementById('showcaseModal'));
+		await Modals.openShowcasePreview({
+			state,
+			api,
+			show
+		});
 	}
-	function closeShowcase(){ hide(document.getElementById('showcaseModal')); }
+
+	function closeShowcase(){
+		Modals.closeShowcase({
+			hide
+		});
+	}
 
 	// ---- Build Showcase from Listings ----
 	async function openBuildShowcaseModal(){
-		const selectedListings = getSelectedListings();
-		if (selectedListings.length === 0) {
-			toast('Please select at least one listing', 'error');
-			return;
-		}
-
-		// Populate lead dropdown with leads assigned to current agent
-		const leadSelect = document.getElementById('buildShowcaseLead');
-		leadSelect.innerHTML = '<option value="">Choose a lead...</option>';
-
-		// Get leads assigned to current agent (in real app, this would filter by agent)
-		const agentLeads = mockLeads.filter(lead =>
-			lead.assigned_agent_id === state.agentId || state.role === 'manager'
-		);
-
-		agentLeads.forEach(lead => {
-			const option = document.createElement('option');
-			option.value = lead.id;
-			option.textContent = `${lead.name} (${lead.email})`;
-			leadSelect.appendChild(option);
+		await Modals.openBuildShowcaseModal({
+			state,
+			mockLeads,
+			getSelectedListings,
+			toast,
+			show
 		});
-
-		// Update selection count
-		document.getElementById('buildSelectedCount').textContent = selectedListings.length;
-
-		// Populate listings grid with selected properties (same format as Top Listing Options)
-		const listingsGrid = document.getElementById('buildListingsGrid');
-		listingsGrid.innerHTML = selectedListings.map(prop => {
-			return `
-				<div class="listing-card" data-property-id="${prop.id}">
-					<div class="listing-image">
-						<img src="${prop.image_url || 'https://via.placeholder.com/300x200?text=Property+Image'}" alt="${prop.name}" />
-						<div class="commission-badge">${Math.max(prop.escort_pct, prop.send_pct)}% Commission</div>
-					</div>
-					<div class="listing-content">
-						<h4>${prop.name}</h4>
-						<div class="listing-rating">
-							<span class="stars">★★★★★</span>
-							<span class="rating-number">4.2</span>
-						</div>
-						<p class="listing-price">$${prop.rent_min} - $${prop.rent_max}/mo</p>
-						<p class="listing-details">${prop.beds_min}-${prop.beds_max} bd • ${prop.baths_min}-${prop.baths_max} ba • ${prop.sqft_min}-${prop.sqft_max} sqft</p>
-						<div class="listing-amenities">
-							${prop.amenities.slice(0, 2).map(amenity => `<span class="amenity-tag">${amenity}</span>`).join('')}
-						</div>
-						<div class="listing-selection">
-							<span>Selected Property</span>
-							<input type="checkbox" class="listing-check" checked disabled>
-						</div>
-					</div>
-				</div>
-			`;
-		}).join('');
-
-		show(document.getElementById('buildShowcaseModal'));
 	}
 
 	function closeBuildShowcase(){
-		hide(document.getElementById('buildShowcaseModal'));
+		Modals.closeBuildShowcase({
+			hide
+		});
 	}
 
 	function getSelectedListings(){
-		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-		return Array.from(checkboxes).map(cb => {
-			const listingId = cb.dataset.listingId;
-			return mockProperties.find(prop => prop.id === listingId);
-		}).filter(Boolean);
+		return Modals.getSelectedListings({
+			mockProperties
+		});
 	}
 
 	function updateBuildShowcaseButton(){

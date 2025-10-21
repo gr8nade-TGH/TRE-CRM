@@ -2,19 +2,22 @@
 // Phase 7A: Lead Modals
 // Phase 7B: Property/Listing Modals
 // Phase 7C: Document/History Modals
+// Phase 7D: Showcase/Email/Matches Modals
 
 import * as LeadModals from './lead-modals.js';
 import * as LeadNotes from './lead-notes.js';
 import * as ListingModals from './listing-modals.js';
 import * as PropertyNotes from './property-notes.js';
 import * as DocumentModals from './document-modals.js';
+import * as ShowcaseModals from './showcase-modals.js';
 
 export {
 	LeadModals,
 	LeadNotes,
 	ListingModals,
 	PropertyNotes,
-	DocumentModals
+	DocumentModals,
+	ShowcaseModals
 };
 
 // Re-export individual functions for convenience
@@ -69,4 +72,21 @@ export {
 	closeHistory,
 	openHistoryDocumentDetails
 } from './document-modals.js';
+
+// Showcase/Email/Matches Modals
+export {
+	openMatches,
+	closeMatches,
+	openEmailPreview,
+	closeEmailPreview,
+	previewLandingPage,
+	sendShowcaseEmail,
+	updateSelectionSummary,
+	updateCreateShowcaseBtn,
+	openShowcasePreview,
+	closeShowcase,
+	openBuildShowcaseModal,
+	closeBuildShowcase,
+	getSelectedListings
+} from './showcase-modals.js';
 
