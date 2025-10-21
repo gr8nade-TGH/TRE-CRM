@@ -1,17 +1,20 @@
 // Modals Module - Barrel Export
 // Phase 7A: Lead Modals
 // Phase 7B: Property/Listing Modals
+// Phase 7C: Document/History Modals
 
 import * as LeadModals from './lead-modals.js';
 import * as LeadNotes from './lead-notes.js';
 import * as ListingModals from './listing-modals.js';
 import * as PropertyNotes from './property-notes.js';
+import * as DocumentModals from './document-modals.js';
 
 export {
 	LeadModals,
 	LeadNotes,
 	ListingModals,
-	PropertyNotes
+	PropertyNotes,
+	DocumentModals
 };
 
 // Re-export individual functions for convenience
@@ -57,4 +60,13 @@ export {
 	loadPropertyNotes,
 	addPropertyNote
 } from './property-notes.js';
+
+// Document Modals
+export {
+	openDocumentDetails,
+	closeDocumentDetails,
+	openHistory,
+	closeHistory,
+	openHistoryDocumentDetails
+} from './document-modals.js';
 
