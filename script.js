@@ -4536,11 +4536,6 @@ function createLeadTable(lead, isExpanded = false) {
 	// initializeHealthStatus removed - was using mockLeads
 	// Health status is now calculated from real Supabase data
 
-	// Initialize health status when page loads
-	document.addEventListener('DOMContentLoaded', () => {
-		initializeHealthStatus();
-	});
-
 	// Global functions for admin page onclick handlers
 	window.editUser = editUser;
 	window.changePassword = changePassword;
