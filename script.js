@@ -53,6 +53,9 @@ import * as Admin from './src/modules/admin/index.js';
 // Import Properties module
 import * as Properties from './src/modules/properties/index.js';
 
+// Import Modals module
+import * as Modals from './src/modules/modals/index.js';
+
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
@@ -3024,101 +3027,21 @@ function createLeadTable(lead, isExpanded = false) {
 
 	// ---- Lead Notes Functions ----
 	async function loadLeadNotes(leadId) {
-		if (USE_MOCK_DATA) {
-			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
-			return;
-		}
-
-		try {
-			const notes = await SupabaseAPI.getLeadNotes(leadId);
-			const notesContainer = document.getElementById('leadNotesContent');
-
-			if (!notes || notes.length === 0) {
-				notesContainer.innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
-				return;
-			}
-
-			notesContainer.innerHTML = notes.map(note => `
-				<div class="note-item" style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #3b82f6;">
-					<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-						<strong style="color: #1f2937;">${note.author_name}</strong>
-						<span class="subtle mono" style="font-size: 12px;">${formatDate(note.created_at)}</span>
-					</div>
-					<div style="color: #4b5563;">${note.content}</div>
-				</div>
-			`).join('');
-		} catch (error) {
-			console.error('Error loading lead notes:', error);
-			document.getElementById('leadNotesContent').innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
-		}
+		await Modals.loadLeadNotes(leadId, {
+			USE_MOCK_DATA,
+			SupabaseAPI,
+			formatDate
+		});
 	}
 
 	async function saveLeadNote(isStandalone = false) {
-		console.log('🔵 saveLeadNote called, isStandalone:', isStandalone);
-		console.log('currentLeadForNotes:', currentLeadForNotes);
-
-		const inputId = isStandalone ? 'standaloneNewLeadNote' : 'newLeadNote';
-		const noteInput = document.getElementById(inputId);
-		const content = noteInput.value.trim();
-		console.log('Note content:', content);
-
-		if (!content) {
-			toast('Please enter a comment', 'error');
-			return;
-		}
-
-		if (!currentLeadForNotes) {
-			toast('No lead selected', 'error');
-			return;
-		}
-
-		if (USE_MOCK_DATA) {
-			toast('Notes feature requires Supabase connection', 'error');
-			return;
-		}
-
-		try {
-			// Use window.currentUser.email as author_id (matches users table)
-			const authorId = window.currentUser?.email;
-			const authorName = window.currentUser?.user_metadata?.name ||
-			                   window.currentUser?.email ||
-			                   'Unknown User';
-
-			console.log('👤 Current user:', window.currentUser);
-			console.log('📧 Author ID:', authorId);
-			console.log('👨 Author Name:', authorName);
-
-			if (!authorId) {
-				toast('User not authenticated', 'error');
-				return;
-			}
-
-			const noteData = {
-				lead_id: currentLeadForNotes,
-				content: content,
-				author_id: authorId,  // Use email, not UUID
-				author_name: authorName
-			};
-
-			console.log('💾 Saving note data:', noteData);
-			const result = await SupabaseAPI.createLeadNote(noteData);
-			console.log('✅ Note saved successfully:', result);
-
-			noteInput.value = '';
-
-			// Reload notes in the modal
-			console.log('🔄 Reloading notes in modal...');
-			await loadLeadNotesInModal(currentLeadForNotes, isStandalone);
-
-			// Refresh leads table to update note icon
-			console.log('🔄 Refreshing leads table...');
-			await renderLeads();
-
-			toast('Comment added successfully!', 'success');
-		} catch (error) {
-			console.error('❌ Error saving lead note:', error);
-			toast('Error saving comment', 'error');
-		}
+		await Modals.saveLeadNote(isStandalone, {
+			USE_MOCK_DATA,
+			SupabaseAPI,
+			loadLeadNotesInModal,
+			renderLeads,
+			toast
+		});
 	}
 
 	// ---- Property Notes Modal Functions ----
@@ -3239,273 +3162,96 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Lead Details Modal (Center-aligned) ----
-	let currentLeadForNotes = null;
+	// ---- Lead Modals Module Wrappers ----
+	// Note: currentLeadForNotes is now window.currentLeadForNotes (global)
 
 	async function openLeadDetailsModal(leadId){
-		state.selectedLeadId = leadId;
-		currentLeadForNotes = leadId;
-
-		const lead = await api.getLead(leadId);
-		const c = document.getElementById('leadDetailsContent');
-
-		// Get agent names
-		const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || 'Unknown';
-		const assignedTo = mockAgents.find(a => a.id === lead.assigned_agent_id)?.name || 'Unassigned';
-
-		// Parse preferences (handle both JSON string and object)
-		let prefs = lead.preferences || lead.prefs || {};
-		if (typeof prefs === 'string') {
-			try {
-				prefs = JSON.parse(prefs);
-			} catch (e) {
-				console.error('Error parsing preferences:', e);
-				prefs = {};
-			}
-		}
-
-		c.innerHTML = `
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-				<div>
-					<h4 style="margin-top: 0; color: #3b82f6;">📋 Contact Information</h4>
-					<div class="field"><label>Name</label><div class="value">${lead.name || '—'}</div></div>
-					<div class="field"><label>Email</label><div class="value">${lead.email || '—'}</div></div>
-					<div class="field"><label>Phone</label><div class="value">${lead.phone || '—'}</div></div>
-					<div class="field"><label>Best Time to Call</label><div class="value">${prefs.bestTimeToCall || prefs.best_time_to_call || '—'}</div></div>
-					<div class="field"><label>Submitted</label><div class="value mono">${formatDate(lead.submitted_at || lead.created_at)}</div></div>
-				</div>
-				<div>
-					<h4 style="margin-top: 0; color: #3b82f6;">👥 Agent Information</h4>
-					<div class="field"><label>Found By Agent</label><div class="value" style="font-weight: 600; color: #10b981;">${foundBy}</div></div>
-					<div class="field"><label>Currently Assigned To</label><div class="value">${state.role==='manager' ? renderAgentSelect(lead) : assignedTo}</div></div>
-					<div class="field"><label>Source</label><div class="value">${lead.source || '—'}</div></div>
-				</div>
-			</div>
-			<hr style="margin: 20px 0;">
-			<h4 style="margin-top: 0; color: #3b82f6;">🏠 Preferences</h4>
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-				<div>
-					<div class="field"><label>Bedrooms</label><div class="value">${prefs.bedrooms || prefs.beds || '—'}</div></div>
-					<div class="field"><label>Bathrooms</label><div class="value">${prefs.bathrooms || prefs.baths || '—'}</div></div>
-					<div class="field"><label>Budget</label><div class="value">${prefs.priceRange || prefs.price_range || (prefs.budget_min && prefs.budget_max ? `$${prefs.budget_min} - $${prefs.budget_max}` : '—')}</div></div>
-					<div class="field"><label>Area of Town</label><div class="value">${prefs.areaOfTown || prefs.area_of_town || (prefs.neighborhoods ? prefs.neighborhoods.join(', ') : '—')}</div></div>
-				</div>
-				<div>
-					<div class="field"><label>Move-in Date</label><div class="value">${prefs.moveInDate || prefs.move_in_date || prefs.move_in || '—'}</div></div>
-					<div class="field"><label>Credit History</label><div class="value">${prefs.creditHistory || prefs.credit_history || prefs.credit_tier || '—'}</div></div>
-					<div class="field"><label>Comments</label><div class="value">${prefs.comments || prefs.notes || '—'}</div></div>
-				</div>
-			</div>
-		`;
-
-		// Load notes
-		await loadLeadNotes(leadId);
-
-		showModal('leadDetailsModal');
+		await Modals.openLeadDetailsModal(leadId, {
+			state,
+			api,
+			mockAgents,
+			formatDate,
+			renderAgentSelect,
+			loadLeadNotes,
+			showModal
+		});
 	}
 
 	function closeLeadDetailsModal(){
-		console.log('closeLeadDetailsModal called');
-		hideModal('leadDetailsModal');
-		currentLeadForNotes = null;
+		Modals.closeLeadDetailsModal({
+			hideModal
+		});
 	}
 
 	// ---- Lead Notes Modal ----
 	async function openLeadNotesModal(leadId, leadName) {
-		currentLeadForNotes = leadId;
-
-		// Set modal title
-		document.getElementById('leadNotesTitle').textContent = `📝 Notes: ${leadName}`;
-
-		// Load notes (standalone modal)
-		await loadLeadNotesInModal(leadId, true);
-
-		// Clear input
-		document.getElementById('standaloneNewLeadNote').value = '';
-
-		showModal('leadNotesModal');
+		await Modals.openLeadNotesModal(leadId, leadName, {
+			loadLeadNotesInModal,
+			showModal
+		});
 	}
 
 	function closeLeadNotesModal() {
-		hideModal('leadNotesModal');
-		currentLeadForNotes = null;
+		Modals.closeLeadNotesModal({
+			hideModal
+		});
 	}
 
 	// ---- Activity Log Modal ----
 	async function openActivityLogModal(entityId, entityType, entityName) {
-		console.log('🔵 openActivityLogModal called:', { entityId, entityType, entityName });
-
-		try {
-			// Fetch activities based on entity type
-			const activities = entityType === 'lead'
-				? await SupabaseAPI.getLeadActivities(entityId)
-				: await SupabaseAPI.getPropertyActivities(entityId);
-
-			console.log('✅ Activities fetched:', activities);
-
-			// Set modal title
-			const title = entityType === 'lead' ? `Lead Activity Log: ${entityName}` : `Property Activity Log: ${entityName}`;
-			document.getElementById('activityLogTitle').textContent = `📋 ${title}`;
-
-			// Render activities
-			const content = renderActivityLog(activities);
-			document.getElementById('activityLogContent').innerHTML = content;
-
-			showModal('activityLogModal');
-		} catch (error) {
-			console.error('❌ Error opening activity log:', error);
-			toast('Failed to load activity log', 'error');
-		}
+		await Modals.openActivityLogModal(entityId, entityType, entityName, {
+			SupabaseAPI,
+			renderActivityLog,
+			showModal,
+			toast
+		});
 	}
 
 	function closeActivityLogModal() {
-		hideModal('activityLogModal');
+		Modals.closeActivityLogModal({
+			hideModal
+		});
 	}
 
 	function renderActivityLog(activities) {
-		if (!activities || activities.length === 0) {
-			return '<p class="subtle" style="text-align: center; padding: 40px;">No activities recorded yet</p>';
-		}
-
-		return activities.map(activity => {
-			const icon = getActivityIcon(activity.activity_type);
-			const timeAgo = formatTimeAgo(activity.created_at);
-
-			return `
-				<div class="activity-item" style="padding: 16px; border-bottom: 1px solid #e4e7ec;">
-					<div style="display: flex; align-items: start; gap: 12px;">
-						<span style="font-size: 24px;">${icon}</span>
-						<div style="flex: 1;">
-							<div style="font-weight: 600; color: #1a202c;">${activity.description}</div>
-							<div style="font-size: 0.875rem; color: #6b7280; margin-top: 4px;">
-								${activity.performed_by_name || 'System'} · ${timeAgo}
-							</div>
-							${renderActivityMetadata(activity)}
-						</div>
-					</div>
-				</div>
-			`;
-		}).join('');
+		return Modals.renderActivityLog(activities, {
+			getActivityIcon,
+			formatTimeAgo,
+			renderActivityMetadata
+		});
 	}
 
 	function getActivityIcon(activityType) {
-		const icons = {
-			'created': '✨',
-			'assigned': '👤',
-			'health_changed': '⚠️',
-			'note_added': '📝',
-			'updated': '✏️',
-			'showcase_sent': '📧',
-			'showcase_responded': '💬',
-			'pumi_changed': '⭐',
-			'pricing_updated': '💰'
-		};
-		return icons[activityType] || '📋';
+		return Modals.getActivityIcon(activityType);
 	}
 
 	function renderActivityMetadata(activity) {
-		if (!activity.metadata) return '';
-
-		const metadata = activity.metadata;
-		let html = '<div style="margin-top: 8px; padding: 8px; background: #f9fafb; border-radius: 6px; font-size: 0.875rem;">';
-
-		// Render based on activity type
-		if (activity.activity_type === 'assigned' && metadata.new_agent_name) {
-			html += `<div>Assigned to: <strong>${metadata.new_agent_name}</strong></div>`;
-			if (metadata.previous_agent_name) {
-				html += `<div>Previously: ${metadata.previous_agent_name}</div>`;
-			}
-		}
-
-		if (activity.activity_type === 'health_changed') {
-			html += `<div>Status: ${metadata.previous_status} → ${metadata.new_status}</div>`;
-			if (metadata.previous_score !== undefined && metadata.new_score !== undefined) {
-				html += `<div>Score: ${metadata.previous_score} → ${metadata.new_score}</div>`;
-			}
-		}
-
-		if (activity.activity_type === 'showcase_sent' && metadata.property_count) {
-			html += `<div>${metadata.property_count} properties sent</div>`;
-			if (metadata.landing_page_url) {
-				html += `<div><a href="${metadata.landing_page_url}" target="_blank" style="color: #3b82f6;">View Showcase</a></div>`;
-			}
-		}
-
-		if (activity.activity_type === 'updated' && metadata.fields_changed) {
-			const fields = metadata.fields_changed.filter(f => f);
-			if (fields.length > 0) {
-				html += `<div>Fields changed: ${fields.join(', ')}</div>`;
-			}
-		}
-
-		if (activity.activity_type === 'note_added' && metadata.note_preview) {
-			html += `<div style="font-style: italic;">"${metadata.note_preview}${metadata.note_length > 100 ? '...' : ''}"</div>`;
-		}
-
-		html += '</div>';
-		return html;
+		return Modals.renderActivityMetadata(activity);
 	}
 
 	function formatTimeAgo(timestamp) {
-		const now = new Date();
-		const then = new Date(timestamp);
-		const seconds = Math.floor((now - then) / 1000);
-
-		if (seconds < 60) return 'Just now';
-		if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
-		if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-		if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-
-		return then.toLocaleDateString();
+		return Modals.formatTimeAgo(timestamp);
 	}
 
 	async function loadLeadNotesInModal(leadId, isStandalone = false) {
-		console.log('🔵 loadLeadNotesInModal called with leadId:', leadId, 'isStandalone:', isStandalone);
-
-		// Use different element IDs based on which modal is open
-		const contentId = isStandalone ? 'standaloneLeadNotesContent' : 'leadNotesContent';
-
-		if (USE_MOCK_DATA) {
-			document.getElementById(contentId).innerHTML = '<p class="subtle">Notes feature requires Supabase connection</p>';
-			return;
-		}
-
-		try {
-			console.log('📡 Fetching notes from Supabase...');
-			const notes = await SupabaseAPI.getLeadNotes(leadId);
-			console.log('📥 Received notes:', notes);
-
-			const notesContainer = document.getElementById(contentId);
-
-			if (!notes || notes.length === 0) {
-				console.log('ℹ️ No notes found for this lead');
-				notesContainer.innerHTML = '<p class="subtle">No comments yet. Add one below!</p>';
-				return;
-			}
-
-			console.log(`✅ Displaying ${notes.length} notes`);
-			notesContainer.innerHTML = notes.map(note => `
-				<div class="note-item" style="background: #f9fafb; padding: 12px; border-radius: 6px; margin-bottom: 10px; border-left: 3px solid #3b82f6;">
-					<div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
-						<strong style="color: #1f2937;">${note.author_name}</strong>
-						<span class="subtle mono" style="font-size: 12px;">${formatDate(note.created_at)}</span>
-					</div>
-					<div style="color: #4b5563;">${note.content}</div>
-				</div>
-			`).join('');
-		} catch (error) {
-			console.error('❌ Error loading lead notes:', error);
-			document.getElementById(contentId).innerHTML = '<p class="subtle" style="color: #ef4444;">Error loading comments</p>';
-		}
+		await Modals.loadLeadNotesInModal(leadId, isStandalone, {
+			USE_MOCK_DATA,
+			SupabaseAPI,
+			formatDate
+		});
 	}
 
 	// Legacy function for backward compatibility
 	async function openDrawer(leadId){
-		await openLeadDetailsModal(leadId);
+		await Modals.openDrawer(leadId, {
+			openLeadDetailsModal
+		});
 	}
 
 	function closeDrawer(){
-		closeLeadDetailsModal();
+		Modals.closeDrawer({
+			closeLeadDetailsModal
+		});
 	}
 
 	// ---- Agent Drawer ----
