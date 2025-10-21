@@ -41,6 +41,8 @@ import { createAPI } from './src/api/api-wrapper.js';
 import { getStepModalContent as getStepModalContentUtil } from './src/utils/step-modal-content.js';
 import { sortTable as sortTableUtil } from './src/utils/table-sorting.js';
 import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase-builder.js';
+import { getCurrentStepFromActivities as getCurrentStepUtil, getStepLabel as getStepLabelUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
+import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentChangesUtil } from './src/utils/agent-drawer.js';
 
 // Import Leads module
 import * as Leads from './src/modules/leads/index.js';
@@ -326,51 +328,13 @@ async function deleteSpecialAPI(specialId) {
 	// calculateHealthStatus is now imported from src/modules/leads/leads-health.js
 
 	// Get current step from lead activities
+	// Wrapper functions for lead health utilities
 	async function getCurrentStepFromActivities(leadId) {
-		try {
-			const activities = await SupabaseAPI.getLeadActivities(leadId);
-
-			// Map activity types to step numbers
-			const stepMapping = {
-				'lead_created': 1,
-				'showcase_sent': 2,
-				'showcase_response': 3,
-				'guest_card_sent': 4,
-				'property_selected': 5,
-				'lease_sent': 6,
-				'lease_signed': 7,
-				'lease_finalized': 8
-			};
-
-			// Find the highest step reached
-			let currentStep = 1;
-			activities.forEach(activity => {
-				const step = stepMapping[activity.activity_type];
-				if (step && step > currentStep) {
-					currentStep = step;
-				}
-			});
-
-			return currentStep;
-		} catch (error) {
-			console.error('Error getting current step:', error);
-			return 1; // Default to step 1
-		}
+		return await getCurrentStepUtil(leadId);
 	}
 
-	// Get step label from step number
 	function getStepLabel(stepNumber) {
-		const stepLabels = {
-			1: 'Lead Joined',
-			2: 'Showcase Sent',
-			3: 'Showcase Response',
-			4: 'Guest Card Sent',
-			5: 'Property Selected',
-			6: 'Lease Sent',
-			7: 'Lease Signed',
-			8: 'Lease Finalized'
-		};
-		return stepLabels[stepNumber] || 'Unknown';
+		return getStepLabelUtil(stepNumber);
 	}
 
 	// Get proper current step based on document progress
@@ -423,89 +387,9 @@ async function deleteSpecialAPI(specialId) {
 	}
 
 	// Dynamic health messages based on lead state
+	// Wrapper function for getHealthMessages
 	async function getHealthMessages(lead) {
-		const now = new Date();
-
-		// Get last activity timestamp
-		let lastActivityDate;
-		if (lead.last_activity_at) {
-			lastActivityDate = new Date(lead.last_activity_at);
-		} else if (lead.updated_at) {
-			lastActivityDate = new Date(lead.updated_at);
-		} else {
-			lastActivityDate = new Date(lead.created_at || lead.submitted_at);
-		}
-
-		const hoursSinceActivity = Math.floor((now - lastActivityDate) / (1000 * 60 * 60));
-		const daysSinceActivity = Math.floor(hoursSinceActivity / 24);
-		const remainingHours = hoursSinceActivity % 24;
-
-		// Get current step
-		const currentStepNumber = lead.current_step || await getCurrentStepFromActivities(lead.id);
-		const currentStepLabel = getStepLabel(currentStepNumber);
-		const nextStepNumber = currentStepNumber < 8 ? currentStepNumber + 1 : null;
-		const nextStepLabel = nextStepNumber ? getStepLabel(nextStepNumber) : 'Complete';
-
-		// Format time display
-		let timeDisplay;
-		if (daysSinceActivity > 0) {
-			timeDisplay = `${daysSinceActivity}d ${remainingHours}h`;
-		} else {
-			timeDisplay = `${hoursSinceActivity}h`;
-		}
-
-		if (lead.health_status === 'green') {
-			return [
-				`✅ Lead is actively engaged`,
-				`📄 Current step: ${currentStepLabel}`,
-				`➡️ Next step: ${nextStepLabel}`,
-				`📅 Last activity: ${timeDisplay} ago`
-			];
-		}
-
-		if (lead.health_status === 'yellow') {
-			return [
-				`⚠️ Needs attention - no activity in 36+ hours`,
-				`📄 Current step: ${currentStepLabel}`,
-				`➡️ Next step: ${nextStepLabel}`,
-				`📅 Last activity: ${timeDisplay} ago`,
-				`🎯 Action: Follow up with lead soon`
-			];
-		}
-
-		if (lead.health_status === 'red') {
-			return [
-				`🚨 Urgent - no activity in 72+ hours`,
-				`📄 Current step: ${currentStepLabel}`,
-				`➡️ Next step: ${nextStepLabel}`,
-				`📅 Last activity: ${timeDisplay} ago`,
-				`🔥 Action: Contact lead immediately`
-			];
-		}
-
-		if (lead.health_status === 'closed') {
-			return [
-				`🎉 Lead successfully closed!`,
-				`📄 Final step: ${currentStepLabel}`,
-				`📅 Closed on: ${formatDate(lead.closed_at || lead.last_activity_at)}`
-			];
-		}
-
-		if (lead.health_status === 'lost') {
-			return [
-				`❌ Lead lost`,
-				`📄 Last step: ${currentStepLabel}`,
-				`📅 Lost on: ${formatDate(lead.lost_at || lead.last_activity_at)}`,
-				`💭 Reason: ${lead.loss_reason || 'No reason provided'}`
-			];
-		}
-
-		// Default fallback
-		return [
-			`📄 Current step: ${currentStepLabel}`,
-			`➡️ Next step: ${nextStepLabel}`,
-			`📅 Last activity: ${timeDisplay} ago`
-		];
+		return await getHealthMessagesUtil(lead, formatDate);
 	}
 
 	// Helper function to get hours on current step
@@ -1934,74 +1818,15 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Agent Drawer ----
+	// Wrapper function for openAgentDrawer
 	async function openAgentDrawer(agentId){
-		state.selectedAgentId = agentId;
-		const agent = realAgents.find(a => a.id === agentId);
-		const stats = getAgentStats(agentId);
-		const c = document.getElementById('agentEditContent');
-
-		c.innerHTML = `
-			<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
-				<div>
-					<h4 style="margin-top: 0; color: #3b82f6;">📋 Contact Information</h4>
-					<div class="field">
-						<label>Agent Name</label>
-						<input type="text" id="editAgentName" value="${agent.name}" />
-					</div>
-					<div class="field">
-						<label>Email</label>
-						<input type="email" id="editAgentEmail" value="${agent.email}" />
-					</div>
-					<div class="field">
-						<label>Phone</label>
-						<input type="tel" id="editAgentPhone" value="${agent.phone}" />
-					</div>
-					<div class="field">
-						<label>Status</label>
-						<select id="editAgentStatus">
-							<option value="true" ${agent.active ? 'selected' : ''}>Active</option>
-							<option value="false" ${!agent.active ? 'selected' : ''}>Inactive</option>
-						</select>
-					</div>
-				</div>
-				<div>
-					<h4 style="margin-top: 0; color: #3b82f6;">👥 Professional Information</h4>
-					<div class="field">
-						<label>Hire Date</label>
-						<input type="date" id="editAgentHireDate" value="${agent.hireDate || ''}" />
-					</div>
-					<div class="field">
-						<label>License Number</label>
-						<input type="text" id="editAgentLicense" value="${agent.licenseNumber || ''}" />
-					</div>
-					<div class="field">
-						<label>Specialties (comma-separated)</label>
-						<input type="text" id="editAgentSpecialties" value="${agent.specialties ? agent.specialties.join(', ') : ''}" />
-					</div>
-					<div class="field">
-						<label>Notes</label>
-						<textarea id="editAgentNotes" rows="3">${agent.notes || ''}</textarea>
-					</div>
-				</div>
-			</div>
-			<hr style="margin: 20px 0;">
-			<h4 style="margin-top: 0; color: #3b82f6;">📊 Statistics</h4>
-			<div class="stats-grid">
-				<div class="stat-card">
-					<div class="label">Leads Generated</div>
-					<div class="value">${stats.generated}</div>
-				</div>
-				<div class="stat-card">
-					<div class="label">Leads Assigned</div>
-					<div class="value">${stats.assigned}</div>
-				</div>
-				<div class="stat-card">
-					<div class="label">Leads Closed (90d)</div>
-					<div class="value">${stats.closed}</div>
-				</div>
-			</div>
-		`;
-		showModal('agentEditModal');
+		await openAgentDrawerUtil({
+			agentId,
+			state,
+			realAgents,
+			getAgentStats,
+			showModal
+		});
 	}
 
 	function closeAgentDrawer(){ hide(document.getElementById('agentDrawer')); }
@@ -2011,26 +1836,15 @@ function createLeadTable(lead, isExpanded = false) {
 		state.selectedAgentId = null;
 	}
 
+	// Wrapper function for saveAgentChanges
 	async function saveAgentChanges() {
-		if (!state.selectedAgentId) return;
-
-		const agent = realAgents.find(a => a.id === state.selectedAgentId);
-		if (!agent) return;
-
-		// Get values from form
-		agent.name = document.getElementById('editAgentName').value;
-		agent.email = document.getElementById('editAgentEmail').value;
-		agent.phone = document.getElementById('editAgentPhone').value;
-		agent.active = document.getElementById('editAgentStatus').value === 'true';
-		agent.hireDate = document.getElementById('editAgentHireDate').value;
-		agent.licenseNumber = document.getElementById('editAgentLicense').value;
-		agent.specialties = document.getElementById('editAgentSpecialties').value.split(',').map(s => s.trim()).filter(s => s);
-		agent.notes = document.getElementById('editAgentNotes').value;
-
-		// In a real app, this would save to the database
-		toast('Agent information updated successfully!', 'success');
-		closeAgentEditModal();
-		renderAgents();
+		await saveAgentChangesUtil({
+			state,
+			realAgents,
+			toast,
+			closeAgentEditModal,
+			renderAgents
+		});
 	}
 
 	// ---- Document Modals ----
