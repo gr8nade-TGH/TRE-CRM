@@ -18,9 +18,9 @@ import {
 	state
 } from './src/state/state.js';
 
-// Import mock data (TEMPORARY - will be removed in Phase 2B)
+// Import mock data (TEMPORARY - will be removed in Phase 4)
+// Note: mockAgents removed - now using real agents from Supabase users table
 import {
-	mockAgents as mockAgentsOriginal,
 	mockLeads,
 	mockInterestedLeads,
 	mockProperties,
@@ -291,12 +291,9 @@ async function deleteSpecialAPI(specialId) {
 	let markers = [];
 	let selectedProperty = null;
 
-	// ---- Mock Data ----
-	// Note: All mock data (mockAgents, mockLeads, mockProperties, etc.) is imported from src/state/mockData.js
-	// prefsSummary and randomDate helper functions are also imported from there
-
-	// Real agents loaded from Supabase (replaces mockAgents)
-	let mockAgents = mockAgentsOriginal; // Start with mock data, will be replaced with real data
+	// ---- Real Data from Supabase ----
+	// Agents are loaded from Supabase users table (filtered by role='AGENT')
+	let realAgents = []; // Will be populated by loadAgents() on initialization
 
 	// ---- Utilities ----
 	// Note: formatDate, showModal, hideModal, toast, show, hide are now imported from helpers.js
@@ -977,8 +974,8 @@ async function deleteSpecialAPI(specialId) {
 							aVal = new Date(a.submitted_at);
 							bVal = new Date(b.submitted_at);
 						} else if (sortKey === 'assigned_agent_id') {
-							const agentA = mockAgents.find(agent => agent.id === a.assigned_agent_id);
-							const agentB = mockAgents.find(agent => agent.id === b.assigned_agent_id);
+							const agentA = realAgents.find(agent => agent.id === a.assigned_agent_id);
+							const agentB = realAgents.find(agent => agent.id === b.assigned_agent_id);
 							aVal = agentA ? agentA.name : 'Unassigned';
 							bVal = agentB ? agentB.name : 'Unassigned';
 						} else {
@@ -1456,7 +1453,7 @@ async function deleteSpecialAPI(specialId) {
 	// ---- Rendering: Leads Table ----
 	// Wrapper function that calls the module
 	renderLeads = async function(){
-		// Call module render function with mockAgents (global variable)
+		// Call module render function with realAgents (global variable)
 		await Leads.renderLeads({
 			api,
 			SupabaseAPI,
@@ -1465,16 +1462,16 @@ async function deleteSpecialAPI(specialId) {
 			getCurrentStepFromActivities,
 			openLeadNotesModal,
 			openActivityLogModal,
-			agents: mockAgents
+			agents: realAgents
 		});
 	}
 
 	function renderAgentSelect(lead){
-		const opts = mockAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
+		const opts = realAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
 	function renderAgentReadOnly(lead){
-		const a = mockAgents.find(a => a.id === lead.assigned_agent_id);
+		const a = realAgents.find(a => a.id === lead.assigned_agent_id);
 		return `<span class="subtle">${a ? a.name : 'Unassigned'}</span>`;
 	}
 
@@ -2273,7 +2270,7 @@ function createLeadTable(lead, isExpanded = false) {
 		// Apply search filter
 		if (searchTerm.trim()) {
 			activeLeads = activeLeads.filter(lead => {
-				const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
+				const agent = realAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
 				const searchLower = searchTerm.toLowerCase();
 
 				if (searchType === 'agent') {
@@ -2289,7 +2286,7 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 
 		activeLeads.forEach(lead => {
-			const agent = mockAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
+			const agent = realAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
 			const progress = getDocumentProgress(lead.id);
 			const currentStep = getCurrentDocumentStep(lead.id);
 			const lastUpdated = getLastDocumentUpdate(lead.id);
@@ -2404,18 +2401,18 @@ function createLeadTable(lead, isExpanded = false) {
 		const rows = tbody.querySelectorAll('tr');
 		rows.forEach(row => {
 			const agentName = row.querySelector('[data-sort="agent_name"]')?.textContent.trim();
-			const agent = mockAgents.find(a => a.id === agentId);
+			const agent = realAgents.find(a => a.id === agentId);
 			if (agent && agentName === agent.name) {
 				row.style.display = '';
 			} else {
 				row.style.display = 'none';
 			}
 		});
-		toast(`Showing leads for ${mockAgents.find(a => a.id === agentId)?.name || 'Unknown Agent'}`);
+		toast(`Showing leads for ${realAgents.find(a => a.id === agentId)?.name || 'Unknown Agent'}`);
 	}
 
 	function viewAgentDetails(agentId) {
-		const agent = mockAgents.find(a => a.id === agentId);
+		const agent = realAgents.find(a => a.id === agentId);
 		if (agent) {
 			openAgentDrawer(agentId);
 		}
@@ -2429,7 +2426,7 @@ function createLeadTable(lead, isExpanded = false) {
 	// Wrapper function that calls the module
 	async function renderAgents(){
 		await Agents.renderAgents({
-			mockAgents,
+			mockAgents: realAgents,
 			state,
 			getAgentStats
 		});
@@ -2742,7 +2739,7 @@ function createLeadTable(lead, isExpanded = false) {
 		await Modals.openLeadDetailsModal(leadId, {
 			state,
 			api,
-			mockAgents,
+			mockAgents: realAgents,
 			formatDate,
 			renderAgentSelect,
 			loadLeadNotes,
@@ -2830,7 +2827,7 @@ function createLeadTable(lead, isExpanded = false) {
 	// ---- Agent Drawer ----
 	async function openAgentDrawer(agentId){
 		state.selectedAgentId = agentId;
-		const agent = mockAgents.find(a => a.id === agentId);
+		const agent = realAgents.find(a => a.id === agentId);
 		const stats = getAgentStats(agentId);
 		const c = document.getElementById('agentEditContent');
 
@@ -2908,7 +2905,7 @@ function createLeadTable(lead, isExpanded = false) {
 	async function saveAgentChanges() {
 		if (!state.selectedAgentId) return;
 
-		const agent = mockAgents.find(a => a.id === state.selectedAgentId);
+		const agent = realAgents.find(a => a.id === state.selectedAgentId);
 		if (!agent) return;
 
 		// Get values from form
@@ -2947,7 +2944,7 @@ function createLeadTable(lead, isExpanded = false) {
 	function openHistory() {
 		Modals.openHistory({
 			mockClosedLeads,
-			mockAgents,
+			mockAgents: realAgents,
 			formatDate,
 			show
 		});
@@ -3277,7 +3274,7 @@ function createLeadTable(lead, isExpanded = false) {
 	function renderPublicShowcaseHTML({ showcaseId }){
 		const sc = state.showcases[showcaseId];
 		const lead = mockLeads.find(l => l.id === sc.lead_id);
-		const agent = mockAgents.find(a => a.id === sc.agent_id);
+		const agent = realAgents.find(a => a.id === sc.agent_id);
 		const listings = sc.listing_ids.map(id => mockProperties.find(p => p.id === id));
 		const items = listings.map(item => `
 			<div class="public-card">
@@ -3402,19 +3399,14 @@ function createLeadTable(lead, isExpanded = false) {
 
 	// ---- Load Real Agents from Supabase ----
 	async function loadAgents() {
-		if (USE_MOCK_DATA) {
-			console.log('📋 Using mock agents data');
-			return;
-		}
-
 		try {
 			console.log('📋 Loading real agents from Supabase...');
 			const agents = await SupabaseAPI.getAgents();
-			mockAgents = agents; // Replace mock data with real data
+			realAgents = agents; // Store real agents data
 			console.log('✅ Loaded', agents.length, 'agents from Supabase');
 		} catch (error) {
 			console.error('❌ Error loading agents:', error);
-			console.log('⚠️ Falling back to mock agents data');
+			throw error; // Don't fall back to mock data - fail fast
 		}
 	}
 
@@ -3562,7 +3554,7 @@ function createLeadTable(lead, isExpanded = false) {
 				const lock = e.target.closest('button[data-lock]');
 				if (lock){
 					const agentId = lock.dataset.lock;
-					const agent = mockAgents.find(a => a.id === agentId);
+					const agent = realAgents.find(a => a.id === agentId);
 					if (agent) {
 						const action = agent.locked ? 'unlock' : 'lock';
 						if (confirm(`Are you sure you want to ${action} this agent's account?`)) {
