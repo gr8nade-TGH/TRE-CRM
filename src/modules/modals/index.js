@@ -1,15 +1,22 @@
 // Modals Module - Barrel Export
-// Phase 7A: Lead Modals only (more modals to be added in phases 7B, 7C, 7D)
+// Phase 7A: Lead Modals
+// Phase 7B: Property/Listing Modals
 
 import * as LeadModals from './lead-modals.js';
 import * as LeadNotes from './lead-notes.js';
+import * as ListingModals from './listing-modals.js';
+import * as PropertyNotes from './property-notes.js';
 
 export {
 	LeadModals,
-	LeadNotes
+	LeadNotes,
+	ListingModals,
+	PropertyNotes
 };
 
 // Re-export individual functions for convenience
+
+// Lead Modals
 export {
 	openLeadDetailsModal,
 	closeLeadDetailsModal,
@@ -23,6 +30,7 @@ export {
 	formatTimeAgo
 } from './lead-modals.js';
 
+// Lead Notes
 export {
 	loadLeadNotes,
 	saveLeadNote,
@@ -30,4 +38,23 @@ export {
 	openDrawer,
 	closeDrawer
 } from './lead-notes.js';
+
+// Listing Modals
+export {
+	openAddListingModal,
+	closeAddListingModal,
+	createListing,
+	openListingEditModal,
+	closeListingEditModal,
+	deleteListing,
+	saveListingEdit
+} from './listing-modals.js';
+
+// Property Notes
+export {
+	openPropertyNotesModal,
+	closePropertyNotesModal,
+	loadPropertyNotes,
+	addPropertyNote
+} from './property-notes.js';
 

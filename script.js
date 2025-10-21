@@ -2868,161 +2868,25 @@ function createLeadTable(lead, isExpanded = false) {
 
 	// ---- Add Listing Modal Functions ----
 	function openAddListingModal() {
-		const form = document.getElementById('addListingForm');
-
-		// Reset form
-		if (form) {
-			form.reset();
-		}
-
-		// Set default date to today
-		const lastUpdatedInput = document.getElementById('listingLastUpdated');
-		if (lastUpdatedInput) {
-			lastUpdatedInput.valueAsDate = new Date();
-		}
-
-		showModal('addListingModal');
+		Modals.openAddListingModal({
+			showModal
+		});
 	}
 
 	function closeAddListingModal() {
-		hideModal('addListingModal');
+		Modals.closeAddListingModal({
+			hideModal
+		});
 	}
 
 	async function createListing() {
-		try {
-			// Debug: Check current user state
-			console.log('🔍 Current user state:', {
-				agentId: state.agentId,
-				currentUser: window.currentUser,
-				userId: window.getUserId()
-			});
-
-			// Get form values
-			const communityName = document.getElementById('listingCommunityName').value.trim();
-			const streetAddress = document.getElementById('listingStreetAddress').value.trim();
-			const market = document.getElementById('listingMarket').value;
-			const zipCode = document.getElementById('listingZipCode').value.trim();
-			const bedRange = document.getElementById('listingBedRange').value.trim();
-			const bathRange = document.getElementById('listingBathRange').value.trim();
-			const rentMin = parseInt(document.getElementById('listingRentMin').value);
-			const rentMax = parseInt(document.getElementById('listingRentMax').value);
-			const commission = parseFloat(document.getElementById('listingCommission').value);
-			const amenitiesInput = document.getElementById('listingAmenities').value.trim();
-			const isPUMI = document.getElementById('listingIsPUMI').checked;
-			const lastUpdated = document.getElementById('listingLastUpdated').value;
-			const contactEmail = document.getElementById('listingContactEmail').value.trim();
-			const leasingLink = document.getElementById('listingLeasingLink').value.trim();
-			const mapLat = document.getElementById('listingMapLat').value;
-			const mapLng = document.getElementById('listingMapLng').value;
-			const noteContent = document.getElementById('listingNotes').value.trim();
-
-			// Validation
-			if (!communityName || !streetAddress || !market || !zipCode || !bedRange || !bathRange || !rentMin || !rentMax || !commission) {
-				toast('Please fill in all required fields', 'error');
-				return;
-			}
-
-			if (rentMin >= rentMax) {
-				toast('Rent Max must be greater than Rent Min', 'error');
-				return;
-			}
-
-			// Parse amenities
-			const amenities = amenitiesInput ? amenitiesInput.split(',').map(a => a.trim()).filter(a => a) : [];
-
-			// Geocode address if lat/lng not provided
-			let lat = mapLat ? parseFloat(mapLat) : null;
-			let lng = mapLng ? parseFloat(mapLng) : null;
-
-			if (!lat || !lng) {
-				console.log('🗺️ Geocoding address...');
-				const coords = await geocodeAddress(streetAddress, market, zipCode);
-				if (coords) {
-					lat = coords.lat;
-					lng = coords.lng;
-					toast('Address geocoded successfully!', 'success');
-				} else {
-					// Address validation failed - reject the submission
-					toast('Error: Invalid address. Please enter a valid street address.', 'error');
-					return;
-				}
-			}
-
-			// Get user email for created_by (public.users uses email as PK, not UUID)
-			const userEmail = window.currentUser?.email || null;
-
-			// Create property data
-			const now = new Date().toISOString();
-			const propertyData = {
-				id: `prop_${Date.now()}`,
-				// New schema fields
-				community_name: communityName,
-				street_address: streetAddress,
-				city: market,
-				market: market,
-				zip_code: zipCode,
-				bed_range: bedRange,
-				bath_range: bathRange,
-				rent_range_min: rentMin,
-				rent_range_max: rentMax,
-				commission_pct: commission,
-				amenities: amenities,
-				is_pumi: isPUMI,
-				last_updated: lastUpdated || now,
-				contact_email: contactEmail || null,
-				leasing_link: leasingLink || null,
-				map_lat: lat,
-				map_lng: lng,
-				created_by: userEmail,
-				created_at: now,
-				updated_at: now,
-				// Old schema fields (for backward compatibility)
-				name: communityName,
-				address: streetAddress,
-				// Also set lat/lng for old schema
-				lat: lat,
-				lng: lng
-			};
-
-			console.log('Creating property:', propertyData);
-
-			// Create property in Supabase
-			const newProperty = await SupabaseAPI.createProperty(propertyData);
-			console.log('✅ Property created:', newProperty);
-
-			// If there's a note, create it
-			if (noteContent && userEmail) {
-				const authorName = window.currentUser?.user_metadata?.name ||
-								   window.currentUser?.email ||
-								   'Unknown';
-				const noteData = {
-					property_id: newProperty.id,
-					content: noteContent,
-					author_id: userEmail,
-					author_name: authorName
-				};
-				try {
-					await SupabaseAPI.createPropertyNote(noteData);
-					console.log('✅ Property note created');
-				} catch (noteError) {
-					console.error('❌ Error creating note (continuing anyway):', noteError);
-					// Don't fail the whole operation if note creation fails
-				}
-			} else if (noteContent && !userEmail) {
-				console.warn('⚠️ Cannot create note: user email not available');
-			}
-
-			toast('Listing created successfully!', 'success');
-			closeAddListingModal();
-
-			// Refresh listings
-			await renderListings();
-		} catch (error) {
-			console.error('❌ Error creating listing:', error);
-			console.error('Error details:', JSON.stringify(error, null, 2));
-			const errorMsg = error.message || error.msg || 'Unknown error';
-			toast(`Error creating listing: ${errorMsg}`, 'error');
-		}
+		await Modals.createListing({
+			SupabaseAPI,
+			geocodeAddress,
+			toast,
+			closeAddListingModal,
+			renderListings
+		});
 	}
 
 	// ---- Lead Notes Functions ----
@@ -3045,101 +2909,37 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Property Notes Modal Functions ----
-	let currentPropertyForNotes = null;
+	// Note: currentPropertyForNotes is now window.currentPropertyForNotes (global)
 
 	async function openPropertyNotesModal(propertyId, propertyName) {
-		currentPropertyForNotes = propertyId;
-
-		const modal = document.getElementById('propertyNotesModal');
-		const modalHeader = modal ? modal.querySelector('.modal-header h3') : null;
-		if (modalHeader) {
-			modalHeader.textContent = `📝 Notes: ${propertyName}`;
-		}
-
-		// Clear note input
-		const noteInput = document.getElementById('newPropertyNote');
-		if (noteInput) {
-			noteInput.value = '';
-		}
-
-		// Load and display notes
-		await loadPropertyNotes(propertyId);
-
-		showModal('propertyNotesModal');
+		await Modals.openPropertyNotesModal(propertyId, propertyName, {
+			loadPropertyNotes,
+			showModal
+		});
 	}
 
 	function closePropertyNotesModal() {
-		hideModal('propertyNotesModal');
-		currentPropertyForNotes = null;
+		Modals.closePropertyNotesModal({
+			hideModal
+		});
 	}
 
 	async function loadPropertyNotes(propertyId) {
-		try {
-			const notes = await SupabaseAPI.getPropertyNotes(propertyId);
-			const notesContent = document.getElementById('propertyNotesContent');
-
-			if (notes.length === 0) {
-				notesContent.innerHTML = '<p style="color: #64748b; text-align: center; padding: 20px;">No notes yet. Add one below!</p>';
-				return;
-			}
-
-			notesContent.innerHTML = notes.map(note => `
-				<div class="note-item" style="border-bottom: 1px solid #e2e8f0; padding: 15px 0;">
-					<div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 8px;">
-						<div>
-							<strong style="color: #1e293b;">${note.author_name}</strong>
-							<span style="color: #64748b; font-size: 13px; margin-left: 10px;">
-								${formatDate(note.created_at)}
-							</span>
-						</div>
-					</div>
-					<div style="color: #475569; line-height: 1.6;">
-						${note.content}
-					</div>
-				</div>
-			`).join('');
-		} catch (error) {
-			console.error('Error loading property notes:', error);
-			toast('Error loading notes', 'error');
-		}
+		await Modals.loadPropertyNotes(propertyId, {
+			SupabaseAPI,
+			formatDate,
+			toast
+		});
 	}
 
 	async function addPropertyNote() {
-		if (!currentPropertyForNotes) {
-			toast('No property selected', 'error');
-			return;
-		}
-
-		const noteContent = document.getElementById('newPropertyNote').value.trim();
-
-		if (!noteContent) {
-			toast('Please enter a note', 'error');
-			return;
-		}
-
-		try {
-			const noteData = {
-				property_id: currentPropertyForNotes,
-				content: noteContent,
-				author_id: state.userId,
-				author_name: state.userName || 'Unknown'
-			};
-
-			await SupabaseAPI.createPropertyNote(noteData);
-			toast('Note added successfully!', 'success');
-
-			// Clear input
-			document.getElementById('newPropertyNote').value = '';
-
-			// Reload notes
-			await loadPropertyNotes(currentPropertyForNotes);
-
-			// Refresh listings to update note icon
-			await renderListings();
-		} catch (error) {
-			console.error('Error adding note:', error);
-			toast(`Error adding note: ${error.message}`, 'error');
-		}
+		await Modals.addPropertyNote({
+			state,
+			SupabaseAPI,
+			loadPropertyNotes,
+			renderListings,
+			toast
+		});
 	}
 
 	// ---- Rendering: Listings Table ----
@@ -5579,125 +5379,34 @@ function createLeadTable(lead, isExpanded = false) {
 
 	// ---- Listing Edit Modal ----
 	function openListingEditModal(property) {
-		console.log('Opening listing edit modal for:', property);
-
-		// Populate the modal with current property data
-		document.getElementById('editListingName').textContent = property.name || property.community_name;
-		document.getElementById('editPropertyName').value = property.name || property.community_name;
-		document.getElementById('editAddress').value = property.address || property.street_address;
-		document.getElementById('editMarket').value = property.market || property.city;
-		document.getElementById('editPhone').value = property.phone || property.contact_email || '';
-		document.getElementById('editRentMin').value = property.rent_min || property.rent_range_min || 0;
-		document.getElementById('editRentMax').value = property.rent_max || property.rent_range_max || 0;
-		document.getElementById('editBedsMin').value = property.beds_min || 0;
-		document.getElementById('editBedsMax').value = property.beds_max || 0;
-		document.getElementById('editBathsMin').value = property.baths_min || 0;
-		document.getElementById('editBathsMax').value = property.baths_max || 0;
-		document.getElementById('editEscortPct').value = property.escort_pct || property.commission_pct || 0;
-		document.getElementById('editSendPct').value = property.send_pct || property.commission_pct || 0;
-		document.getElementById('editWebsite').value = property.website || property.leasing_link || '';
-		document.getElementById('editAmenities').value = Array.isArray(property.amenities) ? property.amenities.join(', ') : '';
-		document.getElementById('editSpecials').value = property.specials_text || '';
-		document.getElementById('editBonus').value = property.bonus_text || '';
-		document.getElementById('editIsPUMI').checked = property.is_pumi || property.isPUMI || false;
-		document.getElementById('editMarkForReview').checked = property.mark_for_review || property.markForReview || false;
-
-		// Show/hide delete button based on role
-		const deleteBtn = document.getElementById('deleteListingBtn');
-		if (deleteBtn) {
-			if (state.role === 'manager' || state.role === 'super_user') {
-				deleteBtn.style.display = 'block';
-			} else {
-				deleteBtn.style.display = 'none';
-			}
-		}
-
-		// Store the current property for saving
-		window.currentEditingProperty = property;
-
-		// Show the modal
-		showModal('listingEditModal');
+		Modals.openListingEditModal(property, {
+			state,
+			showModal
+		});
 	}
 
 	function closeListingEditModal() {
-		hideModal('listingEditModal');
-		window.currentEditingProperty = null;
+		Modals.closeListingEditModal({
+			hideModal
+		});
 	}
 
 	async function deleteListing() {
-		const property = window.currentEditingProperty;
-		if (!property) return;
-
-		// Confirm deletion
-		const propertyName = property.name || property.community_name;
-		const confirmed = confirm(`Are you sure you want to delete "${propertyName}"? This action cannot be undone.`);
-
-		if (!confirmed) return;
-
-		try {
-			console.log('Deleting property:', property.id);
-
-			// Delete from Supabase
-			await SupabaseAPI.deleteProperty(property.id);
-
-			// Show success message
-			toast(`Listing "${propertyName}" deleted successfully!`, 'success');
-
-			// Close modal and refresh display
-			closeListingEditModal();
-			await renderListings();
-		} catch (error) {
-			console.error('Error deleting listing:', error);
-			console.error('Error details:', JSON.stringify(error, null, 2));
-			toast(`Error deleting listing: ${error.message}`, 'error');
-		}
+		await Modals.deleteListing({
+			SupabaseAPI,
+			toast,
+			closeListingEditModal,
+			renderListings
+		});
 	}
 
 	async function saveListingEdit() {
-		const property = window.currentEditingProperty;
-		if (!property) return;
-
-		try {
-			// Get form data - ONLY use new schema field names
-			const formData = {
-				community_name: document.getElementById('editPropertyName').value,
-				street_address: document.getElementById('editAddress').value,
-				city: document.getElementById('editMarket').value,
-				contact_email: document.getElementById('editPhone').value, // Using contact_email for phone
-				rent_range_min: parseInt(document.getElementById('editRentMin').value),
-				rent_range_max: parseInt(document.getElementById('editRentMax').value),
-				bed_range: `${document.getElementById('editBedsMin').value}-${document.getElementById('editBedsMax').value}`,
-				bath_range: `${document.getElementById('editBathsMin').value}-${document.getElementById('editBathsMax').value}`,
-				commission_pct: Math.max(parseFloat(document.getElementById('editEscortPct').value), parseFloat(document.getElementById('editSendPct').value)),
-				leasing_link: document.getElementById('editWebsite').value,
-				amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
-				is_pumi: document.getElementById('editIsPUMI').checked,
-				mark_for_review: document.getElementById('editMarkForReview').checked,
-				updated_at: new Date().toISOString()
-			};
-
-			console.log('Saving listing with data:', formData);
-
-			// Get current user info for activity logging
-			const userEmail = window.currentUser?.email || 'unknown';
-			const userName = window.currentUser?.user_metadata?.name ||
-							 window.currentUser?.email ||
-							 'Unknown User';
-
-			// Update in Supabase
-			await SupabaseAPI.updateProperty(property.id, formData, userEmail, userName);
-
-			// Show success message
-			toast(`Listing "${formData.community_name}" updated successfully!`, 'success');
-
-			// Close modal and refresh display
-			closeListingEditModal();
-			await renderListings();
-		} catch (error) {
-			console.error('Error updating listing:', error);
-			console.error('Error details:', JSON.stringify(error, null, 2));
-			toast(`Error updating listing: ${error.message}`, 'error');
-		}
+		await Modals.saveListingEdit({
+			SupabaseAPI,
+			toast,
+			closeListingEditModal,
+			renderListings
+		});
 	}
 
 	// Initialize health status for all leads
