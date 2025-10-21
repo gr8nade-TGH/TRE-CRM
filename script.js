@@ -3366,140 +3366,29 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	function updateBuildShowcaseButton(){
-		const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
-		const buildBtn = document.getElementById('buildShowcaseBtn');
-		buildBtn.disabled = selectedCount === 0;
-		buildBtn.textContent = selectedCount > 0 ? `Build Showcase (${selectedCount})` : 'Build Showcase';
-
-		// Update bulk actions bar visibility
-		updateBulkActionsBar();
+		Listings.updateBuildShowcaseButton();
 	}
 
 	function updateBulkActionsBar() {
-		const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
-		const bulkActionsCount = document.getElementById('bulkActionsCount');
-		const buildShowcaseBtn = document.getElementById('buildShowcaseBtn');
-		const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
-		const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
-
-		// Update count display
-		if (bulkActionsCount) {
-			if (selectedCount > 0) {
-				bulkActionsCount.textContent = `${selectedCount} selected`;
-				bulkActionsCount.style.display = 'inline-flex';
-			} else {
-				bulkActionsCount.textContent = '';
-				bulkActionsCount.style.display = 'none';
-			}
-		}
-
-		// Enable/disable buttons based on selection
-		const hasSelection = selectedCount > 0;
-		const isManagerOrSuperUser = state.role === 'manager' || state.role === 'super_user';
-
-		if (buildShowcaseBtn) {
-			buildShowcaseBtn.disabled = !hasSelection;
-		}
-
-		if (bulkMarkUnavailableBtn) {
-			bulkMarkUnavailableBtn.disabled = !hasSelection || !isManagerOrSuperUser;
-		}
-
-		if (bulkDeleteBtn) {
-			bulkDeleteBtn.disabled = !hasSelection || !isManagerOrSuperUser;
-		}
+		Listings.updateBulkActionsBar({
+			state
+		});
 	}
 
 	async function bulkMarkAsUnavailable() {
-		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-		const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
-
-		if (selectedIds.length === 0) {
-			toast('No listings selected', 'error');
-			return;
-		}
-
-		const confirmed = confirm(`Are you sure you want to mark ${selectedIds.length} listing(s) as unavailable? They will be removed from the listings table but can be restored later.`);
-
-		if (!confirmed) return;
-
-		try {
-			console.log('Marking listings as unavailable:', selectedIds);
-
-			// Get current user info for activity logging
-			const userEmail = window.currentUser?.email || 'unknown';
-			const userName = window.currentUser?.user_metadata?.name ||
-							 window.currentUser?.email ||
-							 'Unknown User';
-
-			// Update each property to set is_available = false
-			for (const id of selectedIds) {
-				await SupabaseAPI.updateProperty(id, { is_available: false }, userEmail, userName);
-			}
-
-			// Show success message
-			toast(`${selectedIds.length} listing(s) marked as unavailable`, 'success');
-
-			// Clear selections and refresh
-			checkboxes.forEach(cb => cb.checked = false);
-			updateBulkActionsBar();
-			await renderListings();
-		} catch (error) {
-			console.error('Error marking listings as unavailable:', error);
-			toast(`Error: ${error.message}`, 'error');
-		}
+		await Listings.bulkMarkAsUnavailable({
+			SupabaseAPI,
+			toast,
+			renderListings
+		});
 	}
 
 	async function bulkDeleteListings() {
-		console.log('bulkDeleteListings called!');
-		const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-		const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
-
-		console.log('Selected IDs for deletion:', selectedIds);
-
-		if (selectedIds.length === 0) {
-			toast('No listings selected', 'error');
-			return;
-		}
-
-		const confirmed = confirm(`⚠️ WARNING: Are you sure you want to PERMANENTLY DELETE ${selectedIds.length} listing(s)?\n\nThis action CANNOT be undone. The listings will be gone forever.`);
-
-		console.log('First confirmation:', confirmed);
-		if (!confirmed) return;
-
-		// Double confirmation for safety
-		const doubleConfirmed = confirm(`This is your final confirmation. Delete ${selectedIds.length} listing(s) permanently?`);
-
-		console.log('Second confirmation:', doubleConfirmed);
-		if (!doubleConfirmed) return;
-
-		try {
-			console.log('Deleting listings:', selectedIds);
-
-			// Delete each property
-			for (const id of selectedIds) {
-				console.log('Deleting property:', id);
-				const result = await SupabaseAPI.deleteProperty(id);
-				console.log('Delete result for', id, ':', result);
-			}
-
-			console.log('All deletions complete. Refreshing listings...');
-
-			// Show success message
-			toast(`${selectedIds.length} listing(s) deleted permanently`, 'success');
-
-			// Clear selections and refresh
-			checkboxes.forEach(cb => cb.checked = false);
-			updateBulkActionsBar();
-
-			console.log('Calling renderListings()...');
-			await renderListings();
-			console.log('renderListings() complete');
-		} catch (error) {
-			console.error('Error deleting listings:', error);
-			console.error('Error stack:', error.stack);
-			toast(`Error: ${error.message}`, 'error');
-		}
+		await Listings.bulkDeleteListings({
+			SupabaseAPI,
+			toast,
+			renderListings
+		});
 	}
 
 	async function sendBuildShowcase(){
