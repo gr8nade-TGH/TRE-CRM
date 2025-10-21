@@ -1497,10 +1497,7 @@ async function deleteSpecialAPI(specialId) {
 	// ---- Rendering: Leads Table ----
 	// Wrapper function that calls the module
 	renderLeads = async function(){
-		// Fetch agents for dropdown (if manager)
-		const agents = state.role === 'manager' ? await api.getAgents() : [];
-
-		// Call module render function
+		// Call module render function with mockAgents (global variable)
 		await Leads.renderLeads({
 			api,
 			SupabaseAPI,
@@ -1509,7 +1506,7 @@ async function deleteSpecialAPI(specialId) {
 			getCurrentStepFromActivities,
 			openLeadNotesModal,
 			openActivityLogModal,
-			agents
+			agents: mockAgents
 		});
 	}
 
