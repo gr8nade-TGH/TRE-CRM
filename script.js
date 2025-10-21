@@ -37,6 +37,11 @@ import * as SupabaseAPI from './src/api/supabase-api.js';
 // Import API wrapper
 import { createAPI } from './src/api/api-wrapper.js';
 
+// Import utilities
+import { getStepModalContent as getStepModalContentUtil } from './src/utils/step-modal-content.js';
+import { sortTable as sortTableUtil } from './src/utils/table-sorting.js';
+import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase-builder.js';
+
 // Import Leads module
 import * as Leads from './src/modules/leads/index.js';
 import { calculateHealthStatus, renderHealthStatus } from './src/modules/leads/leads-health.js';
@@ -294,116 +299,17 @@ async function deleteSpecialAPI(specialId) {
 	function byKey(key) { return (a,b)=> (a[key] > b[key] ? 1 : a[key] < b[key] ? -1 : 0); }
 
 	// ---- Table Sorting ----
+	// Wrapper function for sortTable - calls utility module
 	function sortTable(column, tableId) {
-		console.log('sortTable called with column:', column, 'tableId:', tableId);
-		const table = document.getElementById(tableId);
-		if (!table) {
-			console.log('Table not found:', tableId);
-			return;
-		}
-
-		const tbody = table.querySelector('tbody');
-		if (!tbody) {
-			console.log('Tbody not found in table:', tableId);
-			return;
-		}
-
-		// Three-state cycle: ascending → descending → no sort (original order)
-		let newSortState;
-		if (state.sort.key === column) {
-			if (state.sort.dir === 'asc') {
-				newSortState = 'desc';
-			} else if (state.sort.dir === 'desc') {
-				newSortState = 'none';
-			} else {
-				newSortState = 'asc';
-			}
-		} else {
-			newSortState = 'asc';
-		}
-
-		// Update sort state
-		state.sort.key = column;
-		state.sort.dir = newSortState;
-
-		// For tables with proper render functions, use those instead of DOM manipulation
-		if (tableId === 'leadsTable') {
-			renderLeads();
-			return;
-		} else if (tableId === 'agentsTable') {
-			renderAgents();
-			return;
-		} else if (tableId === 'listingsTable') {
-			renderListings();
-			return;
-		} else if (tableId === 'specialsTable') {
-			renderSpecials();
-			return;
-		} else if (tableId === 'documentsTable') {
-			renderDocuments();
-			return;
-		} else if (tableId === 'bugsTable') {
-			renderBugs();
-			return;
-		} else if (tableId === 'usersTable') {
-			console.log('Calling renderUsersTable for sorting');
-			renderUsersTable();
-			return;
-		}
-
-		// For tables without render functions, use DOM manipulation
-		const rows = Array.from(tbody.querySelectorAll('tr'));
-		const isAscending = newSortState === 'asc';
-
-		rows.sort((a, b) => {
-			const aVal = a.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
-			const bVal = b.querySelector(`[data-sort="${column}"]`)?.textContent.trim() || '';
-
-			// Handle numeric sorting for specific columns
-			if (['rent_min', 'rent_max', 'beds_min', 'baths_min', 'sqft_min', 'commission_pct'].includes(column)) {
-				// Special handling for commission_pct column
-				if (column === 'commission_pct') {
-					const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
-					const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
-					return isAscending ? aNum - bNum : bNum - aNum;
-				}
-
-				// For rent columns, extract the first number (min value)
-				if (['rent_min', 'rent_max'].includes(column)) {
-					const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
-					const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
-					return isAscending ? aNum - bNum : bNum - aNum;
-				}
-
-				// For beds/baths columns, extract the first number
-				if (['beds_min', 'baths_min'].includes(column)) {
-					const aNum = parseFloat(aVal.split('-')[0]) || 0;
-					const bNum = parseFloat(bVal.split('-')[0]) || 0;
-					return isAscending ? aNum - bNum : bNum - aNum;
-				}
-
-				const aNum = parseFloat(aVal.replace(/[^0-9.-]/g, '')) || 0;
-				const bNum = parseFloat(bVal.replace(/[^0-9.-]/g, '')) || 0;
-				return isAscending ? aNum - bNum : bNum - aNum;
-			}
-
-			// Handle date sorting
-			if (['submitted_at', 'last_updated', 'created_at'].includes(column)) {
-				const aDate = new Date(aVal);
-				const bDate = new Date(bVal);
-				return isAscending ? aDate - bDate : bDate - aDate;
-			}
-
-			// Default text sorting
-			if (isAscending) {
-				return aVal.localeCompare(bVal, undefined, { numeric: true });
-			} else {
-				return bVal.localeCompare(aVal, undefined, { numeric: true });
-			}
-		});
-
-		rows.forEach(row => tbody.appendChild(row));
-		updateSortHeaders(tableId);
+		sortTableUtil(column, tableId, state, {
+			renderLeads,
+			renderAgents,
+			renderListings,
+			renderSpecials,
+			renderDocuments,
+			renderBugs,
+			renderUsersTable
+		}, updateSortHeaders);
 	}
 
 
@@ -1093,260 +999,9 @@ function createLeadTable(lead, isExpanded = false) {
 	return table;
 }
 
+	// Wrapper function for getStepModalContent - calls utility module
 	async function getStepModalContent(lead, step) {
-		switch(step.id) {
-			case 1: // Lead Joined
-				// Fetch the lead_created activity from database
-				try {
-					const leadData = await SupabaseAPI.getLead(lead.id);
-					const activities = await SupabaseAPI.getLeadActivities(lead.id);
-					const createdActivity = activities.find(a => a.activity_type === 'lead_created');
-
-					if (!createdActivity) {
-						return `
-							<div class="modal-details"><strong>Lead Name:</strong> ${lead.leadName || lead.name}</div>
-							<div class="modal-details"><strong>Status:</strong> Lead joined the system</div>
-							<div class="modal-details"><em>No detailed join information available</em></div>
-						`;
-					}
-
-					const metadata = createdActivity.metadata || {};
-					const formData = metadata.form_data || {};
-					const preferences = formData.preferences || leadData.preferences || {};
-
-					// Parse preferences if it's a string
-					const prefs = typeof preferences === 'string' ? JSON.parse(preferences) : preferences;
-
-					// Format the join method
-					const source = metadata.source || 'unknown';
-					const agentName = metadata.agent_name || createdActivity.performed_by_name || 'Unknown Agent';
-					const joinDate = formatDate(createdActivity.created_at);
-
-					let joinMethod = '';
-					if (source === 'landing_page') {
-						joinMethod = `Filled <strong>${agentName}</strong> landing page on ${joinDate}`;
-					} else if (source === 'manual') {
-						joinMethod = `Manually added by ${agentName} on ${joinDate}`;
-					} else {
-						joinMethod = `Joined via ${source} on ${joinDate}`;
-					}
-
-					// Build preferences display
-					let prefsHTML = '';
-					if (prefs && Object.keys(prefs).length > 0) {
-						prefsHTML = '<div class="modal-section"><strong>Preferences from form:</strong><ul class="preferences-list">';
-
-						if (prefs.bedrooms) prefsHTML += `<li><strong>Bedrooms:</strong> ${prefs.bedrooms}</li>`;
-						if (prefs.bathrooms) prefsHTML += `<li><strong>Bathrooms:</strong> ${prefs.bathrooms}</li>`;
-						if (prefs.priceRange) prefsHTML += `<li><strong>Budget:</strong> ${prefs.priceRange}</li>`;
-						if (prefs.areaOfTown) prefsHTML += `<li><strong>Area:</strong> ${prefs.areaOfTown}</li>`;
-						if (prefs.moveInDate) prefsHTML += `<li><strong>Move-in Date:</strong> ${prefs.moveInDate}</li>`;
-						if (prefs.creditHistory) prefsHTML += `<li><strong>Credit History:</strong> ${prefs.creditHistory}</li>`;
-						if (prefs.bestTimeToCall || formData.best_time_to_call) {
-							prefsHTML += `<li><strong>Best Time to Call:</strong> ${prefs.bestTimeToCall || formData.best_time_to_call}</li>`;
-						}
-						if (prefs.comments) prefsHTML += `<li><strong>Comments:</strong> ${prefs.comments}</li>`;
-
-						prefsHTML += '</ul></div>';
-					}
-
-					// Welcome email section (placeholder for Resend integration)
-					const welcomeEmailHTML = `
-						<div class="modal-section">
-							<strong>Welcome Email:</strong>
-							<div class="email-placeholder">
-								<em>📧 Email integration coming soon (Resend)</em>
-								<div class="email-details-placeholder">
-									• Welcome email will be sent automatically<br>
-									• Email status and details will appear here<br>
-									• Click to view email content and delivery status
-								</div>
-							</div>
-						</div>
-					`;
-
-					return `
-						<div class="modal-details"><strong>Lead Name:</strong> ${leadData.name}</div>
-						<div class="modal-details"><strong>Email:</strong> ${leadData.email}</div>
-						<div class="modal-details"><strong>Phone:</strong> ${leadData.phone || 'Not provided'}</div>
-						<div class="modal-details"><strong>Join Method:</strong> ${joinMethod}</div>
-						${prefsHTML}
-						${welcomeEmailHTML}
-					`;
-				} catch (error) {
-					console.error('Error fetching lead joined details:', error);
-					return `
-						<div class="modal-details"><strong>Lead Name:</strong> ${lead.leadName || lead.name}</div>
-						<div class="modal-details"><em>Error loading join details. Please try again.</em></div>
-					`;
-				}
-
-			case 2: // Showcase Sent
-				return `
-					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
-					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
-					<div class="modal-details"><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-					<a href="${lead.showcase.landingPageUrl}" target="_blank" class="modal-link">View Landing Page →</a>
-				`;
-
-			case 3: // Lead Responded
-				return `
-					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
-					<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
-					<div class="modal-details"><strong>Properties Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
-					<div class="modal-details"><strong>Preferred Tour Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
-					<div class="modal-details"><strong>Response Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-					<div class="modal-details"><strong>Status:</strong> Lead has shown interest and selected properties</div>
-					<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
-				`;
-
-			case 4: { // Guest Card Sent / Send Guest Card
-				// Check if this step is completed or needs action
-				const guestCardActivities = await SupabaseAPI.getLeadActivities(lead.id);
-				const guestCardSent = guestCardActivities.find(a => a.activity_type === 'guest_card_sent');
-
-				if (guestCardSent) {
-					// Step is completed - show sent details
-					const metadata = guestCardSent.metadata || {};
-					const properties = metadata.properties || [];
-					const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName || lead.name)}`;
-
-					return `
-						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
-						<div class="modal-details"><strong>Agent:</strong> ${guestCardSent.performed_by_name || 'Unknown'}</div>
-						<div class="modal-details"><strong>Properties:</strong> ${properties.map(p => p.name).join(', ')}</div>
-						<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(guestCardSent.created_at)}</div>
-						<div class="modal-details"><strong>Status:</strong> ✅ Guest cards sent to all properties</div>
-						<a href="${guestCardUrl}" target="_blank" class="modal-link">View Guest Card →</a>
-					`;
-				} else {
-					// Step needs action - show preview/send interface
-					// Get showcase response to know which properties were selected
-					const showcaseResponse = guestCardActivities.find(a => a.activity_type === 'showcase_response');
-
-					if (!showcaseResponse) {
-						return `
-							<div class="modal-warning">⚠️ No showcase response found. Lead must respond to showcase first.</div>
-						`;
-					}
-
-					const responseMetadata = showcaseResponse.metadata || {};
-					const selectedProperties = responseMetadata.selected_properties || [];
-
-					if (selectedProperties.length === 0) {
-						return `
-							<div class="modal-warning">⚠️ No properties selected by lead.</div>
-						`;
-					}
-
-					// Fetch property details and check for contact info
-					let propertiesHTML = '';
-					for (const propSelection of selectedProperties) {
-						try {
-							// Get property details
-							const property = await SupabaseAPI.getProperty(propSelection.property_id);
-							const hasContactInfo = property.contact_email || property.contact_phone;
-							const tourDate = propSelection.tour_date || 'Not specified';
-
-							propertiesHTML += `
-								<div class="guest-card-property" data-property-id="${property.id}">
-									<div class="property-header">
-										<h4>${property.community_name || property.name}</h4>
-										${hasContactInfo ?
-											'<span class="contact-status-badge contact-ok">✓ Contact Info Available</span>' :
-											'<span class="contact-status-badge contact-missing">⚠️ Missing Contact Info</span>'
-										}
-									</div>
-									<div class="property-details">
-										<div><strong>Address:</strong> ${property.street_address}</div>
-										<div><strong>Tour Date:</strong> ${tourDate}</div>
-										${hasContactInfo ? `
-											<div><strong>Contact:</strong> ${property.contact_name || 'N/A'}</div>
-											<div><strong>Email:</strong> ${property.contact_email || 'N/A'}</div>
-											<div><strong>Phone:</strong> ${property.contact_phone || 'N/A'}</div>
-											<div><strong>Office Hours:</strong> ${property.office_hours || 'N/A'}</div>
-										` : `
-											<div class="missing-contact-warning">
-												<p>⚠️ Contact information is required before sending guest card.</p>
-												<button class="btn btn-primary add-contact-btn" data-property-id="${property.id}" data-community-name="${property.community_name || property.name}">
-													📞 Add Contact Info
-												</button>
-											</div>
-										`}
-									</div>
-									${hasContactInfo ? `
-										<div class="property-actions">
-											<button class="btn btn-outline preview-guest-card-btn" data-property-id="${property.id}">
-												👁️ Preview Guest Card
-											</button>
-											<button class="btn btn-primary send-guest-card-btn" data-property-id="${property.id}" data-lead-id="${lead.id}">
-												📤 Send Guest Card
-											</button>
-										</div>
-									` : ''}
-								</div>
-							`;
-						} catch (error) {
-							console.error('Error fetching property:', error);
-							propertiesHTML += `
-								<div class="guest-card-property error">
-									<p>Error loading property details</p>
-								</div>
-							`;
-						}
-					}
-
-					return `
-						<div class="guest-card-workflow">
-							<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
-							<div class="modal-details"><strong>Selected Properties:</strong> ${selectedProperties.length}</div>
-							<div class="modal-section">
-								<h3>Review & Send Guest Cards</h3>
-								<p class="help-text">Review each property and send guest cards individually. Contact information is required for each property.</p>
-							</div>
-							<div class="properties-list">
-								${propertiesHTML}
-							</div>
-						</div>
-					`;
-				}
-			}
-
-			case 5: // Property Selected
-				return `
-					<div class="modal-details"><strong>Property:</strong> ${lead.property.name}</div>
-					<div class="modal-details"><strong>Address:</strong> ${lead.property.address}</div>
-					<div class="modal-details"><strong>Rent:</strong> ${lead.property.rent}</div>
-					<div class="modal-details"><strong>Size:</strong> ${lead.property.bedrooms}bd/${lead.property.bathrooms}ba</div>
-				`;
-
-			case 6: // Lease Sent
-				return `
-					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
-					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-					<a href="https://tre-crm.vercel.app/lease/lead_${lead.id}" target="_blank" class="modal-link">View Lease →</a>
-				`;
-
-			case 7: // Lease Signed
-				return `
-					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-					<div class="modal-details"><strong>Signed by:</strong> Property Management</div>
-					<a href="https://tre-crm.vercel.app/lease-signed/lead_${lead.id}" target="_blank" class="modal-link">View Signed Lease →</a>
-				`;
-
-			case 8: // Lease Finalized
-				return `
-					<div class="modal-details"><strong>Status:</strong> Complete</div>
-					<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-					<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-					<div class="modal-details"><strong>Commission:</strong> Ready for processing</div>
-				`;
-
-			default:
-				return `<div class="modal-details">No details available</div>`;
-		}
+		return await getStepModalContentUtil(lead, step, formatDate);
 	}
 
 	async function showStepDetails(lead, step) {
@@ -2616,98 +2271,16 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	async function sendBuildShowcase(){
-		const leadId = document.getElementById('buildShowcaseLead').value;
-		const selectedListings = getSelectedListings();
-		const includeReferralBonus = document.getElementById('buildReferralBonus').checked;
-		const includeMovingBonus = document.getElementById('buildMovingBonus').checked;
-
-		if (!leadId) {
-			toast('Please select a lead', 'error');
-			return;
-		}
-
-		if (selectedListings.length === 0) {
-			toast('Please select at least one listing', 'error');
-			return;
-		}
-
-		const leads = state.leads || [];
-		const lead = leads.find(l => l.id === leadId);
-		if (!lead) {
-			toast('Lead not found', 'error');
-			return;
-		}
-
-		// Generate unique showcase ID for tracking
-		const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-		// Create landing page URL with tracking parameters
-		const baseUrl = window.location.origin + window.location.pathname.replace('index.html', 'landing.html');
-		const landingUrl = `${baseUrl}?showcase=${showcaseId}&lead=${lead.id}&properties=${selectedListings.map(p => p.id).join(',')}`;
-
-		// Create email content with bonus information
-		let bonusText = '';
-		if (includeReferralBonus || includeMovingBonus) {
-			bonusText = '<p><strong>Special Perks:</strong></p><ul>';
-			if (includeReferralBonus) {
-				bonusText += '<li>Referral bonus for recommending friends</li>';
-			}
-			if (includeMovingBonus) {
-				bonusText += '<li>Moving bonus to help with relocation costs</li>';
-			}
-			bonusText += '</ul>';
-		}
-
-		const emailContent = {
-			to: lead.email,
-			subject: 'Top options hand picked for you',
-			html: `
-				<h2>Top Property Options for You</h2>
-				<p>Hi ${lead.name},</p>
-				<p>I've hand-picked these properties based on your preferences:</p>
-				${bonusText}
-				${selectedListings.map(prop => `
-					<div style="border: 1px solid #e5e7eb; padding: 16px; margin: 16px 0; border-radius: 8px;">
-						<h3>${prop.name}</h3>
-						<p><strong>Location:</strong> ${prop.market}</p>
-						<p><strong>Rent:</strong> $${prop.rent_min} - $${prop.rent_max}</p>
-						<p><strong>Size:</strong> ${prop.beds_min}-${prop.beds_max} bed / ${prop.baths_min}-${prop.baths_max} bath</p>
-						<p><strong>Amenities:</strong> ${prop.amenities.slice(0, 5).join(', ')}</p>
-					</div>
-				`).join('')}
-				<p>Click the link below to view your personalized property showcase and schedule tours:</p>
-				<p><a href="${landingUrl}" style="background: #3b82f6; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px;">View Your Property Showcase</a></p>
-				<p>Best regards,<br>Your TRE Agent</p>
-			`,
-			showcase_id: showcaseId
-		};
-
-		try {
-			// Send email via API
-			await api.sendEmail(emailContent);
-
-			// Create showcase record in database
-			await api.createShowcase({
-				lead_id: lead.id,
-				agent_id: state.agentId || 'current-agent-id',
-				listing_ids: selectedListings.map(p => p.id),
-				message: `Showcase sent to ${lead.name} with ${selectedListings.length} properties`,
-				showcase_id: showcaseId,
-				landing_url: landingUrl
-			});
-
-			toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
-			closeBuildShowcase();
-
-			// Clear selections
-			document.querySelectorAll('.listing-checkbox:checked').forEach(cb => cb.checked = false);
-			updateBuildShowcaseButton();
-
-		} catch (error) {
-			console.error('Error sending showcase email:', error);
-			toast('Error sending email. Please try again.');
-		}
+	// Wrapper function for sendBuildShowcase - calls utility module
+	async function sendBuildShowcase() {
+		await sendBuildShowcaseUtil({
+			state,
+			api,
+			toast,
+			closeBuildShowcase,
+			updateBuildShowcaseButton,
+			getSelectedListings
+		});
 	}
 
 	async function sendShowcase(){
