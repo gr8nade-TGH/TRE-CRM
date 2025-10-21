@@ -40,6 +40,12 @@ import * as Leads from './src/modules/leads/index.js';
 // Import Listings module
 import * as Listings from './src/modules/listings/index.js';
 
+// Import Agents module
+import * as Agents from './src/modules/agents/index.js';
+
+// Import Documents module
+import * as Documents from './src/modules/documents/index.js';
+
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
@@ -2359,134 +2365,31 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Rendering: Documents Table ----
+	// Wrapper function that calls the module
 	async function renderDocuments(){
-		if (state.role === 'agent') {
-			renderAgentDocuments();
-		} else {
-			renderManagerDocuments();
-		}
+		await Documents.renderDocuments({
+			state,
+			renderAgentDocuments,
+			renderManagerDocuments
+		});
 	}
 
 	async function renderManagerDocuments(){
-		// Show manager view, hide agent view
-		document.getElementById('managerDocumentsView').classList.remove('hidden');
-		document.getElementById('agentDocumentsView').classList.add('hidden');
-
-		try {
-			// Fetch real leads from Supabase
-			const result = await SupabaseAPI.getLeads({
-				role: state.role,
-				agentId: state.agentId,
-				search: '',
-				sortKey: 'created_at',
-				sortDir: 'desc',
-				page: 1,
-				pageSize: 100,
-				filters: {}
-			});
-
-			// Transform leads to match the expected format
-			const transformedLeads = result.items.map(lead => ({
-				id: lead.id,
-				leadName: lead.name,
-				agentName: lead.agent_name || 'Unassigned',
-				agentEmail: lead.agent_email || '',
-				currentStep: lead.current_step || 1,
-				lastUpdated: lead.updated_at || lead.created_at,
-				status: lead.health_status === 'closed' ? 'completed' : 'current',
-				property: {
-					name: lead.property_name || 'Not selected',
-					address: lead.property_address || '',
-					rent: lead.property_rent || '',
-					bedrooms: lead.property_bedrooms || 0,
-					bathrooms: lead.property_bathrooms || 0
-				},
-				showcase: {
-					sent: lead.showcase_sent || false,
-					landingPageUrl: lead.showcase_url || '',
-					selections: lead.showcase_selections || [],
-					calendarDates: lead.showcase_dates || []
-				},
-				guestCard: {
-					sent: lead.guest_card_sent || false,
-					url: lead.guest_card_url || ''
-				},
-				lease: {
-					sent: lead.lease_sent || false,
-					signed: lead.lease_signed || false,
-					finalized: lead.lease_finalized || false,
-					property: lead.property_name || '',
-					apartment: lead.apartment_unit || ''
-				}
-			}));
-
-			// Render progress table with real data
-			renderProgressTable('documentsTbody', transformedLeads);
-		} catch (error) {
-			console.error('Error loading documents:', error);
-			toast('Error loading documents. Please try again.');
-		}
+		await Documents.renderManagerDocuments({
+			SupabaseAPI,
+			state,
+			renderProgressTable,
+			toast
+		});
 	}
 
 	async function renderAgentDocuments(){
-		// Show agent view, hide manager view
-		document.getElementById('managerDocumentsView').classList.add('hidden');
-		document.getElementById('agentDocumentsView').classList.remove('hidden');
-
-		try {
-			// Fetch real leads from Supabase for current agent
-			const result = await SupabaseAPI.getLeads({
-				role: 'agent',
-				agentId: state.agentId,
-				search: '',
-				sortKey: 'created_at',
-				sortDir: 'desc',
-				page: 1,
-				pageSize: 100,
-				filters: {}
-			});
-
-			// Transform leads to match the expected format
-			const transformedLeads = result.items.map(lead => ({
-				id: lead.id,
-				leadName: lead.name,
-				agentName: lead.agent_name || 'Unassigned',
-				agentEmail: lead.agent_email || '',
-				currentStep: lead.current_step || 1,
-				lastUpdated: lead.updated_at || lead.created_at,
-				status: lead.health_status === 'closed' ? 'completed' : 'current',
-				property: {
-					name: lead.property_name || 'Not selected',
-					address: lead.property_address || '',
-					rent: lead.property_rent || '',
-					bedrooms: lead.property_bedrooms || 0,
-					bathrooms: lead.property_bathrooms || 0
-				},
-				showcase: {
-					sent: lead.showcase_sent || false,
-					landingPageUrl: lead.showcase_url || '',
-					selections: lead.showcase_selections || [],
-					calendarDates: lead.showcase_dates || []
-				},
-				guestCard: {
-					sent: lead.guest_card_sent || false,
-					url: lead.guest_card_url || ''
-				},
-				lease: {
-					sent: lead.lease_sent || false,
-					signed: lead.lease_signed || false,
-					finalized: lead.lease_finalized || false,
-					property: lead.property_name || '',
-					apartment: lead.apartment_unit || ''
-				}
-			}));
-
-			// Render progress table with real data
-			renderProgressTable('agentDocumentsTbody', transformedLeads);
-		} catch (error) {
-			console.error('Error loading agent documents:', error);
-			toast('Error loading documents. Please try again.');
-		}
+		await Documents.renderAgentDocuments({
+			SupabaseAPI,
+			state,
+			renderProgressTable,
+			toast
+		});
 	}
 
 	// ---- Rendering: Properties Page (Contact Info + Specials) ----
@@ -3179,88 +3082,13 @@ Agent ID: ${bug.technical_context.agent_id}</pre>
 	}
 
 	// ---- Rendering: Agents Table ----
+	// Wrapper function that calls the module
 	async function renderAgents(){
-		const tbody = document.getElementById('agentsTbody');
-		tbody.innerHTML = '';
-
-		// Apply sorting if active
-		const agentsToRender = [...mockAgents];
-		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
-			agentsToRender.sort((a, b) => {
-				const statsA = getAgentStats(a.id);
-				const statsB = getAgentStats(b.id);
-
-				let aVal, bVal;
-				if (state.sort.key === 'name') {
-					aVal = a.name.toLowerCase();
-					bVal = b.name.toLowerCase();
-				} else if (state.sort.key === 'leads_generated') {
-					aVal = statsA.generated;
-					bVal = statsB.generated;
-				} else if (state.sort.key === 'leads_assigned') {
-					aVal = statsA.assigned;
-					bVal = statsB.assigned;
-				} else if (state.sort.key === 'leads_closed') {
-					aVal = statsA.closed;
-					bVal = statsB.closed;
-				} else {
-					return 0;
-				}
-
-				if (state.sort.key === 'leads_generated' || state.sort.key === 'leads_assigned' || state.sort.key === 'leads_closed') {
-					// Numeric sorting
-					const aNum = parseInt(aVal) || 0;
-					const bNum = parseInt(bVal) || 0;
-					return state.sort.dir === 'asc' ? aNum - bNum : bNum - aNum;
-				} else {
-					// Text sorting
-					if (state.sort.dir === 'asc') {
-						return aVal.localeCompare(bVal);
-					} else {
-						return bVal.localeCompare(aVal);
-					}
-				}
-			});
-		}
-
-		agentsToRender.forEach(agent => {
-			const stats = getAgentStats(agent.id);
-			// Generate landing page URL with agent slug (name-based)
-			const agentSlug = agent.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-			// Use Vercel production URL for landing pages
-			const landingUrl = `https://tre-crm.vercel.app/landing/${agentSlug}`;
-
-			const tr = document.createElement('tr');
-			tr.innerHTML = `
-				<td data-sort="name">
-					<div class="lead-name">${agent.name}</div>
-					<div class="subtle mono">${agent.email} · ${agent.phone}</div>
-					${!agent.active ? '<span class="subtle" style="color: #dc2626;">Inactive</span>' : ''}
-					${agent.locked ? '<span class="subtle" style="color: #dc2626;">🔒 Locked</span>' : ''}
-				</td>
-				<td><button class="action-btn secondary" data-view-agent="${agent.id}" title="View/Edit Details">View/Edit</button></td>
-				<td class="mono" data-sort="leads_generated">${stats.generated}</td>
-				<td class="mono" data-sort="leads_assigned">${stats.assigned}</td>
-				<td class="mono" data-sort="leads_closed">${stats.closed}</td>
-				<td>
-					<button class="action-btn secondary" data-view-landing="${landingUrl}" title="View Landing Page" style="margin-right: 8px;">
-						<span style="margin-right: 4px;">🌐</span> View Page
-					</button>
-					<button class="action-btn secondary" data-copy-landing="${landingUrl}" title="Copy Landing Page URL">
-						<span style="margin-right: 4px;">📋</span> Copy Link
-					</button>
-				</td>
-				<td>
-					<button class="action-btn" data-remove="${agent.id}">Remove Agent</button>
-					<button class="action-btn ${agent.locked ? 'secondary' : ''}" data-lock="${agent.id}">${agent.locked ? '🔓 Unlock' : '🔒 Lock'} Account</button>
-					<button class="action-btn" data-assign-leads="${agent.id}">Assign Leads</button>
-				</td>
-			`;
-			tbody.appendChild(tr);
+		await Agents.renderAgents({
+			mockAgents,
+			state,
+			getAgentStats
 		});
-
-		// Update sort headers
-		updateSortHeaders('agentsTable');
 	}
 
 	function initMap() {
