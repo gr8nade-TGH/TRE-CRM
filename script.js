@@ -1535,109 +1535,8 @@ async function deleteSpecialAPI(specialId) {
 	}
 
 	// ---- Interactive Progress System ----
-
-	// Mock data for progress tracking
-	const mockProgressLeads = [
-		{
-			id: 'lead_1',
-			leadName: 'Sarah Johnson',
-			agentName: 'Alex Agent',
-			agentEmail: 'alex@trecrm.com',
-			currentStep: 3,
-			lastUpdated: '2024-01-15T10:30:00Z',
-			status: 'current',
-			property: {
-				name: 'The Howard',
-				address: '123 Main St, Austin, TX',
-				rent: '$1,200/month',
-				bedrooms: 1,
-				bathrooms: 1
-			},
-		showcase: {
-			sent: true,
-			landingPageUrl: 'https://tre-crm.vercel.app/landing.html?showcase=lead_1&lead=Sarah%20Johnson&agent=Alex%20Agent&properties=the-howard,community-2',
-			selections: ['The Howard', 'Community 2'],
-			calendarDates: ['2024-01-20', '2024-01-22']
-		},
-			guestCard: {
-				sent: true,
-				url: 'https://tre-crm.vercel.app/guest-card/lead_1'
-			},
-			lease: {
-				sent: false,
-				signed: false,
-				finalized: false,
-				property: 'The Howard',
-				apartment: 'Unit 205'
-			}
-		},
-		{
-			id: 'lead_2',
-			leadName: 'Mike Chen',
-			agentName: 'Bailey Broker',
-			agentEmail: 'bailey@trecrm.com',
-			currentStep: 5,
-			lastUpdated: '2024-01-14T15:45:00Z',
-			status: 'current',
-			property: {
-				name: 'Waterford Park',
-				address: '456 Oak Ave, Dallas, TX',
-				rent: '$1,400/month',
-				bedrooms: 2,
-				bathrooms: 2
-			},
-		showcase: {
-			sent: true,
-			landingPageUrl: 'https://tre-crm.vercel.app/landing.html?showcase=lead_2&lead=Mike%20Chen&agent=Bailey%20Broker&properties=waterford-park',
-			selections: ['Waterford Park'],
-			calendarDates: ['2024-01-18']
-		},
-			guestCard: {
-				sent: true,
-				url: 'https://tre-crm.vercel.app/guest-card/lead_2'
-			},
-			lease: {
-				sent: true,
-				signed: false,
-				finalized: false,
-				property: 'Waterford Park',
-				apartment: 'Unit 312'
-			}
-		},
-		{
-			id: 'lead_3',
-			leadName: 'Emily Davis',
-			agentName: 'Alex Agent',
-			agentEmail: 'alex@trecrm.com',
-			currentStep: 7,
-			lastUpdated: '2024-01-13T09:20:00Z',
-			status: 'completed',
-			property: {
-				name: 'Community 1',
-				address: '789 Pine St, Houston, TX',
-				rent: '$1,100/month',
-				bedrooms: 1,
-				bathrooms: 1
-			},
-		showcase: {
-			sent: true,
-			landingPageUrl: 'https://tre-crm.vercel.app/landing.html?showcase=lead_3&lead=Emily%20Davis&agent=Alex%20Agent&properties=community-1',
-			selections: ['Community 1'],
-			calendarDates: ['2024-01-15']
-		},
-			guestCard: {
-				sent: true,
-				url: 'https://tre-crm.vercel.app/guest-card/lead_3'
-			},
-			lease: {
-				sent: true,
-				signed: true,
-				finalized: true,
-				property: 'Community 1',
-				apartment: 'Unit 101'
-			}
-		}
-	];
+	// Note: Documents page now uses real Supabase data via Documents module
+	// mockProgressLeads removed - was only used by dead viewLeadDetails() function
 
 	// Note: mockSpecials and mockBugs are imported from src/state/mockData.js
 	// They are only used when USE_MOCK_DATA = true (currently false)
@@ -2129,13 +2028,8 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 	}
 
-	function viewLeadDetails(leadId) {
-		const lead = mockProgressLeads.find(l => l.id === leadId);
-		if (!lead) return;
-
-		const currentStep = progressSteps[lead.currentStep - 1];
-		showStepDetails(lead, currentStep);
-	}
+	// viewLeadDetails() removed - was dead code using mockProgressLeads
+	// Documents page now uses real Supabase data via Documents module
 
 	function toggleLeadTable(leadId) {
 		console.log('toggleLeadTable called with leadId:', leadId);
