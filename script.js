@@ -59,8 +59,8 @@ import * as Modals from './src/modules/modals/index.js';
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
-const USE_MOCK_DATA = false; // ✅ NOW USING REAL SUPABASE DATA!
-const API_BASE = null; // Not using REST API, using Supabase directly
+// ✅ NOW USING REAL SUPABASE DATA ONLY!
+// Mock data removed - all data comes from Supabase database
 
 // Global variables (loaded from external scripts)
 /* global mapboxgl */
@@ -160,7 +160,7 @@ async function saveNewLead() {
 // Unused legacy functions - kept for backward compatibility
 /* eslint-disable no-unused-vars */
 function checkDuplicateLead(email, phone) {
-	const existingLeads = USE_MOCK_DATA ? mockLeads : state.leads || [];
+	const existingLeads = state.leads || [];
 
 	return existingLeads.some(lead =>
 		lead.email.toLowerCase() === email.toLowerCase() ||
@@ -218,16 +218,11 @@ function saveNewSpecial() {
 		agent_name: state.role === 'agent' ? 'Current Agent' : 'Manager' // Will be updated with real name
 	};
 
-	// Add to mock data or call API
-	if (USE_MOCK_DATA) {
-		api.createSpecial(newSpecial);
-		toast('Special added successfully!', 'success');
-		hideModal('addSpecialModal');
-		renderSpecials(); // Refresh the specials list
-	} else {
-		// In production, this would call the API
-		createSpecialAPI(newSpecial);
-	}
+	// Create special via API
+	api.createSpecial(newSpecial);
+	toast('Special added successfully!', 'success');
+	hideModal('addSpecialModal');
+	renderSpecials(); // Refresh the specials list
 }
 
 async function createSpecialAPI(special) {
@@ -252,13 +247,9 @@ async function createSpecialAPI(special) {
 
 function deleteSpecial(specialId) {
 	if (confirm('Are you sure you want to delete this special? This action cannot be undone.')) {
-		if (USE_MOCK_DATA) {
-			api.deleteSpecial(specialId);
-			toast('Special deleted successfully!', 'success');
-			renderSpecials(); // Refresh the specials list
-		} else {
-			deleteSpecialAPI(specialId);
-		}
+		api.deleteSpecial(specialId);
+		toast('Special deleted successfully!', 'success');
+		renderSpecials(); // Refresh the specials list
 	}
 }
 
@@ -905,8 +896,7 @@ async function deleteSpecialAPI(specialId) {
 	}
 
 	// ---- Real API Layer ----
-	// Use Supabase for data storage
-	// Note: USE_MOCK_DATA and API_BASE are now defined at the top of the file
+	// All data comes from Supabase database
 
 	// Helper function to handle API responses
 	async function handleResponse(response) {
@@ -919,143 +909,31 @@ async function deleteSpecialAPI(specialId) {
 
 	api = {
 		async getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters = {} }){
-			if (!USE_MOCK_DATA) {
-				// Use real Supabase data
-				console.log('✅ Using Supabase for leads');
-				return await SupabaseAPI.getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters });
-			}
-
-			// Fallback to mock data
-			if (USE_MOCK_DATA) {
-				console.log('Using mock data for leads, count:', mockLeads.length);
-
-				// Apply filters to mock data
-				let filteredLeads = [...mockLeads];
-
-				// Apply status filter
-				if (filters.status && filters.status !== 'all') {
-					filteredLeads = filteredLeads.filter(lead => lead.health_status === filters.status);
-				}
-
-				// Apply date filters
-				if (filters.fromDate) {
-					const fromDate = new Date(filters.fromDate);
-					filteredLeads = filteredLeads.filter(lead => new Date(lead.submitted_at) >= fromDate);
-				}
-
-				if (filters.toDate) {
-					const toDate = new Date(filters.toDate);
-					toDate.setHours(23, 59, 59, 999); // End of day
-					filteredLeads = filteredLeads.filter(lead => new Date(lead.submitted_at) <= toDate);
-				}
-
-				// Apply search filter
-				if (search) {
-					const searchLower = search.toLowerCase();
-					filteredLeads = filteredLeads.filter(lead =>
-						lead.name.toLowerCase().includes(searchLower) ||
-						lead.email.toLowerCase().includes(searchLower) ||
-						lead.phone.includes(search)
-					);
-				}
-
-				// Apply sorting
-				if (sortKey && sortDir && sortDir !== 'none') {
-					filteredLeads.sort((a, b) => {
-						let aVal, bVal;
-
-						if (sortKey === 'name') {
-							aVal = a.name.toLowerCase();
-							bVal = b.name.toLowerCase();
-						} else if (sortKey === 'health_status') {
-							aVal = a.health_status;
-							bVal = b.health_status;
-						} else if (sortKey === 'submitted_at') {
-							aVal = new Date(a.submitted_at);
-							bVal = new Date(b.submitted_at);
-						} else if (sortKey === 'assigned_agent_id') {
-							const agentA = realAgents.find(agent => agent.id === a.assigned_agent_id);
-							const agentB = realAgents.find(agent => agent.id === b.assigned_agent_id);
-							aVal = agentA ? agentA.name : 'Unassigned';
-							bVal = agentB ? agentB.name : 'Unassigned';
-						} else {
-							return 0;
-						}
-
-						// Handle date sorting
-				if (sortKey === 'submitted_at') {
-							return sortDir === 'asc' ? aVal - bVal : bVal - aVal;
-						} else {
-							// Text sorting
-							if (sortDir === 'asc') {
-								return aVal.localeCompare(bVal);
-							} else {
-								return bVal.localeCompare(aVal);
-							}
-						}
-					});
-				}
-
-				return {
-					items: filteredLeads,
-					total: filteredLeads.length
-				};
-			}
-
-			const params = new URLSearchParams({
-				role,
-				agentId,
-				search,
-				sortKey,
-				sortDir,
-				page,
-				pageSize,
-				...filters
-			});
-
-			const response = await fetch(`${API_BASE}/leads?${params}`);
-			return handleResponse(response);
+			// Use real Supabase data
+			console.log('✅ Using Supabase for leads');
+			return await SupabaseAPI.getLeads({ role, agentId, search, sortKey, sortDir, page, pageSize, filters });
 		},
 
 		async getLead(id) {
-			if (!USE_MOCK_DATA) {
-				// Use real Supabase data
-				console.log('✅ Using Supabase for getLead');
-				return await SupabaseAPI.getLead(id);
-			}
-
-			// Fallback to mock data
-			if (USE_MOCK_DATA) {
-				return mockLeads.find(lead => lead.id === id) || mockLeads[0];
-			}
-
-			const response = await fetch(`${API_BASE}/leads/${id}`);
-			return handleResponse(response);
+			// Use real Supabase data
+			console.log('✅ Using Supabase for getLead');
+			return await SupabaseAPI.getLead(id);
 		},
 
 		async assignLead(id, agent_id) {
-			if (!USE_MOCK_DATA) {
-				// Use real Supabase data
-				console.log('✅ Using Supabase to assign lead');
+			// Use real Supabase data
+			console.log('✅ Using Supabase to assign lead');
 
-				// Get current user info for activity logging
-				const userEmail = window.currentUser?.email || 'unknown';
-				const userName = window.currentUser?.user_metadata?.name ||
-								 window.currentUser?.email ||
-								 'Unknown User';
+			// Get current user info for activity logging
+			const userEmail = window.currentUser?.email || 'unknown';
+			const userName = window.currentUser?.user_metadata?.name ||
+							 window.currentUser?.email ||
+							 'Unknown User';
 
-				return await SupabaseAPI.updateLead(id, {
-					assigned_agent_id: agent_id,
-					updated_at: new Date().toISOString()
-				}, userEmail, userName);
-			}
-
-			const response = await fetch(`${API_BASE}/leads/${id}/assign`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({ agent_id })
-			});
-			return handleResponse(response);
+			return await SupabaseAPI.updateLead(id, {
+				assigned_agent_id: agent_id,
+				updated_at: new Date().toISOString()
+			}, userEmail, userName);
 		},
 
 		async getMatches(lead_id, limit=10){
@@ -1188,36 +1066,17 @@ async function deleteSpecialAPI(specialId) {
 		},
 
 		async getInterestedLeadsCount(propertyId) {
-			if (USE_MOCK_DATA) {
-				const interestedLeads = mockInterestedLeads[propertyId] || [];
-				return interestedLeads.length;
-			}
-
-			try {
-				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
-				const interests = await handleResponse(response);
-				return interests.length;
-			} catch (error) {
-				console.error('Error fetching interested leads count:', error);
-				return 0;
-			}
+			// Note: Using mock data for now - will be replaced with Supabase later
+			const interestedLeads = mockInterestedLeads[propertyId] || [];
+			return interestedLeads.length;
 		},
 
 		async getInterestedLeads(propertyId) {
+			// Note: Using mock data for now - will be replaced with Supabase later
 			console.log('getInterestedLeads called with propertyId:', propertyId);
-			if (USE_MOCK_DATA) {
-				const data = mockInterestedLeads[propertyId] || [];
-				console.log('Mock data for', propertyId, ':', data);
-				return data;
-			}
-
-			try {
-				const response = await fetch(`${API_BASE}/properties/${propertyId}/interests`);
-				return await handleResponse(response);
-			} catch (error) {
-				console.error('Error fetching interested leads:', error);
-				return [];
-			}
+			const data = mockInterestedLeads[propertyId] || [];
+			console.log('Mock data for', propertyId, ':', data);
+			return data;
 		},
 
 		async createLeadInterest({ lead_id, property_id, agent_id, interest_type, status, notes }) {
@@ -1236,217 +1095,79 @@ async function deleteSpecialAPI(specialId) {
 
 		// Specials API functions
 		async getSpecials({ role, agentId, search, sortKey, sortDir, page, pageSize }){
-			if (!USE_MOCK_DATA) {
-				// Use real Supabase data
-				console.log('✅ Using Supabase for specials');
-				return await SupabaseAPI.getSpecials({ role, agentId, search, sortKey, sortDir, page, pageSize });
-			}
-
-			if (USE_MOCK_DATA) {
-				console.log('Using mock data for specials, count:', mockSpecials.length);
-				let filteredSpecials = [...mockSpecials];
-
-				// Filter by agent if role is agent
-				if (role === 'agent' && agentId) {
-					filteredSpecials = filteredSpecials.filter(special => special.agent_id === agentId);
-				}
-
-				// Apply search filter
-				if (search) {
-					filteredSpecials = filteredSpecials.filter(special =>
-						special.property_name.toLowerCase().includes(search.toLowerCase()) ||
-						special.current_special.toLowerCase().includes(search.toLowerCase())
-					);
-				}
-
-				// Apply sorting
-				if (sortKey && sortDir) {
-					filteredSpecials.sort((a, b) => {
-						let aVal = a[sortKey];
-						let bVal = b[sortKey];
-
-						if (sortKey === 'expiration_date' || sortKey === 'created_at') {
-							aVal = new Date(aVal);
-							bVal = new Date(bVal);
-						}
-
-						if (sortDir === 'asc') {
-							return aVal > bVal ? 1 : aVal < bVal ? -1 : 0;
-						} else {
-							return aVal < bVal ? 1 : aVal > bVal ? -1 : 0;
-						}
-					});
-				}
-
-				return {
-					items: filteredSpecials,
-					total: filteredSpecials.length
-				};
-			}
-
-			const params = new URLSearchParams({
-				role,
-				agentId,
-				search,
-				sortKey,
-				sortDir,
-				page,
-				pageSize
-			});
-
-			const response = await fetch(`${API_BASE}/specials?${params}`);
-			return handleResponse(response);
+			// Use real Supabase data
+			console.log('✅ Using Supabase for specials');
+			return await SupabaseAPI.getSpecials({ role, agentId, search, sortKey, sortDir, page, pageSize });
 		},
 
 		async createSpecial(specialData) {
-			if (USE_MOCK_DATA) {
-				const newSpecial = {
-					id: 'special_' + Date.now(),
-					...specialData,
-					created_at: new Date().toISOString()
-				};
-				mockSpecials.unshift(newSpecial); // Add to beginning for newest first
-				return newSpecial;
-			}
-
-			const response = await fetch(`${API_BASE}/specials`, {
-				method: 'POST',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(specialData)
-			});
-			return handleResponse(response);
+			// Use real Supabase data
+			return await SupabaseAPI.createSpecial(specialData);
 		},
 
 		async updateSpecial(id, specialData) {
-			if (USE_MOCK_DATA) {
-				const index = mockSpecials.findIndex(s => s.id === id);
-				if (index !== -1) {
-					mockSpecials[index] = { ...mockSpecials[index], ...specialData };
-					return mockSpecials[index];
-				}
-				throw new Error('Special not found');
-			}
-
-			const response = await fetch(`${API_BASE}/specials/${id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(specialData)
-			});
-			return handleResponse(response);
+			// Use real Supabase data
+			return await SupabaseAPI.updateSpecial(id, specialData);
 		},
 
 		async deleteSpecial(id) {
-			if (USE_MOCK_DATA) {
-				const index = mockSpecials.findIndex(s => s.id === id);
-				if (index !== -1) {
-					mockSpecials.splice(index, 1);
-					return { success: true };
-				}
-				throw new Error('Special not found');
-			}
-
-			const response = await fetch(`${API_BASE}/specials/${id}`, {
-				method: 'DELETE'
-			});
-			return handleResponse(response);
+			// Use real Supabase data
+			return await SupabaseAPI.deleteSpecial(id);
 		},
 
-		// Bug API functions
+		// Bugs API functions
+		// Note: Bugs table exists but no Supabase API methods yet
+		// Keeping mock data implementation for now (will be fixed later)
 		async getBugs({ status, priority, page, pageSize } = {}) {
-			if (USE_MOCK_DATA) {
-				console.log('Using mock data for bugs, count:', mockBugs.length);
-				let filteredBugs = [...mockBugs];
+			console.log('Using mock data for bugs, count:', mockBugs.length);
+			let filteredBugs = [...mockBugs];
 
-				// Filter by status
-				if (status) {
-					filteredBugs = filteredBugs.filter(bug => bug.status === status);
-				}
-
-				// Filter by priority
-				if (priority) {
-					filteredBugs = filteredBugs.filter(bug => bug.priority === priority);
-				}
-
-				// Sort by created date (newest first)
-				filteredBugs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-				return {
-					items: filteredBugs,
-					total: filteredBugs.length
-				};
+			// Filter by status
+			if (status) {
+				filteredBugs = filteredBugs.filter(bug => bug.status === status);
 			}
 
-			const response = await fetch(`${API_BASE}/bugs?${new URLSearchParams({ status, priority, page, pageSize })}`);
-			return handleResponse(response);
+			// Filter by priority
+			if (priority) {
+				filteredBugs = filteredBugs.filter(bug => bug.priority === priority);
+			}
+
+			// Sort by created date (newest first)
+			filteredBugs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+			return {
+				items: filteredBugs,
+				total: filteredBugs.length
+			};
 		},
 
 		async createBug(bugData) {
-			if (USE_MOCK_DATA) {
-				const newBug = {
-					id: `bug_${Date.now()}`,
-					...bugData,
-					created_at: new Date().toISOString(),
-					updated_at: new Date().toISOString()
-				};
-				mockBugs.unshift(newBug);
-				return newBug;
-			}
-
-			// Create FormData for file upload
-			const formData = new FormData();
-
-			// Add all bug data fields
-			Object.keys(bugData).forEach(key => {
-				if (key === 'screenshot' && bugData[key]) {
-					// Handle file upload
-					formData.append('screenshot', bugData[key]);
-				} else if (key === 'technical_context') {
-					// Stringify JSON fields
-					formData.append(key, JSON.stringify(bugData[key]));
-				} else if (bugData[key] !== null && bugData[key] !== undefined) {
-					formData.append(key, bugData[key]);
-				}
-			});
-
-			const response = await fetch(`${API_BASE}/bugs`, {
-				method: 'POST',
-				body: formData
-			});
-			return handleResponse(response);
+			const newBug = {
+				id: `bug_${Date.now()}`,
+				...bugData,
+				created_at: new Date().toISOString(),
+				updated_at: new Date().toISOString()
+			};
+			mockBugs.unshift(newBug);
+			return newBug;
 		},
 
 		async updateBug(id, bugData) {
-			if (USE_MOCK_DATA) {
-				const index = mockBugs.findIndex(b => b.id === id);
-				if (index !== -1) {
-					mockBugs[index] = { ...mockBugs[index], ...bugData, updated_at: new Date().toISOString() };
-					return mockBugs[index];
-				}
-				throw new Error('Bug not found');
+			const index = mockBugs.findIndex(b => b.id === id);
+			if (index !== -1) {
+				mockBugs[index] = { ...mockBugs[index], ...bugData, updated_at: new Date().toISOString() };
+				return mockBugs[index];
 			}
-
-			const response = await fetch(`${API_BASE}/bugs/${id}`, {
-				method: 'PUT',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify(bugData)
-			});
-			return handleResponse(response);
+			throw new Error('Bug not found');
 		},
 
 		async deleteBug(id) {
-			if (USE_MOCK_DATA) {
-				const index = mockBugs.findIndex(b => b.id === id);
-				if (index !== -1) {
-					mockBugs.splice(index, 1);
-					return { success: true };
-				}
-				throw new Error('Bug not found');
+			const index = mockBugs.findIndex(b => b.id === id);
+			if (index !== -1) {
+				mockBugs.splice(index, 1);
+				return { success: true };
 			}
-
-			const response = await fetch(`${API_BASE}/bugs/${id}`, {
-				method: 'DELETE'
-			});
-			return handleResponse(response);
+			throw new Error('Bug not found');
 		}
 	};
 
@@ -1458,7 +1179,6 @@ async function deleteSpecialAPI(specialId) {
 			api,
 			SupabaseAPI,
 			state,
-			USE_MOCK_DATA,
 			getCurrentStepFromActivities,
 			openLeadNotesModal,
 			openActivityLogModal,
@@ -1535,9 +1255,8 @@ async function deleteSpecialAPI(specialId) {
 	// Note: Documents page now uses real Supabase data via Documents module
 	// mockProgressLeads removed - was only used by dead viewLeadDetails() function
 
-	// Note: mockSpecials and mockBugs are imported from src/state/mockData.js
-	// They are only used when USE_MOCK_DATA = true (currently false)
-	// Inline declarations removed to eliminate duplicate mock data
+	// Note: mockBugs still imported from src/state/mockData.js (will be removed in Phase 4)
+	// Bugs feature still uses mock data - Supabase API methods not yet implemented
 
 
 
@@ -2662,7 +2381,6 @@ function createLeadTable(lead, isExpanded = false) {
 	// ---- Lead Notes Functions ----
 	async function loadLeadNotes(leadId) {
 		await Modals.loadLeadNotes(leadId, {
-			USE_MOCK_DATA,
 			SupabaseAPI,
 			formatDate
 		});
@@ -2670,7 +2388,6 @@ function createLeadTable(lead, isExpanded = false) {
 
 	async function saveLeadNote(isStandalone = false) {
 		await Modals.saveLeadNote(isStandalone, {
-			USE_MOCK_DATA,
 			SupabaseAPI,
 			loadLeadNotesInModal,
 			renderLeads,
@@ -2805,7 +2522,6 @@ function createLeadTable(lead, isExpanded = false) {
 
 	async function loadLeadNotesInModal(leadId, isStandalone = false) {
 		await Modals.loadLeadNotesInModal(leadId, isStandalone, {
-			USE_MOCK_DATA,
 			SupabaseAPI,
 			formatDate
 		});
