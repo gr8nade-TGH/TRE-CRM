@@ -1,4 +1,8 @@
 // Listing Modals Functions - EXACT COPY from script.js
+import { initAddressAutocomplete } from '../utils/mapbox-autocomplete.js';
+
+// Store autocomplete cleanup function
+let autocompleteCleanup = null;
 
 export function openAddListingModal(options) {
 	const { showModal } = options;
@@ -164,8 +168,8 @@ export async function createListing(options) {
 	}
 }
 
-export function openListingEditModal(property, options) {
-	const { state, showModal } = options;
+export async function openListingEditModal(property, options) {
+	const { state, showModal, SupabaseAPI } = options;
 
 	console.log('Opening listing edit modal for:', property);
 
@@ -173,16 +177,37 @@ export function openListingEditModal(property, options) {
 	document.getElementById('editListingName').textContent = property.name || property.community_name;
 	document.getElementById('editPropertyName').value = property.name || property.community_name;
 
-	// Split address into components
+	// Address fields
 	document.getElementById('editStreetAddress').value = property.street_address || '';
 	document.getElementById('editCity').value = property.city || '';
 	document.getElementById('editState').value = property.state || 'TX';
 	document.getElementById('editZipCode').value = property.zip_code || '';
 
-	document.getElementById('editMarket').value = property.market || property.city || '';
 	document.getElementById('editPhone').value = property.phone || property.contact_email || '';
-	document.getElementById('editRentMin').value = property.rent_min || property.rent_range_min || 0;
-	document.getElementById('editRentMax').value = property.rent_max || property.rent_range_max || 0;
+
+	// Calculate rent range from units
+	try {
+		const units = await SupabaseAPI.getUnitsByPropertyId(property.id);
+		if (units && units.length > 0) {
+			const rents = units.map(u => u.rent).filter(r => r > 0);
+			if (rents.length > 0) {
+				const minRent = Math.min(...rents);
+				const maxRent = Math.max(...rents);
+				document.getElementById('editRentMin').value = minRent;
+				document.getElementById('editRentMax').value = maxRent;
+			} else {
+				document.getElementById('editRentMin').value = property.rent_range_min || 0;
+				document.getElementById('editRentMax').value = property.rent_range_max || 0;
+			}
+		} else {
+			document.getElementById('editRentMin').value = property.rent_range_min || 0;
+			document.getElementById('editRentMax').value = property.rent_range_max || 0;
+		}
+	} catch (error) {
+		console.error('Error calculating rent range:', error);
+		document.getElementById('editRentMin').value = property.rent_range_min || 0;
+		document.getElementById('editRentMax').value = property.rent_range_max || 0;
+	}
 	document.getElementById('editBedsMin').value = property.beds_min || 0;
 	document.getElementById('editBedsMax').value = property.beds_max || 0;
 	document.getElementById('editBathsMin').value = property.baths_min || 0;
@@ -208,6 +233,31 @@ export function openListingEditModal(property, options) {
 
 	// Store the current property for saving
 	window.currentEditingProperty = property;
+
+	// Initialize address autocomplete
+	const streetAddressInput = document.getElementById('editStreetAddress');
+	if (streetAddressInput) {
+		// Clean up previous autocomplete if exists
+		if (autocompleteCleanup) {
+			autocompleteCleanup();
+		}
+
+		// Initialize new autocomplete
+		autocompleteCleanup = initAddressAutocomplete(streetAddressInput, {
+			onSelect: (addressComponents) => {
+				console.log('Address selected:', addressComponents);
+
+				// Fill in the address fields
+				document.getElementById('editCity').value = addressComponents.city;
+				document.getElementById('editState').value = addressComponents.state;
+				document.getElementById('editZipCode').value = addressComponents.zipCode;
+
+				// Store coordinates for saving
+				window.currentEditingProperty.tempLat = addressComponents.lat;
+				window.currentEditingProperty.tempLng = addressComponents.lng;
+			}
+		});
+	}
 
 	// Show the modal
 	showModal('listingEditModal');
@@ -252,7 +302,7 @@ export async function deleteListing(options) {
 }
 
 export async function saveListingEdit(options) {
-	const { SupabaseAPI, toast, closeListingEditModal, renderListings, geocodeAddress } = options;
+	const { SupabaseAPI, toast, closeListingEditModal, renderListings } = options;
 
 	const property = window.currentEditingProperty;
 	if (!property) return;
@@ -263,24 +313,20 @@ export async function saveListingEdit(options) {
 		const city = document.getElementById('editCity').value.trim();
 		const state = document.getElementById('editState').value;
 		const zipCode = document.getElementById('editZipCode').value.trim();
-		const market = document.getElementById('editMarket').value;
 
 		// Validate required fields
 		if (!streetAddress || !city || !state || !zipCode) {
-			toast('Please fill in all required address fields', 'error');
+			toast('Please select a valid address from the autocomplete suggestions', 'error');
 			return;
 		}
 
-		// Geocode the address to get lat/lng
-		console.log('🗺️ Geocoding address...');
-		const coords = await geocodeAddress(streetAddress, city, state, zipCode);
-
-		if (!coords) {
-			toast('Error: Could not geocode address. Please check the address and try again.', 'error');
+		// Check if we have coordinates from autocomplete
+		if (!property.tempLat || !property.tempLng) {
+			toast('Please select an address from the autocomplete dropdown to ensure accurate location', 'error');
 			return;
 		}
 
-		toast('Address geocoded successfully!', 'success');
+		console.log('✅ Using coordinates from autocomplete:', { lat: property.tempLat, lng: property.tempLng });
 
 		// Build form data - ONLY use new schema field names
 		const formData = {
@@ -289,12 +335,10 @@ export async function saveListingEdit(options) {
 			city: city,
 			state: state,
 			zip_code: zipCode,
-			market: market,
-			lat: coords.lat,
-			lng: coords.lng,
-			contact_email: document.getElementById('editPhone').value.trim(), // Using contact_email for phone
-			rent_range_min: parseInt(document.getElementById('editRentMin').value) || 0,
-			rent_range_max: parseInt(document.getElementById('editRentMax').value) || 0,
+			lat: property.tempLat,
+			lng: property.tempLng,
+			phone: document.getElementById('editPhone').value.trim(),
+			// Rent range is read-only, calculated from units - don't update it
 			bed_range: `${document.getElementById('editBedsMin').value || 0}-${document.getElementById('editBedsMax').value || 0}`,
 			bath_range: `${document.getElementById('editBathsMin').value || 0}-${document.getElementById('editBathsMax').value || 0}`,
 			commission_pct: Math.max(

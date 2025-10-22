@@ -2006,10 +2006,11 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Listing Edit Modal ----
-	function openListingEditModal(property) {
-		Modals.openListingEditModal(property, {
+	async function openListingEditModal(property) {
+		await Modals.openListingEditModal(property, {
 			state,
-			showModal
+			showModal,
+			SupabaseAPI
 		});
 	}
 
@@ -2033,8 +2034,7 @@ function createLeadTable(lead, isExpanded = false) {
 			SupabaseAPI,
 			toast,
 			closeListingEditModal,
-			renderListings,
-			geocodeAddress
+			renderListings
 		});
 	}
 
