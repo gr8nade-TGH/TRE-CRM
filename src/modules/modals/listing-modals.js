@@ -187,7 +187,7 @@ export async function openListingEditModal(property, options) {
 
 	// Calculate rent range from units
 	try {
-		const units = await SupabaseAPI.getUnitsByPropertyId(property.id);
+		const units = await SupabaseAPI.getUnits({ propertyId: property.id });
 		if (units && units.length > 0) {
 			const rents = units.map(u => u.rent).filter(r => r > 0);
 			if (rents.length > 0) {
@@ -212,8 +212,10 @@ export async function openListingEditModal(property, options) {
 	document.getElementById('editBedsMax').value = property.beds_max || 0;
 	document.getElementById('editBathsMin').value = property.baths_min || 0;
 	document.getElementById('editBathsMax').value = property.baths_max || 0;
-	document.getElementById('editEscortPct').value = property.escort_pct || property.commission_pct || 0;
-	document.getElementById('editSendPct').value = property.send_pct || property.commission_pct || 0;
+
+	// Set commission field - use commission_pct, or fallback to max of escort/send
+	const commission = property.commission_pct || Math.max(property.escort_pct || 0, property.send_pct || 0);
+	document.getElementById('editCommissionPct').value = commission;
 	document.getElementById('editWebsite').value = property.website || property.leasing_link || '';
 	document.getElementById('editAmenities').value = Array.isArray(property.amenities) ? property.amenities.join(', ') : '';
 	document.getElementById('editSpecials').value = property.specials_text || '';
@@ -324,17 +326,20 @@ export async function saveListingEdit(options) {
 
 		// Validate required fields
 		if (!streetAddress || !city || !state || !zipCode) {
-			toast('Please select a valid address from the autocomplete suggestions', 'error');
+			toast('Please fill in all address fields', 'error');
 			return;
 		}
 
-		// Check if we have coordinates from autocomplete
-		if (!property.tempLat || !property.tempLng) {
-			toast('Please select an address from the autocomplete dropdown to ensure accurate location', 'error');
+		// Use coordinates from autocomplete if available, otherwise use existing property coordinates
+		const lat = property.tempLat || property.lat;
+		const lng = property.tempLng || property.lng;
+
+		if (!lat || !lng) {
+			toast('Unable to determine property location. Please select an address from the autocomplete dropdown.', 'error');
 			return;
 		}
 
-		console.log('✅ Using coordinates from autocomplete:', { lat: property.tempLat, lng: property.tempLng });
+		console.log('✅ Using coordinates:', { lat, lng, source: property.tempLat ? 'autocomplete' : 'existing' });
 
 		// Build form data - ONLY use new schema field names
 		const formData = {
@@ -343,16 +348,13 @@ export async function saveListingEdit(options) {
 			city: city,
 			state: state,
 			zip_code: zipCode,
-			lat: property.tempLat,
-			lng: property.tempLng,
+			lat: lat,
+			lng: lng,
 			phone: document.getElementById('editPhone').value.trim(),
 			// Rent range is read-only, calculated from units - don't update it
 			bed_range: `${document.getElementById('editBedsMin').value || 0}-${document.getElementById('editBedsMax').value || 0}`,
 			bath_range: `${document.getElementById('editBathsMin').value || 0}-${document.getElementById('editBathsMax').value || 0}`,
-			commission_pct: Math.max(
-				parseFloat(document.getElementById('editEscortPct').value) || 0,
-				parseFloat(document.getElementById('editSendPct').value) || 0
-			),
+			commission_pct: parseFloat(document.getElementById('editCommissionPct').value) || 0,
 			leasing_link: document.getElementById('editWebsite').value.trim(),
 			amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
 			is_pumi: document.getElementById('editIsPUMI').checked,

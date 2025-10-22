@@ -319,22 +319,38 @@ body {
   min-width: 700px; /* Ensure table has minimum width */
 }
 
-#listingsTable th,
-#listingsTable td {
-  white-space: nowrap; /* Prevent text wrapping */
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* Optimize column widths for listings table - Updated for 3-column layout */
+#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) {
+  width: 50px;
+  min-width: 50px;
+  max-width: 50px;
+} /* Expand arrow */
+
+#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) {
+  width: auto;
+  min-width: 300px;
+} /* Listings (property name, address, details) */
+
+#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) {
+  width: 180px;
+  min-width: 150px;
+  max-width: 200px;
+} /* Rent Range */
+
+/* Allow wrapping in the listings column, prevent wrapping in others */
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  white-space: normal; /* Allow wrapping for property details */
 }
 
-/* Optimize column widths for listings table */
-#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 220px; min-width: 200px; } /* Community */
-#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 140px; min-width: 120px; } /* Market */
-#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 140px; min-width: 120px; } /* Rent Range */
-#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Beds/Baths */
-#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 120px; min-width: 100px; } /* Commission */
-#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 140px; min-width: 120px; } /* Interested Leads */
-#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 160px; min-width: 140px; } /* Last Updated */
-.data-table thead th { 
+#listingsTable th:nth-child(1),
+#listingsTable td:nth-child(1),
+#listingsTable th:nth-child(3),
+#listingsTable td:nth-child(3) {
+  white-space: nowrap; /* Prevent wrapping for expand arrow and rent range */
+}
+
+.data-table thead th {
   background: #1e293b; 
   text-align: left; 
   font-family: 'Inter', sans-serif;
