@@ -2046,6 +2046,9 @@ function createLeadTable(lead, isExpanded = false) {
 	// Global functions for property notes
 	window.openPropertyNotesModal = openPropertyNotesModal;
 
+	// Global function for activity log modal (used by unit icons)
+	window.openActivityLogModal = openActivityLogModal;
+
 	// Bulk actions event listeners moved to dom-event-listeners.js
 
 	// Expose state to global scope
