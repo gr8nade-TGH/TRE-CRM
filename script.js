@@ -2125,10 +2125,10 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 	}
 
-	// ---- Events ----
-	document.addEventListener('DOMContentLoaded', () => {
-		// Don't initialize app here - wait for auth.js to call initializeApp()
-		console.log('DOM loaded, waiting for authentication...');
+	// ---- Event Listeners Setup Function ----
+	// Extracted from DOMContentLoaded handler to reduce nesting and improve readability
+	function setupAllEventListeners() {
+		console.log('🎯 Setting up all event listeners...');
 
 		// search
 		const leadSearchEl = document.getElementById('leadSearch');
@@ -3427,6 +3427,17 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 
 		// Routing will be initialized by initializeApp() after authentication
+
+		console.log('✅ All event listeners setup complete');
+	}
+
+	// ---- Events ----
+	document.addEventListener('DOMContentLoaded', () => {
+		// Don't initialize app here - wait for auth.js to call initializeApp()
+		console.log('DOM loaded, waiting for authentication...');
+
+		// Setup all event listeners
+		setupAllEventListeners();
 	});
 
 	// Initialize routing (called by initializeApp after auth)
