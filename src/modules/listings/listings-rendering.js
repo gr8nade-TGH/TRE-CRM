@@ -212,6 +212,7 @@ export async function renderListings(options) {
 				<div class="lead-name">
 					<strong>${communityName}</strong>
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
+					${commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
@@ -251,7 +252,6 @@ export async function renderListings(options) {
 				</div>
 			</td>
 			<td class="mono" data-sort="rent_min">$${rentMin} - $${rentMax}</td>
-			<td class="mono" data-sort="commission_pct">${commission}%</td>
 		`;
 
 		// Add click handler to table row
@@ -383,7 +383,6 @@ export async function renderListings(options) {
 					<td class="mono" style="font-size: 0.9em;">
 						$${unitRent}${unitMarketRent > unitRent ? ` <span style="color: #10b981; font-size: 0.85em;">(save $${unitMarketRent - unitRent})</span>` : ''}
 					</td>
-					<td class="mono" style="font-size: 0.9em;">${commission}%</td>
 				`;
 
 				// Add unit-level event handlers
