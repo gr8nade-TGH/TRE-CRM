@@ -26,14 +26,25 @@ COMMENT ON COLUMN public.unit_notes.author_id IS 'User ID from auth.uid() - no F
 -- ============================================================================
 
 -- Drop the foreign key constraint on property_notes.author_id
-ALTER TABLE public.property_notes 
+ALTER TABLE public.property_notes
 DROP CONSTRAINT IF EXISTS property_notes_author_id_fkey;
 
 -- The author_id column will remain as VARCHAR, but without the foreign key constraint
 COMMENT ON COLUMN public.property_notes.author_id IS 'User ID from auth.uid() - no FK constraint for flexibility';
 
 -- ============================================================================
--- 3. VERIFICATION
+-- 3. REMOVE FOREIGN KEY FROM UNIT_ACTIVITIES
+-- ============================================================================
+
+-- Drop the foreign key constraint on unit_activities.performed_by
+ALTER TABLE public.unit_activities
+DROP CONSTRAINT IF EXISTS unit_activities_performed_by_fkey;
+
+-- The performed_by column will remain as VARCHAR, but without the foreign key constraint
+COMMENT ON COLUMN public.unit_activities.performed_by IS 'User ID from auth.uid() - no FK constraint for flexibility';
+
+-- ============================================================================
+-- 4. VERIFICATION
 -- ============================================================================
 
 -- Verify constraints were removed
@@ -41,43 +52,58 @@ DO $$
 DECLARE
     unit_notes_fk_exists BOOLEAN;
     property_notes_fk_exists BOOLEAN;
+    unit_activities_fk_exists BOOLEAN;
 BEGIN
     -- Check if unit_notes foreign key still exists
     SELECT EXISTS (
-        SELECT 1 
-        FROM information_schema.table_constraints 
+        SELECT 1
+        FROM information_schema.table_constraints
         WHERE constraint_name = 'unit_notes_author_id_fkey'
         AND table_name = 'unit_notes'
     ) INTO unit_notes_fk_exists;
-    
+
     -- Check if property_notes foreign key still exists
     SELECT EXISTS (
-        SELECT 1 
-        FROM information_schema.table_constraints 
+        SELECT 1
+        FROM information_schema.table_constraints
         WHERE constraint_name = 'property_notes_author_id_fkey'
         AND table_name = 'property_notes'
     ) INTO property_notes_fk_exists;
-    
+
+    -- Check if unit_activities foreign key still exists
+    SELECT EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints
+        WHERE constraint_name = 'unit_activities_performed_by_fkey'
+        AND table_name = 'unit_activities'
+    ) INTO unit_activities_fk_exists;
+
     -- Report results
     RAISE NOTICE '✅ Migration 029 Complete!';
     RAISE NOTICE '';
     RAISE NOTICE '📊 Foreign Key Constraints Removed:';
-    
+
     IF NOT unit_notes_fk_exists THEN
         RAISE NOTICE '  ✅ unit_notes.author_id - FK removed';
     ELSE
         RAISE WARNING '  ⚠️ unit_notes.author_id - FK still exists!';
     END IF;
-    
+
     IF NOT property_notes_fk_exists THEN
         RAISE NOTICE '  ✅ property_notes.author_id - FK removed';
     ELSE
         RAISE WARNING '  ⚠️ property_notes.author_id - FK still exists!';
     END IF;
-    
+
+    IF NOT unit_activities_fk_exists THEN
+        RAISE NOTICE '  ✅ unit_activities.performed_by - FK removed';
+    ELSE
+        RAISE WARNING '  ⚠️ unit_activities.performed_by - FK still exists!';
+    END IF;
+
     RAISE NOTICE '';
-    RAISE NOTICE '💡 Notes tables now match lead_notes pattern:';
-    RAISE NOTICE '   - author_id can store any auth.uid() value';
+    RAISE NOTICE '💡 Notes and activities tables now match lead_notes pattern:';
+    RAISE NOTICE '   - author_id/performed_by can store any auth.uid() value';
     RAISE NOTICE '   - No dependency on public.users table';
     RAISE NOTICE '   - More flexible for Supabase Auth integration';
 END $$;

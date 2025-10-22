@@ -80,19 +80,11 @@ export async function addUnitNote() {
 	}
 
 	try {
-		// Debug: Log the entire currentUser object
-		console.log('🔍 DEBUG: window.currentUser:', window.currentUser);
-		console.log('🔍 DEBUG: window.currentUser.id:', window.currentUser?.id);
-		console.log('🔍 DEBUG: window.currentUser.email:', window.currentUser?.email);
-
 		// Use window.currentUser.id as author_id (matches users.id which is UUID)
 		const authorId = window.currentUser?.id;
 		const authorName = window.currentUser?.user_metadata?.name ||
 		                   window.currentUser?.email ||
 		                   'Unknown User';
-
-		console.log('🔍 DEBUG: authorId being used:', authorId);
-		console.log('🔍 DEBUG: authorName being used:', authorName);
 
 		if (!authorId) {
 			console.error('❌ No authorId - window.currentUser:', window.currentUser);
@@ -108,7 +100,6 @@ export async function addUnitNote() {
 			author_name: authorName
 		};
 
-		console.log('💾 DEBUG: Final noteData being sent:', noteData);
 		await SupabaseAPI.createUnitNote(noteData);
 		toast('Note added successfully!', 'success');
 
@@ -118,7 +109,7 @@ export async function addUnitNote() {
 		// Reload notes
 		await loadUnitNotes(window.currentUnitForNotes);
 
-		// Refresh listings (trigger custom event)
+		// Refresh listings to update note icon and count
 		window.dispatchEvent(new CustomEvent('refreshListings'));
 	} catch (error) {
 		console.error('Error adding note:', error);

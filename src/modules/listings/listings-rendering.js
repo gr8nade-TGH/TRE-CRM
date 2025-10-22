@@ -87,6 +87,25 @@ export async function renderListings(options) {
 					// Get units for this property
 					const units = await SupabaseAPI.getUnits({ propertyId: prop.id });
 
+					// Fetch notes count for each unit
+					const unitsWithNotes = await Promise.all(
+						(units || []).map(async (unit) => {
+							try {
+								const unitNotes = await SupabaseAPI.getUnitNotes(unit.id);
+								return {
+									...unit,
+									notesCount: unitNotes.length
+								};
+							} catch (error) {
+								console.warn('Error fetching unit notes:', error);
+								return {
+									...unit,
+									notesCount: 0
+								};
+							}
+						})
+					);
+
 					// Calculate rent range from units
 					let rentMin = prop.rent_range_min || 0;
 					let rentMax = prop.rent_range_max || 0;
@@ -103,7 +122,7 @@ export async function renderListings(options) {
 						...prop,
 						notesCount: notes.length,
 						floorPlans: floorPlans || [],
-						units: units || [],
+						units: unitsWithNotes || [],
 						rent_range_min: rentMin,
 						rent_range_max: rentMax
 					};
@@ -347,11 +366,11 @@ export async function renderListings(options) {
 									</svg>
 									<span>0</span>
 								</div>
-								<div class="notes-count unit-notes" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}" title="Add a note" style="cursor: pointer;">
-									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #9ca3af;">
+								<div class="notes-count unit-notes ${unit.notesCount > 0 ? 'has-notes' : ''}" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}" title="${unit.notesCount > 0 ? unit.notesCount + ' note(s)' : 'Add a note'}" style="cursor: pointer;">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: ${unit.notesCount > 0 ? '#fbbf24' : '#9ca3af'};">
 										<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
 									</svg>
-									<span></span>
+									<span>${unit.notesCount || ''}</span>
 								</div>
 								<div class="activity-count unit-activity" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}" title="View activity log" style="cursor: pointer;">
 									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
