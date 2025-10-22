@@ -236,16 +236,20 @@ export async function openListingEditModal(property, options) {
 
 	// Initialize address autocomplete
 	const streetAddressInput = document.getElementById('editStreetAddress');
+	console.log('🔍 Looking for editStreetAddress input:', streetAddressInput);
+
 	if (streetAddressInput) {
 		// Clean up previous autocomplete if exists
 		if (autocompleteCleanup) {
+			console.log('🧹 Cleaning up previous autocomplete');
 			autocompleteCleanup();
 		}
 
+		console.log('🚀 Initializing autocomplete on street address input');
 		// Initialize new autocomplete
 		autocompleteCleanup = initAddressAutocomplete(streetAddressInput, {
 			onSelect: (addressComponents) => {
-				console.log('Address selected:', addressComponents);
+				console.log('✅ Address selected:', addressComponents);
 
 				// Fill in the address fields
 				document.getElementById('editCity').value = addressComponents.city;
@@ -255,8 +259,12 @@ export async function openListingEditModal(property, options) {
 				// Store coordinates for saving
 				window.currentEditingProperty.tempLat = addressComponents.lat;
 				window.currentEditingProperty.tempLng = addressComponents.lng;
+
+				console.log('📍 Stored coordinates:', { lat: addressComponents.lat, lng: addressComponents.lng });
 			}
 		});
+	} else {
+		console.error('❌ Could not find editStreetAddress input element!');
 	}
 
 	// Show the modal

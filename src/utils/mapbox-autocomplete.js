@@ -15,6 +15,8 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHB
  * @param {string} options.proximity - Proximity bias as 'lng,lat' (optional)
  */
 export function initAddressAutocomplete(inputElement, options = {}) {
+	console.log('🗺️ Initializing address autocomplete on:', inputElement);
+
 	const {
 		onSelect,
 		types = ['address'],
@@ -61,6 +63,8 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 			return;
 		}
 
+		console.log('🔍 Fetching suggestions for:', query);
+
 		try {
 			const params = new URLSearchParams({
 				access_token: MAPBOX_TOKEN,
@@ -75,6 +79,7 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 			}
 
 			const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
+			console.log('📡 Mapbox API URL:', url);
 			const response = await fetch(url);
 
 			if (!response.ok) {
@@ -83,6 +88,7 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 
 			const data = await response.json();
 			currentSuggestions = data.features || [];
+			console.log('✅ Got suggestions:', currentSuggestions.length, currentSuggestions);
 			displaySuggestions(currentSuggestions);
 		} catch (error) {
 			console.error('Error fetching address suggestions:', error);
@@ -95,10 +101,12 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 		const container = createSuggestionsContainer();
 
 		if (!suggestions || suggestions.length === 0) {
+			console.log('⚠️ No suggestions to display');
 			hideSuggestions();
 			return;
 		}
 
+		console.log('📋 Displaying', suggestions.length, 'suggestions');
 		container.innerHTML = '';
 		container.style.display = 'block';
 
@@ -185,6 +193,7 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 	// Input event handler with debounce
 	function handleInput(e) {
 		const query = e.target.value;
+		console.log('⌨️ Input changed:', query);
 
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(() => {
