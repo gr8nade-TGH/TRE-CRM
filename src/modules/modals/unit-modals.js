@@ -80,13 +80,22 @@ export async function addUnitNote() {
 	}
 
 	try {
+		// Debug: Check what window.currentUser contains
+		console.log('🔍 window.currentUser:', window.currentUser);
+		console.log('🔍 window.currentUser?.email:', window.currentUser?.email);
+		console.log('🔍 window.currentUser?.user_metadata:', window.currentUser?.user_metadata);
+
 		// Use window.currentUser.email as author_id (matches users table)
 		const authorId = window.currentUser?.email;
 		const authorName = window.currentUser?.user_metadata?.name ||
 		                   window.currentUser?.email ||
 		                   'Unknown User';
 
+		console.log('🔍 authorId:', authorId);
+		console.log('🔍 authorName:', authorName);
+
 		if (!authorId) {
+			console.error('❌ No authorId - window.currentUser:', window.currentUser);
 			toast('User not authenticated', 'error');
 			return;
 		}
@@ -99,6 +108,7 @@ export async function addUnitNote() {
 			author_name: authorName
 		};
 
+		console.log('💾 About to create unit note with data:', noteData);
 		await SupabaseAPI.createUnitNote(noteData);
 		toast('Note added successfully!', 'success');
 
