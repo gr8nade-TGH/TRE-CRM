@@ -316,43 +316,175 @@ export async function getAgent(id) {
  */
 export async function getProperties({ search, market, minPrice, maxPrice, beds, amenities } = {}) {
     const supabase = getSupabase();
-    
+
     let query = supabase
         .from('properties')
         .select('*');
-    
+
     // Apply filters
     if (market && market !== 'all') {
         query = query.eq('market', market);
     }
-    
+
     if (search) {
         query = query.or(`name.ilike.%${search}%,address.ilike.%${search}%`);
     }
-    
+
     if (minPrice) {
         query = query.gte('rent_min', parseInt(minPrice));
     }
-    
+
     if (maxPrice) {
         query = query.lte('rent_max', parseInt(maxPrice));
     }
-    
+
     if (beds && beds !== 'any') {
         const bedsNum = parseInt(beds);
         query = query.lte('beds_min', bedsNum).gte('beds_max', bedsNum);
     }
-    
+
     query = query.order('name');
-    
+
     const { data, error } = await query;
-    
+
     if (error) {
         console.error('Error fetching properties:', error);
         throw error;
     }
-    
+
     return data || [];
+}
+
+/**
+ * Floor Plans API
+ */
+export async function getFloorPlans(propertyId = null) {
+    const supabase = getSupabase();
+
+    let query = supabase
+        .from('floor_plans')
+        .select('*');
+
+    if (propertyId) {
+        query = query.eq('property_id', propertyId);
+    }
+
+    const { data, error } = await query.order('beds').order('baths');
+
+    if (error) {
+        console.error('Error fetching floor plans:', error);
+        throw error;
+    }
+
+    return data || [];
+}
+
+export async function getFloorPlanById(id) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('floor_plans')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching floor plan:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+/**
+ * Units API
+ */
+export async function getUnits({
+    propertyId = null,
+    propertyIds = null, // NEW: Batch query support
+    floorPlanId = null,
+    availableOnly = false,
+    isActive = true // NEW: Soft delete support (null = all, true = active only, false = inactive only)
+} = {}) {
+    const supabase = getSupabase();
+
+    let query = supabase
+        .from('units')
+        .select(`
+            *,
+            floor_plan:floor_plans(*)
+        `);
+
+    // Single property query
+    if (propertyId) {
+        query = query.eq('property_id', propertyId);
+    }
+
+    // Batch property query (for performance)
+    if (propertyIds && Array.isArray(propertyIds) && propertyIds.length > 0) {
+        query = query.in('property_id', propertyIds);
+    }
+
+    if (floorPlanId) {
+        query = query.eq('floor_plan_id', floorPlanId);
+    }
+
+    if (availableOnly) {
+        query = query.eq('is_available', true).eq('status', 'available');
+    }
+
+    // Soft delete filter
+    if (isActive !== null) {
+        query = query.eq('is_active', isActive);
+    }
+
+    const { data, error } = await query.order('unit_number');
+
+    if (error) {
+        console.error('Error fetching units:', error);
+        throw error;
+    }
+
+    return data || [];
+}
+
+export async function getUnitById(id) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .select(`
+            *,
+            floor_plan:floor_plans(*),
+            property:properties(*)
+        `)
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching unit:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function updateUnit(unitId, updates) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .update(updates)
+        .eq('id', unitId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating unit:', error);
+        throw error;
+    }
+
+    return data;
 }
 
 export async function getProperty(id) {
@@ -977,6 +1109,126 @@ export async function deletePropertyNote(noteId) {
     }
 
     return { success: true };
+}
+
+/**
+ * Unit Notes API
+ */
+export async function getUnitNotes(unitId, { limit = 50, offset = 0 } = {}) {
+    console.log('🔵 getUnitNotes called with unitId:', unitId);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_notes')
+        .select('*')
+        .eq('unit_id', unitId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (error) {
+        console.error('❌ Error fetching unit notes:', error);
+        throw error;
+    }
+
+    console.log('✅ getUnitNotes returning:', data);
+    return data || [];
+}
+
+export async function createUnitNote(noteData) {
+    console.log('🔵 createUnitNote called with:', noteData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_notes')
+        .insert([noteData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating unit note:', error);
+        throw error;
+    }
+
+    // Log activity
+    try {
+        await createUnitActivity({
+            unit_id: noteData.unit_id,
+            property_id: noteData.property_id,
+            activity_type: 'note_added',
+            description: 'Added unit note',
+            metadata: {
+                note_id: data.id,
+                note_preview: noteData.content.substring(0, 100),
+                note_length: noteData.content.length
+            },
+            performed_by: noteData.author_id,
+            performed_by_name: noteData.author_name
+        });
+    } catch (activityError) {
+        console.error('⚠️ Failed to log unit note activity:', activityError);
+        // Don't throw - note was created successfully
+    }
+
+    console.log('✅ createUnitNote returning:', data);
+    return data;
+}
+
+export async function deleteUnitNote(noteId) {
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('unit_notes')
+        .delete()
+        .eq('id', noteId);
+
+    if (error) {
+        console.error('Error deleting unit note:', error);
+        throw error;
+    }
+
+    return { success: true };
+}
+
+/**
+ * Unit Activities API
+ */
+export async function getUnitActivities(unitId, { limit = 50, offset = 0 } = {}) {
+    console.log('🔵 getUnitActivities called with unitId:', unitId);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_activities')
+        .select('*')
+        .eq('unit_id', unitId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (error) {
+        console.error('❌ Error fetching unit activities:', error);
+        throw error;
+    }
+
+    console.log('✅ getUnitActivities returning:', data);
+    return data || [];
+}
+
+export async function createUnitActivity(activityData) {
+    console.log('🔵 createUnitActivity called with:', activityData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_activities')
+        .insert([activityData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating unit activity:', error);
+        throw error;
+    }
+
+    console.log('✅ createUnitActivity returning:', data);
+    return data;
 }
 
 /**

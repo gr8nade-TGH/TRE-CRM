@@ -308,33 +308,63 @@ body {
   overflow: hidden; 
   box-shadow: var(--shadow);
 }
-.data-table { 
-  width: 100%; 
-  border-collapse: separate; 
-  border-spacing: 0; 
+.data-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
 }
 
 /* Listings table specific styles */
 #listingsTable {
-  min-width: 700px; /* Ensure table has minimum width */
+  width: 100%; /* Table should fit container width */
+  table-layout: fixed; /* Fixed layout for better column control */
 }
 
+/* Optimize column widths for listings table - Updated for 3-column layout */
+#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) {
+  width: 40px;
+  min-width: 40px;
+  max-width: 40px;
+  padding: 12px 8px !important;
+} /* Expand arrow - Minimal width */
+
+#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+} /* Listings (property name, address, details) - Flexible, takes remaining space */
+
+#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) {
+  width: 140px;
+  min-width: 120px;
+  max-width: 140px;
+} /* Rent Range - Compact but readable */
+
+/* Allow wrapping in the listings column, prevent wrapping in others */
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  white-space: normal; /* Allow wrapping for property details */
+}
+
+#listingsTable th:nth-child(1),
+#listingsTable td:nth-child(1),
+#listingsTable th:nth-child(3),
+#listingsTable td:nth-child(3) {
+  white-space: nowrap; /* Prevent wrapping for expand arrow and rent range */
+}
+
+/* Compact padding for listings table to fit in 35% column */
 #listingsTable th,
 #listingsTable td {
-  white-space: nowrap; /* Prevent text wrapping */
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 12px 10px !important;
 }
 
-/* Optimize column widths for listings table */
-#listingsTable th:nth-child(1), #listingsTable td:nth-child(1) { width: 220px; min-width: 200px; } /* Community */
-#listingsTable th:nth-child(2), #listingsTable td:nth-child(2) { width: 140px; min-width: 120px; } /* Market */
-#listingsTable th:nth-child(3), #listingsTable td:nth-child(3) { width: 140px; min-width: 120px; } /* Rent Range */
-#listingsTable th:nth-child(4), #listingsTable td:nth-child(4) { width: 120px; min-width: 100px; } /* Beds/Baths */
-#listingsTable th:nth-child(5), #listingsTable td:nth-child(5) { width: 120px; min-width: 100px; } /* Commission */
-#listingsTable th:nth-child(6), #listingsTable td:nth-child(6) { width: 140px; min-width: 120px; } /* Interested Leads */
-#listingsTable th:nth-child(7), #listingsTable td:nth-child(7) { width: 160px; min-width: 140px; } /* Last Updated */
-.data-table thead th { 
+#listingsTable th:nth-child(2),
+#listingsTable td:nth-child(2) {
+  padding: 12px 12px !important; /* Slightly more padding for main content column */
+}
+
+.data-table thead th {
   background: #1e293b; 
   text-align: left; 
   font-family: 'Inter', sans-serif;

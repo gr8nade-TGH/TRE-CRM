@@ -235,3 +235,37 @@ export function setQueryParam(param, value) {
 	window.history.pushState({}, '', url);
 }
 
+/**
+ * Update sort headers in a table
+ * EXACT COPY from script.js (lines 6953-6981)
+ * @param {string} tableId - ID of the table element
+ */
+export function updateSortHeaders(tableId) {
+	console.log('updateSortHeaders called with tableId:', tableId);
+	const table = document.getElementById(tableId);
+	if (!table) {
+		console.log('Table not found:', tableId);
+		return;
+	}
+
+	const currentState = window.state || { sort: { key: null, dir: null } };
+	console.log('updateSortHeaders - currentState.sort:', currentState.sort);
+	const headers = table.querySelectorAll('th[data-sort]');
+	console.log('Found sortable headers:', headers.length);
+	headers.forEach(header => {
+		const column = header.dataset.sort;
+		const icon = header.querySelector('.sort-icon');
+
+		if (column === currentState.sort.key && currentState.sort.dir !== 'none') {
+			header.classList.add('sorted');
+			if (icon) {
+				icon.textContent = currentState.sort.dir === 'asc' ? '↑' : '↓';
+			}
+		} else {
+			header.classList.remove('sorted');
+			if (icon) {
+				icon.textContent = '↕';
+			}
+		}
+	});
+}

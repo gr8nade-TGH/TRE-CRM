@@ -344,9 +344,8 @@
 						<thead>
 							<tr>
 								<th></th>
-								<th data-sort="name" class="sortable">Community <span class="sort-icon">↕</span></th>
+								<th data-sort="name" class="sortable">Listings <span class="sort-icon">↕</span></th>
 								<th data-sort="rent_min" class="sortable">Rent Range <span class="sort-icon">↕</span></th>
-								<th data-sort="commission_pct" class="sortable">Commission % <span class="sort-icon">↕</span></th>
 							</tr>
 						</thead>
 						<tbody id="listingsTbody">
@@ -870,123 +869,138 @@
 		</div>
 	</div>
 
-	<!-- Listing Edit Modal -->
+	<!-- Property Edit Modal -->
 	<div id="listingEditModal" class="modal hidden">
-		<div class="modal-card">
+		<div class="modal-card" style="max-width: 900px; width: 90%;">
 			<div class="modal-header">
-				<h3>Edit Listing - <span id="editListingName">Property Name</span></h3>
+				<h3>⚙️ Edit Property - <span id="editListingName">Property Name</span></h3>
 				<button id="closeListingEdit" class="icon-btn" aria-label="Close">×</button>
 			</div>
 			<div class="modal-body">
 				<form id="listingEditForm">
-					<div class="form-group">
-						<label class="checkbox-label">
-							<input type="checkbox" id="editIsPUMI">
-							<span class="checkmark"></span>
-							Mark as PUMI
-						</label>
-					</div>
-					
-					<div class="form-group">
-						<label class="checkbox-label">
-							<input type="checkbox" id="editMarkForReview">
-							<span class="checkmark"></span>
-							Mark for Review
-						</label>
-					</div>
-					
-					<div class="form-group">
-						<label for="editPropertyName">Property Name</label>
-						<input type="text" id="editPropertyName" required>
-					</div>
-					
-					<div class="form-group">
-						<label for="editAddress">Address</label>
-						<input type="text" id="editAddress" required>
-					</div>
-					
+					<!-- Property Flags -->
 					<div class="form-row">
 						<div class="form-group">
-							<label for="editMarket">Market</label>
-							<select id="editMarket" required>
-								<option value="Austin">Austin</option>
-								<option value="Dallas">Dallas</option>
-								<option value="Houston">Houston</option>
+							<label class="checkbox-label">
+								<input type="checkbox" id="editIsPUMI">
+								<span class="checkmark"></span>
+								Mark as PUMI
+							</label>
+						</div>
+
+						<div class="form-group">
+							<label class="checkbox-label">
+								<input type="checkbox" id="editMarkForReview">
+								<span class="checkmark"></span>
+								Mark for Review
+							</label>
+						</div>
+					</div>
+
+					<!-- Property Name -->
+					<div class="form-group">
+						<label for="editPropertyName">Property Name <span style="color: #ef4444;">*</span></label>
+						<input type="text" id="editPropertyName" required placeholder="e.g., Linden at The Rim">
+					</div>
+
+					<!-- Address Fields -->
+					<div class="form-group">
+						<label for="editStreetAddress">Street Address <span style="color: #ef4444;">*</span></label>
+						<input type="text" id="editStreetAddress" required placeholder="e.g., 15022 Vance Jackson Rd">
+					</div>
+
+					<div class="form-row">
+						<div class="form-group" style="flex: 2;">
+							<label for="editCity">City <span style="color: #ef4444;">*</span></label>
+							<input type="text" id="editCity" required placeholder="Auto-filled from address" readonly style="background-color: #f9fafb;">
+						</div>
+
+						<div class="form-group" style="flex: 1;">
+							<label for="editState">State <span style="color: #ef4444;">*</span></label>
+							<select id="editState" required disabled style="background-color: #f9fafb;">
+								<option value="TX">TX</option>
+								<option value="OK">OK</option>
+								<option value="LA">LA</option>
+								<option value="AR">AR</option>
 							</select>
 						</div>
-						
-						<div class="form-group">
-							<label for="editPhone">Phone</label>
-							<input type="tel" id="editPhone" required>
+
+						<div class="form-group" style="flex: 1;">
+							<label for="editZipCode">Zip Code <span style="color: #ef4444;">*</span></label>
+							<input type="text" id="editZipCode" required placeholder="Auto-filled" pattern="[0-9]{5}" readonly style="background-color: #f9fafb;">
 						</div>
 					</div>
+
+					<div class="form-group">
+						<label for="editPhone">Phone</label>
+						<input type="tel" id="editPhone" placeholder="(210) 555-1234">
+					</div>
 					
+					<!-- Rent Range (Auto-calculated from units) -->
 					<div class="form-row">
 						<div class="form-group">
-							<label for="editRentMin">Min Rent</label>
-							<input type="number" id="editRentMin" min="0" required>
+							<label for="editRentMin">Min Rent (Auto-calculated)</label>
+							<input type="number" id="editRentMin" min="0" placeholder="Calculated from units" readonly style="background-color: #f9fafb;">
 						</div>
-						
+
 						<div class="form-group">
-							<label for="editRentMax">Max Rent</label>
-							<input type="number" id="editRentMax" min="0" required>
+							<label for="editRentMax">Max Rent (Auto-calculated)</label>
+							<input type="number" id="editRentMax" min="0" placeholder="Calculated from units" readonly style="background-color: #f9fafb;">
 						</div>
 					</div>
-					
+
+					<!-- Bed/Bath Range -->
 					<div class="form-row">
 						<div class="form-group">
 							<label for="editBedsMin">Min Beds</label>
-							<input type="number" id="editBedsMin" min="0" required>
+							<input type="number" id="editBedsMin" min="0" placeholder="1">
 						</div>
-						
+
 						<div class="form-group">
 							<label for="editBedsMax">Max Beds</label>
-							<input type="number" id="editBedsMax" min="0" required>
+							<input type="number" id="editBedsMax" min="0" placeholder="3">
 						</div>
 					</div>
-					
+
 					<div class="form-row">
 						<div class="form-group">
 							<label for="editBathsMin">Min Baths</label>
-							<input type="number" id="editBathsMin" min="0" step="0.5" required>
+							<input type="number" id="editBathsMin" min="0" step="0.5" placeholder="1">
 						</div>
-						
+
 						<div class="form-group">
 							<label for="editBathsMax">Max Baths</label>
-							<input type="number" id="editBathsMax" min="0" step="0.5" required>
+							<input type="number" id="editBathsMax" min="0" step="0.5" placeholder="2">
 						</div>
 					</div>
-					
+
+					<!-- Commission -->
 					<div class="form-row">
 						<div class="form-group">
-							<label for="editEscortPct">Escort Commission %</label>
-							<input type="number" id="editEscortPct" min="0" max="10" step="0.1" required>
-						</div>
-						
-						<div class="form-group">
-							<label for="editSendPct">Send Commission %</label>
-							<input type="number" id="editSendPct" min="0" max="10" step="0.1" required>
+							<label for="editCommissionPct">Commission %</label>
+							<input type="number" id="editCommissionPct" min="0" max="10" step="0.1" placeholder="2.0">
 						</div>
 					</div>
-					
+
+					<!-- Additional Info -->
 					<div class="form-group">
 						<label for="editWebsite">Website</label>
-						<input type="url" id="editWebsite">
+						<input type="url" id="editWebsite" placeholder="https://property-website.com">
 					</div>
-					
+
 					<div class="form-group">
 						<label for="editAmenities">Amenities (comma-separated)</label>
-						<input type="text" id="editAmenities" placeholder="Pool, Gym, Parking">
+						<input type="text" id="editAmenities" placeholder="Pool, Gym, Parking, Pet Friendly">
 					</div>
-					
+
 					<div class="form-group">
 						<label for="editSpecials">Special Offers</label>
-						<input type="text" id="editSpecials" placeholder="1 month free">
+						<input type="text" id="editSpecials" placeholder="1 month free, $99 deposit">
 					</div>
-					
+
 					<div class="form-group">
 						<label for="editBonus">Bonus Text</label>
-						<input type="text" id="editBonus" placeholder="$300 bonus">
+						<input type="text" id="editBonus" placeholder="$300 bonus on approved application">
 					</div>
 				</form>
 			</div>
@@ -1473,6 +1487,100 @@
 			</div>
 			<div class="modal-footer">
 				<button id="closeActivityLogBtn" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Unit Notes Modal -->
+	<div id="unitNotesModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>📝 Unit Notes</h3>
+				<button id="closeUnitNotes" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="unitNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+					<!-- Notes will be populated here -->
+				</div>
+				<div class="field">
+					<label for="newUnitNote">Add New Note</label>
+					<textarea id="newUnitNote" rows="3" placeholder="Type your note here..."></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveUnitNoteBtn" class="btn btn-primary">Add Note</button>
+				<button id="cancelUnitNotes" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Unit Configuration Modal -->
+	<div id="unitConfigModal" class="modal hidden">
+		<div class="modal-card" style="max-width: 600px;">
+			<div class="modal-header">
+				<h3>⚙️ Configure Unit</h3>
+				<button id="closeUnitConfig" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div class="field">
+					<label for="configUnitNumber">Unit Number *</label>
+					<input type="text" id="configUnitNumber" placeholder="e.g., 101, 2A" required>
+				</div>
+
+				<div class="field">
+					<label for="configUnitFloor">Floor</label>
+					<input type="number" id="configUnitFloor" placeholder="e.g., 1, 2, 3">
+				</div>
+
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+					<div class="field">
+						<label for="configUnitRent">Rent ($)</label>
+						<input type="number" id="configUnitRent" placeholder="e.g., 1200">
+					</div>
+
+					<div class="field">
+						<label for="configUnitMarketRent">Market Rent ($)</label>
+						<input type="number" id="configUnitMarketRent" placeholder="e.g., 1300">
+					</div>
+				</div>
+
+				<div class="field">
+					<label for="configUnitAvailableFrom">Available From</label>
+					<input type="date" id="configUnitAvailableFrom">
+				</div>
+
+				<div class="field">
+					<label for="configUnitStatus">Status</label>
+					<select id="configUnitStatus">
+						<option value="available">Available</option>
+						<option value="pending">Pending</option>
+						<option value="leased">Leased</option>
+						<option value="unavailable">Unavailable</option>
+					</select>
+				</div>
+
+				<div class="field">
+					<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+						<input type="checkbox" id="configUnitIsAvailable">
+						<span>Unit is available for leasing</span>
+					</label>
+				</div>
+
+				<div class="field">
+					<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+						<input type="checkbox" id="configUnitIsActive">
+						<span>Unit is active (on market)</span>
+					</label>
+				</div>
+
+				<div class="field">
+					<label for="configUnitNotes">Internal Notes</label>
+					<textarea id="configUnitNotes" rows="3" placeholder="Internal notes about this unit..."></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveUnitConfigBtn" class="btn btn-primary">Save Changes</button>
+				<button id="cancelUnitConfig" class="btn btn-secondary">Cancel</button>
 			</div>
 		</div>
 	</div>
