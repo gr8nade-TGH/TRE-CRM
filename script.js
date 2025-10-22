@@ -91,198 +91,37 @@ let api, renderLeads, renderSpecials;
 // Note: These are now imported from modules above, but we keep them
 // accessible globally for functions that expect them in global scope
 
-// Add Lead functionality
+// ---- Lead Forms ----
+// Wrapper function for saveNewLead - calls module function
 async function saveNewLead() {
-	const name = document.getElementById('leadName').value.trim();
-	const email = document.getElementById('leadEmail').value.trim();
-	const phone = document.getElementById('leadPhone').value.trim();
-	const status = document.getElementById('leadStatus').value;
-	const health = document.getElementById('leadHealth').value;
-	const source = document.getElementById('leadSource').value;
-	const notes = document.getElementById('leadNotes').value.trim();
-
-	// New fields from landing page
-	const bestTime = document.getElementById('leadBestTime').value;
-	const bedrooms = document.getElementById('leadBedrooms').value;
-	const bathrooms = document.getElementById('leadBathrooms').value;
-	const priceRange = document.getElementById('leadPriceRange').value;
-	const areaOfTown = document.getElementById('leadAreaOfTown').value;
-	const moveInDate = document.getElementById('leadMoveInDate').value;
-	const creditHistory = document.getElementById('leadCreditHistory').value;
-	const comments = document.getElementById('leadComments').value.trim();
-
-	// Validation
-	if (!name || !email || !phone) {
-		toast('Please fill in all required fields (Name, Email, Phone)', 'error');
-		return;
-	}
-
-	// Build preferences object
-	const preferences = {
-		bedrooms: bedrooms,
-		bathrooms: bathrooms,
-		priceRange: priceRange,
-		areaOfTown: areaOfTown,
-		moveInDate: moveInDate,
-		creditHistory: creditHistory,
-		bestTimeToCall: bestTime,
-		comments: comments
-	};
-
-	// Create new lead object for Supabase
-	const newLead = {
-		name: name,
-		email: email,
-		phone: phone,
-		status: status,
-		health_status: health,
-		source: source,
-		notes: notes,
-		preferences: JSON.stringify(preferences),
-		assigned_agent_id: state.agentId || null,
-		found_by_agent_id: state.agentId || null,
-		submitted_at: new Date().toISOString(),
-		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString()
-	};
-
-	try {
-		// Insert into Supabase
-		const { data, error } = await window.supabase
-			.from('leads')
-			.insert([newLead])
-			.select();
-
-		if (error) {
-			console.error('❌ Error creating lead:', error);
-			toast('Error adding lead: ' + error.message, 'error');
-			return;
-		}
-
-		console.log('✅ Lead created:', data);
-		toast('Lead added successfully!', 'success');
-		hideModal('addLeadModal');
-
-		// Refresh leads table
-		await renderLeads();
-
-	} catch (error) {
-		console.error('❌ Error saving lead:', error);
-		toast('Error adding lead. Please try again.', 'error');
-	}
+	await Leads.saveNewLead({
+		SupabaseAPI,
+		state,
+		toast,
+		hideModal,
+		renderLeads
+	});
 }
 
-// Unused legacy functions - kept for backward compatibility
-/* eslint-disable no-unused-vars */
-function checkDuplicateLead(email, phone) {
-	const existingLeads = state.leads || [];
-
-	return existingLeads.some(lead =>
-		lead.email.toLowerCase() === email.toLowerCase() ||
-		lead.phone === phone
-	);
-}
-
-async function createLeadAPI(lead) {
-	try {
-		const response = await fetch(`${API_BASE}/leads`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(lead)
-		});
-
-		if (response.ok) {
-			toast('Lead added successfully!', 'success');
-			hideModal('addLeadModal');
-			renderLeads(); // Refresh the leads list
-		} else {
-			throw new Error('Failed to create lead');
-		}
-	} catch (error) {
-		toast('Error adding lead: ' + error.message, 'error');
-	}
-}
-/* eslint-enable no-unused-vars */
-
-// Add Special functionality
+// ---- Specials Actions ----
+// Wrapper function for saveNewSpecial - calls module function
 function saveNewSpecial() {
-	const propertyName = document.getElementById('specialPropertyName').value.trim();
-	const currentSpecial = document.getElementById('specialCurrentSpecial').value.trim();
-	const commissionRate = document.getElementById('specialCommissionRate').value.trim();
-	const expirationDate = document.getElementById('specialExpirationDate').value;
-
-	// Validation
-	if (!propertyName || !currentSpecial || !commissionRate || !expirationDate) {
-		toast('Please fill in all required fields', 'error');
-		return;
-	}
-
-	// Check if expiration date is in the past
-	if (new Date(expirationDate) < new Date()) {
-		toast('Expiration date cannot be in the past', 'error');
-		return;
-	}
-
-	// Create new special
-	const newSpecial = {
-		property_name: propertyName,
-		current_special: currentSpecial,
-		commission_rate: commissionRate,
-		expiration_date: expirationDate,
-		agent_id: state.currentAgent || 'agent_1', // Default agent
-		agent_name: state.role === 'agent' ? 'Current Agent' : 'Manager' // Will be updated with real name
-	};
-
-	// Create special via API
-	api.createSpecial(newSpecial);
-	toast('Special added successfully!', 'success');
-	hideModal('addSpecialModal');
-	renderSpecials(); // Refresh the specials list
+	Properties.saveNewSpecial({
+		api,
+		toast,
+		hideModal,
+		renderSpecials,
+		state
+	});
 }
 
-async function createSpecialAPI(special) {
-	try {
-		const response = await fetch(`${API_BASE}/specials`, {
-			method: 'POST',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify(special)
-		});
-
-		if (response.ok) {
-			toast('Special added successfully!', 'success');
-			hideModal('addSpecialModal');
-			renderSpecials(); // Refresh the specials list
-		} else {
-			throw new Error('Failed to create special');
-		}
-	} catch (error) {
-		toast('Error adding special: ' + error.message, 'error');
-	}
-}
-
+// Wrapper function for deleteSpecial - calls module function
 function deleteSpecial(specialId) {
-	if (confirm('Are you sure you want to delete this special? This action cannot be undone.')) {
-		api.deleteSpecial(specialId);
-		toast('Special deleted successfully!', 'success');
-		renderSpecials(); // Refresh the specials list
-	}
-}
-
-async function deleteSpecialAPI(specialId) {
-	try {
-		const response = await fetch(`${API_BASE}/specials/${specialId}`, {
-			method: 'DELETE'
-		});
-
-		if (response.ok) {
-			toast('Special deleted successfully!', 'success');
-			renderSpecials(); // Refresh the specials list
-		} else {
-			throw new Error('Failed to delete special');
-		}
-	} catch (error) {
-		toast('Error deleting special: ' + error.message, 'error');
-	}
+	Properties.deleteSpecial(specialId, {
+		api,
+		toast,
+		renderSpecials
+	});
 }
 
 // Note: mockUsers and mockAuditLog are imported from src/state/mockData.js
@@ -349,144 +188,27 @@ async function deleteSpecialAPI(specialId) {
 
 	// renderHealthStatus is now imported from src/modules/leads/leads-health.js
 
+	// ---- Listings Filters ----
+	// Wrapper function for matchesListingsFilters - calls module function
 	function matchesListingsFilters(property, filters) {
-		// Search filter
-		if (filters.search) {
-			const searchTerm = filters.search.toLowerCase();
-			const matchesSearch =
-				property.name.toLowerCase().includes(searchTerm) ||
-				property.address.toLowerCase().includes(searchTerm) ||
-				property.amenities.some(amenity => amenity.toLowerCase().includes(searchTerm));
-			if (!matchesSearch) return false;
-		}
-
-		// Market filter
-		if (filters.market !== 'all' && property.market !== filters.market) {
-			return false;
-		}
-
-		// Price range filter
-		if (filters.minPrice && property.rent_min < parseInt(filters.minPrice)) {
-			return false;
-		}
-		if (filters.maxPrice && property.rent_max > parseInt(filters.maxPrice)) {
-			return false;
-		}
-
-		// Beds filter
-		if (filters.beds !== 'any') {
-			const minBeds = parseInt(filters.beds);
-			if (property.beds_min < minBeds) {
-				return false;
-			}
-		}
-
-		// Commission filter
-		if (filters.commission !== '0') {
-			const minCommission = parseFloat(filters.commission);
-			const totalCommission = property.escort_pct + property.send_pct;
-			if (totalCommission < minCommission) {
-				return false;
-			}
-		}
-
-		// Amenities filter
-		if (filters.amenities !== 'any') {
-			const amenityMap = {
-				'pool': 'Pool',
-				'gym': 'Gym',
-				'pet': 'Pet Friendly',
-				'ev': 'EV Charging'
-			};
-			const requiredAmenity = amenityMap[filters.amenities];
-			if (!property.amenities.includes(requiredAmenity)) {
-				return false;
-			}
-		}
-
-		// PUMI filter (support both old and new field names)
-		if (filters.pumiOnly && !(property.is_pumi || property.isPUMI)) {
-			return false;
-		}
-
-		return true;
+		return Listings.matchesListingsFilters(property, filters);
 	}
 
 	// ---- Health Popover Functions ----
-	let pop, popTitle, popList;
-
+	// Wrapper functions for health popover - calls module functions
 	function initPopover() {
-		pop = document.getElementById('healthPopover');
-		popTitle = document.getElementById('popTitle');
-		popList = document.getElementById('popList');
+		Leads.initPopover();
 	}
 
 	function showPopover(anchor, status) {
-		console.log('showPopover called with status:', status); // Debug
-		if (!pop || !popTitle || !popList) {
-			console.log('Initializing popover elements...'); // Debug
-			initPopover();
-		}
-		if (!pop) {
-			console.log('Popover element not found!'); // Debug
-			return;
-		}
-
-		// Get lead ID from the button
-		const leadId = anchor.getAttribute('data-lead-id');
-
-		console.log('Showing popover for status:', status, 'leadId:', leadId); // Debug
-
-		// Show loading state first
-		popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
-		popList.innerHTML = '<li>Loading...</li>';
-
-		const r = anchor.getBoundingClientRect();
-		const top = r.bottom + 10;
-		let left = r.left - 12;
-		if (left + 300 > window.innerWidth) left = window.innerWidth - 310;
-		if (left < 8) left = 8;
-		pop.style.top = `${Math.round(top)}px`;
-		pop.style.left = `${Math.round(left)}px`;
-		pop.style.display = 'block';
-
-		// Load lead data and messages asynchronously
-		if (leadId) {
-			(async () => {
-				try {
-					const lead = await SupabaseAPI.getLead(leadId);
-					if (lead) {
-						const messages = await getHealthMessages(lead);
-						popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
-						popList.innerHTML = messages.map(s => `<li>${s}</li>`).join('');
-					} else {
-						// Lead not found - show generic status message
-						popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
-						popList.innerHTML = `<li>Unable to load lead details</li>`;
-					}
-				} catch (error) {
-					console.error('Error loading health messages:', error);
-					// Error fallback - show generic status message
-					popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
-					popList.innerHTML = `<li>Unable to load lead details</li>`;
-				}
-			})();
-		} else {
-			// No leadId provided - show generic status message
-			popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
-			popList.innerHTML = `<li>No lead information available</li>`;
-		}
-
-		console.log('Popover should be visible now'); // Debug
+		Leads.showPopover(anchor, status, {
+			SupabaseAPI,
+			getHealthMessages
+		});
 	}
 
 	function hidePopover() {
-		if (!pop) {
-			pop = document.getElementById('healthPopover');
-		}
-		if (pop) {
-			pop.style.display = 'none';
-		}
+		Leads.hidePopover();
 	}
 
 	// ---- Agent Statistics ----

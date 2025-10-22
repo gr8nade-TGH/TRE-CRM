@@ -7,4 +7,5 @@
 
 export * from './listings-rendering.js';
 export * from './bulk-actions.js';
+export * from './listings-filters.js';
 
