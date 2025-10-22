@@ -1,5 +1,5 @@
 // Listing Modals Functions - EXACT COPY from script.js
-import { initAddressAutocomplete } from '../utils/mapbox-autocomplete.js';
+import { initAddressAutocomplete } from '../../utils/mapbox-autocomplete.js';
 
 // Store autocomplete cleanup function
 let autocompleteCleanup = null;
