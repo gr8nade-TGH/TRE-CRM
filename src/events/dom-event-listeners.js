@@ -18,6 +18,7 @@ export function setupAllEventListeners(deps) {
 		realUsers,
 		api,
 		pop,
+		mockClosedLeads,
 		
 		// Render functions
 		renderLeads,
@@ -51,7 +52,9 @@ export function setupAllEventListeners(deps) {
 		closeListingEditModal,
 		openInterestedLeads,
 		openPropertyNotesModal,
+		closePropertyNotesModal,
 		openAddListingModal,
+		closeAddListingModal,
 		openBuildShowcaseModal,
 		openShowcasePreview,
 		
@@ -98,7 +101,10 @@ export function setupAllEventListeners(deps) {
 
 		// Other functions
 		previewLandingPage,
-		openHistory
+		openHistory,
+		closeDocumentDetails,
+		sendShowcaseEmail,
+		openHistoryDocumentDetails
 	} = deps;
 
 		// search

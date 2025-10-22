@@ -2144,6 +2144,7 @@ function createLeadTable(lead, isExpanded = false) {
 			realUsers,
 			api,
 			pop,
+			mockClosedLeads,
 
 			// Render functions
 			renderLeads,
@@ -2177,7 +2178,9 @@ function createLeadTable(lead, isExpanded = false) {
 			closeListingEditModal,
 			openInterestedLeads,
 			openPropertyNotesModal,
+			closePropertyNotesModal,
 			openAddListingModal,
+			closeAddListingModal,
 			openBuildShowcaseModal,
 			openShowcasePreview,
 
@@ -2224,7 +2227,10 @@ function createLeadTable(lead, isExpanded = false) {
 
 			// Other functions
 			previewLandingPage,
-			openHistory
+			openHistory,
+			closeDocumentDetails,
+			sendShowcaseEmail,
+			openHistoryDocumentDetails
 		});
 	});
 
