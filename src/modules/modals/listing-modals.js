@@ -166,14 +166,20 @@ export async function createListing(options) {
 
 export function openListingEditModal(property, options) {
 	const { state, showModal } = options;
-	
+
 	console.log('Opening listing edit modal for:', property);
 
 	// Populate the modal with current property data
 	document.getElementById('editListingName').textContent = property.name || property.community_name;
 	document.getElementById('editPropertyName').value = property.name || property.community_name;
-	document.getElementById('editAddress').value = property.address || property.street_address;
-	document.getElementById('editMarket').value = property.market || property.city;
+
+	// Split address into components
+	document.getElementById('editStreetAddress').value = property.street_address || '';
+	document.getElementById('editCity').value = property.city || '';
+	document.getElementById('editState').value = property.state || 'TX';
+	document.getElementById('editZipCode').value = property.zip_code || '';
+
+	document.getElementById('editMarket').value = property.market || property.city || '';
 	document.getElementById('editPhone').value = property.phone || property.contact_email || '';
 	document.getElementById('editRentMin').value = property.rent_min || property.rent_range_min || 0;
 	document.getElementById('editRentMax').value = property.rent_max || property.rent_range_max || 0;
@@ -246,24 +252,56 @@ export async function deleteListing(options) {
 }
 
 export async function saveListingEdit(options) {
-	const { SupabaseAPI, toast, closeListingEditModal, renderListings } = options;
-	
+	const { SupabaseAPI, toast, closeListingEditModal, renderListings, geocodeAddress } = options;
+
 	const property = window.currentEditingProperty;
 	if (!property) return;
 
 	try {
-		// Get form data - ONLY use new schema field names
+		// Get form data
+		const streetAddress = document.getElementById('editStreetAddress').value.trim();
+		const city = document.getElementById('editCity').value.trim();
+		const state = document.getElementById('editState').value;
+		const zipCode = document.getElementById('editZipCode').value.trim();
+		const market = document.getElementById('editMarket').value;
+
+		// Validate required fields
+		if (!streetAddress || !city || !state || !zipCode) {
+			toast('Please fill in all required address fields', 'error');
+			return;
+		}
+
+		// Geocode the address to get lat/lng
+		console.log('🗺️ Geocoding address...');
+		const coords = await geocodeAddress(streetAddress, city, state, zipCode);
+
+		if (!coords) {
+			toast('Error: Could not geocode address. Please check the address and try again.', 'error');
+			return;
+		}
+
+		toast('Address geocoded successfully!', 'success');
+
+		// Build form data - ONLY use new schema field names
 		const formData = {
-			community_name: document.getElementById('editPropertyName').value,
-			street_address: document.getElementById('editAddress').value,
-			city: document.getElementById('editMarket').value,
-			contact_email: document.getElementById('editPhone').value, // Using contact_email for phone
-			rent_range_min: parseInt(document.getElementById('editRentMin').value),
-			rent_range_max: parseInt(document.getElementById('editRentMax').value),
-			bed_range: `${document.getElementById('editBedsMin').value}-${document.getElementById('editBedsMax').value}`,
-			bath_range: `${document.getElementById('editBathsMin').value}-${document.getElementById('editBathsMax').value}`,
-			commission_pct: Math.max(parseFloat(document.getElementById('editEscortPct').value), parseFloat(document.getElementById('editSendPct').value)),
-			leasing_link: document.getElementById('editWebsite').value,
+			community_name: document.getElementById('editPropertyName').value.trim(),
+			street_address: streetAddress,
+			city: city,
+			state: state,
+			zip_code: zipCode,
+			market: market,
+			lat: coords.lat,
+			lng: coords.lng,
+			contact_email: document.getElementById('editPhone').value.trim(), // Using contact_email for phone
+			rent_range_min: parseInt(document.getElementById('editRentMin').value) || 0,
+			rent_range_max: parseInt(document.getElementById('editRentMax').value) || 0,
+			bed_range: `${document.getElementById('editBedsMin').value || 0}-${document.getElementById('editBedsMax').value || 0}`,
+			bath_range: `${document.getElementById('editBathsMin').value || 0}-${document.getElementById('editBathsMax').value || 0}`,
+			commission_pct: Math.max(
+				parseFloat(document.getElementById('editEscortPct').value) || 0,
+				parseFloat(document.getElementById('editSendPct').value) || 0
+			),
+			leasing_link: document.getElementById('editWebsite').value.trim(),
 			amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
 			is_pumi: document.getElementById('editIsPUMI').checked,
 			mark_for_review: document.getElementById('editMarkForReview').checked,
@@ -282,7 +320,7 @@ export async function saveListingEdit(options) {
 		await SupabaseAPI.updateProperty(property.id, formData, userEmail, userName);
 
 		// Show success message
-		toast(`Listing "${formData.community_name}" updated successfully!`, 'success');
+		toast(`Property "${formData.community_name}" updated successfully!`, 'success');
 
 		// Close modal and refresh display
 		closeListingEditModal();

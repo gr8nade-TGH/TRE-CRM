@@ -1164,11 +1164,13 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Geocoding Helper ----
-	async function geocodeAddress(address, city, zipCode) {
+	async function geocodeAddress(address, city, state = 'TX', zipCode) {
 		try {
 			// Build full address string
-			const fullAddress = `${address}, ${city}, TX ${zipCode}`;
+			const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
 			const encodedAddress = encodeURIComponent(fullAddress);
+
+			console.log('🗺️ Geocoding:', fullAddress);
 
 			// Use Mapbox Geocoding API
 			const response = await fetch(
@@ -1183,7 +1185,7 @@ function createLeadTable(lead, isExpanded = false) {
 
 			if (data.features && data.features.length > 0) {
 				const [lng, lat] = data.features[0].center;
-				console.log('✅ Geocoded address:', fullAddress, 'to', lat, lng);
+				console.log('✅ Geocoded address:', fullAddress, 'to', { lat, lng });
 				return { lat, lng };
 			} else {
 				console.warn('⚠️ No geocoding results for:', fullAddress);
@@ -2031,7 +2033,8 @@ function createLeadTable(lead, isExpanded = false) {
 			SupabaseAPI,
 			toast,
 			closeListingEditModal,
-			renderListings
+			renderListings,
+			geocodeAddress
 		});
 	}
 
