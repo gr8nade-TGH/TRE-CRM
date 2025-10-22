@@ -1477,6 +1477,100 @@
 		</div>
 	</div>
 
+	<!-- Unit Notes Modal -->
+	<div id="unitNotesModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>📝 Unit Notes</h3>
+				<button id="closeUnitNotes" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div id="unitNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+					<!-- Notes will be populated here -->
+				</div>
+				<div class="field">
+					<label for="newUnitNote">Add New Note</label>
+					<textarea id="newUnitNote" rows="3" placeholder="Type your note here..."></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveUnitNoteBtn" class="btn btn-primary">Add Note</button>
+				<button id="cancelUnitNotes" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Unit Configuration Modal -->
+	<div id="unitConfigModal" class="modal hidden">
+		<div class="modal-card" style="max-width: 600px;">
+			<div class="modal-header">
+				<h3>⚙️ Configure Unit</h3>
+				<button id="closeUnitConfig" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<div class="field">
+					<label for="configUnitNumber">Unit Number *</label>
+					<input type="text" id="configUnitNumber" placeholder="e.g., 101, 2A" required>
+				</div>
+
+				<div class="field">
+					<label for="configUnitFloor">Floor</label>
+					<input type="number" id="configUnitFloor" placeholder="e.g., 1, 2, 3">
+				</div>
+
+				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+					<div class="field">
+						<label for="configUnitRent">Rent ($)</label>
+						<input type="number" id="configUnitRent" placeholder="e.g., 1200">
+					</div>
+
+					<div class="field">
+						<label for="configUnitMarketRent">Market Rent ($)</label>
+						<input type="number" id="configUnitMarketRent" placeholder="e.g., 1300">
+					</div>
+				</div>
+
+				<div class="field">
+					<label for="configUnitAvailableFrom">Available From</label>
+					<input type="date" id="configUnitAvailableFrom">
+				</div>
+
+				<div class="field">
+					<label for="configUnitStatus">Status</label>
+					<select id="configUnitStatus">
+						<option value="available">Available</option>
+						<option value="pending">Pending</option>
+						<option value="leased">Leased</option>
+						<option value="unavailable">Unavailable</option>
+					</select>
+				</div>
+
+				<div class="field">
+					<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+						<input type="checkbox" id="configUnitIsAvailable">
+						<span>Unit is available for leasing</span>
+					</label>
+				</div>
+
+				<div class="field">
+					<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+						<input type="checkbox" id="configUnitIsActive">
+						<span>Unit is active (on market)</span>
+					</label>
+				</div>
+
+				<div class="field">
+					<label for="configUnitNotes">Internal Notes</label>
+					<textarea id="configUnitNotes" rows="3" placeholder="Internal notes about this unit..."></textarea>
+				</div>
+			</div>
+			<div class="modal-footer">
+				<button id="saveUnitConfigBtn" class="btn btn-primary">Save Changes</button>
+				<button id="cancelUnitConfig" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
 	<!-- Add Listing Modal -->
 	<div id="addListingModal" class="modal hidden">
 		<div class="modal-card large">

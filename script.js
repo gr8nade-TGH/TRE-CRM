@@ -481,7 +481,12 @@ async function deleteSpecialAPI(specialId) {
 	}
 
 	function hidePopover() {
-		if (pop) pop.style.display = 'none';
+		if (!pop) {
+			pop = document.getElementById('healthPopover');
+		}
+		if (pop) {
+			pop.style.display = 'none';
+		}
 	}
 
 	// ---- Agent Statistics ----
@@ -1867,6 +1872,18 @@ function createLeadTable(lead, isExpanded = false) {
 		// Don't initialize app here - wait for auth.js to call initializeApp()
 		console.log('DOM loaded, waiting for authentication...');
 
+		// Initialize unit modal event listeners
+		import('./src/modules/modals/unit-modals.js').then(module => {
+			module.initializeUnitModalListeners();
+		});
+
+		// Listen for refresh listings event (triggered by unit modals)
+		window.addEventListener('refreshListings', () => {
+			if (state.currentPage === 'listings') {
+				renderListings();
+			}
+		});
+
 		// Setup all event listeners with dependencies
 		setupAllEventListeners({
 			// State and global variables
@@ -1874,7 +1891,6 @@ function createLeadTable(lead, isExpanded = false) {
 			realAgents,
 			realUsers,
 			api,
-			pop,
 			mockClosedLeads,
 
 			// Render functions

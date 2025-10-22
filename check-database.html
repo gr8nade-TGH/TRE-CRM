@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Check Database</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+        }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        #output {
+            margin-top: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            white-space: pre-wrap;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+        .success {
+            color: #10b981;
+        }
+        .error {
+            color: #ef4444;
+        }
+        .info {
+            color: #3b82f6;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 10px;
+        }
+        th, td {
+            padding: 8px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+        th {
+            background: #f3f4f6;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Database Checker</h1>
+        <div>
+            <button onclick="checkProperties()">Check Properties</button>
+            <button onclick="checkFloorPlans()">Check Floor Plans</button>
+            <button onclick="checkUnits()">Check Units</button>
+            <button onclick="checkAll()">Check All</button>
+        </div>
+        <div id="output"></div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg1OTI1NzcsImV4cCI6MjA0NDE2ODU3N30.cJwkfje-8ul_jd5DSKsqLy-mbZHwyLPJ_AaF5BN_-Ug';
+
+        const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            const span = document.createElement('div');
+            span.className = type;
+            span.textContent = message;
+            output.appendChild(span);
+        }
+
+        function clear() {
+            document.getElementById('output').innerHTML = '';
+        }
+
+        window.checkProperties = async function() {
+            clear();
+            log('📋 Checking Properties Table...', 'info');
+            log('');
+
+            try {
+                const { data, error } = await supabase
+                    .from('properties')
+                    .select('*')
+                    .order('name')
+                    .limit(10);
+
+                if (error) {
+                    log(`❌ Error: ${error.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Found ${data.length} properties`, 'success');
+                log('');
+
+                data.forEach((prop, i) => {
+                    log(`${i + 1}. ${prop.name || prop.community_name}`);
+                    log(`   ID: ${prop.id}`);
+                    log(`   Market: ${prop.market}`);
+                    log(`   Beds: ${prop.beds_min}-${prop.beds_max}`);
+                    log(`   Rent: $${prop.rent_min}-$${prop.rent_max}`);
+                    log('');
+                });
+            } catch (err) {
+                log(`❌ Error: ${err.message}`, 'error');
+            }
+        };
+
+        window.checkFloorPlans = async function() {
+            clear();
+            log('📋 Checking Floor Plans Table...', 'info');
+            log('');
+
+            try {
+                const { data, error } = await supabase
+                    .from('floor_plans')
+                    .select('*, property:properties(name)')
+                    .order('property_id')
+                    .limit(20);
+
+                if (error) {
+                    log(`❌ Error: ${error.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Found ${data.length} floor plans`, 'success');
+                log('');
+
+                if (data.length === 0) {
+                    log('⚠️ No floor plans found in database!', 'error');
+                    log('You need to populate floor plans data.', 'info');
+                } else {
+                    data.forEach((fp, i) => {
+                        log(`${i + 1}. ${fp.name}`);
+                        log(`   Property: ${fp.property?.name || 'Unknown'}`);
+                        log(`   Beds/Baths: ${fp.beds}bd/${fp.baths}ba`);
+                        log(`   Sqft: ${fp.sqft}`);
+                        log(`   Rent: $${fp.starting_at}`);
+                        log(`   Units Available: ${fp.units_available || 0}`);
+                        log('');
+                    });
+                }
+            } catch (err) {
+                log(`❌ Error: ${err.message}`, 'error');
+            }
+        };
+
+        window.checkUnits = async function() {
+            clear();
+            log('📋 Checking Units Table...', 'info');
+            log('');
+
+            try {
+                const { data, error } = await supabase
+                    .from('units')
+                    .select('*, property:properties(name), floor_plan:floor_plans(name)')
+                    .order('property_id')
+                    .limit(20);
+
+                if (error) {
+                    log(`❌ Error: ${error.message}`, 'error');
+                    return;
+                }
+
+                log(`✅ Found ${data.length} units`, 'success');
+                log('');
+
+                if (data.length === 0) {
+                    log('⚠️ No units found in database!', 'error');
+                    log('You need to populate units data.', 'info');
+                } else {
+                    data.forEach((unit, i) => {
+                        log(`${i + 1}. Unit ${unit.unit_number}`);
+                        log(`   Property: ${unit.property?.name || 'Unknown'}`);
+                        log(`   Floor Plan: ${unit.floor_plan?.name || 'Unknown'}`);
+                        log(`   Floor: ${unit.floor}`);
+                        log(`   Rent: $${unit.rent || 'N/A'}`);
+                        log(`   Status: ${unit.status}`);
+                        log(`   Available: ${unit.is_available ? 'Yes' : 'No'}`);
+                        log('');
+                    });
+                }
+            } catch (err) {
+                log(`❌ Error: ${err.message}`, 'error');
+            }
+        };
+
+        window.checkAll = async function() {
+            clear();
+            log('🔍 Checking All Tables...', 'info');
+            log('='.repeat(60));
+            log('');
+
+            // Check properties
+            try {
+                const { data: props, error: propsError } = await supabase
+                    .from('properties')
+                    .select('*', { count: 'exact', head: true });
+
+                if (propsError) {
+                    log(`❌ Properties Error: ${propsError.message}`, 'error');
+                } else {
+                    log(`✅ Properties: ${props?.length || 0} records`, 'success');
+                }
+            } catch (err) {
+                log(`❌ Properties Error: ${err.message}`, 'error');
+            }
+
+            // Check floor plans
+            try {
+                const { count: fpCount, error: fpError } = await supabase
+                    .from('floor_plans')
+                    .select('*', { count: 'exact', head: true });
+
+                if (fpError) {
+                    log(`❌ Floor Plans Error: ${fpError.message}`, 'error');
+                } else {
+                    log(`✅ Floor Plans: ${fpCount || 0} records`, fpCount > 0 ? 'success' : 'error');
+                }
+            } catch (err) {
+                log(`❌ Floor Plans Error: ${err.message}`, 'error');
+            }
+
+            // Check units
+            try {
+                const { count: unitsCount, error: unitsError } = await supabase
+                    .from('units')
+                    .select('*', { count: 'exact', head: true });
+
+                if (unitsError) {
+                    log(`❌ Units Error: ${unitsError.message}`, 'error');
+                } else {
+                    log(`✅ Units: ${unitsCount || 0} records`, unitsCount > 0 ? 'success' : 'error');
+                }
+            } catch (err) {
+                log(`❌ Units Error: ${err.message}`, 'error');
+            }
+
+            log('');
+            log('='.repeat(60));
+        };
+
+        // Auto-run check all on load
+        window.addEventListener('load', () => {
+            setTimeout(() => window.checkAll(), 500);
+        });
+    </script>
+</body>
+</html>
+

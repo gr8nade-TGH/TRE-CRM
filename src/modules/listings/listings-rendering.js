@@ -354,7 +354,51 @@ export async function renderListings(options) {
 				`;
 
 				// Add unit-level event handlers
-				// TODO: Implement unit-specific modals for notes, activity, interested leads, edit
+				const unitNotesIcon = unitTr.querySelector('.unit-notes');
+				const unitActivityIcon = unitTr.querySelector('.unit-activity');
+				const unitGearIcon = unitTr.querySelector('.unit-gear');
+
+				// Unit Notes Icon
+				if (unitNotesIcon) {
+					unitNotesIcon.addEventListener('click', async (e) => {
+						e.stopPropagation();
+						e.preventDefault();
+						console.log('Unit notes icon clicked for unit:', unit.id);
+						try {
+							const { openUnitNotesModal } = await import('../modals/unit-modals.js');
+							await openUnitNotesModal(unit.id, unit.unit_number, prop.community_name, prop.id);
+						} catch (error) {
+							console.error('Error opening unit notes modal:', error);
+						}
+					});
+				}
+
+				// Unit Activity Icon
+				if (unitActivityIcon) {
+					unitActivityIcon.addEventListener('click', async (e) => {
+						e.stopPropagation();
+						e.preventDefault();
+						console.log('Unit activity icon clicked for unit:', unit.id);
+						if (window.openActivityLogModal) {
+							await window.openActivityLogModal(unit.id, 'unit', `Unit ${unit.unit_number} - ${prop.community_name}`);
+						}
+					});
+				}
+
+				// Unit Gear Icon (Configuration)
+				if (unitGearIcon) {
+					unitGearIcon.addEventListener('click', async (e) => {
+						e.stopPropagation();
+						e.preventDefault();
+						console.log('Unit gear icon clicked for unit:', unit.id);
+						try {
+							const { openUnitConfigModal } = await import('../modals/unit-modals.js');
+							await openUnitConfigModal(unit.id);
+						} catch (error) {
+							console.error('Error opening unit config modal:', error);
+						}
+					});
+				}
 
 				tbody.appendChild(unitTr);
 			});

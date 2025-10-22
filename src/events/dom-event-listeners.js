@@ -17,7 +17,6 @@ export function setupAllEventListeners(deps) {
 		realAgents,
 		realUsers,
 		api,
-		pop,
 		mockClosedLeads,
 		
 		// Render functions
@@ -57,7 +56,7 @@ export function setupAllEventListeners(deps) {
 		closeAddListingModal,
 		openBuildShowcaseModal,
 		openShowcasePreview,
-		
+
 		// CRUD operation functions
 		saveNewLead,
 		savePropertyContact,
@@ -1160,7 +1159,6 @@ export function setupAllEventListeners(deps) {
 			savePropertyNoteBtn.addEventListener('click', addPropertyNote);
 		}
 
-
 		// Initialize popover elements
 		initPopover();
 
@@ -1179,7 +1177,8 @@ export function setupAllEventListeners(deps) {
 		leadsTable.addEventListener('mouseleave', (e)=>{
 			if (e.target.closest && e.target.closest('.health-btn')) {
 				setTimeout(() => {
-					if (pop && !pop.matches(':hover')) hidePopover();
+					const popElement = document.getElementById('healthPopover');
+					if (popElement && !popElement.matches(':hover')) hidePopover();
 				}, 150);
 			}
 		}, true);
@@ -1199,7 +1198,9 @@ export function setupAllEventListeners(deps) {
 			const btn = e.target.closest('.health-btn');
 			console.log('Health button clicked:', !!btn, btn?.dataset.status); // Debug
 			if (btn) {
-				const open = pop && pop.style.display === 'block';
+				// Toggle popover - hidePopover is safe to call even if not visible
+				const popElement = document.getElementById('healthPopover');
+				const open = popElement && popElement.style.display === 'block';
 				if (open) hidePopover();
 				else showPopover(btn, btn.dataset.status);
 				e.stopPropagation();
@@ -1221,7 +1222,7 @@ export function setupAllEventListeners(deps) {
 
 		window.addEventListener('resize', hidePopover);
 		window.addEventListener('scroll', ()=>{
-			if (pop.style.display === 'block') hidePopover();
+			hidePopover();
 		}, true);
 
 	// Test function for debugging

@@ -399,7 +399,13 @@ export async function getFloorPlanById(id) {
 /**
  * Units API
  */
-export async function getUnits({ propertyId = null, floorPlanId = null, availableOnly = false } = {}) {
+export async function getUnits({
+    propertyId = null,
+    propertyIds = null, // NEW: Batch query support
+    floorPlanId = null,
+    availableOnly = false,
+    isActive = true // NEW: Soft delete support (null = all, true = active only, false = inactive only)
+} = {}) {
     const supabase = getSupabase();
 
     let query = supabase
@@ -409,8 +415,14 @@ export async function getUnits({ propertyId = null, floorPlanId = null, availabl
             floor_plan:floor_plans(*)
         `);
 
+    // Single property query
     if (propertyId) {
         query = query.eq('property_id', propertyId);
+    }
+
+    // Batch property query (for performance)
+    if (propertyIds && Array.isArray(propertyIds) && propertyIds.length > 0) {
+        query = query.in('property_id', propertyIds);
     }
 
     if (floorPlanId) {
@@ -419,6 +431,11 @@ export async function getUnits({ propertyId = null, floorPlanId = null, availabl
 
     if (availableOnly) {
         query = query.eq('is_available', true).eq('status', 'available');
+    }
+
+    // Soft delete filter
+    if (isActive !== null) {
+        query = query.eq('is_active', isActive);
     }
 
     const { data, error } = await query.order('unit_number');
@@ -1092,6 +1109,126 @@ export async function deletePropertyNote(noteId) {
     }
 
     return { success: true };
+}
+
+/**
+ * Unit Notes API
+ */
+export async function getUnitNotes(unitId, { limit = 50, offset = 0 } = {}) {
+    console.log('🔵 getUnitNotes called with unitId:', unitId);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_notes')
+        .select('*')
+        .eq('unit_id', unitId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (error) {
+        console.error('❌ Error fetching unit notes:', error);
+        throw error;
+    }
+
+    console.log('✅ getUnitNotes returning:', data);
+    return data || [];
+}
+
+export async function createUnitNote(noteData) {
+    console.log('🔵 createUnitNote called with:', noteData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_notes')
+        .insert([noteData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating unit note:', error);
+        throw error;
+    }
+
+    // Log activity
+    try {
+        await createUnitActivity({
+            unit_id: noteData.unit_id,
+            property_id: noteData.property_id,
+            activity_type: 'note_added',
+            description: 'Added unit note',
+            metadata: {
+                note_id: data.id,
+                note_preview: noteData.content.substring(0, 100),
+                note_length: noteData.content.length
+            },
+            performed_by: noteData.author_id,
+            performed_by_name: noteData.author_name
+        });
+    } catch (activityError) {
+        console.error('⚠️ Failed to log unit note activity:', activityError);
+        // Don't throw - note was created successfully
+    }
+
+    console.log('✅ createUnitNote returning:', data);
+    return data;
+}
+
+export async function deleteUnitNote(noteId) {
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('unit_notes')
+        .delete()
+        .eq('id', noteId);
+
+    if (error) {
+        console.error('Error deleting unit note:', error);
+        throw error;
+    }
+
+    return { success: true };
+}
+
+/**
+ * Unit Activities API
+ */
+export async function getUnitActivities(unitId, { limit = 50, offset = 0 } = {}) {
+    console.log('🔵 getUnitActivities called with unitId:', unitId);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_activities')
+        .select('*')
+        .eq('unit_id', unitId)
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+
+    if (error) {
+        console.error('❌ Error fetching unit activities:', error);
+        throw error;
+    }
+
+    console.log('✅ getUnitActivities returning:', data);
+    return data || [];
+}
+
+export async function createUnitActivity(activityData) {
+    console.log('🔵 createUnitActivity called with:', activityData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('unit_activities')
+        .insert([activityData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating unit activity:', error);
+        throw error;
+    }
+
+    console.log('✅ createUnitActivity returning:', data);
+    return data;
 }
 
 /**

@@ -98,19 +98,33 @@ export function closeLeadNotesModal(options) {
 
 export async function openActivityLogModal(entityId, entityType, entityName, options) {
 	const { SupabaseAPI, renderActivityLog, showModal, toast } = options;
-	
+
 	console.log('🔵 openActivityLogModal called:', { entityId, entityType, entityName });
 
 	try {
 		// Fetch activities based on entity type
-		const activities = entityType === 'lead'
-			? await SupabaseAPI.getLeadActivities(entityId)
-			: await SupabaseAPI.getPropertyActivities(entityId);
+		let activities;
+		if (entityType === 'lead') {
+			activities = await SupabaseAPI.getLeadActivities(entityId);
+		} else if (entityType === 'property') {
+			activities = await SupabaseAPI.getPropertyActivities(entityId);
+		} else if (entityType === 'unit') {
+			activities = await SupabaseAPI.getUnitActivities(entityId);
+		} else {
+			throw new Error(`Unknown entity type: ${entityType}`);
+		}
 
 		console.log('✅ Activities fetched:', activities);
 
 		// Set modal title
-		const title = entityType === 'lead' ? `Lead Activity Log: ${entityName}` : `Property Activity Log: ${entityName}`;
+		let title;
+		if (entityType === 'lead') {
+			title = `Lead Activity Log: ${entityName}`;
+		} else if (entityType === 'property') {
+			title = `Property Activity Log: ${entityName}`;
+		} else if (entityType === 'unit') {
+			title = `Unit Activity Log: ${entityName}`;
+		}
 		document.getElementById('activityLogTitle').textContent = `📋 ${title}`;
 
 		// Render activities
