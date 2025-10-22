@@ -316,43 +316,158 @@ export async function getAgent(id) {
  */
 export async function getProperties({ search, market, minPrice, maxPrice, beds, amenities } = {}) {
     const supabase = getSupabase();
-    
+
     let query = supabase
         .from('properties')
         .select('*');
-    
+
     // Apply filters
     if (market && market !== 'all') {
         query = query.eq('market', market);
     }
-    
+
     if (search) {
         query = query.or(`name.ilike.%${search}%,address.ilike.%${search}%`);
     }
-    
+
     if (minPrice) {
         query = query.gte('rent_min', parseInt(minPrice));
     }
-    
+
     if (maxPrice) {
         query = query.lte('rent_max', parseInt(maxPrice));
     }
-    
+
     if (beds && beds !== 'any') {
         const bedsNum = parseInt(beds);
         query = query.lte('beds_min', bedsNum).gte('beds_max', bedsNum);
     }
-    
+
     query = query.order('name');
-    
+
     const { data, error } = await query;
-    
+
     if (error) {
         console.error('Error fetching properties:', error);
         throw error;
     }
-    
+
     return data || [];
+}
+
+/**
+ * Floor Plans API
+ */
+export async function getFloorPlans(propertyId = null) {
+    const supabase = getSupabase();
+
+    let query = supabase
+        .from('floor_plans')
+        .select('*');
+
+    if (propertyId) {
+        query = query.eq('property_id', propertyId);
+    }
+
+    const { data, error } = await query.order('beds').order('baths');
+
+    if (error) {
+        console.error('Error fetching floor plans:', error);
+        throw error;
+    }
+
+    return data || [];
+}
+
+export async function getFloorPlanById(id) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('floor_plans')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching floor plan:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+/**
+ * Units API
+ */
+export async function getUnits({ propertyId = null, floorPlanId = null, availableOnly = false } = {}) {
+    const supabase = getSupabase();
+
+    let query = supabase
+        .from('units')
+        .select(`
+            *,
+            floor_plan:floor_plans(*)
+        `);
+
+    if (propertyId) {
+        query = query.eq('property_id', propertyId);
+    }
+
+    if (floorPlanId) {
+        query = query.eq('floor_plan_id', floorPlanId);
+    }
+
+    if (availableOnly) {
+        query = query.eq('is_available', true).eq('status', 'available');
+    }
+
+    const { data, error } = await query.order('unit_number');
+
+    if (error) {
+        console.error('Error fetching units:', error);
+        throw error;
+    }
+
+    return data || [];
+}
+
+export async function getUnitById(id) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .select(`
+            *,
+            floor_plan:floor_plans(*),
+            property:properties(*)
+        `)
+        .eq('id', id)
+        .single();
+
+    if (error) {
+        console.error('Error fetching unit:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+export async function updateUnit(unitId, updates) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .update(updates)
+        .eq('id', unitId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('Error updating unit:', error);
+        throw error;
+    }
+
+    return data;
 }
 
 export async function getProperty(id) {

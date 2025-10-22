@@ -74,21 +74,38 @@ export async function renderListings(options) {
 			return prop.is_available !== false;
 		});
 
-		// Fetch notes count for each property (with error handling for missing table)
-		const propertiesWithNotes = await Promise.all(
+		// Fetch floor plans and units for each property
+		const propertiesWithData = await Promise.all(
 			availableProperties.map(async (prop) => {
 				try {
+					// Get notes count
 					const notes = await SupabaseAPI.getPropertyNotes(prop.id);
-					return { ...prop, notesCount: notes.length };
+
+					// Get floor plans for this property
+					const floorPlans = await SupabaseAPI.getFloorPlans(prop.id);
+
+					// Get units for this property
+					const units = await SupabaseAPI.getUnits({ propertyId: prop.id });
+
+					return {
+						...prop,
+						notesCount: notes.length,
+						floorPlans: floorPlans || [],
+						units: units || []
+					};
 				} catch (error) {
-					// If property_notes table doesn't exist yet, just return property without notes
-					console.warn('Property notes not available yet (run migration)');
-					return { ...prop, notesCount: 0 };
+					console.warn('Error fetching property data:', error);
+					return {
+						...prop,
+						notesCount: 0,
+						floorPlans: [],
+						units: []
+					};
 				}
 			})
 		);
 
-		let filtered = propertiesWithNotes;
+		let filtered = propertiesWithData;
 
 		// Apply additional filters
 		filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
@@ -130,13 +147,15 @@ export async function renderListings(options) {
 	tbody.innerHTML = '';
 	console.log('Rendering', filtered.length, 'filtered properties');
 	filtered.forEach((prop, index) => {
-		console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI);
+		console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI, 'Units:', prop.units?.length || 0);
 
+		// Create property row (parent)
 		const tr = document.createElement('tr');
 		tr.dataset.propertyId = prop.id;
+		tr.classList.add('property-row');
 
 		// Add PUMI class for styling
-		if (prop.isPUMI) {
+		if (prop.isPUMI || prop.is_pumi) {
 			tr.classList.add('pumi-listing');
 			console.log('Added pumi-listing class to:', prop.name);
 		}
@@ -150,14 +169,18 @@ export async function renderListings(options) {
 		const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
 		const isPUMI = prop.is_pumi || prop.isPUMI;
 		const markedForReview = prop.mark_for_review || prop.markForReview;
+		const hasUnits = prop.units && prop.units.length > 0;
 
 		tr.innerHTML = `
-			<td><input type="checkbox" class="listing-checkbox" data-listing-id="${prop.id}"></td>
+			<td>
+				${hasUnits ? `<span class="expand-arrow" data-property-id="${prop.id}" style="cursor: pointer; user-select: none;">▶</span>` : ''}
+			</td>
 			<td data-sort="name">
 				<div class="lead-name">
-					${communityName}
+					<strong>${communityName}</strong>
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
+					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
 				<div class="subtle mono">${address}</div>
 				<div class="community-details">
@@ -243,7 +266,99 @@ export async function renderListings(options) {
 			});
 		}
 
+		// Add expand/collapse handler for units
+		if (hasUnits) {
+			const expandArrow = tr.querySelector('.expand-arrow');
+			if (expandArrow) {
+				expandArrow.addEventListener('click', (e) => {
+					e.stopPropagation();
+					const isExpanded = expandArrow.textContent === '▼';
+					expandArrow.textContent = isExpanded ? '▶' : '▼';
+
+					// Toggle unit rows visibility
+					const unitRows = tbody.querySelectorAll(`tr.unit-row[data-parent-property-id="${prop.id}"]`);
+					unitRows.forEach(unitRow => {
+						unitRow.style.display = isExpanded ? 'none' : 'table-row';
+					});
+				});
+			}
+		}
+
 		tbody.appendChild(tr);
+
+		// Add unit rows (initially hidden)
+		if (hasUnits) {
+			prop.units.forEach(unit => {
+				const unitTr = document.createElement('tr');
+				unitTr.classList.add('unit-row');
+				unitTr.dataset.parentPropertyId = prop.id;
+				unitTr.dataset.unitId = unit.id;
+				unitTr.style.display = 'none'; // Initially hidden
+				unitTr.style.backgroundColor = '#f9fafb'; // Light gray background
+
+				// Get unit details
+				const floorPlan = unit.floor_plan || {};
+				const unitRent = unit.rent || floorPlan.starting_at || 0;
+				const unitMarketRent = unit.market_rent || floorPlan.market_rent || 0;
+				const beds = floorPlan.beds || '?';
+				const baths = floorPlan.baths || '?';
+				const sqft = floorPlan.sqft || '?';
+				const availableDate = unit.available_from ? new Date(unit.available_from).toLocaleDateString() : 'TBD';
+
+				unitTr.innerHTML = `
+					<td style="padding-left: 40px;">
+						<input type="checkbox" class="unit-checkbox" data-unit-id="${unit.id}">
+					</td>
+					<td>
+						<div class="lead-name" style="font-size: 0.9em;">
+							<span style="color: #6b7280;">Unit ${unit.unit_number}</span>
+							${unit.status === 'pending' ? '<span class="badge" style="background: #fbbf24; color: #000;">Pending</span>' : ''}
+							${unit.status === 'leased' ? '<span class="badge" style="background: #ef4444; color: #fff;">Leased</span>' : ''}
+						</div>
+						<div class="subtle mono" style="font-size: 0.85em;">
+							${beds}bd / ${baths}ba • ${sqft} sqft • Available: ${availableDate}
+						</div>
+						<div class="community-meta">
+							<div class="listing-controls">
+								${state.role === 'manager' ? `
+									<div class="gear-icon unit-gear" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}" title="Edit Unit">
+										<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
+											<path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
+										</svg>
+									</div>
+								` : ''}
+								<div class="interest-count unit-interest" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #ef4444;">
+										<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+									</svg>
+									<span>0</span>
+								</div>
+								<div class="notes-count unit-notes" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}" title="Add a note" style="cursor: pointer;">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #9ca3af;">
+										<path d="M14,10H19.5L14,4.5V10M5,3H15L21,9V19A2,2 0 0,1 19,21H5C3.89,21 3,20.1 3,19V5C3,3.89 3.89,3 5,3M5,5V19H19V12H12V5H5Z"/>
+									</svg>
+									<span></span>
+								</div>
+								<div class="activity-count unit-activity" data-unit-id="${unit.id}" data-unit-number="${unit.unit_number}" title="View activity log" style="cursor: pointer;">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
+										<path d="M12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22C6.47,22 2,17.5 2,12A10,10 0 0,1 12,2M12.5,7V12.25L17,14.92L16.25,16.15L11,13V7H12.5Z"/>
+									</svg>
+								</div>
+							</div>
+						</div>
+					</td>
+					<td class="mono" style="font-size: 0.9em;">
+						$${unitRent}${unitMarketRent > unitRent ? ` <span style="color: #10b981; font-size: 0.85em;">(save $${unitMarketRent - unitRent})</span>` : ''}
+					</td>
+					<td class="mono" style="font-size: 0.9em;">${commission}%</td>
+				`;
+
+				// Add unit-level event handlers
+				// TODO: Implement unit-specific modals for notes, activity, interested leads, edit
+
+				tbody.appendChild(unitTr);
+			});
+		}
 	});
 
 	// Update map - simplified marker addition
