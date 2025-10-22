@@ -19,7 +19,7 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 
 	const {
 		onSelect,
-		types = ['address'],
+		types = null, // Don't restrict types by default - allow all address types
 		country = 'us',
 		proximity = null
 	} = options;
@@ -68,11 +68,15 @@ export function initAddressAutocomplete(inputElement, options = {}) {
 		try {
 			const params = new URLSearchParams({
 				access_token: MAPBOX_TOKEN,
-				types: types.join(','),
 				country: country,
 				limit: 5,
 				autocomplete: true
 			});
+
+			// Only add types if specified (for more flexible searching, we don't restrict by default)
+			if (types && types.length > 0) {
+				params.append('types', types.join(','));
+			}
 
 			if (proximity) {
 				params.append('proximity', proximity);
