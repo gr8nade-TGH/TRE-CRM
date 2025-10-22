@@ -79,8 +79,8 @@ export async function addPropertyNote(options) {
 	}
 
 	try {
-		// Use window.currentUser.email as author_id (matches users table)
-		const authorId = window.currentUser?.email;
+		// Use window.currentUser.id as author_id (matches users.id which is UUID)
+		const authorId = window.currentUser?.id;
 		const authorName = window.currentUser?.user_metadata?.name ||
 		                   window.currentUser?.email ||
 		                   'Unknown User';
@@ -93,7 +93,7 @@ export async function addPropertyNote(options) {
 		const noteData = {
 			property_id: window.currentPropertyForNotes,
 			content: noteContent,
-			author_id: authorId,  // Use email, not state.userId
+			author_id: authorId,  // Use user UUID, not email
 			author_name: authorName
 		};
 
