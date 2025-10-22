@@ -347,25 +347,7 @@ async function deleteSpecialAPI(specialId) {
 		return await getHealthMessagesUtil(lead, formatDate);
 	}
 
-	// Legacy health messages for backward compatibility
-	const healthMessages = {
-		red: ['- Lead has not been provided listing options.', '- Lease Agreement has been pending e-signature for 2d 4h.'],
-		yellow: ['- Lead has not responded in 3d 10h.', '- Lead is not scheduled to visit any properties yet.'],
-		green: ['- Lead signed off, awaiting Lease Agreement signoff.'],
-		closed: ['Lead Closed!'],
-		lost: ['Lead Lost.']
-	};
-
 	// renderHealthStatus is now imported from src/modules/leads/leads-health.js
-
-	// ---- Filter Functions ----
-	function withinDateRange(date, from, to) {
-		if (!from && !to) return true;
-		const checkDate = new Date(date);
-		if (from && checkDate < new Date(from)) return false;
-		if (to && checkDate > new Date(to)) return false;
-		return true;
-	}
 
 	function matchesListingsFilters(property, filters) {
 		// Search filter
@@ -478,16 +460,21 @@ async function deleteSpecialAPI(specialId) {
 						popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
 						popList.innerHTML = messages.map(s => `<li>${s}</li>`).join('');
 					} else {
-						popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+						// Lead not found - show generic status message
+						popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
+						popList.innerHTML = `<li>Unable to load lead details</li>`;
 					}
 				} catch (error) {
 					console.error('Error loading health messages:', error);
-					popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+					// Error fallback - show generic status message
+					popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
+					popList.innerHTML = `<li>Unable to load lead details</li>`;
 				}
 			})();
 		} else {
-			// Fallback to legacy messages
-			popList.innerHTML = healthMessages[status].map(s => `<li>${s}</li>`).join('');
+			// No leadId provided - show generic status message
+			popTitle.textContent = `Status — ${STATUS_LABEL[status] || status}`;
+			popList.innerHTML = `<li>No lead information available</li>`;
 		}
 
 		console.log('Popover should be visible now'); // Debug
@@ -545,10 +532,6 @@ async function deleteSpecialAPI(specialId) {
 		const opts = realAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
-	function renderAgentReadOnly(lead){
-		const a = realAgents.find(a => a.id === lead.assigned_agent_id);
-		return `<span class="subtle">${a ? a.name : 'Unassigned'}</span>`;
-	}
 
 	// ---- Document Status Rendering ----
 	function renderDocumentStepStatus(step, currentStep) {
@@ -585,25 +568,6 @@ async function deleteSpecialAPI(specialId) {
 				` : ''}
 			</div>
 		`).join('');
-	}
-
-	function renderLeadDocumentSummary(leadId) {
-		const docStatus = mockDocumentStatuses[leadId];
-		if (!docStatus) return 'No documents';
-
-		const completed = docStatus.steps.filter(s => s.status === 'completed').length;
-		const total = docStatus.steps.length;
-		const currentStep = docStatus.steps.find(s => s.status === 'in_progress');
-
-		return `
-			<div class="lead-document-summary">
-				<div class="progress-bar">
-					<div class="progress-fill" style="width: ${(completed / total) * 100}%"></div>
-				</div>
-				<div class="progress-text">${completed}/${total} steps completed</div>
-				${currentStep ? `<div class="current-step">Currently: ${currentStep.name}</div>` : ''}
-			</div>
-		`;
 	}
 
 	// ---- Interactive Progress System ----
@@ -973,48 +937,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	function renderAgentLeadsList(){
-		const agentLeadsList = document.getElementById('agentLeadsList');
-		agentLeadsList.innerHTML = '';
-
-		// Get current agent's leads
-		const leads = state.leads || [];
-		const agentLeads = leads.filter(l => l.assigned_agent_id === state.agentId);
-
-		agentLeads.forEach(lead => {
-			const progress = getDocumentProgress(lead.id);
-			const currentStep = getCurrentDocumentStep(lead.id);
-			const status = getDocumentStatus(lead.id);
-
-			const card = document.createElement('div');
-			card.className = 'lead-card';
-			card.innerHTML = `
-				<div class="lead-card-header">
-					<div class="lead-name">${lead.name}</div>
-					<div class="lead-status ${status}">${status}</div>
-				</div>
-				<div class="lead-progress">
-					<div class="progress-bar">
-						<div class="progress-fill" style="width: ${progress}%"></div>
-					</div>
-					<div class="progress-text">${progress}% complete - ${currentStep}</div>
-				</div>
-				<div class="document-steps">
-					${renderDocumentSteps(lead.id)}
-				</div>
-				<div class="lead-actions">
-					<button class="btn-small btn-primary-small" onclick="openDocumentDetails('${lead.id}')">
-						View Details
-					</button>
-					<button class="btn-small btn-secondary-small" onclick="updateDocumentStatus('${lead.id}')">
-						Update Status
-					</button>
-				</div>
-			`;
-			agentLeadsList.appendChild(card);
-		});
-	}
-
 	// Helper functions for document status
 	function getDocumentProgress(leadId) {
 		const status = mockDocumentStatuses[leadId];
@@ -1048,30 +970,6 @@ function createLeadTable(lead, isExpanded = false) {
 			.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
 
 		return lastStep ? lastStep.updated_at : new Date();
-	}
-
-	// Helper functions for agent actions
-	function viewAgentLeads(agentId) {
-		// Filter the leads table to show only this agent's leads
-		const tbody = document.getElementById('documentsTbody');
-		const rows = tbody.querySelectorAll('tr');
-		rows.forEach(row => {
-			const agentName = row.querySelector('[data-sort="agent_name"]')?.textContent.trim();
-			const agent = realAgents.find(a => a.id === agentId);
-			if (agent && agentName === agent.name) {
-				row.style.display = '';
-			} else {
-				row.style.display = 'none';
-			}
-		});
-		toast(`Showing leads for ${realAgents.find(a => a.id === agentId)?.name || 'Unknown Agent'}`);
-	}
-
-	function viewAgentDetails(agentId) {
-		const agent = realAgents.find(a => a.id === agentId);
-		if (agent) {
-			openAgentDrawer(agentId);
-		}
 	}
 
 	function updateDocumentStatus(leadId) {
