@@ -79,11 +79,22 @@ export async function addPropertyNote(options) {
 	}
 
 	try {
+		// Use window.currentUser.email as author_id (matches users table)
+		const authorId = window.currentUser?.email;
+		const authorName = window.currentUser?.user_metadata?.name ||
+		                   window.currentUser?.email ||
+		                   'Unknown User';
+
+		if (!authorId) {
+			toast('User not authenticated', 'error');
+			return;
+		}
+
 		const noteData = {
 			property_id: window.currentPropertyForNotes,
 			content: noteContent,
-			author_id: state.userId,
-			author_name: state.userName || 'Unknown'
+			author_id: authorId,  // Use email, not state.userId
+			author_name: authorName
 		};
 
 		await SupabaseAPI.createPropertyNote(noteData);

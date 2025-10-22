@@ -80,12 +80,23 @@ export async function addUnitNote() {
 	}
 
 	try {
+		// Use window.currentUser.email as author_id (matches users table)
+		const authorId = window.currentUser?.email;
+		const authorName = window.currentUser?.user_metadata?.name ||
+		                   window.currentUser?.email ||
+		                   'Unknown User';
+
+		if (!authorId) {
+			toast('User not authenticated', 'error');
+			return;
+		}
+
 		const noteData = {
 			unit_id: window.currentUnitForNotes,
 			property_id: window.currentPropertyForUnitNotes,
 			content: noteContent,
-			author_id: state.userId,
-			author_name: state.userName || 'Unknown'
+			author_id: authorId,  // Use email, not state.userId
+			author_name: authorName
 		};
 
 		await SupabaseAPI.createUnitNote(noteData);
