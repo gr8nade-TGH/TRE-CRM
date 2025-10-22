@@ -84,6 +84,10 @@ export function setupAllEventListeners(deps) {
 		toggleLeadTable,
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
+
+		// Bulk actions functions
+		bulkMarkAsUnavailable,
+		bulkDeleteListings,
 		
 		// Bug tracker functions
 		submitBugReport,
@@ -1402,6 +1406,27 @@ export function setupAllEventListeners(deps) {
 				}
 			});
 		}
+
+		// Bulk actions event listeners using event delegation
+		document.addEventListener('click', (e) => {
+			// Handle bulk mark as unavailable button
+			if (e.target.id === 'bulkMarkUnavailableBtn' || e.target.closest('#bulkMarkUnavailableBtn')) {
+				console.log('Bulk Mark as Unavailable clicked!');
+				e.preventDefault();
+				bulkMarkAsUnavailable();
+				return;
+			}
+
+			// Handle bulk delete button
+			if (e.target.id === 'bulkDeleteBtn' || e.target.closest('#bulkDeleteBtn')) {
+				console.log('Bulk Delete clicked!');
+				e.preventDefault();
+				bulkDeleteListings();
+				return;
+			}
+		});
+
+		console.log('✅ Bulk action event delegation set up');
 
 		// Routing will be initialized by initializeApp() after authentication
 

@@ -46,6 +46,8 @@ import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentCh
 
 // Import event listeners setup
 import { setupAllEventListeners } from './src/events/dom-event-listeners.js';
+import { createLeadTable as createLeadTableUtil } from './src/renders/lead-table.js';
+import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-modals.js';
 
 // Import Leads module
 import * as Leads from './src/modules/leads/index.js';
@@ -654,60 +656,12 @@ async function deleteSpecialAPI(specialId) {
 		});
 	}
 
+// Wrapper function for createLeadTable - calls utility module
 function createLeadTable(lead, isExpanded = false) {
-	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
-	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
-
-	const table = document.createElement('div');
-	table.className = 'lead-table-container';
-	table.innerHTML = `
-		<div class="lead-table-header">
-			<div class="lead-info">
-				<div class="lead-icon">⚙️</div>
-				<div class="lead-details">
-					<div class="lead-names">
-						<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
-						<span class="lead-label">Lead:</span> <span class="lead-name">${lead.leadName}</span>
-					</div>
-				</div>
-			</div>
-			<div class="progress-center">
-				<span class="progress-info">${progressPercentage}% Complete - Current Step: ${currentStepName}</span>
-			</div>
-			<div class="lead-actions">
-				<span class="last-updated">Last Update: ${formatDate(lead.lastUpdated)}</span>
-				<button class="expand-btn" data-lead-id="${lead.id}">
-					<span class="expand-icon">${isExpanded ? '▼' : '▶'}</span>
-				</button>
-			</div>
-		</div>
-
-		<div class="lead-table-content ${isExpanded ? 'expanded' : 'collapsed'}">
-			<div class="progress-section">
-				<div class="progress-bar-container">
-					<div class="progress-bar">
-						<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
-						<div class="progress-steps">
-							${progressSteps.map(step => {
-								const stepClass = step.id < lead.currentStep ? 'completed' :
-																 step.id === lead.currentStep ? 'current' : 'pending';
-								return `
-									<div class="progress-step ${stepClass}"
-										 data-lead-id="${lead.id}"
-										 data-step="${step.id}">
-										<div class="progress-step-dot ${stepClass}">${step.id}</div>
-										<div class="progress-step-label">${step.label}</div>
-									</div>
-								`;
-							}).join('')}
-						</div>
-					</div>
-				</div>
-			</div>
-		</div>
-	`;
-
-	return table;
+	return createLeadTableUtil(lead, isExpanded, {
+		progressSteps,
+		formatDate
+	});
 }
 
 	// Wrapper function for getStepModalContent - calls utility module
@@ -715,135 +669,14 @@ function createLeadTable(lead, isExpanded = false) {
 		return await getStepModalContentUtil(lead, step, formatDate);
 	}
 
+	// Wrapper function for showStepDetails - calls utility module
 	async function showStepDetails(lead, step) {
-		// Create modal if it doesn't exist
-		let modal = document.getElementById('progressModal');
-		if (!modal) {
-			modal = document.createElement('div');
-			modal.id = 'progressModal';
-			modal.className = 'progress-modal';
-			modal.innerHTML = `
-				<div class="progress-modal-content">
-					<button class="progress-modal-close">&times;</button>
-					<div class="modal-title"></div>
-					<div class="modal-content"></div>
-				</div>
-			`;
-			document.body.appendChild(modal);
-
-			// Add close event listeners
-			modal.querySelector('.progress-modal-close').addEventListener('click', () => {
-				modal.classList.remove('show');
-			});
-
-			modal.addEventListener('click', (e) => {
-				if (e.target === modal) {
-					modal.classList.remove('show');
-				}
-			});
-		}
-
-		// Update modal content
-		const title = modal.querySelector('.modal-title');
-		const content = modal.querySelector('.modal-content');
-
-		title.textContent = step.label;
-
-		// Show loading state
-		content.innerHTML = '<div class="modal-loading">Loading...</div>';
-
-		// Show modal
-		modal.classList.add('show');
-
-		// Load content asynchronously
-		try {
-			const modalContent = await getStepModalContent(lead, step);
-			content.innerHTML = modalContent;
-
-			// Add event listeners for guest card workflow buttons (Step 4)
-			if (step.id === 4) {
-				// Add Contact Info buttons
-				content.querySelectorAll('.add-contact-btn').forEach(btn => {
-					btn.addEventListener('click', async (e) => {
-						const propertyId = e.target.dataset.propertyId;
-						const communityName = e.target.dataset.communityName;
-
-						// Open the property contact modal with pre-filled property
-						const property = await SupabaseAPI.getProperty(propertyId);
-						document.getElementById('contactPropertySelect').value = communityName;
-						document.getElementById('contactName').value = property.contact_name || '';
-						document.getElementById('contactEmail').value = property.contact_email || '';
-						document.getElementById('contactPhone').value = property.contact_phone || '';
-						document.getElementById('contactOfficeHours').value = property.office_hours || '';
-						document.getElementById('contactNotes').value = property.contact_notes || '';
-
-						// Disable property dropdown (can't change property when editing)
-						document.getElementById('contactPropertySelect').disabled = true;
-
-						// Show the modal
-						showModal('addPropertyContactModal');
-
-						// After saving, refresh the guest card modal
-						const saveBtn = document.getElementById('savePropertyContactBtn');
-						const refreshHandler = async () => {
-							// Re-enable dropdown
-							document.getElementById('contactPropertySelect').disabled = false;
-							// Refresh the step modal
-							await showStepDetails(lead, step);
-							// Remove this handler
-							saveBtn.removeEventListener('click', refreshHandler);
-						};
-						saveBtn.addEventListener('click', refreshHandler);
-					});
-				});
-
-				// Preview Guest Card buttons
-				content.querySelectorAll('.preview-guest-card-btn').forEach(btn => {
-					btn.addEventListener('click', async (e) => {
-						const propertyId = e.target.dataset.propertyId;
-						const property = await SupabaseAPI.getProperty(propertyId);
-						const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName || lead.name)}&property=${encodeURIComponent(property.community_name || property.name)}`;
-						window.open(guestCardUrl, '_blank');
-					});
-				});
-
-				// Send Guest Card buttons
-				content.querySelectorAll('.send-guest-card-btn').forEach(btn => {
-					btn.addEventListener('click', async (e) => {
-						const propertyId = e.target.dataset.propertyId;
-						const leadId = e.target.dataset.leadId;
-
-						try {
-							const property = await SupabaseAPI.getProperty(propertyId);
-
-							// Log the guest card sent activity
-							await SupabaseAPI.logLeadActivity({
-								lead_id: leadId,
-								activity_type: 'guest_card_sent',
-								description: `Guest card sent to ${property.community_name || property.name}`,
-								metadata: {
-									property_id: propertyId,
-									property_name: property.community_name || property.name,
-									contact_email: property.contact_email,
-									contact_phone: property.contact_phone
-								}
-							});
-
-							toast(`✅ Guest card sent to ${property.community_name || property.name}!`, 'success');
-
-							// Refresh the modal to show updated status
-							await showStepDetails(lead, step);
-						} catch (error) {
-							console.error('Error sending guest card:', error);
-							toast('Error sending guest card. Please try again.', 'error');
-						}
-					});
-				});
-			}
-		} catch (error) {
-			console.error('Error loading step details:', error);
-			content.innerHTML = '<div class="modal-error">Error loading details. Please try again.</div>';
-		}
+		return await showStepDetailsUtil(lead, step, {
+			getStepModalContent,
+			showModal,
+			toast,
+			SupabaseAPI
+		});
 	}
 
 	// viewLeadDetails() removed - was dead code using mockProgressLeads
@@ -2211,6 +2044,10 @@ function createLeadTable(lead, isExpanded = false) {
 			updateBulkActionsBar,
 			updateBuildShowcaseButton,
 
+			// Bulk actions functions
+			bulkMarkAsUnavailable,
+			bulkDeleteListings,
+
 			// Bug tracker functions
 			submitBugReport,
 			saveBugChanges,
@@ -2295,26 +2132,7 @@ function createLeadTable(lead, isExpanded = false) {
 	// Global functions for property notes
 	window.openPropertyNotesModal = openPropertyNotesModal;
 
-	// Bulk actions event listeners using event delegation
-	document.addEventListener('click', (e) => {
-		// Handle bulk mark as unavailable button
-		if (e.target.id === 'bulkMarkUnavailableBtn' || e.target.closest('#bulkMarkUnavailableBtn')) {
-			console.log('Bulk Mark as Unavailable clicked!');
-			e.preventDefault();
-			bulkMarkAsUnavailable();
-			return;
-		}
-
-		// Handle bulk delete button
-		if (e.target.id === 'bulkDeleteBtn' || e.target.closest('#bulkDeleteBtn')) {
-			console.log('Bulk Delete clicked!');
-			e.preventDefault();
-			bulkDeleteListings();
-			return;
-		}
-	});
-
-	console.log('✅ Bulk action event delegation set up');
+	// Bulk actions event listeners moved to dom-event-listeners.js
 
 	// Expose state to global scope
 	window.state = state;
