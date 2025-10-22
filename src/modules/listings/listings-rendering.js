@@ -87,11 +87,25 @@ export async function renderListings(options) {
 					// Get units for this property
 					const units = await SupabaseAPI.getUnits({ propertyId: prop.id });
 
+					// Calculate rent range from units
+					let rentMin = prop.rent_range_min || 0;
+					let rentMax = prop.rent_range_max || 0;
+
+					if (units && units.length > 0) {
+						const rents = units.map(u => u.rent).filter(r => r > 0);
+						if (rents.length > 0) {
+							rentMin = Math.min(...rents);
+							rentMax = Math.max(...rents);
+						}
+					}
+
 					return {
 						...prop,
 						notesCount: notes.length,
 						floorPlans: floorPlans || [],
-						units: units || []
+						units: units || [],
+						rent_range_min: rentMin,
+						rent_range_max: rentMax
 					};
 				} catch (error) {
 					console.warn('Error fetching property data:', error);
