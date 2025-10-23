@@ -18,7 +18,8 @@ export function setupAllEventListeners(deps) {
 		realUsers,
 		api,
 		mockClosedLeads,
-		
+		SupabaseAPI,
+
 		// Render functions
 		renderLeads,
 		renderListings,

@@ -1625,6 +1625,7 @@ function createLeadTable(lead, isExpanded = false) {
 			realUsers,
 			api,
 			mockClosedLeads,
+			SupabaseAPI,
 
 			// Render functions
 			renderLeads,
