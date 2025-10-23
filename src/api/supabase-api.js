@@ -1120,25 +1120,7 @@ export async function createUnit(unitData) {
     return data;
 }
 
-export async function updateUnit(id, unitData) {
-    console.log('🔵 updateUnit called with:', id, unitData);
-    const supabase = getSupabase();
-
-    const { data, error } = await supabase
-        .from('units')
-        .update(unitData)
-        .eq('id', id)
-        .select()
-        .single();
-
-    if (error) {
-        console.error('❌ Error updating unit:', error);
-        throw error;
-    }
-
-    console.log('✅ updateUnit returning:', data);
-    return data;
-}
+// Note: updateUnit already exists at line 472, so we don't redefine it here
 
 export async function deleteUnit(id) {
     console.log('🔵 deleteUnit called with:', id);
