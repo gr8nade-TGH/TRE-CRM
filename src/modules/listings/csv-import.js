@@ -398,24 +398,32 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 			
 			if (!propertyId) {
 				// Create new property
+				const now = new Date().toISOString();
 				const propertyData = {
+					id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique VARCHAR id
 					community_name: data.property_name,
+					name: data.property_name, // For backward compatibility
 					market: data.market,
 					city: data.city || data.market,
 					street_address: data.street_address,
-					zip_code: data.zip_code,
-					phone: data.phone,
-					contact_email: data.contact_email,
-					leasing_link: data.leasing_link,
+					address: data.street_address || null, // For backward compatibility
+					zip_code: data.zip_code || null,
+					phone: data.phone || null,
+					contact_email: data.contact_email || null,
+					leasing_link: data.leasing_link || null,
 					neighborhood: data.neighborhood || null,
 					description: data.description || null,
 					amenities: data.amenities ? data.amenities.split('|').map(a => a.trim()) : [],
 					is_pumi: data.is_pumi === 'true',
 					commission_pct: data.commission_pct ? parseFloat(data.commission_pct) : null,
 					map_lat: data.map_lat ? parseFloat(data.map_lat) : null,
-					map_lng: data.map_lng ? parseFloat(data.map_lng) : null
+					map_lng: data.map_lng ? parseFloat(data.map_lng) : null,
+					lat: data.map_lat ? parseFloat(data.map_lat) : null, // For backward compatibility
+					lng: data.map_lng ? parseFloat(data.map_lng) : null, // For backward compatibility
+					created_at: now,
+					updated_at: now
 				};
-				
+
 				const property = await SupabaseAPI.createProperty(propertyData);
 				propertyId = property.id;
 				propertyCache.set(data.property_name, propertyId);
