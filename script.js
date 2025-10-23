@@ -81,6 +81,9 @@ import * as Properties from './src/modules/properties/index.js';
 // Import Modals module
 import * as Modals from './src/modules/modals/index.js';
 
+// Import Routing module
+import * as Routing from './src/routing/index.js';
+
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
@@ -1233,103 +1236,32 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Routing ----
+	// Wrapper functions for routing - calls module functions
 	function setRoleLabel(page = 'leads'){
-		const label = document.getElementById(`${page}RoleLabel`) || document.getElementById('roleLabel');
-		if (label) {
-			label.textContent = state.role === 'manager' ? 'Viewing as Manager' : 'Viewing as Agent';
-		}
+		Routing.setRoleLabel(page, state);
 	}
 
 	function updateNavigation(activePage) {
-		document.querySelectorAll('.nav-link').forEach(link => {
-			link.classList.remove('active');
-		});
-		document.querySelector(`[data-page="${activePage}"]`).classList.add('active');
+		Routing.updateNavigation(activePage);
 	}
 
 	function route(){
-		// Protect routes - require authentication
-		if (!window.isAuthenticated || !window.isAuthenticated()) {
-			console.log('⚠️ Not authenticated, cannot route');
-			return;
-		}
-
-		const hash = location.hash.slice(1);
-		// public showcase route: #/sc_xxxxxx
-		if (hash.startsWith('/sc_')){
-			// render public showcase view (read-only)
-			document.body.innerHTML = `
-				<link rel="stylesheet" href="styles.css" />
-				<div id="publicMount"></div>
-			`;
-			const mount = document.getElementById('publicMount');
-			// We don't persist by slug in mock; show a generic example
-			mount.innerHTML = `
-				<div class="public-wrap">
-					<div class="public-header">
-						<h2>Agent Name — Top Listings for Lead Name</h2>
-						<div class="public-banner">${state.publicBanner}</div>
-					</div>
-					<div class="public-body">
-						<div class="public-card">Example Listing — replace with real when backend ready.</div>
-					</div>
-				</div>
-			`;
-			return;
-		}
-
-		// Hide all views
-		document.querySelectorAll('.route-view').forEach(view => hide(view));
-
-		// Show appropriate view based on route
-		if (hash === '/agents') {
-			state.currentPage = 'agents';
-			show(document.getElementById('agentsView'));
-			setRoleLabel('agents');
-			renderAgents();
-		} else if (hash === '/listings') {
-			state.currentPage = 'listings';
-			show(document.getElementById('listingsView'));
-			setRoleLabel('listings');
-			// Initialize map if not already done
-			setTimeout(() => {
-				initMap();
-				renderListings();
-			}, 100);
-		} else if (hash === '/documents') {
-			state.currentPage = 'documents';
-			show(document.getElementById('documentsView'));
-			setRoleLabel('documents');
-			// Initialize the documents view properly
-			document.getElementById('managerDocumentsView').classList.remove('hidden');
-			document.getElementById('agentDocumentsView').classList.add('hidden');
-			renderDocuments();
-		} else if (hash === '/properties' || hash === '/specials') {
-			// Support both /properties and /specials for backward compatibility
-			state.currentPage = 'properties';
-			show(document.getElementById('propertiesView'));
-			setRoleLabel('properties');
-			renderProperties();
-		} else if (hash === '/admin') {
-			state.currentPage = 'admin';
-			show(document.getElementById('adminView'));
-			setRoleLabel('admin');
-			renderAdmin();
-		} else if (hash === '/bugs') {
-			state.currentPage = 'bugs';
-			show(document.getElementById('bugsView'));
-			setRoleLabel('bugs');
-			renderBugs();
-		} else {
-			// default: leads
-			state.currentPage = 'leads';
-			show(document.getElementById('leadsView'));
-			setRoleLabel('leads');
-			renderLeads();
-		}
-
-		updateNavigation(state.currentPage);
-		updateBugFlagVisibility();
+		Routing.route({
+			state,
+			hide,
+			show,
+			setRoleLabel,
+			renderAgents,
+			renderListings,
+			renderDocuments,
+			renderProperties,
+			renderAdmin,
+			renderBugs,
+			renderLeads,
+			initMap,
+			updateNavigation,
+			updateBugFlagVisibility
+		});
 	}
 
 	// ---- Load Real Agents from Supabase ----
@@ -1370,26 +1302,9 @@ function createLeadTable(lead, isExpanded = false) {
 		initializeRouting();
 	};
 
-	// Update navigation visibility based on role
+	// Update navigation visibility based on role - wrapper function
 	function updateNavVisibility() {
-		const agentsNavLink = document.getElementById('agentsNavLink');
-		const adminNavLink = document.getElementById('adminNavLink');
-
-		if (agentsNavLink) {
-			if (state.role === 'agent') {
-				agentsNavLink.style.display = 'none';
-			} else {
-				agentsNavLink.style.display = 'block';
-			}
-		}
-
-		if (adminNavLink) {
-			if (state.role === 'agent') {
-				adminNavLink.style.display = 'none';
-			} else {
-				adminNavLink.style.display = 'block';
-			}
-		}
+		Routing.updateNavVisibility(state);
 	}
 
 	// ---- Event Listeners Setup ----
@@ -1524,22 +1439,9 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	});
 
-	// Initialize routing (called by initializeApp after auth)
+	// Initialize routing (called by initializeApp after auth) - wrapper function
 	function initializeRouting() {
-		console.log('🔀 Initializing routing...');
-
-		// Set initial route if none exists
-		if (!location.hash) {
-			location.hash = '/leads';
-		}
-
-		// Route to current hash
-		route();
-
-		// Listen for hash changes
-		window.addEventListener('hashchange', route);
-
-		console.log('✅ Routing initialized');
+		Routing.initializeRouting(route);
 	}
 
 	// ---- Listing Edit Modal ----
