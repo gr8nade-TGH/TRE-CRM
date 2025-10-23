@@ -55,6 +55,7 @@ import { calculateHealthStatus, renderHealthStatus } from './src/modules/leads/l
 
 // Import Listings module
 import * as Listings from './src/modules/listings/index.js';
+import { downloadCSVTemplate, importCSV } from './src/modules/listings/csv-import.js';
 
 // Import Agents module
 import * as Agents from './src/modules/agents/index.js';
@@ -1699,6 +1700,10 @@ function createLeadTable(lead, isExpanded = false) {
 			// Bulk actions functions
 			bulkMarkAsUnavailable,
 			bulkDeleteListings,
+
+			// CSV import/export functions
+			downloadCSVTemplate,
+			importCSV,
 
 			// Bug tracker functions
 			submitBugReport,

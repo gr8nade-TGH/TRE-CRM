@@ -1040,6 +1040,124 @@ export async function createPropertyActivity(activityData) {
 }
 
 /**
+ * Floor Plans API
+ */
+export async function createFloorPlan(floorPlanData) {
+    console.log('🔵 createFloorPlan called with:', floorPlanData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('floor_plans')
+        .insert([floorPlanData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating floor plan:', error);
+        throw error;
+    }
+
+    console.log('✅ createFloorPlan returning:', data);
+    return data;
+}
+
+export async function updateFloorPlan(id, floorPlanData) {
+    console.log('🔵 updateFloorPlan called with:', id, floorPlanData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('floor_plans')
+        .update(floorPlanData)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error updating floor plan:', error);
+        throw error;
+    }
+
+    console.log('✅ updateFloorPlan returning:', data);
+    return data;
+}
+
+export async function deleteFloorPlan(id) {
+    console.log('🔵 deleteFloorPlan called with:', id);
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('floor_plans')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('❌ Error deleting floor plan:', error);
+        throw error;
+    }
+
+    console.log('✅ deleteFloorPlan completed');
+}
+
+/**
+ * Units API
+ */
+export async function createUnit(unitData) {
+    console.log('🔵 createUnit called with:', unitData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .insert([unitData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating unit:', error);
+        throw error;
+    }
+
+    console.log('✅ createUnit returning:', data);
+    return data;
+}
+
+export async function updateUnit(id, unitData) {
+    console.log('🔵 updateUnit called with:', id, unitData);
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .update(unitData)
+        .eq('id', id)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error updating unit:', error);
+        throw error;
+    }
+
+    console.log('✅ updateUnit returning:', data);
+    return data;
+}
+
+export async function deleteUnit(id) {
+    console.log('🔵 deleteUnit called with:', id);
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('units')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('❌ Error deleting unit:', error);
+        throw error;
+    }
+
+    console.log('✅ deleteUnit completed');
+}
+
+/**
  * Property Notes API
  */
 export async function getPropertyNotes(propertyId) {

@@ -1189,6 +1189,38 @@ export function setupAllEventListeners(deps) {
 			});
 		}
 
+		// CSV Template Download button
+		const downloadCSVTemplateBtn = document.getElementById('downloadCSVTemplateBtn');
+		if (downloadCSVTemplateBtn) {
+			downloadCSVTemplateBtn.addEventListener('click', () => {
+				downloadCSVTemplate({ toast });
+			});
+		}
+
+		// CSV Upload button
+		const uploadCSVBtn = document.getElementById('uploadCSVBtn');
+		const csvFileInput = document.getElementById('csvFileInput');
+
+		if (uploadCSVBtn && csvFileInput) {
+			uploadCSVBtn.addEventListener('click', () => {
+				csvFileInput.click();
+			});
+
+			csvFileInput.addEventListener('change', async (e) => {
+				const file = e.target.files[0];
+				if (file) {
+					await importCSV({
+						file,
+						toast,
+						SupabaseAPI,
+						renderListings
+					});
+					// Clear the input so the same file can be uploaded again
+					csvFileInput.value = '';
+				}
+			});
+		}
+
 		const closeAddListing = document.getElementById('closeAddListing');
 		const cancelAddListing = document.getElementById('cancelAddListing');
 		const saveListingBtn = document.getElementById('saveListingBtn');
