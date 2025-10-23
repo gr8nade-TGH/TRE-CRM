@@ -195,8 +195,6 @@ export async function renderListings(options) {
 
 		const communityName = prop.community_name || prop.name;
 		const address = prop.street_address || prop.address;
-		const bedRange = prop.bed_range || `${prop.beds_min}-${prop.beds_max} bed`;
-		const bathRange = prop.bath_range || `${prop.baths_min}-${prop.baths_max} bath`;
 		const rentMin = prop.rent_range_min || prop.rent_min;
 		const rentMax = prop.rent_range_max || prop.rent_max;
 		const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
@@ -219,7 +217,6 @@ export async function renderListings(options) {
 				<div class="subtle mono">${address}</div>
 				<div class="community-details">
 					<span class="market-info">${prop.market}</span>
-					<span class="beds-baths">${bedRange} / ${bathRange}</span>
 				</div>
 				<div class="community-meta">
 					<div class="listing-controls">
