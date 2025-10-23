@@ -75,9 +75,41 @@ export async function saveNewLead(options) {
 
 		console.log('✅ Lead created:', data);
 
+		const leadId = data[0].id;
+
+		// Log the lead creation activity
+		try {
+			const activityData = {
+				lead_id: leadId,
+				activity_type: 'lead_created',
+				description: `Lead added through CRM by ${state.userName || 'Unknown'}`,
+				metadata: {
+					source: 'crm',
+					initial_status: status,
+					initial_health: health,
+					agent_id: state.agentId,
+					agent_name: state.userName || 'Unknown'
+				},
+				performed_by: state.agentId,
+				performed_by_name: state.userName || 'Unknown'
+			};
+
+			const { error: activityError } = await window.supabase
+				.from('lead_activities')
+				.insert([activityData]);
+
+			if (activityError) {
+				console.error('❌ Error logging activity:', activityError);
+				// Don't fail the whole operation if activity logging fails
+			} else {
+				console.log('✅ Activity logged successfully');
+			}
+		} catch (activityError) {
+			console.error('⚠️ Failed to log activity:', activityError);
+		}
+
 		// If there are notes, add them to lead_notes table
-		if (notes && notes.trim() && data && data[0]) {
-			const leadId = data[0].id;
+		if (notes && notes.trim()) {
 			const { error: notesError } = await window.supabase
 				.from('lead_notes')
 				.insert([{

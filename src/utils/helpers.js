@@ -4,16 +4,25 @@
  */
 
 /**
- * Format ISO date string to localized date/time string
+ * Format ISO date string to localized date/time string in Central Time
  * @param {string} iso - ISO date string
  * @returns {string} Formatted date string
  */
-export function formatDate(iso) { 
-	try { 
-		return new Date(iso).toLocaleString(); 
-	} catch { 
-		return iso; 
-	} 
+export function formatDate(iso) {
+	try {
+		return new Date(iso).toLocaleString('en-US', {
+			timeZone: 'America/Chicago',
+			year: 'numeric',
+			month: '2-digit',
+			day: '2-digit',
+			hour: '2-digit',
+			minute: '2-digit',
+			second: '2-digit',
+			hour12: true
+		});
+	} catch {
+		return iso;
+	}
 }
 
 /**
