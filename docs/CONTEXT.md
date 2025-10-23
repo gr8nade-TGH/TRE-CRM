@@ -117,14 +117,26 @@ export default MyClass;
 
 ### API Call Pattern
 ```javascript
-// Always use try-catch for API calls
+// ⚠️ CRITICAL RULE: ALWAYS use existing modular APIs instead of direct window.supabase calls
+// ✅ CORRECT - Use SupabaseAPI module functions
 try {
     const data = await SupabaseAPI.getProperties({ isActive: true });
+    await SupabaseAPI.createLeadActivity({ lead_id, activity_type, description, metadata });
+    await SupabaseAPI.createPropertyActivity({ property_id, activity_type, description });
     // Handle success
 } catch (error) {
-    console.error('Error fetching properties:', error);
+    console.error('Error:', error);
     // Handle error
 }
+
+// ❌ WRONG - Don't use direct window.supabase calls
+// const { data } = await window.supabase.from('leads').insert([...]);
+
+// 📋 WORKFLOW: Before writing ANY database code:
+// 1. Check src/api/supabase-api.js for existing functions
+// 2. Check src/modules/* for module-specific functions
+// 3. Only use direct window.supabase if no API function exists
+// 4. If no API exists, consider creating one in supabase-api.js
 ```
 
 ### Modal Pattern
