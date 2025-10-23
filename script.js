@@ -84,6 +84,9 @@ import * as Modals from './src/modules/modals/index.js';
 // Import Routing module
 import * as Routing from './src/routing/index.js';
 
+// Import Initialization module
+import * as Init from './src/init/index.js';
+
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
@@ -1265,41 +1268,20 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Load Real Agents from Supabase ----
+	// Wrapper function for loadAgents - calls module function
 	async function loadAgents() {
-		try {
-			console.log('📋 Loading real agents from Supabase...');
-			const agents = await SupabaseAPI.getAgents();
-			realAgents = agents; // Store real agents data
-			console.log('✅ Loaded', agents.length, 'agents from Supabase');
-		} catch (error) {
-			console.error('❌ Error loading agents:', error);
-			throw error; // Don't fall back to mock data - fail fast
-		}
+		return await Init.loadAgents(SupabaseAPI);
 	}
 
 	// ---- App Initialization (called by auth.js after login) ----
 	window.initializeApp = async function() {
-		console.log('🚀 Initializing app...');
-
-		// Update state from authenticated user
-		if (window.currentUser) {
-			const role = window.getUserRole();
-			const userId = window.getUserId();
-
-			state.role = role;
-			state.agentId = userId;
-
-			console.log('✅ App initialized with role:', role, 'userId:', userId);
-		}
-
-		// Load real agents from Supabase
-		await loadAgents();
-
-		// Initialize nav visibility based on current role
-		updateNavVisibility();
-
-		// Initialize routing
-		initializeRouting();
+		await Init.initializeApp({
+			state,
+			SupabaseAPI,
+			updateNavVisibility,
+			initializeRouting,
+			setRealAgents: (agents) => { realAgents = agents; }
+		});
 	};
 
 	// Update navigation visibility based on role - wrapper function
