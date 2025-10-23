@@ -72,7 +72,13 @@ export function setupAllEventListeners(deps) {
 		changeUserPassword,
 		saveListingEdit,
 		deleteListing,
-		
+
+		// Profile functions
+		updateProfile,
+		changePassword,
+		updateNotificationPreferences,
+		openProfileModal,
+
 		// Utility functions
 		sortTable,
 		toast,
@@ -732,6 +738,54 @@ export function setupAllEventListeners(deps) {
 				const filter = e.target.value;
 				// In a real app, this would filter the audit log
 				renderAuditLog(); // For now, just re-render
+			});
+		}
+
+		// Profile button and modal
+		const profileBtn = document.getElementById('profileBtn');
+		const profileModal = document.getElementById('profileModal');
+		const closeProfileModal = document.getElementById('closeProfileModal');
+		const saveProfileBtn = document.getElementById('saveProfileBtn');
+		const cancelProfileBtn = document.getElementById('cancelProfileBtn');
+
+		// Profile button - open modal
+		if (profileBtn) {
+			profileBtn.addEventListener('click', () => {
+				openProfileModal({ showModal });
+			});
+		}
+
+		// Profile modal close buttons
+		if (closeProfileModal) {
+			closeProfileModal.addEventListener('click', () => hideModal('profileModal'));
+		}
+		if (cancelProfileBtn) {
+			cancelProfileBtn.addEventListener('click', () => hideModal('profileModal'));
+		}
+
+		// Save Profile button
+		if (saveProfileBtn) {
+			saveProfileBtn.addEventListener('click', async () => {
+				try {
+					// Update display name
+					await updateProfile({ toast });
+
+					// Update password if provided
+					const newPassword = document.getElementById('profileNewPassword').value;
+					if (newPassword) {
+						await changePassword({ toast });
+					}
+
+					// Update notification preferences
+					await updateNotificationPreferences({ toast });
+
+					// Close modal
+					hideModal('profileModal');
+
+				} catch (error) {
+					console.error('Error saving profile:', error);
+					toast('Error saving profile: ' + error.message, 'error');
+				}
 			});
 		}
 

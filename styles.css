@@ -171,17 +171,94 @@ body {
   padding: 8px 16px;
   border-radius: 8px;
 }
-.app-header .role-switch select { 
+.app-header .role-switch select {
   font-family: 'Inter', sans-serif;
-  padding: 6px 12px; 
-  border-radius: 6px; 
-  border: none; 
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: none;
   background: #fff;
   color: var(--ink);
   font-weight: 500;
 }
 
-.view-bar { 
+/* Header Actions (User Info, Profile, Logout) */
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+#headerUserEmail {
+  font-weight: 600;
+  color: #fff;
+  font-size: 14px;
+}
+
+.role-badge {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: capitalize;
+}
+
+.role-badge.role-agent {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.role-badge.role-manager {
+  background: #8b5cf6;
+  color: #fff;
+}
+
+.role-badge.role-super_user {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.role-badge.role-accountant {
+  background: #10b981;
+  color: #fff;
+}
+
+/* Profile Button */
+#profileBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  font-weight: 500;
+  font-size: 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#profileBtn:hover {
+  background: rgba(255, 255, 255, 0.25);
+  border-color: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
+#profileBtn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.view-bar {
   display: flex; 
   align-items: center; 
   justify-content: space-between; 

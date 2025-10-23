@@ -130,6 +130,13 @@
 				<span id="headerUserEmail"></span>
 				<span id="headerUserRole" class="role-badge"></span>
 			</div>
+			<button id="profileBtn" class="btn btn-secondary btn-sm" title="Profile Settings">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+					<circle cx="12" cy="7" r="4"></circle>
+				</svg>
+				Profile
+			</button>
 			<button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
 		</div>
 	</header>
@@ -1084,6 +1091,74 @@
 			<div class="modal-footer">
 				<button id="savePasswordBtn" class="btn btn-primary">Update Password</button>
 				<button id="cancelPasswordBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Profile Settings Modal -->
+	<div id="profileModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>Profile Settings</h3>
+				<button id="closeProfileModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="profileForm">
+					<!-- Display Name -->
+					<div class="field">
+						<label for="profileDisplayName">Display Name *</label>
+						<input type="text" id="profileDisplayName" required>
+						<small style="color: #666;">This is how your name appears throughout the CRM</small>
+					</div>
+
+					<!-- Email (Read-only) -->
+					<div class="field">
+						<label for="profileEmail">Email</label>
+						<input type="email" id="profileEmail" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+						<small style="color: #666;">Email cannot be changed</small>
+					</div>
+
+					<!-- Role (Read-only) -->
+					<div class="field">
+						<label for="profileRole">Role</label>
+						<input type="text" id="profileRole" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+					</div>
+
+					<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+					<!-- Change Password Section -->
+					<h4 style="margin-bottom: 15px; color: #333;">Change Password</h4>
+
+					<div class="field">
+						<label for="profileNewPassword">New Password</label>
+						<input type="password" id="profileNewPassword" placeholder="Leave blank to keep current password">
+						<small style="color: #666;">Minimum 6 characters</small>
+					</div>
+
+					<div class="field">
+						<label for="profileConfirmPassword">Confirm New Password</label>
+						<input type="password" id="profileConfirmPassword" placeholder="Confirm new password">
+					</div>
+
+					<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+					<!-- Notification Preferences Section -->
+					<h4 style="margin-bottom: 15px; color: #333;">Notification Preferences</h4>
+
+					<div class="field">
+						<label style="display: flex; align-items: center; cursor: pointer;">
+							<input type="checkbox" id="profileEmailNotifications" style="margin-right: 10px;">
+							<span>Receive email notifications for lead activities</span>
+						</label>
+						<small style="color: #666; margin-left: 26px; display: block; margin-top: 5px;">
+							Get notified when leads are assigned, updated, or require attention
+						</small>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelProfileBtn" class="btn btn-secondary">Cancel</button>
+				<button id="saveProfileBtn" class="btn btn-primary">Save Changes</button>
 			</div>
 		</div>
 	</div>

@@ -225,13 +225,15 @@ function showMainApp(user) {
 	console.log('Showing main app for user:', user.email);
 	document.getElementById('loginPortal').style.display = 'none';
 	document.getElementById('mainAppContent').style.display = 'block';
-	
+
 	// Update user info in header
 	const userEmail = document.getElementById('headerUserEmail');
 	const userRole = document.getElementById('headerUserRole');
 
 	if (userEmail) {
-		userEmail.textContent = user.email;
+		// Show user's name instead of email
+		const displayName = user.user_metadata?.name || user.email;
+		userEmail.textContent = displayName;
 	}
 
 	if (userRole) {
@@ -239,13 +241,15 @@ function showMainApp(user) {
 		userRole.textContent = role.replace('_', ' ');
 		userRole.className = 'role-badge role-' + role;
 	}
-	
-	// Store role in global state for the app to use
+
+	// Store role and user info in global state for the app to use
 	if (window.state) {
 		const role = user.user_metadata?.role || 'agent';
+		const userName = user.user_metadata?.name || user.email;
 		window.state.role = role;
 		window.state.agentId = user.id;
-		console.log('✅ Set global state role:', role, 'agentId:', user.id);
+		window.state.userName = userName;
+		console.log('✅ Set global state role:', role, 'agentId:', user.id, 'userName:', userName);
 	}
 }
 

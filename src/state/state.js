@@ -11,7 +11,8 @@ export const state = {
 	// User/Auth state
 	role: 'manager',
 	agentId: 'agent_1',
-	
+	userName: 'Unknown', // User's display name
+
 	// Navigation state
 	currentPage: 'leads',
 	

@@ -59,6 +59,9 @@ import * as Listings from './src/modules/listings/index.js';
 // Import Agents module
 import * as Agents from './src/modules/agents/index.js';
 
+// Import Profile module
+import { updateProfile, changePassword, updateNotificationPreferences, openProfileModal } from './src/modules/profile/profile-actions.js';
+
 // Import Documents module
 import * as Documents from './src/modules/documents/index.js';
 
@@ -1670,6 +1673,12 @@ function createLeadTable(lead, isExpanded = false) {
 			changeUserPassword,
 			saveListingEdit,
 			deleteListing,
+
+			// Profile functions
+			updateProfile,
+			changePassword,
+			updateNotificationPreferences,
+			openProfileModal,
 
 			// Utility functions
 			sortTable,
