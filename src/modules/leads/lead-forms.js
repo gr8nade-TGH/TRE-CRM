@@ -90,7 +90,7 @@ export async function saveNewLead(options) {
 					agent_id: state.agentId,
 					agent_name: state.userName || 'Unknown'
 				},
-				performed_by: state.agentId,
+				performed_by: null, // Don't use state.agentId - it's auth UUID, not public.users.id
 				performed_by_name: state.userName || 'Unknown'
 			};
 
