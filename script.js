@@ -27,8 +27,7 @@ import {
 	mockInterestedLeads,
 	mockBugs,
 	mockDocumentStatuses,
-	mockClosedLeads,
-	prefsSummary
+	mockClosedLeads
 } from './src/state/mockData.js';
 
 // Import Supabase API (for real data)
@@ -41,7 +40,7 @@ import { createAPI } from './src/api/api-wrapper.js';
 import { getStepModalContent as getStepModalContentUtil } from './src/utils/step-modal-content.js';
 import { sortTable as sortTableUtil } from './src/utils/table-sorting.js';
 import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase-builder.js';
-import { getCurrentStepFromActivities as getCurrentStepUtil, getStepLabel as getStepLabelUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
+import { getCurrentStepFromActivities as getCurrentStepUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
 import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentChangesUtil } from './src/utils/agent-drawer.js';
 import { geocodeAddress } from './src/utils/geocoding.js';
 
@@ -52,7 +51,6 @@ import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-m
 
 // Import Leads module
 import * as Leads from './src/modules/leads/index.js';
-import { calculateHealthStatus, renderHealthStatus } from './src/modules/leads/leads-health.js';
 
 // Import Listings module
 import * as Listings from './src/modules/listings/index.js';
@@ -139,26 +137,10 @@ let api, renderLeads, renderSpecials;
 	}
 
 
-	// ---- Health Status ----
-	const STATUS_LABEL = {
-		green: 'Healthy',
-		yellow: 'Warm',
-		red: 'At Risk',
-		closed: 'Closed',
-		lost: 'Lost'
-	};
-
 	// ---- Health Status System ----
-	// calculateHealthStatus is now imported from src/modules/leads/leads-health.js
-
-	// Get current step from lead activities
 	// Wrapper functions for lead health utilities
 	async function getCurrentStepFromActivities(leadId) {
 		return await getCurrentStepUtil(leadId);
-	}
-
-	function getStepLabel(stepNumber) {
-		return getStepLabelUtil(stepNumber);
 	}
 
 	// Dynamic health messages based on lead state
@@ -237,16 +219,6 @@ let api, renderLeads, renderSpecials;
 	function renderAgentSelect(lead){
 		const opts = realAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
-	}
-
-	// ---- Document Status Rendering ----
-	// Wrapper functions for document status - calls module functions
-	function renderDocumentStepStatus(step, currentStep) {
-		return Documents.renderDocumentStepStatus(step, currentStep);
-	}
-
-	function renderDocumentSteps(leadId) {
-		return Documents.renderDocumentSteps(leadId, mockDocumentStatuses);
 	}
 
 	// ---- Interactive Progress System ----
@@ -474,27 +446,6 @@ function createLeadTable(lead, isExpanded = false) {
 			mockDocumentStatuses,
 			formatDate
 		});
-	}
-
-	// Helper functions for document status - wrapper functions that call module functions
-	function getDocumentProgress(leadId) {
-		return Documents.getDocumentProgress(leadId, mockDocumentStatuses);
-	}
-
-	function getCurrentDocumentStep(leadId) {
-		return Documents.getCurrentDocumentStep(leadId, mockDocumentStatuses);
-	}
-
-	function getDocumentStatus(leadId) {
-		return Documents.getDocumentStatus(leadId, mockDocumentStatuses);
-	}
-
-	function getLastDocumentUpdate(leadId) {
-		return Documents.getLastDocumentUpdate(leadId, mockDocumentStatuses);
-	}
-
-	function updateDocumentStatus(leadId) {
-		Documents.updateDocumentStatus(leadId, toast);
 	}
 
 	// ---- Rendering: Agents Table ----
@@ -744,16 +695,6 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Document Modals ----
-	function openDocumentDetails(leadId) {
-		Modals.openDocumentDetails(leadId, {
-			mockLeads: state.leads || [],
-			mockDocumentStatuses,
-			renderDocumentSteps,
-			toast,
-			show
-		});
-	}
-
 	function closeDocumentDetails() {
 		Modals.closeDocumentDetails({
 			hide
@@ -910,12 +851,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	function updateCreateShowcaseBtn(){
-		Modals.updateCreateShowcaseBtn({
-			state
-		});
-	}
-
 	// ---- Showcase ----
 	async function openShowcasePreview(){
 		await Modals.openShowcasePreview({
@@ -1064,12 +999,6 @@ function createLeadTable(lead, isExpanded = false) {
 			updateNavigation,
 			updateBugFlagVisibility
 		});
-	}
-
-	// ---- Load Real Agents from Supabase ----
-	// Wrapper function for loadAgents - calls module function
-	async function loadAgents() {
-		return await Init.loadAgents(SupabaseAPI);
 	}
 
 	// ---- App Initialization (called by auth.js after login) ----
