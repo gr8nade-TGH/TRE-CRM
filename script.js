@@ -251,40 +251,13 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// ---- Document Status Rendering ----
+	// Wrapper functions for document status - calls module functions
 	function renderDocumentStepStatus(step, currentStep) {
-		if (step.id < currentStep) {
-			return `<span class="step-completed">✓ Completed</span>`;
-		} else if (step.id === currentStep) {
-			return `<span class="step-current">● In Progress</span>`;
-		} else {
-			return `<span class="step-pending">○ Pending</span>`;
-		}
+		return Documents.renderDocumentStepStatus(step, currentStep);
 	}
 
 	function renderDocumentSteps(leadId) {
-		const docStatus = mockDocumentStatuses[leadId];
-		if (!docStatus) return 'No document status available';
-
-		return docStatus.steps.map(step => `
-			<div class="document-step ${step.status === 'completed' ? 'completed' : step.status === 'in_progress' ? 'current' : 'pending'}">
-				<div class="step-header">
-					<span class="step-number">${step.id}.</span>
-					<span class="step-name">${step.name}</span>
-					${renderDocumentStepStatus(step, docStatus.currentStep)}
-				</div>
-				${step.attachments.length > 0 ? `
-					<div class="attachments">
-						${step.attachments.map(attachment => `
-							<div class="attachment">
-								<span class="attachment-icon">📎</span>
-								<span class="attachment-name">${attachment}</span>
-								<button class="attachment-download" data-file="${attachment}">Download</button>
-							</div>
-						`).join('')}
-					</div>
-				` : ''}
-			</div>
-		`).join('');
+		return Documents.renderDocumentSteps(leadId, mockDocumentStatuses);
 	}
 
 	// ---- Interactive Progress System ----
@@ -296,44 +269,14 @@ let api, renderLeads, renderSpecials;
 
 
 
-	// Progress steps configuration
-	const progressSteps = [
-		{ id: 1, label: 'Lead Joined', key: 'leadJoined' },
-		{ id: 2, label: 'Showcase Sent', key: 'showcaseSent' },
-		{ id: 3, label: 'Lead Responded', key: 'leadResponded' },
-		{ id: 4, label: 'Guest Card Sent', key: 'guestCardSent' },
-		{ id: 5, label: 'Property Selected', key: 'propertySelected' },
-		{ id: 6, label: 'Lease Sent', key: 'leaseSent' },
-		{ id: 7, label: 'Lease Signed', key: 'leaseSigned' },
-		{ id: 8, label: 'Lease Finalized', key: 'leaseFinalized' }
-	];
+	// Progress steps configuration - imported from module
+	const progressSteps = Documents.progressSteps;
 
+	// Wrapper function for renderProgressTable - calls module function
 	function renderProgressTable(tbodyId, leads) {
-		const container = document.getElementById(tbodyId);
-		if (!container) return;
-
-		// Clear existing content
-		container.innerHTML = '';
-
-		// Create each lead as a separate table
-		leads.forEach((lead, index) => {
-			const leadTable = createLeadTable(lead, index === 0); // First lead expanded by default
-			container.appendChild(leadTable);
-		});
-
-		// Event listeners are handled by event delegation in the main event listener setup
-
-		// Add event listeners for progress steps
-		leads.forEach(lead => {
-			progressSteps.forEach(step => {
-				const stepElement = document.querySelector(`[data-lead-id="${lead.id}"][data-step="${step.id}"]`);
-				if (stepElement) {
-					stepElement.addEventListener('click', (e) => {
-						e.stopPropagation();
-						showStepDetails(lead, step);
-					});
-				}
-			});
+		Documents.renderProgressTable(tbodyId, leads, {
+			createLeadTable,
+			showStepDetails
 		});
 	}
 
@@ -363,60 +306,9 @@ function createLeadTable(lead, isExpanded = false) {
 	// viewLeadDetails() removed - was dead code using mockProgressLeads
 	// Documents page now uses real Supabase data via Documents module
 
+	// Wrapper function for toggleLeadTable - calls module function
 	function toggleLeadTable(leadId) {
-		console.log('toggleLeadTable called with leadId:', leadId);
-
-		// Find the button in the currently visible view only
-		const managerView = document.getElementById('managerDocumentsView');
-		const agentView = document.getElementById('agentDocumentsView');
-
-		let btn = null;
-		let container = null;
-
-		// Check which view is visible and search within that view only
-		if (managerView && !managerView.classList.contains('hidden')) {
-			container = managerView.querySelector(`[data-lead-id="${leadId}"]`)?.closest('.lead-table-container');
-			btn = container?.querySelector('.expand-btn');
-			console.log('Searching in Manager view');
-		} else if (agentView && !agentView.classList.contains('hidden')) {
-			container = agentView.querySelector(`[data-lead-id="${leadId}"]`)?.closest('.lead-table-container');
-			btn = container?.querySelector('.expand-btn');
-			console.log('Searching in Agent view');
-		}
-
-		console.log('Found button:', btn);
-		console.log('Found container:', container);
-
-		if (!btn || !container) {
-			console.log('No button or container found for leadId:', leadId);
-			return;
-		}
-
-		const content = container.querySelector('.lead-table-content');
-		const expandIcon = container.querySelector('.expand-icon');
-
-		console.log('Content element:', content);
-		console.log('Expand icon:', expandIcon);
-
-		if (content.classList.contains('expanded')) {
-			content.classList.remove('expanded');
-			content.classList.add('collapsed');
-			expandIcon.textContent = '▶';
-			console.log('Collapsed table');
-			console.log('Content classes after collapse:', content.classList.toString());
-		} else {
-			content.classList.remove('collapsed');
-			content.classList.add('expanded');
-			expandIcon.textContent = '▼';
-			console.log('Expanded table');
-			console.log('Content classes after expand:', content.classList.toString());
-		}
-
-		// Check computed styles
-		const computedStyle = window.getComputedStyle(content);
-		console.log('Computed max-height:', computedStyle.maxHeight);
-		console.log('Computed height:', computedStyle.height);
-		console.log('Computed padding:', computedStyle.padding);
+		Documents.toggleLeadTable(leadId);
 	}
 
 	// ---- Rendering: Documents Table ----
@@ -615,102 +507,35 @@ function createLeadTable(lead, isExpanded = false) {
 		}
 	}
 
+	// Wrapper function for renderLeadsTable - calls module function
 	function renderLeadsTable(searchTerm = '', searchType = 'both'){
-		const tbody = document.getElementById('documentsTbody');
-		tbody.innerHTML = '';
-
-		// Get all active leads with their agent info
-		const leads = state.leads || [];
-		let activeLeads = leads.filter(l => l.health_status !== 'closed' && l.health_status !== 'lost');
-
-		// Apply search filter
-		if (searchTerm.trim()) {
-			activeLeads = activeLeads.filter(lead => {
-				const agent = realAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
-				const searchLower = searchTerm.toLowerCase();
-
-				if (searchType === 'agent') {
-					return agent.name.toLowerCase().includes(searchLower);
-				} else if (searchType === 'lead') {
-					return lead.name.toLowerCase().includes(searchLower) || lead.email.toLowerCase().includes(searchLower);
-				} else { // both
-					return agent.name.toLowerCase().includes(searchLower) ||
-						   lead.name.toLowerCase().includes(searchLower) ||
-						   lead.email.toLowerCase().includes(searchLower);
-				}
-			});
-		}
-
-		activeLeads.forEach(lead => {
-			const agent = realAgents.find(a => a.id === lead.assigned_agent_id) || { name: 'Unassigned' };
-			const progress = getDocumentProgress(lead.id);
-			const currentStep = getCurrentDocumentStep(lead.id);
-			const lastUpdated = getLastDocumentUpdate(lead.id);
-
-			const tr = document.createElement('tr');
-			tr.innerHTML = `
-				<td data-sort="agent_name">${agent.name}</td>
-				<td data-sort="lead_name">
-					<div class="lead-name">${lead.name}</div>
-					<div class="subtle mono">${lead.email}</div>
-				</td>
-				<td data-sort="current_step">
-					<div class="current-step">${currentStep}</div>
-				</td>
-				<td data-sort="progress">
-					<div class="progress-bar">
-						<div class="progress-fill" style="width: ${progress}%"></div>
-					</div>
-					<div class="progress-text">${progress}% complete</div>
-				</td>
-				<td data-sort="last_updated" class="mono">${formatDate(lastUpdated)}</td>
-				<td>
-					<button class="btn-small btn-primary-small" onclick="openDocumentDetails('${lead.id}')">
-						View Details
-					</button>
-				</td>
-			`;
-			tbody.appendChild(tr);
+		Documents.renderLeadsTable(searchTerm, searchType, {
+			state,
+			realAgents,
+			mockDocumentStatuses,
+			formatDate
 		});
 	}
 
-	// Helper functions for document status
+	// Helper functions for document status - wrapper functions that call module functions
 	function getDocumentProgress(leadId) {
-		const status = mockDocumentStatuses[leadId];
-		if (!status) return 0;
-
-		const completedSteps = status.steps.filter(step => step.status === 'completed').length;
-		return Math.round((completedSteps / status.steps.length) * 100);
+		return Documents.getDocumentProgress(leadId, mockDocumentStatuses);
 	}
 
 	function getCurrentDocumentStep(leadId) {
-		const status = mockDocumentStatuses[leadId];
-		if (!status) return 'Not Started';
-
-		const currentStep = status.steps.find(step => step.status === 'current');
-		return currentStep ? currentStep.name : 'Completed';
+		return Documents.getCurrentDocumentStep(leadId, mockDocumentStatuses);
 	}
 
 	function getDocumentStatus(leadId) {
-		const progress = getDocumentProgress(leadId);
-		if (progress === 0) return 'not-started';
-		if (progress === 100) return 'completed';
-		return 'active';
+		return Documents.getDocumentStatus(leadId, mockDocumentStatuses);
 	}
 
 	function getLastDocumentUpdate(leadId) {
-		const status = mockDocumentStatuses[leadId];
-		if (!status) return new Date();
-
-		const lastStep = status.steps
-			.filter(step => step.status === 'completed')
-			.sort((a, b) => new Date(b.updated_at) - new Date(a.updated_at))[0];
-
-		return lastStep ? lastStep.updated_at : new Date();
+		return Documents.getLastDocumentUpdate(leadId, mockDocumentStatuses);
 	}
 
 	function updateDocumentStatus(leadId) {
-		toast('Document status update feature coming soon!');
+		Documents.updateDocumentStatus(leadId, toast);
 	}
 
 	// ---- Rendering: Agents Table ----
