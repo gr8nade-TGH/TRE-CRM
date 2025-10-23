@@ -88,42 +88,17 @@ import * as Init from './src/init/index.js';
 // ============================================================================
 // GLOBAL CONFIGURATION
 // ============================================================================
-// ✅ NOW USING REAL SUPABASE DATA ONLY!
-// Mock data removed - all data comes from Supabase database
 
-// Global variables (loaded from external scripts)
 /* global mapboxgl */
 
-// Forward declarations for functions defined later (to avoid hoisting issues)
- 
+// Forward declarations
 let api, renderLeads, renderSpecials;
- 
-
-// ============================================================================
-// GLOBAL FUNCTIONS (Keep for backward compatibility)
-// ============================================================================
-// Note: These wrapper functions are defined inside the IIFE below
-// where they have access to renderLeads, renderSpecials, etc.
-
-// Note: mockUsers and mockAuditLog are imported from src/state/mockData.js
 
 (function() {
-	// ---- State ----
-	// Note: State is now imported from src/state/state.js
-	// The imported 'state' object is used throughout this file
-
-	// ---- Global Variables ----
-	// Map state is now managed by map-manager.js module
-
-	// ---- Real Data from Supabase ----
-	// Agents are loaded from Supabase users table (filtered by role='AGENT')
-	let realAgents = []; // Will be populated by loadAgents() on initialization
-
-	// ---- Utilities ----
-	// Note: formatDate, showModal, hideModal, toast, show, hide are now imported from helpers.js
+	// Real agents loaded from Supabase users table
+	let realAgents = [];
 
 	// ---- Table Sorting ----
-	// Wrapper function for sortTable - calls utility module
 	function sortTable(column, tableId) {
 		sortTableUtil(column, tableId, state, {
 			renderLeads,
@@ -137,28 +112,19 @@ let api, renderLeads, renderSpecials;
 	}
 
 
-	// ---- Health Status System ----
-	// Wrapper functions for lead health utilities
+	// ---- Health & Lead Utilities ----
 	async function getCurrentStepFromActivities(leadId) {
 		return await getCurrentStepUtil(leadId);
 	}
 
-	// Dynamic health messages based on lead state
-	// Wrapper function for getHealthMessages
 	async function getHealthMessages(lead) {
 		return await getHealthMessagesUtil(lead, formatDate);
 	}
 
-	// renderHealthStatus is now imported from src/modules/leads/leads-health.js
-
-	// ---- Listings Filters ----
-	// Wrapper function for matchesListingsFilters - calls module function
 	function matchesListingsFilters(property, filters) {
 		return Listings.matchesListingsFilters(property, filters);
 	}
 
-	// ---- Health Popover Functions ----
-	// Wrapper functions for health popover - calls module functions
 	function initPopover() {
 		Leads.initPopover();
 	}
@@ -174,22 +140,17 @@ let api, renderLeads, renderSpecials;
 		Leads.hidePopover();
 	}
 
-	// ---- Agent Statistics ----
-	// Wrapper function for getAgentStats - calls module function
 	function getAgentStats(agentId) {
 		return Agents.getAgentStats(agentId, { leads: state.leads || [] });
 	}
 
-	// ---- Real API Layer ----
-	// All data comes from Supabase database
-	// API object created from api-wrapper module
+	// ---- API Layer ----
 	api = createAPI({
 		mockInterestedLeads,
 		mockBugs
 	});
 
-	// ---- Rendering: Leads Table ----
-	// Wrapper function that calls the module
+	// ---- Rendering Functions ----
 	renderLeads = async function(){
 		// Call module render function with realAgents (global variable)
 		await Leads.renderLeads({
@@ -204,8 +165,6 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// ---- Lead Forms ----
-	// Wrapper function for saveNewLead - calls module function
-	// Must be inside IIFE to access renderLeads
 	window.saveNewLead = async function() {
 		await Leads.saveNewLead({
 			SupabaseAPI,
@@ -221,19 +180,9 @@ let api, renderLeads, renderSpecials;
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
 
-	// ---- Interactive Progress System ----
-	// Note: Documents page now uses real Supabase data via Documents module
-	// mockProgressLeads removed - was only used by dead viewLeadDetails() function
-
-	// Note: mockBugs still imported from src/state/mockData.js (will be removed in Phase 4)
-	// Bugs feature still uses mock data - Supabase API methods not yet implemented
-
-
-
-	// Progress steps configuration - imported from module
+	// ---- Progress & Documents ----
 	const progressSteps = Documents.progressSteps;
 
-	// Wrapper function for renderProgressTable - calls module function
 	function renderProgressTable(tbodyId, leads) {
 		Documents.renderProgressTable(tbodyId, leads, {
 			createLeadTable,
@@ -241,20 +190,17 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-// Wrapper function for createLeadTable - calls utility module
-function createLeadTable(lead, isExpanded = false) {
-	return createLeadTableUtil(lead, isExpanded, {
-		progressSteps,
-		formatDate
-	});
-}
+	function createLeadTable(lead, isExpanded = false) {
+		return createLeadTableUtil(lead, isExpanded, {
+			progressSteps,
+			formatDate
+		});
+	}
 
-	// Wrapper function for getStepModalContent - calls utility module
 	async function getStepModalContent(lead, step) {
 		return await getStepModalContentUtil(lead, step, formatDate);
 	}
 
-	// Wrapper function for showStepDetails - calls utility module
 	async function showStepDetails(lead, step) {
 		return await showStepDetailsUtil(lead, step, {
 			getStepModalContent,
@@ -264,16 +210,10 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// viewLeadDetails() removed - was dead code using mockProgressLeads
-	// Documents page now uses real Supabase data via Documents module
-
-	// Wrapper function for toggleLeadTable - calls module function
 	function toggleLeadTable(leadId) {
 		Documents.toggleLeadTable(leadId);
 	}
 
-	// ---- Rendering: Documents Table ----
-	// Wrapper function that calls the module
 	async function renderDocuments(){
 		await Documents.renderDocuments({
 			state,
@@ -300,7 +240,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Properties Module Wrappers ----
 	async function renderProperties() {
 		await Properties.renderProperties({
 			renderPropertyContacts,
@@ -338,7 +277,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Specials Module Wrapper ----
 	renderSpecials = async function(){
 		await Properties.renderSpecials({
 			state,
@@ -348,8 +286,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Specials Actions ----
-	// Wrapper functions for specials - must be inside IIFE to access renderSpecials
 	window.saveNewSpecial = function() {
 		Properties.saveNewSpecial({
 			api,
@@ -368,7 +304,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Bug Tracker Module Wrappers ----
 	async function renderBugs() {
 		await Properties.renderBugs({
 			api,
@@ -395,12 +330,10 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// Helper function to get browser info
 	function getBrowserInfo() {
 		return Properties.getBrowserInfo();
 	}
 
-	// Helper function to get OS info
 	function getOSInfo() {
 		return Properties.getOSInfo();
 	}
@@ -448,8 +381,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Rendering: Agents Table ----
-	// Wrapper function that calls the module
 	async function renderAgents(){
 		await Agents.renderAgents({
 			mockAgents: realAgents,
@@ -459,7 +390,6 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Map Management ----
-	// Wrapper functions for map management - calls module functions
 	function initMap() {
 		Listings.initMap();
 	}
@@ -476,10 +406,7 @@ function createLeadTable(lead, isExpanded = false) {
 		Listings.selectProperty(prop);
 	}
 
-	// ---- Geocoding Helper ----
-	// Moved to src/utils/geocoding.js for reusability
-
-	// ---- Add Listing Modal Functions ----
+	// ---- Modals ----
 	function openAddListingModal() {
 		Modals.openAddListingModal({
 			showModal
@@ -502,7 +429,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Lead Notes Functions ----
 	async function loadLeadNotes(leadId) {
 		await Modals.loadLeadNotes(leadId, {
 			SupabaseAPI,
@@ -553,8 +479,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Rendering: Listings Table ----
-	// Wrapper function that calls the module
 	async function renderListings(){
 		await Listings.renderListings({
 			SupabaseAPI,
@@ -572,9 +496,6 @@ function createLeadTable(lead, isExpanded = false) {
 			toast
 		});
 	}
-
-	// ---- Lead Modals Module Wrappers ----
-	// Note: currentLeadForNotes is now window.currentLeadForNotes (global)
 
 	async function openLeadDetailsModal(leadId){
 		await Modals.openLeadDetailsModal(leadId, {
@@ -834,8 +755,6 @@ function createLeadTable(lead, isExpanded = false) {
 		`).join('');
 	}
 
-	// Global functions will be assigned at the end of the file
-
 	async function sendShowcaseEmail(){
 		await Modals.sendShowcaseEmail({
 			state,
@@ -851,7 +770,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Showcase ----
 	async function openShowcasePreview(){
 		await Modals.openShowcasePreview({
 			state,
@@ -866,7 +784,6 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- Build Showcase from Listings ----
 	async function openBuildShowcaseModal(){
 		await Modals.openBuildShowcaseModal({
 			state,
@@ -973,7 +890,6 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Routing ----
-	// Wrapper functions for routing - calls module functions
 	function setRoleLabel(page = 'leads'){
 		Routing.setRoleLabel(page, state);
 	}
@@ -1001,7 +917,11 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
-	// ---- App Initialization (called by auth.js after login) ----
+	function updateNavVisibility() {
+		Routing.updateNavVisibility(state);
+	}
+
+	// ---- App Initialization ----
 	window.initializeApp = async function() {
 		await Init.initializeApp({
 			state,
@@ -1012,32 +932,20 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	};
 
-	// Update navigation visibility based on role - wrapper function
-	function updateNavVisibility() {
-		Routing.updateNavVisibility(state);
-	}
-
-	// ---- Event Listeners Setup ----
-	// Event listeners are now in src/events/dom-event-listeners.js
-	// The setupAllEventListeners() function is called from DOMContentLoaded with all dependencies
-	// ---- Events ----
+	// ---- Event Listeners ----
 	document.addEventListener('DOMContentLoaded', () => {
-		// Don't initialize app here - wait for auth.js to call initializeApp()
 		console.log('DOM loaded, waiting for authentication...');
 
-		// Initialize unit modal event listeners
 		import('./src/modules/modals/unit-modals.js').then(module => {
 			module.initializeUnitModalListeners();
 		});
 
-		// Listen for refresh listings event (triggered by unit modals)
 		window.addEventListener('refreshListings', () => {
 			if (state.currentPage === 'listings') {
 				renderListings();
 			}
 		});
 
-		// Setup all event listeners with dependencies
 		setupAllEventListeners({
 			// State and global variables
 			state,
