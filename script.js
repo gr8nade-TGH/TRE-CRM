@@ -62,7 +62,7 @@ import * as Agents from './src/modules/agents/index.js';
 // Import Profile module
 import {
 	updateProfile as updateUserProfile,
-	changePassword as changeUserPassword,
+	changePassword as changeOwnPassword,
 	updateNotificationPreferences,
 	openProfileModal
 } from './src/modules/profile/profile-actions.js';
@@ -1681,7 +1681,7 @@ function createLeadTable(lead, isExpanded = false) {
 
 			// Profile functions
 			updateProfile: updateUserProfile,
-			changePassword: changeUserPassword,
+			changePassword: changeOwnPassword,
 			updateNotificationPreferences,
 			openProfileModal,
 
