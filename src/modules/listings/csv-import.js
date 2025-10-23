@@ -291,13 +291,14 @@ export async function importCSV(options) {
 		const result = await processCSVImport(headers, dataRows, SupabaseAPI);
 		
 		// Show results
-		const { propertiesCreated, floorPlansCreated, unitsCreated, errors } = result;
+		const { propertiesCreated, propertiesSkipped, floorPlansCreated, unitsCreated, errors } = result;
 		
 		if (errors.length > 0) {
 			console.error('Import errors:', errors);
 			toast(`Import completed with ${errors.length} error(s). Check console for details.`, 'warning');
 		} else {
-			toast(`✅ Import successful! Created ${propertiesCreated} properties, ${floorPlansCreated} floor plans, ${unitsCreated} units`, 'success');
+			const skipMsg = propertiesSkipped > 0 ? `, skipped ${propertiesSkipped} duplicate${propertiesSkipped > 1 ? 's' : ''}` : '';
+			toast(`✅ Import successful! Created ${propertiesCreated} properties${skipMsg}, ${floorPlansCreated} floor plans, ${unitsCreated} units`, 'success');
 		}
 		
 		// Refresh listings
@@ -373,14 +374,32 @@ function parseCSV(text) {
 async function processCSVImport(headers, dataRows, SupabaseAPI) {
 	const result = {
 		propertiesCreated: 0,
+		propertiesSkipped: 0,
 		floorPlansCreated: 0,
 		unitsCreated: 0,
 		errors: []
 	};
-	
+
 	// Track created properties and floor plans to avoid duplicates
 	const propertyCache = new Map(); // key: property_name, value: property_id
 	const floorPlanCache = new Map(); // key: property_id|floor_plan_name, value: floor_plan_id
+
+	// Fetch existing properties to check for duplicates
+	const existingProperties = await SupabaseAPI.getProperties();
+	const existingPropertiesMap = new Map();
+
+	// Index by community_name (case-insensitive)
+	existingProperties.forEach(prop => {
+		if (prop.community_name) {
+			const key = prop.community_name.toLowerCase().trim();
+			existingPropertiesMap.set(key, prop.id);
+		}
+		// Also index by street_address + city (case-insensitive)
+		if (prop.street_address && prop.city) {
+			const key = `${prop.street_address.toLowerCase().trim()}|${prop.city.toLowerCase().trim()}`;
+			existingPropertiesMap.set(key, prop.id);
+		}
+	});
 	
 	for (let rowIndex = 0; rowIndex < dataRows.length; rowIndex++) {
 		const row = dataRows[rowIndex];
@@ -392,42 +411,102 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 			headers.forEach((header, index) => {
 				data[header] = row[index] || '';
 			});
-			
+
+			// Validate required fields
+			const requiredFields = {
+				property_name: 'Property Name',
+				market: 'Market',
+				floor_plan_name: 'Floor Plan Name',
+				beds: 'Beds',
+				baths: 'Baths',
+				market_rent: 'Market Rent',
+				starting_at: 'Starting At',
+				unit_number: 'Unit Number',
+				available_from: 'Available From'
+			};
+
+			const missingFields = [];
+			for (const [field, label] of Object.entries(requiredFields)) {
+				if (!data[field] || data[field].trim() === '') {
+					missingFields.push(label);
+				}
+			}
+
+			if (missingFields.length > 0) {
+				throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
+			}
+
+			// Validate numeric fields
+			const numericFields = {
+				beds: 'Beds',
+				baths: 'Baths',
+				market_rent: 'Market Rent',
+				starting_at: 'Starting At'
+			};
+
+			for (const [field, label] of Object.entries(numericFields)) {
+				const value = data[field].trim();
+				if (value && isNaN(Number(value))) {
+					throw new Error(`${label} must be a number (got: "${value}")`);
+				}
+			}
+
 			// 1. Create or get property
 			let propertyId = propertyCache.get(data.property_name);
-			
-			if (!propertyId) {
-				// Create new property
-				const now = new Date().toISOString();
-				const propertyData = {
-					id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique VARCHAR id
-					community_name: data.property_name,
-					name: data.property_name, // For backward compatibility
-					market: data.market,
-					city: data.city || data.market,
-					street_address: data.street_address,
-					address: data.street_address || null, // For backward compatibility
-					zip_code: data.zip_code || null,
-					phone: data.phone || null,
-					contact_email: data.contact_email || null,
-					leasing_link: data.leasing_link || null,
-					neighborhood: data.neighborhood || null,
-					description: data.description || null,
-					amenities: data.amenities ? data.amenities.split('|').map(a => a.trim()) : [],
-					is_pumi: data.is_pumi === 'true',
-					commission_pct: data.commission_pct ? parseFloat(data.commission_pct) : null,
-					map_lat: data.map_lat ? parseFloat(data.map_lat) : null,
-					map_lng: data.map_lng ? parseFloat(data.map_lng) : null,
-					lat: data.map_lat ? parseFloat(data.map_lat) : null, // For backward compatibility
-					lng: data.map_lng ? parseFloat(data.map_lng) : null, // For backward compatibility
-					created_at: now,
-					updated_at: now
-				};
 
-				const property = await SupabaseAPI.createProperty(propertyData);
-				propertyId = property.id;
-				propertyCache.set(data.property_name, propertyId);
-				result.propertiesCreated++;
+			if (!propertyId) {
+				// Check if property already exists in database
+				const nameKey = data.property_name.toLowerCase().trim();
+				const addressKey = data.street_address && data.city
+					? `${data.street_address.toLowerCase().trim()}|${(data.city || data.market).toLowerCase().trim()}`
+					: null;
+
+				// Check by name first, then by address
+				propertyId = existingPropertiesMap.get(nameKey) ||
+							 (addressKey ? existingPropertiesMap.get(addressKey) : null);
+
+				if (propertyId) {
+					// Property already exists - skip creation
+					propertyCache.set(data.property_name, propertyId);
+					result.propertiesSkipped++;
+				} else {
+					// Create new property
+					const now = new Date().toISOString();
+					const propertyData = {
+						id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique VARCHAR id
+						community_name: data.property_name,
+						name: data.property_name, // For backward compatibility
+						market: data.market,
+						city: data.city || data.market,
+						street_address: data.street_address || null,
+						address: data.street_address || null, // For backward compatibility
+						zip_code: data.zip_code || null,
+						phone: data.phone || null,
+						contact_email: data.contact_email || null,
+						leasing_link: data.leasing_link || null,
+						neighborhood: data.neighborhood || null,
+						description: data.description || null,
+						amenities: data.amenities ? data.amenities.split('|').map(a => a.trim()) : [],
+						is_pumi: data.is_pumi === 'true',
+						commission_pct: data.commission_pct ? parseFloat(data.commission_pct) : null,
+						map_lat: data.map_lat ? parseFloat(data.map_lat) : null,
+						map_lng: data.map_lng ? parseFloat(data.map_lng) : null,
+						lat: data.map_lat ? parseFloat(data.map_lat) : null, // For backward compatibility
+						lng: data.map_lng ? parseFloat(data.map_lng) : null, // For backward compatibility
+						created_at: now,
+						updated_at: now
+					};
+
+					const property = await SupabaseAPI.createProperty(propertyData);
+					propertyId = property.id;
+					propertyCache.set(data.property_name, propertyId);
+					// Also add to existing properties map to prevent duplicates within same import
+					existingPropertiesMap.set(nameKey, propertyId);
+					if (addressKey) {
+						existingPropertiesMap.set(addressKey, propertyId);
+					}
+					result.propertiesCreated++;
+				}
 			}
 			
 			// 2. Create or get floor plan
