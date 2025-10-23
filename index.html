@@ -1129,15 +1129,17 @@
 					<!-- Change Password Section -->
 					<h4 style="margin-bottom: 15px; color: #333;">Change Password</h4>
 
-					<div class="field">
+					<div class="field password-field" id="newPasswordField">
 						<label for="profileNewPassword">New Password</label>
 						<input type="password" id="profileNewPassword" placeholder="Leave blank to keep current password">
 						<small style="color: #666;">Minimum 6 characters</small>
+						<div class="password-error">Password must be at least 6 characters</div>
 					</div>
 
-					<div class="field">
+					<div class="field password-field" id="confirmPasswordField">
 						<label for="profileConfirmPassword">Confirm New Password</label>
 						<input type="password" id="profileConfirmPassword" placeholder="Confirm new password">
+						<div class="password-error">Passwords do not match</div>
 					</div>
 
 					<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
@@ -1146,11 +1148,11 @@
 					<h4 style="margin-bottom: 15px; color: #333;">Notification Preferences</h4>
 
 					<div class="field">
-						<label style="display: flex; align-items: center; cursor: pointer;">
-							<input type="checkbox" id="profileEmailNotifications" style="margin-right: 10px;">
+						<label class="checkbox-label">
+							<input type="checkbox" id="profileEmailNotifications">
 							<span>Receive email notifications for lead activities</span>
 						</label>
-						<small style="color: #666; margin-left: 26px; display: block; margin-top: 5px;">
+						<small style="color: #666; display: block; margin-top: 5px;">
 							Get notified when leads are assigned, updated, or require attention
 						</small>
 					</div>

@@ -770,16 +770,21 @@ export function setupAllEventListeners(deps) {
 					// Update display name
 					await updateProfile({ toast });
 
-					// Update password if provided
-					const newPassword = document.getElementById('profileNewPassword').value;
-					if (newPassword) {
-						await changePassword({ toast });
-					}
-
 					// Update notification preferences
 					await updateNotificationPreferences({ toast });
 
-					// Close modal
+					// Update password if provided (this must be last as it will sign out the user)
+					const newPassword = document.getElementById('profileNewPassword').value;
+					if (newPassword) {
+						const passwordChanged = await changePassword({ toast });
+						// If password was changed, the changePassword function will handle sign out
+						// Don't close modal or do anything else - user will be redirected to login
+						if (passwordChanged) {
+							return;
+						}
+					}
+
+					// Close modal (only if password wasn't changed)
 					hideModal('profileModal');
 
 				} catch (error) {
