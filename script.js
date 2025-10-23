@@ -88,41 +88,8 @@ let api, renderLeads, renderSpecials;
 // ============================================================================
 // GLOBAL FUNCTIONS (Keep for backward compatibility)
 // ============================================================================
-// Note: These are now imported from modules above, but we keep them
-// accessible globally for functions that expect them in global scope
-
-// ---- Lead Forms ----
-// Wrapper function for saveNewLead - calls module function
-async function saveNewLead() {
-	await Leads.saveNewLead({
-		SupabaseAPI,
-		state,
-		toast,
-		hideModal,
-		renderLeads
-	});
-}
-
-// ---- Specials Actions ----
-// Wrapper function for saveNewSpecial - calls module function
-function saveNewSpecial() {
-	Properties.saveNewSpecial({
-		api,
-		toast,
-		hideModal,
-		renderSpecials,
-		state
-	});
-}
-
-// Wrapper function for deleteSpecial - calls module function
-function deleteSpecial(specialId) {
-	Properties.deleteSpecial(specialId, {
-		api,
-		toast,
-		renderSpecials
-	});
-}
+// Note: These wrapper functions are defined inside the IIFE below
+// where they have access to renderLeads, renderSpecials, etc.
 
 // Note: mockUsers and mockAuditLog are imported from src/state/mockData.js
 
@@ -252,6 +219,19 @@ function deleteSpecial(specialId) {
 			openLeadNotesModal,
 			openActivityLogModal,
 			agents: realAgents
+		});
+	}
+
+	// ---- Lead Forms ----
+	// Wrapper function for saveNewLead - calls module function
+	// Must be inside IIFE to access renderLeads
+	window.saveNewLead = async function() {
+		await Leads.saveNewLead({
+			SupabaseAPI,
+			state,
+			toast,
+			hideModal,
+			renderLeads
 		});
 	}
 
@@ -502,6 +482,26 @@ function createLeadTable(lead, isExpanded = false) {
 			api,
 			formatDate,
 			updateSortHeaders
+		});
+	}
+
+	// ---- Specials Actions ----
+	// Wrapper functions for specials - must be inside IIFE to access renderSpecials
+	window.saveNewSpecial = function() {
+		Properties.saveNewSpecial({
+			api,
+			toast,
+			hideModal,
+			renderSpecials,
+			state
+		});
+	}
+
+	window.deleteSpecial = function(specialId) {
+		Properties.deleteSpecial(specialId, {
+			api,
+			toast,
+			renderSpecials
 		});
 	}
 
