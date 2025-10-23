@@ -291,14 +291,15 @@ export async function importCSV(options) {
 		const result = await processCSVImport(headers, dataRows, SupabaseAPI);
 		
 		// Show results
-		const { propertiesCreated, propertiesSkipped, floorPlansCreated, unitsCreated, errors } = result;
-		
+		const { propertiesCreated, propertiesSkipped, floorPlansCreated, unitsCreated, unitsSkipped, errors } = result;
+
 		if (errors.length > 0) {
 			console.error('Import errors:', errors);
 			toast(`Import completed with ${errors.length} error(s). Check console for details.`, 'warning');
 		} else {
-			const skipMsg = propertiesSkipped > 0 ? `, skipped ${propertiesSkipped} duplicate${propertiesSkipped > 1 ? 's' : ''}` : '';
-			toast(`✅ Import successful! Created ${propertiesCreated} properties${skipMsg}, ${floorPlansCreated} floor plans, ${unitsCreated} units`, 'success');
+			const propSkipMsg = propertiesSkipped > 0 ? `, skipped ${propertiesSkipped} duplicate propert${propertiesSkipped > 1 ? 'ies' : 'y'}` : '';
+			const unitSkipMsg = unitsSkipped > 0 ? `, skipped ${unitsSkipped} duplicate unit${unitsSkipped > 1 ? 's' : ''}` : '';
+			toast(`✅ Import successful! Created ${propertiesCreated} properties${propSkipMsg}, ${floorPlansCreated} floor plans, ${unitsCreated} units${unitSkipMsg}`, 'success');
 		}
 		
 		// Refresh listings
@@ -377,12 +378,14 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 		propertiesSkipped: 0,
 		floorPlansCreated: 0,
 		unitsCreated: 0,
+		unitsSkipped: 0,
 		errors: []
 	};
 
 	// Track created properties and floor plans to avoid duplicates
 	const propertyCache = new Map(); // key: property_name, value: property_id
 	const floorPlanCache = new Map(); // key: property_id|floor_plan_name, value: floor_plan_id
+	const unitCache = new Set(); // key: property_id|unit_number
 
 	// Fetch existing properties to check for duplicates
 	const existingProperties = await SupabaseAPI.getProperties();
@@ -398,6 +401,16 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 		if (prop.street_address && prop.city) {
 			const key = `${prop.street_address.toLowerCase().trim()}|${prop.city.toLowerCase().trim()}`;
 			existingPropertiesMap.set(key, prop.id);
+		}
+	});
+
+	// Fetch existing units to check for duplicates
+	const existingUnits = await SupabaseAPI.getUnits({});
+	const existingUnitsMap = new Set();
+	existingUnits.forEach(unit => {
+		if (unit.property_id && unit.unit_number) {
+			const key = `${unit.property_id}|${unit.unit_number}`;
+			existingUnitsMap.add(key);
 		}
 	});
 	
@@ -449,6 +462,12 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 				if (value && isNaN(Number(value))) {
 					throw new Error(`${label} must be a number (got: "${value}")`);
 				}
+			}
+
+			// Validate date format for available_from (must be YYYY-MM-DD)
+			const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+			if (!dateRegex.test(data.available_from.trim())) {
+				throw new Error(`Available From must be in YYYY-MM-DD format (got: "${data.available_from}"). Examples: "2025-11-01", "2025-12-15"`);
 			}
 
 			// 1. Create or get property
@@ -535,22 +554,30 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 				result.floorPlansCreated++;
 			}
 			
-			// 3. Create unit
-			const unitData = {
-				floor_plan_id: floorPlanId,
-				property_id: propertyId,
-				unit_number: data.unit_number,
-				floor: data.floor ? parseInt(data.floor) : null,
-				rent: data.unit_rent ? parseInt(data.unit_rent) : null,
-				market_rent: data.unit_market_rent ? parseInt(data.unit_market_rent) : null,
-				available_from: data.available_from,
-				is_available: true,
-				status: data.unit_status || 'available',
-				notes: data.unit_notes || null
-			};
-			
-			await SupabaseAPI.createUnit(unitData);
-			result.unitsCreated++;
+			// 3. Create unit (check for duplicates first)
+			const unitKey = `${propertyId}|${data.unit_number}`;
+
+			if (unitCache.has(unitKey) || existingUnitsMap.has(unitKey)) {
+				// Unit already exists - skip creation
+				result.unitsSkipped++;
+			} else {
+				const unitData = {
+					floor_plan_id: floorPlanId,
+					property_id: propertyId,
+					unit_number: data.unit_number,
+					floor: data.floor ? parseInt(data.floor) : null,
+					rent: data.unit_rent ? parseInt(data.unit_rent) : null,
+					market_rent: data.unit_market_rent ? parseInt(data.unit_market_rent) : null,
+					available_from: data.available_from,
+					is_available: true,
+					status: data.unit_status || 'available',
+					notes: data.unit_notes || null
+				};
+
+				await SupabaseAPI.createUnit(unitData);
+				unitCache.add(unitKey); // Track this unit to prevent duplicates within same import
+				result.unitsCreated++;
+			}
 			
 		} catch (error) {
 			result.errors.push({
