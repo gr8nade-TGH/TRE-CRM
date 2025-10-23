@@ -193,24 +193,9 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// ---- Agent Statistics ----
+	// Wrapper function for getAgentStats - calls module function
 	function getAgentStats(agentId) {
-		const leads = state.leads || [];
-		const assignedLeads = leads.filter(l => l.assigned_agent_id === agentId);
-		const generatedLeads = leads.filter(l => l.found_by_agent_id === agentId);
-		const now = new Date();
-		const ninetyDaysAgo = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-
-		// Mock closed leads (in real app, this would come from a separate table)
-		const closedLeads = assignedLeads.filter(l => {
-			const submittedDate = new Date(l.submitted_at);
-			return submittedDate >= ninetyDaysAgo && Math.random() > 0.7; // 30% chance of being "closed"
-		});
-
-		return {
-			generated: generatedLeads.length,
-			assigned: assignedLeads.length,
-			closed: closedLeads.length
-		};
+		return Agents.getAgentStats(agentId, { leads: state.leads || [] });
 	}
 
 	// ---- Real API Layer ----
@@ -471,44 +456,14 @@ function createLeadTable(lead, isExpanded = false) {
 		});
 	}
 
+	// ---- Bug Actions ----
+	// Wrapper functions for bug actions - calls module functions
 	async function saveBugChanges(bugId) {
-		try {
-			const statusSelect = document.querySelector(`.bug-status-select[data-bug-id="${bugId}"]`);
-			const prioritySelect = document.querySelector(`.bug-priority-select[data-bug-id="${bugId}"]`);
-
-			if (!statusSelect || !prioritySelect) {
-				toast('Could not find bug fields to update', 'error');
-				return;
-			}
-
-			const updates = {
-				status: statusSelect.value,
-				priority: prioritySelect.value,
-				updated_at: new Date().toISOString()
-			};
-
-			await api.updateBug(bugId, updates);
-			toast('Bug updated successfully!', 'success');
-
-			// Hide save button
-			const saveBtn = document.querySelector(`.save-bug[data-id="${bugId}"]`);
-			if (saveBtn) {
-				saveBtn.style.display = 'none';
-			}
-
-			// Refresh the bugs table
-			renderBugs();
-		} catch (error) {
-			toast('Error updating bug: ' + error.message, 'error');
-		}
+		await Properties.saveBugChanges(bugId, { api, toast, renderBugs });
 	}
 
 	function handleBugFieldChange(bugId) {
-		// Show save button when fields change
-		const saveBtn = document.querySelector(`.save-bug[data-id="${bugId}"]`);
-		if (saveBtn) {
-			saveBtn.style.display = 'inline-block';
-		}
+		Properties.handleBugFieldChange(bugId);
 	}
 
 	// Wrapper function for renderLeadsTable - calls module function

@@ -5,12 +5,14 @@ import * as PropertiesRendering from './properties-rendering.js';
 import * as SpecialsRendering from './specials-rendering.js';
 import * as SpecialsActions from './specials-actions.js';
 import * as BugsRendering from './bugs-rendering.js';
+import * as BugsActions from './bugs-actions.js';
 
 export {
 	PropertiesRendering,
 	SpecialsRendering,
 	SpecialsActions,
-	BugsRendering
+	BugsRendering,
+	BugsActions
 };
 
 // Re-export individual functions for convenience
@@ -43,4 +45,9 @@ export {
 	updateBugFlagVisibility,
 	showBugDetails
 } from './bugs-rendering.js';
+
+export {
+	saveBugChanges,
+	handleBugFieldChange
+} from './bugs-actions.js';
 
