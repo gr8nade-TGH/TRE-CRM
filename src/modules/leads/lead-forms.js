@@ -77,9 +77,9 @@ export async function saveNewLead(options) {
 
 		const leadId = data[0].id;
 
-		// Log the lead creation activity
+		// Log the lead creation activity using the SupabaseAPI module
 		try {
-			const activityData = {
+			await SupabaseAPI.createLeadActivity({
 				lead_id: leadId,
 				activity_type: 'lead_created',
 				description: `Lead added through CRM by ${state.userName || 'Unknown'}`,
@@ -92,20 +92,11 @@ export async function saveNewLead(options) {
 				},
 				performed_by: null, // Don't use state.agentId - it's auth UUID, not public.users.id
 				performed_by_name: state.userName || 'Unknown'
-			};
-
-			const { error: activityError } = await window.supabase
-				.from('lead_activities')
-				.insert([activityData]);
-
-			if (activityError) {
-				console.error('❌ Error logging activity:', activityError);
-				// Don't fail the whole operation if activity logging fails
-			} else {
-				console.log('✅ Activity logged successfully');
-			}
+			});
+			console.log('✅ Activity logged successfully');
 		} catch (activityError) {
 			console.error('⚠️ Failed to log activity:', activityError);
+			// Don't fail the whole operation if activity logging fails
 		}
 
 		// If there are notes, add them to lead_notes table
