@@ -43,6 +43,7 @@ import { sortTable as sortTableUtil } from './src/utils/table-sorting.js';
 import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase-builder.js';
 import { getCurrentStepFromActivities as getCurrentStepUtil, getStepLabel as getStepLabelUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
 import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentChangesUtil } from './src/utils/agent-drawer.js';
+import { geocodeAddress } from './src/utils/geocoding.js';
 
 // Import event listeners setup
 import { setupAllEventListeners } from './src/events/dom-event-listeners.js';
@@ -895,38 +896,7 @@ function createLeadTable(lead, isExpanded = false) {
 	}
 
 	// ---- Geocoding Helper ----
-	async function geocodeAddress(address, city, state = 'TX', zipCode) {
-		try {
-			// Build full address string
-			const fullAddress = `${address}, ${city}, ${state} ${zipCode}`;
-			const encodedAddress = encodeURIComponent(fullAddress);
-
-			console.log('🗺️ Geocoding:', fullAddress);
-
-			// Use Mapbox Geocoding API
-			const response = await fetch(
-				`https://api.mapbox.com/geocoding/v5/mapbox.places/${encodedAddress}.json?access_token=pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg&limit=1`
-			);
-
-			if (!response.ok) {
-				throw new Error('Geocoding failed');
-			}
-
-			const data = await response.json();
-
-			if (data.features && data.features.length > 0) {
-				const [lng, lat] = data.features[0].center;
-				console.log('✅ Geocoded address:', fullAddress, 'to', { lat, lng });
-				return { lat, lng };
-			} else {
-				console.warn('⚠️ No geocoding results for:', fullAddress);
-				return null;
-			}
-		} catch (error) {
-			console.error('❌ Geocoding error:', error);
-			return null;
-		}
-	}
+	// Moved to src/utils/geocoding.js for reusability
 
 	// ---- Add Listing Modal Functions ----
 	function openAddListingModal() {

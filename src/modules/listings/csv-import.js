@@ -14,6 +14,8 @@
  * All other fields are optional and can be left empty.
  */
 
+import { geocodeAddress } from '../../utils/geocoding.js';
+
 /**
  * Generate and download CSV template
  * @param {Object} options - Options object
@@ -288,10 +290,10 @@ export async function importCSV(options) {
 		
 		// Process import
 		toast('Importing CSV data...', 'info');
-		const result = await processCSVImport(headers, dataRows, SupabaseAPI);
-		
+		const result = await processCSVImport(headers, dataRows, SupabaseAPI, toast);
+
 		// Show results
-		const { propertiesCreated, propertiesSkipped, floorPlansCreated, unitsCreated, unitsSkipped, errors } = result;
+		const { propertiesCreated, propertiesSkipped, floorPlansCreated, unitsCreated, unitsSkipped, geocoded, geocodeFailed, errors } = result;
 
 		if (errors.length > 0) {
 			console.error('Import errors:', errors);
@@ -299,7 +301,9 @@ export async function importCSV(options) {
 		} else {
 			const propSkipMsg = propertiesSkipped > 0 ? `, skipped ${propertiesSkipped} duplicate propert${propertiesSkipped > 1 ? 'ies' : 'y'}` : '';
 			const unitSkipMsg = unitsSkipped > 0 ? `, skipped ${unitsSkipped} duplicate unit${unitsSkipped > 1 ? 's' : ''}` : '';
-			toast(`✅ Import successful! Created ${propertiesCreated} properties${propSkipMsg}, ${floorPlansCreated} floor plans, ${unitsCreated} units${unitSkipMsg}`, 'success');
+			const geocodeMsg = geocoded > 0 ? `, geocoded ${geocoded} address${geocoded > 1 ? 'es' : ''}` : '';
+			const geocodeFailMsg = geocodeFailed > 0 ? ` (${geocodeFailed} failed)` : '';
+			toast(`✅ Import successful! Created ${propertiesCreated} properties${propSkipMsg}${geocodeMsg}${geocodeFailMsg}, ${floorPlansCreated} floor plans, ${unitsCreated} units${unitSkipMsg}`, 'success');
 		}
 		
 		// Refresh listings
@@ -372,13 +376,15 @@ function parseCSV(text) {
  * @param {Object} SupabaseAPI - Supabase API module
  * @returns {Promise<Object>} - Import results
  */
-async function processCSVImport(headers, dataRows, SupabaseAPI) {
+async function processCSVImport(headers, dataRows, SupabaseAPI, toast) {
 	const result = {
 		propertiesCreated: 0,
 		propertiesSkipped: 0,
 		floorPlansCreated: 0,
 		unitsCreated: 0,
 		unitsSkipped: 0,
+		geocoded: 0,
+		geocodeFailed: 0,
 		errors: []
 	};
 
@@ -491,6 +497,38 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 				} else {
 					// Create new property
 					const now = new Date().toISOString();
+
+					// Geocode address if coordinates not provided
+					let lat = data.map_lat ? parseFloat(data.map_lat) : null;
+					let lng = data.map_lng ? parseFloat(data.map_lng) : null;
+
+					if ((!lat || !lng) && data.street_address && data.city) {
+						console.log(`🗺️ Geocoding row ${rowNum}: ${data.street_address}, ${data.city}`);
+
+						// Show progress toast
+						if (toast) {
+							toast(`Geocoding addresses... (${result.geocoded + result.geocodeFailed + 1}/${dataRows.length})`, 'info');
+						}
+
+						const coords = await geocodeAddress(
+							data.street_address,
+							data.city,
+							'TX', // Default to Texas, could use data.state if available
+							data.zip_code || ''
+						);
+
+						if (coords) {
+							lat = coords.lat;
+							lng = coords.lng;
+							result.geocoded++;
+							console.log(`✅ Geocoded row ${rowNum}:`, coords);
+						} else {
+							result.geocodeFailed++;
+							console.warn(`⚠️ Could not geocode address for row ${rowNum}`);
+							// Still create property, just without coordinates
+						}
+					}
+
 					const propertyData = {
 						id: `prop_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // Generate unique VARCHAR id
 						community_name: data.property_name,
@@ -508,10 +546,10 @@ async function processCSVImport(headers, dataRows, SupabaseAPI) {
 						amenities: data.amenities ? data.amenities.split('|').map(a => a.trim()) : [],
 						is_pumi: data.is_pumi === 'true',
 						commission_pct: data.commission_pct ? parseFloat(data.commission_pct) : null,
-						map_lat: data.map_lat ? parseFloat(data.map_lat) : null,
-						map_lng: data.map_lng ? parseFloat(data.map_lng) : null,
-						lat: data.map_lat ? parseFloat(data.map_lat) : null, // For backward compatibility
-						lng: data.map_lng ? parseFloat(data.map_lng) : null, // For backward compatibility
+						map_lat: lat,
+						map_lng: lng,
+						lat: lat, // For backward compatibility
+						lng: lng, // For backward compatibility
 						created_at: now,
 						updated_at: now
 					};
