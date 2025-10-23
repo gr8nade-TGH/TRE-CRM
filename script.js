@@ -660,7 +660,7 @@ function createLeadTable(lead, isExpanded = false) {
 			openInterestedLeads,
 			openActivityLogModal,
 			openPropertyNotesModal,
-			map,
+			map: Listings.getMap(), // Get map instance from module
 			clearMarkers,
 			addMarker,
 			toast
