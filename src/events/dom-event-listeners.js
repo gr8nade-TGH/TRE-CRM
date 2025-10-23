@@ -93,14 +93,18 @@ export function setupAllEventListeners(deps) {
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
 		bulkDeleteListings,
-		
+
+		// CSV import/export functions
+		downloadCSVTemplate,
+		importCSV,
+
 		// Bug tracker functions
 		submitBugReport,
 		saveBugChanges,
 		addBugFlags,
 		handleBugFieldChange,
 		showBugDetails,
-		
+
 		// Showcase functions
 		sendBuildShowcase,
 		sendShowcase,
