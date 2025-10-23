@@ -45,6 +45,7 @@ export async function saveNewLead(options) {
 
 	// Create new lead object for Supabase
 	// Note: 'notes' field doesn't exist in leads table - notes are stored in separate lead_notes table
+	const now = new Date().toISOString();
 	const newLead = {
 		name: name,
 		email: email,
@@ -55,9 +56,10 @@ export async function saveNewLead(options) {
 		preferences: preferences, // Send as object, not string - Supabase JSONB will handle it
 		assigned_agent_id: state.agentId || null,
 		found_by_agent_id: state.agentId || null,
-		submitted_at: new Date().toISOString(),
-		created_at: new Date().toISOString(),
-		updated_at: new Date().toISOString()
+		submitted_at: now,
+		created_at: now,
+		updated_at: now,
+		last_activity_at: now // Set last_activity_at to prevent "5 hours ago" timezone issue
 	};
 
 	try {
