@@ -84,8 +84,8 @@ export async function renderListings(options) {
 					// Get floor plans for this property
 					const floorPlans = await SupabaseAPI.getFloorPlans(prop.id);
 
-					// Get units for this property
-					const units = await SupabaseAPI.getUnits({ propertyId: prop.id });
+					// Get units for this property (include inactive units - isActive: null means get all)
+					const units = await SupabaseAPI.getUnits({ propertyId: prop.id, isActive: null });
 
 					// Fetch notes count for each unit
 					const unitsWithNotes = await Promise.all(
@@ -317,14 +317,28 @@ export async function renderListings(options) {
 		tbody.appendChild(tr);
 
 		// Add unit rows (initially hidden)
+		// Sort units: active units first, then inactive units
 		if (hasUnits) {
-			prop.units.forEach(unit => {
+			const activeUnits = prop.units.filter(u => u.is_active !== false);
+			const inactiveUnits = prop.units.filter(u => u.is_active === false);
+			const sortedUnits = [...activeUnits, ...inactiveUnits];
+
+			sortedUnits.forEach(unit => {
+				const isInactive = unit.is_active === false;
+
 				const unitTr = document.createElement('tr');
 				unitTr.classList.add('unit-row');
 				unitTr.dataset.parentPropertyId = prop.id;
 				unitTr.dataset.unitId = unit.id;
 				unitTr.style.display = 'none'; // Initially hidden
-				unitTr.style.backgroundColor = '#f9fafb'; // Light gray background
+
+				// Visual distinction for inactive units
+				if (isInactive) {
+					unitTr.style.backgroundColor = '#f3f4f6'; // Darker gray for inactive
+					unitTr.style.opacity = '0.6'; // Slightly faded
+				} else {
+					unitTr.style.backgroundColor = '#f9fafb'; // Light gray background
+				}
 
 				// Get unit details
 				const floorPlan = unit.floor_plan || {};
@@ -337,11 +351,12 @@ export async function renderListings(options) {
 
 				unitTr.innerHTML = `
 					<td style="padding-left: 40px;">
-						<input type="checkbox" class="unit-checkbox" data-unit-id="${unit.id}">
+						<input type="checkbox" class="unit-checkbox" data-unit-id="${unit.id}" ${isInactive ? 'disabled' : ''}>
 					</td>
 					<td>
 						<div class="lead-name" style="font-size: 0.9em;">
 							<span style="color: #6b7280;">Unit ${unit.unit_number}</span>
+							${isInactive ? '<span class="badge" style="background: #9ca3af; color: #fff;">Off Market</span>' : ''}
 							${unit.status === 'pending' ? '<span class="badge" style="background: #fbbf24; color: #000;">Pending</span>' : ''}
 							${unit.status === 'leased' ? '<span class="badge" style="background: #ef4444; color: #fff;">Leased</span>' : ''}
 						</div>

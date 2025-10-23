@@ -1655,17 +1655,23 @@
 				</div>
 
 				<div class="field">
-					<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+					<label class="checkbox-label" title="Unit is physically available for leasing (not currently leased)">
 						<input type="checkbox" id="configUnitIsAvailable">
 						<span>Unit is available for leasing</span>
 					</label>
+					<div class="field-hint" style="margin-top: 4px; font-size: 0.85em; color: #6b7280;">
+						Physical availability - uncheck if unit is currently leased
+					</div>
 				</div>
 
 				<div class="field">
-					<label style="display: flex; align-items: center; gap: 10px; cursor: pointer;">
+					<label class="checkbox-label" title="Unit is visible to agents and can be added to showcases">
 						<input type="checkbox" id="configUnitIsActive">
 						<span>Unit is active (on market)</span>
 					</label>
+					<div class="field-hint" style="margin-top: 4px; font-size: 0.85em; color: #6b7280;">
+						Market visibility - uncheck to hide from showcases (unit stays in list but grayed out)
+					</div>
 				</div>
 
 				<div class="field">
