@@ -1,6 +1,17 @@
 /**
  * CSV Import Module
  * Handles CSV template generation and bulk import for Properties, Floor Plans, and Units
+ *
+ * REQUIRED FIELDS (9 total):
+ * - Properties: property_name, market (2 fields)
+ * - Floor Plans: floor_plan_name, beds, baths, market_rent, starting_at (5 fields)
+ * - Units: unit_number, available_from (2 fields)
+ *
+ * RECOMMENDED FIELDS (makes data more useful):
+ * - Properties: city, street_address
+ * - Floor Plans: sqft
+ *
+ * All other fields are optional and can be left empty.
  */
 
 /**
@@ -13,44 +24,51 @@ export function downloadCSVTemplate(options) {
 	
 	// CSV Template with all required and optional fields
 	const headers = [
-		// Property fields (required)
-		'property_name',
-		'market',
+		// ===== PROPERTY FIELDS =====
+		// Required (minimum 2)
+		'property_name',  // REQUIRED
+		'market',         // REQUIRED
+
+		// Recommended (makes data useful)
 		'city',
 		'street_address',
+
+		// Optional
 		'zip_code',
 		'phone',
 		'contact_email',
 		'leasing_link',
-		
-		// Property fields (optional)
 		'neighborhood',
 		'description',
-		'amenities', // Comma-separated list
+		'amenities', // Pipe-separated list (e.g., "Pool|Gym|Parking")
 		'is_pumi', // true/false
 		'commission_pct',
 		'map_lat',
 		'map_lng',
-		
-		// Floor Plan fields (required)
-		'floor_plan_name',
-		'beds',
-		'baths',
+
+		// ===== FLOOR PLAN FIELDS =====
+		// Required (5 fields)
+		'floor_plan_name',  // REQUIRED
+		'beds',             // REQUIRED
+		'baths',            // REQUIRED
+		'market_rent',      // REQUIRED
+		'starting_at',      // REQUIRED
+
+		// Recommended
 		'sqft',
-		'market_rent',
-		'starting_at',
-		
-		// Floor Plan fields (optional - concessions)
+
+		// Optional - Concessions
 		'has_concession', // true/false
 		'concession_type', // free_weeks, fee_waiver, dollar_off, percentage_off
 		'concession_value', // e.g., "2 weeks free", "$500 off"
 		'concession_description',
-		
-		// Unit fields (required)
-		'unit_number',
-		'available_from', // YYYY-MM-DD format
-		
-		// Unit fields (optional)
+
+		// ===== UNIT FIELDS =====
+		// Required (2 fields)
+		'unit_number',      // REQUIRED
+		'available_from',   // REQUIRED (YYYY-MM-DD format)
+
+		// Optional
 		'floor',
 		'unit_rent', // Override floor plan rent if needed
 		'unit_market_rent', // Override floor plan market rent if needed
@@ -115,7 +133,7 @@ export function downloadCSVTemplate(options) {
 			'512-555-0100',
 			'leasing@madison.com',
 			'https://madison.com/apply',
-			
+
 			// Property optional
 			'Downtown',
 			'Luxury apartments in the heart of downtown',
@@ -124,7 +142,7 @@ export function downloadCSVTemplate(options) {
 			'3.5',
 			'30.2672',
 			'-97.7431',
-			
+
 			// Floor Plan
 			'B2 - 2x2 Deluxe',
 			'2',
@@ -132,23 +150,56 @@ export function downloadCSVTemplate(options) {
 			'1100',
 			'2200',
 			'2000',
-			
+
 			// Concessions
 			'true',
 			'dollar_off',
 			'$500 off',
 			'$500 off first month rent',
-			
+
 			// Unit
 			'205',
 			'2025-11-15',
-			
+
 			// Unit optional
 			'2',
 			'1950', // Custom rent for this unit
 			'2200',
 			'available',
 			'Recently renovated'
+		],
+		[
+			// MINIMAL EXAMPLE - Only required fields filled in
+			// Property (required only)
+			'The Oaks Apartments',  // property_name
+			'Dallas',               // market
+
+			// Property (recommended - empty)
+			'',  // city (will default to market)
+			'',  // street_address
+
+			// Property (optional - all empty)
+			'', '', '', '', '', '', '', '', '', '', '',
+
+			// Floor Plan (required)
+			'Studio',  // floor_plan_name
+			'0',       // beds
+			'1.0',     // baths
+			'1200',    // market_rent
+			'1100',    // starting_at
+
+			// Floor Plan (recommended - empty)
+			'',  // sqft
+
+			// Floor Plan (optional concessions - all empty)
+			'', '', '', '',
+
+			// Unit (required)
+			'S1',          // unit_number
+			'2025-12-01',  // available_from
+
+			// Unit (optional - all empty)
+			'', '', '', '', ''
 		]
 	];
 	
@@ -205,13 +256,20 @@ export async function importCSV(options) {
 			return;
 		}
 		
-		// Validate headers
+		// Validate headers - only check truly required fields
 		const headers = rows[0];
-		const requiredHeaders = ['property_name', 'market', 'floor_plan_name', 'beds', 'baths', 'market_rent', 'starting_at', 'unit_number', 'available_from'];
+		const requiredHeaders = [
+			// Property (2 required)
+			'property_name', 'market',
+			// Floor Plan (5 required)
+			'floor_plan_name', 'beds', 'baths', 'market_rent', 'starting_at',
+			// Unit (2 required)
+			'unit_number', 'available_from'
+		];
 		const missingHeaders = requiredHeaders.filter(h => !headers.includes(h));
-		
+
 		if (missingHeaders.length > 0) {
-			toast(`Missing required columns: ${missingHeaders.join(', ')}`, 'error');
+			toast(`❌ Missing required columns: ${missingHeaders.join(', ')}`, 'error');
 			return;
 		}
 		
