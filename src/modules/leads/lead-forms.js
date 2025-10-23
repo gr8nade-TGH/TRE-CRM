@@ -44,6 +44,7 @@ export async function saveNewLead(options) {
 	};
 
 	// Create new lead object for Supabase
+	// Note: 'notes' field doesn't exist in leads table - notes are stored in separate lead_notes table
 	const newLead = {
 		name: name,
 		email: email,
@@ -51,7 +52,6 @@ export async function saveNewLead(options) {
 		status: status,
 		health_status: health,
 		source: source,
-		notes: notes,
 		preferences: preferences, // Send as object, not string - Supabase JSONB will handle it
 		assigned_agent_id: state.agentId || null,
 		found_by_agent_id: state.agentId || null,
@@ -73,6 +73,25 @@ export async function saveNewLead(options) {
 		}
 
 		console.log('✅ Lead created:', data);
+
+		// If there are notes, add them to lead_notes table
+		if (notes && notes.trim() && data && data[0]) {
+			const leadId = data[0].id;
+			const { error: notesError } = await window.supabase
+				.from('lead_notes')
+				.insert([{
+					lead_id: leadId,
+					content: notes,
+					author_id: state.agentId,
+					author_name: state.userName || 'Unknown'
+				}]);
+
+			if (notesError) {
+				console.error('❌ Error adding note:', notesError);
+				// Don't fail the whole operation if note fails
+			}
+		}
+
 		toast('Lead added successfully!', 'success');
 		hideModal('addLeadModal');
 
