@@ -63,6 +63,8 @@ export function setupAllEventListeners(deps) {
 		savePropertyContact,
 		editPropertyContact,
 		saveNewSpecial,
+		saveEditedSpecial,
+		deleteEditedSpecial,
 		deleteSpecial,
 		createListing,
 		addPropertyNote,
@@ -948,6 +950,36 @@ export function setupAllEventListeners(deps) {
 		if (saveAddSpecialBtn) {
 			saveAddSpecialBtn.addEventListener('click', () => {
 				saveNewSpecial();
+			});
+		}
+
+		// Edit Special Modal
+		const closeEditSpecialModal = document.getElementById('closeEditSpecialModal');
+		const saveEditSpecialBtn = document.getElementById('saveEditSpecialBtn');
+		const deleteEditSpecialBtn = document.getElementById('deleteEditSpecialBtn');
+		const cancelEditSpecialBtn = document.getElementById('cancelEditSpecialBtn');
+
+		if (closeEditSpecialModal) {
+			closeEditSpecialModal.addEventListener('click', () => {
+				hideModal('editSpecialModal');
+			});
+		}
+
+		if (cancelEditSpecialBtn) {
+			cancelEditSpecialBtn.addEventListener('click', () => {
+				hideModal('editSpecialModal');
+			});
+		}
+
+		if (saveEditSpecialBtn) {
+			saveEditSpecialBtn.addEventListener('click', async () => {
+				await saveEditedSpecial();
+			});
+		}
+
+		if (deleteEditSpecialBtn) {
+			deleteEditSpecialBtn.addEventListener('click', async () => {
+				await deleteEditedSpecial();
 			});
 		}
 

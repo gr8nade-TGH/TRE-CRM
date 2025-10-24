@@ -933,7 +933,30 @@
 						<label for="editPhone">Phone</label>
 						<input type="tel" id="editPhone" placeholder="(210) 555-1234">
 					</div>
-					
+
+					<!-- Contact Info Section -->
+					<h4 style="margin-top: 24px; margin-bottom: 12px; color: #3b82f6;">📞 Contact Information</h4>
+					<div class="form-group">
+						<label for="editContactName">Contact Name</label>
+						<input type="text" id="editContactName" placeholder="e.g., John Smith">
+					</div>
+
+					<div class="form-group">
+						<label for="editContactEmail">Contact Email</label>
+						<input type="email" id="editContactEmail" placeholder="e.g., leasing@property.com">
+					</div>
+
+					<div class="form-group">
+						<label for="editOfficeHours">Office Hours</label>
+						<input type="text" id="editOfficeHours" placeholder="e.g., Mon-Fri 9am-6pm">
+					</div>
+
+					<!-- Active Specials Section -->
+					<h4 style="margin-top: 24px; margin-bottom: 12px; color: #3b82f6;">🔥 Active Specials</h4>
+					<div id="editPropertySpecialsList" style="margin-bottom: 16px;">
+						<!-- Specials will be populated here -->
+					</div>
+
 					<!-- Rent Range (Auto-calculated from units) -->
 					<div class="form-row">
 						<div class="form-group">
@@ -1406,6 +1429,44 @@
 			<div class="modal-footer">
 				<button id="saveAddSpecialBtn" class="btn btn-primary">Add Special</button>
 				<button id="cancelAddSpecialBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Edit Special Modal -->
+	<div id="editSpecialModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>🔥 Edit Special - <span id="editSpecialPropertyName"></span></h3>
+				<button id="closeEditSpecialModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<form id="editSpecialForm">
+					<input type="hidden" id="editSpecialId">
+					<div class="field">
+						<label for="editSpecialTitle">Special Title *</label>
+						<textarea id="editSpecialTitle" rows="2" required placeholder="e.g., First Month Free"></textarea>
+					</div>
+					<div class="field">
+						<label for="editSpecialDescription">Details *</label>
+						<textarea id="editSpecialDescription" rows="4" required placeholder="Describe the special offer, discount, or promotion..."></textarea>
+					</div>
+					<div class="form-row">
+						<div class="field">
+							<label for="editSpecialValidFrom">Valid From *</label>
+							<input type="date" id="editSpecialValidFrom" required>
+						</div>
+						<div class="field">
+							<label for="editSpecialValidUntil">Valid Until *</label>
+							<input type="date" id="editSpecialValidUntil" required>
+						</div>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="saveEditSpecialBtn" class="btn btn-primary">Save Changes</button>
+				<button id="deleteEditSpecialBtn" class="btn btn-danger" style="margin-right: auto;">Delete Special</button>
+				<button id="cancelEditSpecialBtn" class="btn btn-secondary">Cancel</button>
 			</div>
 		</div>
 	</div>

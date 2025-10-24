@@ -206,17 +206,31 @@ export async function openListingEditModal(property, options) {
 
 	console.log('Opening listing edit modal for:', property);
 
+	// Fetch fresh property data to get contact info
+	let fullProperty = property;
+	try {
+		fullProperty = await SupabaseAPI.getProperty(property.id);
+		console.log('Fetched full property data:', fullProperty);
+	} catch (error) {
+		console.error('Error fetching full property data:', error);
+		// Continue with the property data we have
+	}
+
 	// Populate the modal with current property data
-	document.getElementById('editListingName').textContent = property.name || property.community_name;
-	document.getElementById('editPropertyName').value = property.name || property.community_name;
+	document.getElementById('editListingName').textContent = fullProperty.name || fullProperty.community_name;
+	document.getElementById('editPropertyName').value = fullProperty.name || fullProperty.community_name;
 
 	// Address fields
-	document.getElementById('editStreetAddress').value = property.street_address || '';
-	document.getElementById('editCity').value = property.city || '';
-	document.getElementById('editState').value = property.state || 'TX';
-	document.getElementById('editZipCode').value = property.zip_code || '';
+	document.getElementById('editStreetAddress').value = fullProperty.street_address || '';
+	document.getElementById('editCity').value = fullProperty.city || '';
+	document.getElementById('editState').value = fullProperty.state || 'TX';
+	document.getElementById('editZipCode').value = fullProperty.zip_code || '';
 
-	document.getElementById('editPhone').value = property.phone || property.contact_email || '';
+	// Contact info fields
+	document.getElementById('editPhone').value = fullProperty.contact_phone || fullProperty.phone || '';
+	document.getElementById('editContactName').value = fullProperty.contact_name || '';
+	document.getElementById('editContactEmail').value = fullProperty.contact_email || '';
+	document.getElementById('editOfficeHours').value = fullProperty.office_hours || '';
 
 	// Calculate rent range from units
 	try {
@@ -249,12 +263,55 @@ export async function openListingEditModal(property, options) {
 	// Set commission field - use commission_pct, or fallback to max of escort/send
 	const commission = property.commission_pct || Math.max(property.escort_pct || 0, property.send_pct || 0);
 	document.getElementById('editCommissionPct').value = commission;
-	document.getElementById('editWebsite').value = property.website || property.leasing_link || '';
-	document.getElementById('editAmenities').value = Array.isArray(property.amenities) ? property.amenities.join(', ') : '';
-	document.getElementById('editSpecials').value = property.specials_text || '';
-	document.getElementById('editBonus').value = property.bonus_text || '';
-	document.getElementById('editIsPUMI').checked = property.is_pumi || property.isPUMI || false;
-	document.getElementById('editMarkForReview').checked = property.mark_for_review || property.markForReview || false;
+	document.getElementById('editWebsite').value = fullProperty.website || fullProperty.leasing_link || '';
+	document.getElementById('editAmenities').value = Array.isArray(fullProperty.amenities) ? fullProperty.amenities.join(', ') : '';
+	document.getElementById('editSpecials').value = fullProperty.specials_text || '';
+	document.getElementById('editBonus').value = fullProperty.bonus_text || '';
+	document.getElementById('editIsPUMI').checked = fullProperty.is_pumi || fullProperty.isPUMI || false;
+	document.getElementById('editMarkForReview').checked = fullProperty.mark_for_review || fullProperty.markForReview || false;
+
+	// Fetch and display active specials
+	try {
+		const specialsData = await SupabaseAPI.getSpecials({ search: '' });
+		const specials = specialsData.items || [];
+		const propertyName = fullProperty.name || fullProperty.community_name;
+		const propertySpecials = specials.filter(s => s.property_name === propertyName);
+		const activeSpecials = propertySpecials.filter(s => {
+			const expDate = new Date(s.valid_until);
+			return expDate > new Date();
+		});
+
+		const specialsList = document.getElementById('editPropertySpecialsList');
+		if (specialsList) {
+			if (activeSpecials.length === 0) {
+				specialsList.innerHTML = '<p style="color: #6b7280; font-size: 14px;">No active specials for this property.</p>';
+			} else {
+				specialsList.innerHTML = activeSpecials.map(special => {
+					const expDate = new Date(special.valid_until).toLocaleDateString();
+					return `
+						<div style="background: #f3f4f6; padding: 12px; border-radius: 6px; margin-bottom: 8px;">
+							<div style="display: flex; justify-content: space-between; align-items: start;">
+								<div style="flex: 1;">
+									<strong style="color: #1f2937;">${special.title}</strong>
+									<p style="margin: 4px 0; color: #6b7280; font-size: 13px;">${special.description}</p>
+									<p style="margin: 4px 0; color: #3b82f6; font-size: 12px;">Expires: ${expDate}</p>
+								</div>
+								<button type="button" class="icon-btn" onclick="window.editPropertySpecial('${special.id}', '${propertyName.replace(/'/g, "\\'")}');" title="Edit Special">
+									✏️
+								</button>
+							</div>
+						</div>
+					`;
+				}).join('');
+			}
+		}
+	} catch (error) {
+		console.error('Error fetching specials:', error);
+		const specialsList = document.getElementById('editPropertySpecialsList');
+		if (specialsList) {
+			specialsList.innerHTML = '<p style="color: #ef4444; font-size: 14px;">Error loading specials.</p>';
+		}
+	}
 
 	// Show/hide delete button based on role
 	const deleteBtn = document.getElementById('deleteListingBtn');
@@ -384,6 +441,10 @@ export async function saveListingEdit(options) {
 			lat: lat,
 			lng: lng,
 			phone: document.getElementById('editPhone').value.trim(),
+			contact_name: document.getElementById('editContactName').value.trim(),
+			contact_email: document.getElementById('editContactEmail').value.trim(),
+			contact_phone: document.getElementById('editPhone').value.trim(),
+			office_hours: document.getElementById('editOfficeHours').value.trim(),
 			// Rent range is read-only, calculated from units - don't update it
 			bed_range: `${document.getElementById('editBedsMin').value || 0}-${document.getElementById('editBedsMax').value || 0}`,
 			bath_range: `${document.getElementById('editBathsMin').value || 0}-${document.getElementById('editBathsMax').value || 0}`,

@@ -259,6 +259,14 @@ let api, renderLeads, renderSpecials;
 		});
 	};
 
+	window.editPropertySpecial = async function(specialId, propertyName) {
+		await Properties.editPropertySpecial(specialId, propertyName, {
+			SupabaseAPI,
+			showModal,
+			toast
+		});
+	};
+
 	// View property specials from listing table (specials data already loaded)
 	window.viewPropertySpecialsFromListing = function(propertyId, propertyName, specialsData) {
 		// Show modal with specials

@@ -113,12 +113,18 @@ export async function renderProperties(options) {
 
 			// Actions
 			const actionsHtml = `
-				<button class="icon-btn" onclick="window.editPropertyContact('${prop.id}', '${name.replace(/'/g, "\\'")}')}" title="Edit Contact">
-					✏️
+				<button class="icon-btn" onclick="window.editPropertyContact('${prop.id}', '${name.replace(/'/g, "\\'")}')}" title="Edit Contact Info">
+					📞
 				</button>
-				<button class="icon-btn" onclick="window.addSpecialForProperty('${name.replace(/'/g, "\\'")}')}" title="Add Special">
-					🔥
-				</button>
+				${hasActiveSpecials ? `
+					<button class="icon-btn" onclick="window.editPropertySpecial('${prop.activeSpecials[0].id}', '${name.replace(/'/g, "\\'")}')}" title="Edit Special">
+						🔥
+					</button>
+				` : `
+					<button class="icon-btn" onclick="window.addSpecialForProperty('${name.replace(/'/g, "\\'")}')}" title="Add Special">
+						🔥
+					</button>
+				`}
 			`;
 
 			tr.innerHTML = `
@@ -214,6 +220,97 @@ export async function viewPropertySpecials(propertyId, propertyName, options) {
 		showModal('viewSpecialsModal');
 	} catch (error) {
 		console.error('Error loading property specials:', error);
+	}
+}
+
+/**
+ * Edit an existing special
+ */
+export async function editPropertySpecial(specialId, propertyName, options) {
+	const { SupabaseAPI, showModal, toast } = options;
+
+	try {
+		// Fetch the special details
+		const specialsData = await SupabaseAPI.getSpecials({ search: '' });
+		const specials = specialsData.items || [];
+		const special = specials.find(s => s.id === specialId);
+
+		if (!special) {
+			toast('Special not found', 'error');
+			return;
+		}
+
+		// Populate the form
+		document.getElementById('editSpecialId').value = special.id;
+		document.getElementById('editSpecialPropertyName').textContent = propertyName;
+		document.getElementById('editSpecialTitle').value = special.title || '';
+		document.getElementById('editSpecialDescription').value = special.description || '';
+		document.getElementById('editSpecialValidFrom').value = special.valid_from ? new Date(special.valid_from).toISOString().split('T')[0] : '';
+		document.getElementById('editSpecialValidUntil').value = special.valid_until ? new Date(special.valid_until).toISOString().split('T')[0] : '';
+
+		// Show modal
+		showModal('editSpecialModal');
+	} catch (error) {
+		console.error('Error loading special for editing:', error);
+		toast('Error loading special. Please try again.', 'error');
+	}
+}
+
+/**
+ * Save edited special
+ */
+export async function saveEditedSpecial(options) {
+	const { SupabaseAPI, toast, hideModal, renderProperties } = options;
+
+	const specialId = document.getElementById('editSpecialId').value;
+	const title = document.getElementById('editSpecialTitle').value.trim();
+	const description = document.getElementById('editSpecialDescription').value.trim();
+	const validFrom = document.getElementById('editSpecialValidFrom').value;
+	const validUntil = document.getElementById('editSpecialValidUntil').value;
+
+	// Validation
+	if (!title || !description || !validFrom || !validUntil) {
+		toast('Please fill in all required fields', 'error');
+		return;
+	}
+
+	try {
+		await SupabaseAPI.updateSpecial(specialId, {
+			title,
+			description,
+			valid_from: validFrom,
+			valid_until: validUntil
+		});
+
+		toast('Special updated successfully!', 'success');
+		hideModal('editSpecialModal');
+		await renderProperties();
+	} catch (error) {
+		console.error('Error updating special:', error);
+		toast('Error updating special. Please try again.', 'error');
+	}
+}
+
+/**
+ * Delete a special from edit modal
+ */
+export async function deleteEditedSpecial(options) {
+	const { SupabaseAPI, toast, hideModal, renderProperties } = options;
+
+	const specialId = document.getElementById('editSpecialId').value;
+	const propertyName = document.getElementById('editSpecialPropertyName').textContent;
+
+	const confirmed = confirm(`Are you sure you want to delete this special for ${propertyName}?`);
+	if (!confirmed) return;
+
+	try {
+		await SupabaseAPI.deleteSpecial(specialId);
+		toast('Special deleted successfully!', 'success');
+		hideModal('editSpecialModal');
+		await renderProperties();
+	} catch (error) {
+		console.error('Error deleting special:', error);
+		toast('Error deleting special. Please try again.', 'error');
 	}
 }
 
