@@ -121,19 +121,11 @@ let api, renderLeads, renderSpecials;
 		return await getHealthMessagesUtil(lead, formatDate);
 	}
 
-	function matchesListingsFilters(property, filters) {
-		return Listings.matchesListingsFilters(property, filters);
-	}
-
 	function showPopover(anchor, status) {
 		Leads.showPopover(anchor, status, {
 			SupabaseAPI,
 			getHealthMessages
 		});
-	}
-
-	function getAgentStats(agentId) {
-		return Agents.getAgentStats(agentId, { leads: state.leads || [] });
 	}
 
 	api = createAPI({
@@ -297,7 +289,7 @@ let api, renderLeads, renderSpecials;
 		await Agents.renderAgents({
 			mockAgents: realAgents,
 			state,
-			getAgentStats
+			getAgentStats: (agentId) => Agents.getAgentStats(agentId, { leads: state.leads || [] })
 		});
 	}
 
@@ -339,7 +331,7 @@ let api, renderLeads, renderSpecials;
 		await Listings.renderListings({
 			SupabaseAPI,
 			state,
-			matchesListingsFilters,
+			matchesListingsFilters: Listings.matchesListingsFilters,
 			mockInterestedLeads,
 			selectProperty,
 			openListingEditModal,
@@ -393,12 +385,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function closeActivityLogModal() {
-		Modals.closeActivityLogModal({
-			hideModal
-		});
-	}
-
 	function renderActivityLog(activities) {
 		return Modals.renderActivityLog(activities, {
 			getActivityIcon,
@@ -432,7 +418,7 @@ let api, renderLeads, renderSpecials;
 			agentId,
 			state,
 			realAgents,
-			getAgentStats,
+			getAgentStats: (agentId) => Agents.getAgentStats(agentId, { leads: state.leads || [] }),
 			showModal
 		});
 	}
@@ -452,24 +438,12 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function closeDocumentDetails() {
-		Modals.closeDocumentDetails({
-			hide
-		});
-	}
-
 	function openHistory() {
 		Modals.openHistory({
 			mockClosedLeads,
 			mockAgents: realAgents,
 			formatDate,
 			show
-		});
-	}
-
-	function closeHistory() {
-		Modals.closeHistory({
-			hide
 		});
 	}
 
@@ -542,19 +516,9 @@ let api, renderLeads, renderSpecials;
 		await Modals.openBuildShowcaseModal({
 			state,
 			mockLeads: state.leads || [],
-			getSelectedListings,
+			getSelectedListings: () => Modals.getSelectedListings({ mockProperties }),
 			toast,
 			show
-		});
-	}
-
-	function getSelectedListings(){
-		return Modals.getSelectedListings({ mockProperties });
-	}
-
-	function updateBulkActionsBar() {
-		Listings.updateBulkActionsBar({
-			state
 		});
 	}
 
@@ -581,7 +545,7 @@ let api, renderLeads, renderSpecials;
 			toast,
 			closeBuildShowcase: () => Modals.closeBuildShowcase({ hide }),
 			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
-			getSelectedListings
+			getSelectedListings: () => Modals.getSelectedListings({ mockProperties })
 		});
 	}
 
@@ -621,7 +585,7 @@ let api, renderLeads, renderSpecials;
 			state,
 			SupabaseAPI,
 			updateNavVisibility,
-			initializeRouting,
+			initializeRouting: () => Routing.initializeRouting(route),
 			setRealAgents: (agents) => { realAgents = agents; }
 		});
 	};
@@ -646,8 +610,8 @@ let api, renderLeads, renderSpecials;
 			renderBugs, renderAdmin, renderLeadsTable, renderProperties, renderAuditLog,
 			openDrawer, closeDrawer, openAgentDrawer, openMatches,
 			closeMatches, showModal, hideModal, closeLeadDetailsModal, closeLeadNotesModal,
-			closeActivityLogModal, closeAgentEditModal, closeHistory,
-			closeListingEditModal, openInterestedLeads,
+			closeAgentEditModal,
+			openInterestedLeads,
 			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
 			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
 			saveNewLead, savePropertyContact, editPropertyContact, saveNewSpecial,
@@ -655,21 +619,16 @@ let api, renderLeads, renderSpecials;
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
 			sortTable, toast, formatDate, showPopover,
-			updateBulkActionsBar, updateBuildShowcaseButton,
+			updateBuildShowcaseButton,
 			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
 			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,
 			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
-			openEmailPreview, previewLandingPage, openHistory, closeDocumentDetails,
+			openEmailPreview, previewLandingPage, openHistory,
 			sendShowcaseEmail, openHistoryDocumentDetails
 		});
 
 		setupAllEventListeners(deps);
 	});
-
-	// Initialize routing (called by initializeApp after auth) - wrapper function
-	function initializeRouting() {
-		Routing.initializeRouting(route);
-	}
 
 	async function openListingEditModal(property) {
 		await Modals.openListingEditModal(property, {
@@ -679,17 +638,11 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function closeListingEditModal() {
-		Modals.closeListingEditModal({
-			hideModal
-		});
-	}
-
 	async function deleteListing() {
 		await Modals.deleteListing({
 			SupabaseAPI,
 			toast,
-			closeListingEditModal,
+			closeListingEditModal: () => Modals.closeListingEditModal({ hideModal }),
 			renderListings
 		});
 	}
@@ -698,7 +651,7 @@ let api, renderLeads, renderSpecials;
 		await Modals.saveListingEdit({
 			SupabaseAPI,
 			toast,
-			closeListingEditModal,
+			closeListingEditModal: () => Modals.closeListingEditModal({ hideModal }),
 			renderListings
 		});
 	}
