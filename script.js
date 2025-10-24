@@ -644,7 +644,7 @@ let api, renderLeads, renderSpecials;
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
 			sortTable, toast, formatDate, showPopover, initPopover, hidePopover, toggleLeadTable,
-			updateBulkActionsBar,
+			updateBulkActionsBar, populateSpecialPropertyDropdown,
 			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
 			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
 			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,

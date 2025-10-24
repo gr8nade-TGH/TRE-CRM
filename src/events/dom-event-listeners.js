@@ -90,6 +90,7 @@ export function setupAllEventListeners(deps) {
 		toggleLeadTable,
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
+		populateSpecialPropertyDropdown,
 
 		// Bulk actions functions
 		bulkMarkAsUnavailable,

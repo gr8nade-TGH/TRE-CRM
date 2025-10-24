@@ -83,6 +83,7 @@ export function createDependencies(context) {
 		toggleLeadTable,
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
+		populateSpecialPropertyDropdown,
 		
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
@@ -186,6 +187,7 @@ export function createDependencies(context) {
 		toggleLeadTable,
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
+		populateSpecialPropertyDropdown,
 		
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
