@@ -951,7 +951,7 @@ export function setupAllEventListeners(deps) {
 			});
 		}
 
-		// View Specials Modal
+		// View Specials Modal (from Properties page)
 		const closeViewSpecialsModal = document.getElementById('closeViewSpecialsModal');
 		const closeViewSpecialsBtn = document.getElementById('closeViewSpecialsBtn');
 
@@ -964,6 +964,22 @@ export function setupAllEventListeners(deps) {
 		if (closeViewSpecialsBtn) {
 			closeViewSpecialsBtn.addEventListener('click', () => {
 				hideModal('viewSpecialsModal');
+			});
+		}
+
+		// View Listing Specials Modal (from Listings page)
+		const closeListingSpecialsModal = document.getElementById('closeListingSpecialsModal');
+		const closeListingSpecialsBtn = document.getElementById('closeListingSpecialsBtn');
+
+		if (closeListingSpecialsModal) {
+			closeListingSpecialsModal.addEventListener('click', () => {
+				hideModal('listingSpecialsModal');
+			});
+		}
+
+		if (closeListingSpecialsBtn) {
+			closeListingSpecialsBtn.addEventListener('click', () => {
+				hideModal('listingSpecialsModal');
 			});
 		}
 

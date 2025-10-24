@@ -1410,7 +1410,7 @@
 		</div>
 	</div>
 
-	<!-- View Property Specials Modal -->
+	<!-- View Property Specials Modal (from Properties page) -->
 	<div id="viewSpecialsModal" class="modal hidden">
 		<div class="modal-card">
 			<div class="modal-header">
@@ -1434,6 +1434,33 @@
 			</div>
 			<div class="modal-footer">
 				<button id="closeViewSpecialsBtn" class="btn btn-secondary">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- View Listing Specials Modal (from Listings page) -->
+	<div id="listingSpecialsModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>🔥 Active Specials for <span id="listingSpecialsPropertyName"></span></h3>
+				<button id="closeListingSpecialsModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Special</th>
+							<th>Details</th>
+							<th>Expires</th>
+						</tr>
+					</thead>
+					<tbody id="listingSpecialsTbody">
+						<!-- Specials will be populated here -->
+					</tbody>
+				</table>
+			</div>
+			<div class="modal-footer">
+				<button id="closeListingSpecialsBtn" class="btn btn-secondary">Close</button>
 			</div>
 		</div>
 	</div>

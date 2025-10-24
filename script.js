@@ -259,6 +259,43 @@ let api, renderLeads, renderSpecials;
 		});
 	};
 
+	// View property specials from listing table (specials data already loaded)
+	window.viewPropertySpecialsFromListing = function(propertyId, propertyName, specialsData) {
+		// Show modal with specials
+		const modal = document.getElementById('listingSpecialsModal');
+		const propertyNameSpan = document.getElementById('listingSpecialsPropertyName');
+		const tbody = document.getElementById('listingSpecialsTbody');
+
+		if (!modal || !propertyNameSpan || !tbody) {
+			console.error('Listing specials modal elements not found');
+			return;
+		}
+
+		propertyNameSpan.textContent = propertyName;
+		tbody.innerHTML = '';
+
+		// Render specials
+		specialsData.forEach(special => {
+			const expDate = new Date(special.valid_until || special.expiration_date);
+			const isExpired = expDate < new Date();
+			const specialTitle = special.title || special.current_special;
+			const specialDesc = special.description || special.commission_rate;
+
+			const tr = document.createElement('tr');
+			tr.innerHTML = `
+				<td>
+					<strong>${specialTitle}</strong>
+					${isExpired ? '<span style="color: #ef4444; font-size: 0.85em; margin-left: 8px;">(Expired)</span>' : ''}
+				</td>
+				<td>${specialDesc}</td>
+				<td>${expDate.toLocaleDateString()}</td>
+			`;
+			tbody.appendChild(tr);
+		});
+
+		showModal('listingSpecialsModal');
+	};
+
 	// Listing edit modal functions - defined in outer scope so renderListings can access them
 	async function openListingEditModal(property) {
 		await Modals.openListingEditModal(property, {

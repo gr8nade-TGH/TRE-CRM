@@ -59,14 +59,20 @@ export async function renderListings(options) {
 	}
 
 	try {
-		// Fetch properties from Supabase
-		const properties = await SupabaseAPI.getProperties({
-			search: state.search,
-			market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
-			minPrice: state.listingsFilters.minPrice,
-			maxPrice: state.listingsFilters.maxPrice,
-			beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
-		});
+		// Fetch properties and specials in parallel
+		const [properties, specialsData] = await Promise.all([
+			SupabaseAPI.getProperties({
+				search: state.search,
+				market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
+				minPrice: state.listingsFilters.minPrice,
+				maxPrice: state.listingsFilters.maxPrice,
+				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
+			}),
+			SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' })
+		]);
+
+		// Extract specials array from response
+		const specials = specialsData?.items || specialsData || [];
 
 		// Filter out unavailable listings (is_available = false)
 		const availableProperties = properties.filter(prop => {
@@ -118,10 +124,19 @@ export async function renderListings(options) {
 						}
 					}
 
+					// Find active specials for this property
+					const propName = prop.community_name || prop.name;
+					const propSpecials = specials.filter(s => s.property_name === propName);
+					const activeSpecials = propSpecials.filter(s => {
+						const expDate = new Date(s.valid_until || s.expiration_date);
+						return expDate > new Date();
+					});
+
 					return {
 						...prop,
 						notesCount: notes.length,
 						floorPlans: floorPlans || [],
+						activeSpecials: activeSpecials,
 						units: unitsWithNotes || [],
 						rent_range_min: rentMin,
 						rent_range_max: rentMax
@@ -201,6 +216,7 @@ export async function renderListings(options) {
 		const isPUMI = prop.is_pumi || prop.isPUMI;
 		const markedForReview = prop.mark_for_review || prop.markForReview;
 		const hasUnits = prop.units && prop.units.length > 0;
+		const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
 
 		tr.innerHTML = `
 			<td>
@@ -209,6 +225,7 @@ export async function renderListings(options) {
 			<td data-sort="name">
 				<div class="lead-name">
 					<strong>${communityName}</strong>
+					${hasActiveSpecials ? `<span class="special-icon" onclick="window.viewPropertySpecialsFromListing('${prop.id}', '${communityName.replace(/'/g, "\\'")}', ${JSON.stringify(prop.activeSpecials).replace(/"/g, '&quot;')})" title="${prop.activeSpecials.length} active special(s)" style="cursor: pointer; margin-left: 6px; font-size: 1em;">🔥</span>` : ''}
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
 					${commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
