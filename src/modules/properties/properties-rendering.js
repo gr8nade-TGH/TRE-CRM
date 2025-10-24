@@ -33,10 +33,17 @@ export async function renderPropertyContacts(options) {
 		}
 
 		// Filter out invalid properties (must have address and valid name)
+		// Only exclude obvious test entries like "act4", "activity event test", "test 1", etc.
+		// Don't exclude legitimate property names that happen to contain "test" like "TestAfter Mod"
 		const validProperties = properties.filter(prop => {
 			const name = prop.community_name || prop.name;
 			const hasAddress = prop.address && prop.address.trim() !== '';
-			const hasValidName = name && name.trim() !== '' && !name.toLowerCase().includes('test') && !name.toLowerCase().includes('act4');
+
+			// Check if name is obviously a test entry
+			// Pattern matches: act4, act123, activity event test, test 1, test123, etc.
+			const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
+
+			const hasValidName = name && name.trim() !== '' && !isTestEntry;
 			return hasAddress && hasValidName;
 		});
 
@@ -87,7 +94,6 @@ export async function renderPropertyContacts(options) {
  */
 export async function populateSpecialPropertyDropdown(SupabaseAPI) {
 	const select = document.getElementById('specialPropertyName');
-	const warningDiv = document.getElementById('noPropertyWarning');
 	if (!select) return;
 
 	try {
@@ -98,10 +104,16 @@ export async function populateSpecialPropertyDropdown(SupabaseAPI) {
 		});
 
 		// Filter valid properties (same logic as property contacts)
+		// Only exclude obvious test entries, not legitimate property names containing "test"
 		const validProperties = properties.filter(prop => {
 			const name = prop.community_name || prop.name;
 			const hasAddress = prop.address && prop.address.trim() !== '';
-			const hasValidName = name && name.trim() !== '' && !name.toLowerCase().includes('test') && !name.toLowerCase().includes('act4');
+
+			// Check if name is obviously a test entry
+			// Pattern matches: act4, act123, activity event test, test 1, test123, etc.
+			const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
+
+			const hasValidName = name && name.trim() !== '' && !isTestEntry;
 			return hasAddress && hasValidName;
 		});
 
@@ -125,17 +137,9 @@ export async function populateSpecialPropertyDropdown(SupabaseAPI) {
 			select.appendChild(option);
 		});
 
-		// Show warning if no properties available
-		if (communities.size === 0 && warningDiv) {
-			warningDiv.style.display = 'block';
-		} else if (warningDiv) {
-			warningDiv.style.display = 'none';
-		}
+		console.log(`Populated special property dropdown with ${communities.size} properties`);
 	} catch (error) {
 		console.error('Error populating special property dropdown:', error);
-		if (warningDiv) {
-			warningDiv.style.display = 'block';
-		}
 	}
 }
 
