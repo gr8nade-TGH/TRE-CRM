@@ -19,18 +19,26 @@ import { createLeaseConfirmationPreview } from './lease-confirmation-preview.js'
 export async function showLeaseConfirmationModal(lead, property, deps) {
 	const { SupabaseAPI, toast } = deps;
 
+	console.log('showLeaseConfirmationModal called', { lead, property }); // Debug
+
 	// Check if lease has been sent
 	const leaseSent = lead.lease?.sent || false;
 
+	// Remove existing modal if present
+	const existingModal = document.getElementById('leaseConfirmationModal');
+	if (existingModal) {
+		existingModal.remove();
+	}
+
 	// Create modal
 	const modal = document.createElement('div');
-	modal.className = 'progress-modal active';
+	modal.className = 'progress-modal show';
 	modal.id = 'leaseConfirmationModal';
 
 	modal.innerHTML = `
 		<div class="progress-modal-content lease-confirmation-modal-content">
 			<div class="progress-modal-header">
-				<h3>Lease Confirmation - ${lead.leadName}</h3>
+				<h3>Lease Confirmation - ${lead.leadName || lead.name}</h3>
 				<button class="close-modal" id="closeLeaseModal">&times;</button>
 			</div>
 			<div class="progress-modal-body" id="leaseModalBody">
