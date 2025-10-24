@@ -32,20 +32,26 @@ export async function renderPropertyContacts(options) {
 			return;
 		}
 
-		// Filter out invalid properties (must have address and valid name)
+		// Filter out invalid properties
 		// Only exclude obvious test entries like "act4", "activity event test", "test 1", etc.
 		// Don't exclude legitimate property names that happen to contain "test" like "TestAfter Mod"
+		// Note: Address is NOT required for property contacts (we're showing contact info, not property details)
 		const validProperties = properties.filter(prop => {
 			const name = prop.community_name || prop.name;
-			const hasAddress = prop.address && prop.address.trim() !== '';
 
 			// Check if name is obviously a test entry
 			// Pattern matches: act4, act123, activity event test, test 1, test123, etc.
 			const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
 
 			const hasValidName = name && name.trim() !== '' && !isTestEntry;
-			return hasAddress && hasValidName;
+			return hasValidName;
 		});
+
+		console.log('Valid properties after filtering:', validProperties.map(p => ({
+			name: p.community_name || p.name,
+			address: p.address,
+			hasAddress: !!(p.address && p.address.trim())
+		})));
 
 		// Group by community_name (only show unique communities)
 		const communities = new Map();
@@ -105,16 +111,16 @@ export async function populateSpecialPropertyDropdown(SupabaseAPI) {
 
 		// Filter valid properties (same logic as property contacts)
 		// Only exclude obvious test entries, not legitimate property names containing "test"
+		// Note: Address is NOT required (we're just populating a dropdown with property names)
 		const validProperties = properties.filter(prop => {
 			const name = prop.community_name || prop.name;
-			const hasAddress = prop.address && prop.address.trim() !== '';
 
 			// Check if name is obviously a test entry
 			// Pattern matches: act4, act123, activity event test, test 1, test123, etc.
 			const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
 
 			const hasValidName = name && name.trim() !== '' && !isTestEntry;
-			return hasAddress && hasValidName;
+			return hasValidName;
 		});
 
 		// Get unique community names
