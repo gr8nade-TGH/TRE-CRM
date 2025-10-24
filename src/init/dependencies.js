@@ -84,7 +84,8 @@ export function createDependencies(context) {
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
 		populateSpecialPropertyDropdown,
-		
+		populatePropertyDropdownForContact,
+
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
 		bulkDeleteListings,
@@ -188,7 +189,8 @@ export function createDependencies(context) {
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
 		populateSpecialPropertyDropdown,
-		
+		populatePropertyDropdownForContact,
+
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
 		bulkDeleteListings,

@@ -209,6 +209,28 @@ let api, renderLeads, renderSpecials;
 		await Properties.populateSpecialPropertyDropdown(SupabaseAPI);
 	}
 
+	async function populatePropertyDropdownForContact() {
+		// Fetch all properties and populate the contact property dropdown
+		try {
+			const properties = await SupabaseAPI.getProperties({ search: '', market: 'all' });
+
+			// Filter valid properties (exclude test entries)
+			const validProperties = properties.filter(prop => {
+				const name = prop.community_name || prop.name;
+				const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
+				return name && name.trim() !== '' && !isTestEntry;
+			});
+
+			// Extract unique community names
+			const communityNames = [...new Set(validProperties.map(p => p.community_name || p.name))];
+
+			// Populate dropdown
+			Properties.populatePropertyDropdown(communityNames);
+		} catch (error) {
+			console.error('Error populating property dropdown:', error);
+		}
+	}
+
 	async function renderPropertyContacts() {
 		// Legacy function - now calls renderProperties
 		await renderProperties();
@@ -653,7 +675,7 @@ let api, renderLeads, renderSpecials;
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
 			sortTable, toast, formatDate, showPopover, initPopover, hidePopover, toggleLeadTable,
-			updateBulkActionsBar, populateSpecialPropertyDropdown,
+			updateBulkActionsBar, populateSpecialPropertyDropdown, populatePropertyDropdownForContact,
 			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
 			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
 			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,

@@ -91,6 +91,7 @@ export function setupAllEventListeners(deps) {
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
 		populateSpecialPropertyDropdown,
+		populatePropertyDropdownForContact,
 
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
@@ -837,16 +838,27 @@ export function setupAllEventListeners(deps) {
 		}
 
 		// Property Contact event listeners
+		const addPropertyBtn = document.getElementById('addPropertyBtn');
 		const addPropertyContactBtn = document.getElementById('addPropertyContactBtn');
 		const closeAddPropertyContactModal = document.getElementById('closeAddPropertyContactModal');
 		const savePropertyContactBtn = document.getElementById('savePropertyContactBtn');
 		const cancelPropertyContactBtn = document.getElementById('cancelPropertyContactBtn');
 
+		// Add New Property button (on Properties page)
+		if (addPropertyBtn) {
+			addPropertyBtn.addEventListener('click', () => {
+				showModal('addListingModal');
+				document.getElementById('addListingForm').reset();
+			});
+		}
+
 		// Add Property Contact button
 		if (addPropertyContactBtn) {
-			addPropertyContactBtn.addEventListener('click', () => {
+			addPropertyContactBtn.addEventListener('click', async () => {
 				showModal('addPropertyContactModal');
 				document.getElementById('addPropertyContactForm').reset();
+				// Populate property dropdown
+				await populatePropertyDropdownForContact();
 			});
 		}
 
