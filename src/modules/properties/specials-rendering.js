@@ -2,16 +2,21 @@
 
 export async function renderSpecials(options) {
 	const { state, api, formatDate, updateSortHeaders } = options;
-	
+
 	console.log('renderSpecials called');
 	const tbody = document.getElementById('specialsTbody');
 	if (!tbody) return;
+
+	// Use default sort for specials (don't use global state.sort which is for leads)
+	// Specials table columns: property_name, commission_rate, expiration_date, agent_name, created_at
+	const validSpecialsSortKeys = ['property_name', 'commission_rate', 'expiration_date', 'agent_name', 'created_at'];
+	const sortKey = validSpecialsSortKeys.includes(state.sort.key) ? state.sort.key : 'created_at';
 
 	const { items, total } = await api.getSpecials({
 		role: state.role,
 		agentId: state.agentId,
 		search: state.search,
-		sortKey: state.sort.key,
+		sortKey: sortKey,
 		sortDir: state.sort.dir,
 		page: state.page,
 		pageSize: state.pageSize

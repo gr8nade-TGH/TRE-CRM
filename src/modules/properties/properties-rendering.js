@@ -18,22 +18,23 @@ export async function renderPropertyContacts(options) {
 	try {
 		// Fetch all properties with contact info
 		const properties = await SupabaseAPI.getProperties({
-			role: state.role,
-			agentId: state.agentId,
 			search: '',
-			sortKey: 'community_name',
-			sortDir: 'asc',
-			page: 1,
-			pageSize: 1000,
-			filters: {}
+			market: 'all'
 		});
 
 		console.log('Properties for contacts:', properties);
 		tbody.innerHTML = '';
 
+		// Check if properties is an array
+		if (!Array.isArray(properties)) {
+			console.error('Properties is not an array:', properties);
+			toast('Error loading property contacts. Please try again.');
+			return;
+		}
+
 		// Group by community_name (only show unique communities)
 		const communities = new Map();
-		properties.items.forEach(prop => {
+		properties.forEach(prop => {
 			const communityName = prop.community_name || prop.name;
 			if (!communities.has(communityName)) {
 				communities.set(communityName, prop);
