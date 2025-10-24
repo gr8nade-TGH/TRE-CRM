@@ -367,8 +367,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Bug Actions ----
-	// Wrapper functions for bug actions - calls module functions
 	async function saveBugChanges(bugId) {
 		await Properties.saveBugChanges(bugId, { api, toast, renderBugs });
 	}
@@ -377,7 +375,6 @@ let api, renderLeads, renderSpecials;
 		Properties.handleBugFieldChange(bugId);
 	}
 
-	// Wrapper function for renderLeadsTable - calls module function
 	function renderLeadsTable(searchTerm = '', searchType = 'both'){
 		Documents.renderLeadsTable(searchTerm, searchType, {
 			state,
@@ -592,7 +589,6 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// ---- Agent Drawer ----
-	// Wrapper function for openAgentDrawer
 	async function openAgentDrawer(agentId){
 		await openAgentDrawerUtil({
 			agentId,
@@ -610,7 +606,6 @@ let api, renderLeads, renderSpecials;
 		state.selectedAgentId = null;
 	}
 
-	// Wrapper function for saveAgentChanges
 	async function saveAgentChanges() {
 		await saveAgentChangesUtil({
 			state,
@@ -776,7 +771,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// Wrapper function for sendBuildShowcase - calls utility module
 	async function sendBuildShowcase() {
 		await sendBuildShowcaseUtil({
 			state,
@@ -789,20 +783,7 @@ let api, renderLeads, renderSpecials;
 	}
 
 	async function sendShowcase(){
-		const lead = await api.getLead(state.selectedLeadId);
-		const listing_ids = Array.from(state.selectedMatches);
-		const { showcase_id, public_url } = await api.createShowcase({
-			lead_id: lead.id,
-			agent_id: state.agentId,
-			listing_ids,
-			message: document.getElementById('showcaseMessage').value
-		});
-		const html = Showcases.renderPublicShowcaseHTML(showcase_id, { state, realAgents, mockProperties });
-		await api.sendEmail({ to: lead.email, subject: document.getElementById('showcaseSubject').value, html, showcase_id });
-		toast('ShowCase sent and recorded');
-		closeShowcase();
-		closeMatches();
-		window.prompt('Copy public link:', public_url);
+		await Showcases.sendShowcase({ state, api, realAgents, mockProperties, toast, closeShowcase, closeMatches });
 	}
 
 	// ---- Routing ----

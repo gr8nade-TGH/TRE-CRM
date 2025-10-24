@@ -126,3 +126,24 @@ export function renderPublicShowcaseHTML(showcaseId, { state, realAgents, mockPr
 	`;
 }
 
+/**
+ * Send showcase email to lead
+ * @param {Object} options - Dependencies
+ */
+export async function sendShowcase({ state, api, realAgents, mockProperties, toast, closeShowcase, closeMatches }) {
+	const lead = await api.getLead(state.selectedLeadId);
+	const listing_ids = Array.from(state.selectedMatches);
+	const { showcase_id, public_url } = await api.createShowcase({
+		lead_id: lead.id,
+		agent_id: state.agentId,
+		listing_ids,
+		message: document.getElementById('showcaseMessage').value
+	});
+	const html = renderPublicShowcaseHTML(showcase_id, { state, realAgents, mockProperties });
+	await api.sendEmail({ to: lead.email, subject: document.getElementById('showcaseSubject').value, html, showcase_id });
+	toast('ShowCase sent and recorded');
+	closeShowcase();
+	closeMatches();
+	window.prompt('Copy public link:', public_url);
+}
+

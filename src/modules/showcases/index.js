@@ -5,6 +5,7 @@
 export {
 	openInterestedLeads,
 	closeInterestedLeads,
-	renderPublicShowcaseHTML
+	renderPublicShowcaseHTML,
+	sendShowcase
 } from './showcase-helpers.js';
 
