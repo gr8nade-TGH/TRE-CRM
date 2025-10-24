@@ -200,6 +200,10 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function populatePropertyDropdown(communityNames) {
+		Properties.populatePropertyDropdown(communityNames);
+	}
+
 	async function renderPropertyContacts() {
 		await Properties.renderPropertyContacts({
 			state,
