@@ -23,6 +23,23 @@ async function hasLeadResponded(leadId, SupabaseAPI) {
 }
 
 /**
+ * Check if a lease has been signed by checking lead_activities
+ * @param {string} leadId - The lead ID
+ * @param {Object} SupabaseAPI - Supabase API object
+ * @returns {Promise<boolean>} True if lease has been signed
+ */
+async function hasLeaseSigned(leadId, SupabaseAPI) {
+	try {
+		const activities = await SupabaseAPI.getLeadActivities(leadId);
+		// Check if there's a 'lease_signed' activity
+		return activities.some(activity => activity.activity_type === 'lease_signed');
+	} catch (error) {
+		console.error('Error checking lease signed:', error);
+		return false;
+	}
+}
+
+/**
  * Render documents (delegates to manager or agent view)
  * EXACT COPY from script.js (lines 2362-2368)
  *
@@ -83,7 +100,7 @@ export async function renderManagerDocuments(options) {
 		});
 
 		// Transform leads to match the expected format
-		// Check for lead responses in parallel
+		// Check for lead responses and lease signed status in parallel
 		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
 			id: lead.id,
 			leadName: lead.name,
@@ -93,6 +110,7 @@ export async function renderManagerDocuments(options) {
 			lastUpdated: lead.updated_at || lead.created_at,
 			status: lead.health_status === 'closed' ? 'completed' : 'current',
 			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI), // Check if lead responded
+			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI), // Check if lease signed
 			property: {
 				name: lead.property_name || 'Not selected',
 				address: lead.property_address || '',
@@ -164,7 +182,7 @@ export async function renderAgentDocuments(options) {
 		});
 
 		// Transform leads to match the expected format
-		// Check for lead responses in parallel
+		// Check for lead responses and lease signed status in parallel
 		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
 			id: lead.id,
 			leadName: lead.name,
@@ -174,6 +192,7 @@ export async function renderAgentDocuments(options) {
 			lastUpdated: lead.updated_at || lead.created_at,
 			status: lead.health_status === 'closed' ? 'completed' : 'current',
 			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI), // Check if lead responded
+			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI), // Check if lease signed
 			property: {
 				name: lead.property_name || 'Not selected',
 				address: lead.property_address || '',

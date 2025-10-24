@@ -3,6 +3,8 @@
  * Handles the step details modal for lead progress tracking
  */
 
+import { showLeaseConfirmationModal } from '../modules/documents/lease-confirmation-modal.js';
+
 /**
  * Show step details modal for a lead's progress step
  * @param {Object} lead - Lead object
@@ -15,6 +17,14 @@
  */
 export async function showStepDetails(lead, step, deps) {
 	const { getStepModalContent, showModal, toast, SupabaseAPI } = deps;
+
+	// Special handling for step 5 (Lease Sent) - show lease confirmation modal
+	if (step.id === 5) {
+		// Get property information
+		const property = lead.property || {};
+		await showLeaseConfirmationModal(lead, property, { SupabaseAPI, toast });
+		return;
+	}
 	
 	// Create modal if it doesn't exist
 	let modal = document.getElementById('progressModal');

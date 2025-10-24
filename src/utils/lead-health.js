@@ -14,14 +14,14 @@ export async function getCurrentStepFromActivities(leadId) {
 
 		// Map activity types to step numbers
 		// Note: 'showcase_response' is optional and doesn't advance the step counter
+		// Note: 'lease_signed' is optional and doesn't advance the step counter
 		const stepMapping = {
 			'lead_created': 1,
 			'showcase_sent': 2,
 			'guest_card_sent': 3,
 			'property_selected': 4,
 			'lease_sent': 5,
-			'lease_signed': 6,
-			'lease_finalized': 7
+			'lease_finalized': 6
 		};
 
 		// Find the highest step reached
@@ -42,7 +42,7 @@ export async function getCurrentStepFromActivities(leadId) {
 
 /**
  * Get step label from step number
- * @param {number} stepNumber - Step number (1-7)
+ * @param {number} stepNumber - Step number (1-6)
  * @returns {string} Step label
  */
 export function getStepLabel(stepNumber) {
@@ -52,8 +52,7 @@ export function getStepLabel(stepNumber) {
 		3: 'Guest Card Sent',
 		4: 'Property Selected',
 		5: 'Lease Sent',
-		6: 'Lease Signed',
-		7: 'Lease Finalized'
+		6: 'Lease Finalized'
 	};
 	return stepLabels[stepNumber] || 'Unknown';
 }
@@ -84,7 +83,7 @@ export async function getHealthMessages(lead, formatDate) {
 	// Get current step
 	const currentStepNumber = lead.current_step || await getCurrentStepFromActivities(lead.id);
 	const currentStepLabel = getStepLabel(currentStepNumber);
-	const nextStepNumber = currentStepNumber < 8 ? currentStepNumber + 1 : null;
+	const nextStepNumber = currentStepNumber < 6 ? currentStepNumber + 1 : null;
 	const nextStepLabel = nextStepNumber ? getStepLabel(nextStepNumber) : 'Complete';
 
 	// Format time display

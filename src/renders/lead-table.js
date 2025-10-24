@@ -21,6 +21,9 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 	// Check if lead has responded to showcase (optional indicator)
 	const hasLeadResponded = lead.leadResponded || false;
 
+	// Check if lease has been signed (optional indicator)
+	const hasLeaseSigned = lead.leaseSigned || false;
+
 	const table = document.createElement('div');
 	table.className = 'lead-table-container';
 	table.innerHTML = `
@@ -63,11 +66,20 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 									</div>
 								` : '';
 
+								// For step 5 (Lease Sent), add optional "Lease Signed!" indicator above
+								const leaseSignedIndicator = (step.id === 5 && hasLeaseSigned) ? `
+									<div class="lead-responded-indicator" title="Lease Signed!">
+										<span class="checkmark">✓</span>
+										<span class="label">Lease Signed!</span>
+									</div>
+								` : '';
+
 								return `
 									<div class="progress-step ${stepClass}"
 										 data-lead-id="${lead.id}"
 										 data-step="${step.id}">
 										${leadRespondedIndicator}
+										${leaseSignedIndicator}
 										<div class="progress-step-dot ${stepClass}">${step.id}</div>
 										<div class="progress-step-label">${step.label}</div>
 									</div>
