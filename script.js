@@ -19,11 +19,8 @@ import {
 } from './src/state/state.js';
 
 // Import mock data (TEMPORARY - will be removed when Supabase APIs are complete)
-// Note: mockAgents removed - now using real agents from Supabase users table
-// Note: mockLeads removed - now using state.leads from Supabase
-// Note: mockSpecials removed - now using real specials from Supabase
 import {
-	mockProperties, // Still used for showcases - TODO: replace with Supabase
+	mockProperties,
 	mockInterestedLeads,
 	mockBugs,
 	mockDocumentStatuses,
@@ -104,7 +101,6 @@ let api, renderLeads, renderSpecials;
 	// Real agents loaded from Supabase users table
 	let realAgents = [];
 
-	// ---- Table Sorting ----
 	function sortTable(column, tableId) {
 		sortTableUtil(column, tableId, state, {
 			renderLeads,
@@ -117,8 +113,6 @@ let api, renderLeads, renderSpecials;
 		}, updateSortHeaders);
 	}
 
-
-	// ---- Health & Lead Utilities ----
 	async function getCurrentStepFromActivities(leadId) {
 		return await getCurrentStepUtil(leadId);
 	}
@@ -150,13 +144,11 @@ let api, renderLeads, renderSpecials;
 		return Agents.getAgentStats(agentId, { leads: state.leads || [] });
 	}
 
-	// ---- API Layer ----
 	api = createAPI({
 		mockInterestedLeads,
 		mockBugs
 	});
 
-	// ---- Rendering Functions ----
 	renderLeads = async function(){
 		// Call module render function with realAgents (global variable)
 		await Leads.renderLeads({
@@ -170,7 +162,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Lead Forms ----
 	window.saveNewLead = async function() {
 		await Leads.saveNewLead({
 			SupabaseAPI,
@@ -186,7 +177,6 @@ let api, renderLeads, renderSpecials;
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
 
-	// ---- Progress & Documents ----
 	const progressSteps = Documents.progressSteps;
 
 	function renderProgressTable(tbodyId, leads) {
@@ -265,22 +255,11 @@ let api, renderLeads, renderSpecials;
 	function populatePropertyDropdown(communityNames) {
 		Properties.populatePropertyDropdown(communityNames);
 	}
-
 	async function savePropertyContact() {
-		await Properties.savePropertyContact({
-			SupabaseAPI,
-			hideModal,
-			renderPropertyContacts,
-			toast
-		});
+		await Properties.savePropertyContact({ SupabaseAPI, hideModal, renderPropertyContacts, toast });
 	}
-
 	async function editPropertyContact(propertyId, communityName) {
-		await Properties.editPropertyContact(propertyId, communityName, {
-			SupabaseAPI,
-			showModal,
-			toast
-		});
+		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
 	}
 
 	renderSpecials = async function(){
@@ -293,84 +272,33 @@ let api, renderLeads, renderSpecials;
 	}
 
 	window.saveNewSpecial = function() {
-		Properties.saveNewSpecial({
-			api,
-			toast,
-			hideModal,
-			renderSpecials,
-			state
-		});
+		Properties.saveNewSpecial({ api, toast, hideModal, renderSpecials, state });
 	}
-
 	window.deleteSpecial = function(specialId) {
-		Properties.deleteSpecial(specialId, {
-			api,
-			toast,
-			renderSpecials
-		});
+		Properties.deleteSpecial(specialId, { api, toast, renderSpecials });
 	}
-
 	async function renderBugs() {
-		await Properties.renderBugs({
-			api,
-			formatDate
-		});
+		await Properties.renderBugs({ api, formatDate });
 	}
-
 	function showBugReportModal(context = {}) {
-		Properties.showBugReportModal(context, {
-			state,
-			showModal
-		});
+		Properties.showBugReportModal(context, { state, showModal });
 	}
 
 	async function submitBugReport() {
-		await Properties.submitBugReport({
-			api,
-			state,
-			toast,
-			hideModal,
-			renderBugs,
-			getBrowserInfo,
-			getOSInfo
-		});
+		await Properties.submitBugReport({ api, state, toast, hideModal, renderBugs, getBrowserInfo, getOSInfo });
 	}
-
-	function getBrowserInfo() {
-		return Properties.getBrowserInfo();
-	}
-
-	function getOSInfo() {
-		return Properties.getOSInfo();
-	}
-
+	function getBrowserInfo() { return Properties.getBrowserInfo(); }
+	function getOSInfo() { return Properties.getOSInfo(); }
 	function addBugFlags() {
-		Properties.addBugFlags({
-			state,
-			showBugReportModal,
-			updateBugFlagVisibility
-		});
+		Properties.addBugFlags({ state, showBugReportModal, updateBugFlagVisibility });
 	}
-
-	function updateBugFlagVisibility() {
-		Properties.updateBugFlagVisibility({
-			state
-		});
-	}
-
+	function updateBugFlagVisibility() { Properties.updateBugFlagVisibility({ state }); }
 	async function showBugDetails(bugId) {
-		await Properties.showBugDetails(bugId, {
-			mockBugs,
-			formatDate,
-			showModal,
-			toast
-		});
+		await Properties.showBugDetails(bugId, { mockBugs, formatDate, showModal, toast });
 	}
-
 	async function saveBugChanges(bugId) {
 		await Properties.saveBugChanges(bugId, { api, toast, renderBugs });
 	}
-
 	function handleBugFieldChange(bugId) {
 		Properties.handleBugFieldChange(bugId);
 	}
@@ -392,7 +320,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Map Management ----
 	function initMap() {
 		Listings.initMap();
 	}
@@ -409,7 +336,6 @@ let api, renderLeads, renderSpecials;
 		Listings.selectProperty(prop);
 	}
 
-	// ---- Modals ----
 	function openAddListingModal() {
 		Modals.openAddListingModal({
 			showModal
@@ -423,63 +349,25 @@ let api, renderLeads, renderSpecials;
 	}
 
 	async function createListing() {
-		await Modals.createListing({
-			SupabaseAPI,
-			geocodeAddress,
-			toast,
-			closeAddListingModal,
-			renderListings
-		});
+		await Modals.createListing({ SupabaseAPI, geocodeAddress, toast, closeAddListingModal, renderListings });
 	}
-
 	async function loadLeadNotes(leadId) {
-		await Modals.loadLeadNotes(leadId, {
-			SupabaseAPI,
-			formatDate
-		});
+		await Modals.loadLeadNotes(leadId, { SupabaseAPI, formatDate });
 	}
-
 	async function saveLeadNote(isStandalone = false) {
-		await Modals.saveLeadNote(isStandalone, {
-			SupabaseAPI,
-			loadLeadNotesInModal,
-			renderLeads,
-			toast
-		});
+		await Modals.saveLeadNote(isStandalone, { SupabaseAPI, loadLeadNotesInModal, renderLeads, toast });
 	}
-
-	// ---- Property Notes Modal Functions ----
-	// Note: currentPropertyForNotes is now window.currentPropertyForNotes (global)
-
 	async function openPropertyNotesModal(propertyId, propertyName) {
-		await Modals.openPropertyNotesModal(propertyId, propertyName, {
-			loadPropertyNotes,
-			showModal
-		});
+		await Modals.openPropertyNotesModal(propertyId, propertyName, { loadPropertyNotes, showModal });
 	}
-
 	function closePropertyNotesModal() {
-		Modals.closePropertyNotesModal({
-			hideModal
-		});
+		Modals.closePropertyNotesModal({ hideModal });
 	}
-
 	async function loadPropertyNotes(propertyId) {
-		await Modals.loadPropertyNotes(propertyId, {
-			SupabaseAPI,
-			formatDate,
-			toast
-		});
+		await Modals.loadPropertyNotes(propertyId, { SupabaseAPI, formatDate, toast });
 	}
-
 	async function addPropertyNote() {
-		await Modals.addPropertyNote({
-			state,
-			SupabaseAPI,
-			loadPropertyNotes,
-			renderListings,
-			toast
-		});
+		await Modals.addPropertyNote({ state, SupabaseAPI, loadPropertyNotes, renderListings, toast });
 	}
 
 	async function renderListings(){
@@ -518,7 +406,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Lead Notes Modal ----
 	async function openLeadNotesModal(leadId, leadName) {
 		await Modals.openLeadNotesModal(leadId, leadName, {
 			loadLeadNotesInModal,
@@ -532,7 +419,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Activity Log Modal ----
 	async function openActivityLogModal(entityId, entityType, entityName) {
 		await Modals.openActivityLogModal(entityId, entityType, entityName, {
 			SupabaseAPI,
@@ -588,7 +474,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Agent Drawer ----
 	async function openAgentDrawer(agentId){
 		await openAgentDrawerUtil({
 			agentId,
@@ -616,7 +501,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Document Modals ----
 	function closeDocumentDetails() {
 		Modals.closeDocumentDetails({
 			hide
@@ -645,7 +529,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Matches Modal ----
 	async function openMatches(leadId){
 		await Modals.openMatches(leadId, {
 			state,
@@ -661,7 +544,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Email Preview Modal ----
 	async function openEmailPreview(){
 		await Modals.openEmailPreview({
 			state,
@@ -684,7 +566,6 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	// ---- Interested Leads Modal ----
 	async function openInterestedLeads(propertyId, propertyName) {
 		await Showcases.openInterestedLeads(propertyId, propertyName, { api, show });
 	}
@@ -739,10 +620,7 @@ let api, renderLeads, renderSpecials;
 	}
 
 	function getSelectedListings(){
-		// Note: mockProperties still used for showcases - will be replaced with Supabase later
-		return Modals.getSelectedListings({
-			mockProperties
-		});
+		return Modals.getSelectedListings({ mockProperties });
 	}
 
 	function updateBuildShowcaseButton(){
@@ -786,7 +664,6 @@ let api, renderLeads, renderSpecials;
 		await Showcases.sendShowcase({ state, api, realAgents, mockProperties, toast, closeShowcase, closeMatches });
 	}
 
-	// ---- Routing ----
 	function setRoleLabel(page = 'leads'){
 		Routing.setRoleLabel(page, state);
 	}
@@ -818,7 +695,6 @@ let api, renderLeads, renderSpecials;
 		Routing.updateNavVisibility(state);
 	}
 
-	// ---- App Initialization ----
 	window.initializeApp = async function() {
 		await Init.initializeApp({
 			state,
@@ -829,7 +705,6 @@ let api, renderLeads, renderSpecials;
 		});
 	};
 
-	// ---- Event Listeners ----
 	document.addEventListener('DOMContentLoaded', () => {
 		console.log('DOM loaded, waiting for authentication...');
 
@@ -875,7 +750,6 @@ let api, renderLeads, renderSpecials;
 		Routing.initializeRouting(route);
 	}
 
-	// ---- Listing Edit Modal ----
 	async function openListingEditModal(property) {
 		await Modals.openListingEditModal(property, {
 			state,
@@ -933,7 +807,6 @@ let realUsers = [];
 let realAuditLog = [];
 
 // API functions for real data
-// ---- Admin Module Wrappers ----
 async function loadUsers() {
 	await Admin.loadUsers({
 		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
