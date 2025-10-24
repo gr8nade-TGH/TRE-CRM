@@ -8,16 +8,18 @@
 /**
  * Progress steps configuration
  * Defines the 8-step workflow for lead document processing
+ *
+ * Note: "Lead Responded" is an optional indicator that appears above "Showcase Sent"
+ * when a lead responds. It doesn't block progress to the next step.
  */
 export const progressSteps = [
 	{ id: 1, label: 'Lead Joined', key: 'leadJoined' },
 	{ id: 2, label: 'Showcase Sent', key: 'showcaseSent' },
-	{ id: 3, label: 'Lead Responded', key: 'leadResponded' },
-	{ id: 4, label: 'Guest Card Sent', key: 'guestCardSent' },
-	{ id: 5, label: 'Property Selected', key: 'propertySelected' },
-	{ id: 6, label: 'Lease Sent', key: 'leaseSent' },
-	{ id: 7, label: 'Lease Signed', key: 'leaseSigned' },
-	{ id: 8, label: 'Lease Finalized', key: 'leaseFinalized' }
+	{ id: 3, label: 'Guest Card Sent', key: 'guestCardSent' },
+	{ id: 4, label: 'Property Selected', key: 'propertySelected' },
+	{ id: 5, label: 'Lease Sent', key: 'leaseSent' },
+	{ id: 6, label: 'Lease Signed', key: 'leaseSigned' },
+	{ id: 7, label: 'Lease Finalized', key: 'leaseFinalized' }
 ];
 
 /**

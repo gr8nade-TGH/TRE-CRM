@@ -14,9 +14,12 @@
  */
 export function createLeadTable(lead, isExpanded = false, deps) {
 	const { progressSteps, formatDate } = deps;
-	
+
 	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
+
+	// Check if lead has responded to showcase (optional indicator)
+	const hasLeadResponded = lead.leadResponded || false;
 
 	const table = document.createElement('div');
 	table.className = 'lead-table-container';
@@ -51,10 +54,20 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 							${progressSteps.map(step => {
 								const stepClass = step.id < lead.currentStep ? 'completed' :
 																 step.id === lead.currentStep ? 'current' : 'pending';
+
+								// For step 2 (Showcase Sent), add optional "Lead Responded" indicator above
+								const leadRespondedIndicator = (step.id === 2 && hasLeadResponded) ? `
+									<div class="lead-responded-indicator" title="Lead Responded">
+										<span class="checkmark">✓</span>
+										<span class="label">Lead Responded</span>
+									</div>
+								` : '';
+
 								return `
 									<div class="progress-step ${stepClass}"
 										 data-lead-id="${lead.id}"
 										 data-step="${step.id}">
+										${leadRespondedIndicator}
 										<div class="progress-step-dot ${stepClass}">${step.id}</div>
 										<div class="progress-step-label">${step.label}</div>
 									</div>

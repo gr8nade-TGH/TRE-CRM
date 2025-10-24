@@ -1,9 +1,26 @@
 /**
  * Documents Rendering Module
  * EXACT COPY from script.js - Preserves all pre-modularization functionality
- * 
+ *
  * @module documents/rendering
  */
+
+/**
+ * Check if a lead has responded to showcase by checking lead_activities
+ * @param {string} leadId - The lead ID
+ * @param {Object} SupabaseAPI - Supabase API object
+ * @returns {Promise<boolean>} True if lead has responded
+ */
+async function hasLeadResponded(leadId, SupabaseAPI) {
+	try {
+		const activities = await SupabaseAPI.getLeadActivities(leadId);
+		// Check if there's a 'showcase_response' activity
+		return activities.some(activity => activity.activity_type === 'showcase_response');
+	} catch (error) {
+		console.error('Error checking lead response:', error);
+		return false;
+	}
+}
 
 /**
  * Render documents (delegates to manager or agent view)
@@ -66,7 +83,8 @@ export async function renderManagerDocuments(options) {
 		});
 
 		// Transform leads to match the expected format
-		const transformedLeads = result.items.map(lead => ({
+		// Check for lead responses in parallel
+		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
 			id: lead.id,
 			leadName: lead.name,
 			agentName: lead.agent_name || 'Unassigned',
@@ -74,6 +92,7 @@ export async function renderManagerDocuments(options) {
 			currentStep: lead.current_step || 1,
 			lastUpdated: lead.updated_at || lead.created_at,
 			status: lead.health_status === 'closed' ? 'completed' : 'current',
+			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI), // Check if lead responded
 			property: {
 				name: lead.property_name || 'Not selected',
 				address: lead.property_address || '',
@@ -98,7 +117,7 @@ export async function renderManagerDocuments(options) {
 				property: lead.property_name || '',
 				apartment: lead.apartment_unit || ''
 			}
-		}));
+		})));
 
 		// Render progress table with real data
 		renderProgressTable('documentsTbody', transformedLeads);
@@ -145,7 +164,8 @@ export async function renderAgentDocuments(options) {
 		});
 
 		// Transform leads to match the expected format
-		const transformedLeads = result.items.map(lead => ({
+		// Check for lead responses in parallel
+		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
 			id: lead.id,
 			leadName: lead.name,
 			agentName: lead.agent_name || 'Unassigned',
@@ -153,6 +173,7 @@ export async function renderAgentDocuments(options) {
 			currentStep: lead.current_step || 1,
 			lastUpdated: lead.updated_at || lead.created_at,
 			status: lead.health_status === 'closed' ? 'completed' : 'current',
+			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI), // Check if lead responded
 			property: {
 				name: lead.property_name || 'Not selected',
 				address: lead.property_address || '',
@@ -177,7 +198,7 @@ export async function renderAgentDocuments(options) {
 				property: lead.property_name || '',
 				apartment: lead.apartment_unit || ''
 			}
-		}));
+		})));
 
 		// Render progress table with real data
 		renderProgressTable('agentDocumentsTbody', transformedLeads);

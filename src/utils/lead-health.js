@@ -13,15 +13,15 @@ export async function getCurrentStepFromActivities(leadId) {
 		const activities = await getLeadActivities(leadId);
 
 		// Map activity types to step numbers
+		// Note: 'showcase_response' is optional and doesn't advance the step counter
 		const stepMapping = {
 			'lead_created': 1,
 			'showcase_sent': 2,
-			'showcase_response': 3,
-			'guest_card_sent': 4,
-			'property_selected': 5,
-			'lease_sent': 6,
-			'lease_signed': 7,
-			'lease_finalized': 8
+			'guest_card_sent': 3,
+			'property_selected': 4,
+			'lease_sent': 5,
+			'lease_signed': 6,
+			'lease_finalized': 7
 		};
 
 		// Find the highest step reached
@@ -42,19 +42,18 @@ export async function getCurrentStepFromActivities(leadId) {
 
 /**
  * Get step label from step number
- * @param {number} stepNumber - Step number (1-8)
+ * @param {number} stepNumber - Step number (1-7)
  * @returns {string} Step label
  */
 export function getStepLabel(stepNumber) {
 	const stepLabels = {
 		1: 'Lead Joined',
 		2: 'Showcase Sent',
-		3: 'Showcase Response',
-		4: 'Guest Card Sent',
-		5: 'Property Selected',
-		6: 'Lease Sent',
-		7: 'Lease Signed',
-		8: 'Lease Finalized'
+		3: 'Guest Card Sent',
+		4: 'Property Selected',
+		5: 'Lease Sent',
+		6: 'Lease Signed',
+		7: 'Lease Finalized'
 	};
 	return stepLabels[stepNumber] || 'Unknown';
 }
