@@ -538,7 +538,7 @@ let api, renderLeads, renderSpecials;
 		await Init.initializeApp({
 			state,
 			SupabaseAPI,
-			updateNavVisibility,
+			updateNavVisibility: (state) => Routing.updateNavVisibility(state),
 			initializeRouting: () => Routing.initializeRouting(route),
 			setRealAgents: (agents) => { realAgents = agents; }
 		});
@@ -573,7 +573,7 @@ let api, renderLeads, renderSpecials;
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
 			sortTable, toast, formatDate, showPopover,
-			updateBuildShowcaseButton,
+			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
 			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
 			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,
 			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
