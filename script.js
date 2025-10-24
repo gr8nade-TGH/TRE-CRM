@@ -77,6 +77,22 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function initPopover() {
+		Leads.initPopover();
+	}
+
+	function hidePopover() {
+		Leads.hidePopover();
+	}
+
+	function toggleLeadTable(leadId) {
+		Documents.toggleLeadTable(leadId);
+	}
+
+	function updateBulkActionsBar() {
+		Listings.updateBulkActionsBar({ state });
+	}
+
 	api = createAPI({
 		mockInterestedLeads,
 		mockBugs
@@ -538,7 +554,7 @@ let api, renderLeads, renderSpecials;
 		await Init.initializeApp({
 			state,
 			SupabaseAPI,
-			updateNavVisibility: (state) => Routing.updateNavVisibility(state),
+			updateNavVisibility: () => Routing.updateNavVisibility(state),
 			initializeRouting: () => Routing.initializeRouting(route),
 			setRealAgents: (agents) => { realAgents = agents; }
 		});
