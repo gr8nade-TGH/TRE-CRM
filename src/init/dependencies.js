@@ -42,6 +42,7 @@ export function createDependencies(context) {
 		closeLeadDetailsModal,
 		closeLeadNotesModal,
 		closeAgentEditModal,
+		closeListingEditModal,
 		openInterestedLeads,
 		openPropertyNotesModal,
 		closePropertyNotesModal,
@@ -144,6 +145,7 @@ export function createDependencies(context) {
 		closeLeadDetailsModal,
 		closeLeadNotesModal,
 		closeAgentEditModal,
+		closeListingEditModal,
 		openInterestedLeads,
 		openPropertyNotesModal,
 		closePropertyNotesModal,
@@ -178,7 +180,11 @@ export function createDependencies(context) {
 		sortTable,
 		toast,
 		formatDate,
+		initPopover,
 		showPopover,
+		hidePopover,
+		toggleLeadTable,
+		updateBulkActionsBar,
 		updateBuildShowcaseButton,
 		
 		// Bulk actions functions
