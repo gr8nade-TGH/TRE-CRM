@@ -847,8 +847,7 @@ export function setupAllEventListeners(deps) {
 		// Add New Property button (on Properties page)
 		if (addPropertyBtn) {
 			addPropertyBtn.addEventListener('click', () => {
-				showModal('addListingModal');
-				document.getElementById('addListingForm').reset();
+				openAddListingModal();
 			});
 		}
 
