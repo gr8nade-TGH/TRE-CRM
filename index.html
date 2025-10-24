@@ -387,67 +387,38 @@
 		<!-- Route: #/properties (formerly #/specials) -->
 		<section id="propertiesView" class="route-view hidden">
 			<div class="view-bar" style="display: none;">
-				<h1>🔥 Properties</h1>
+				<h1>🔥 Properties & Specials</h1>
 				<div id="propertiesRoleLabel" class="role-label"></div>
 			</div>
 
-			<!-- Property Specials Section -->
+			<!-- Unified Properties Table -->
 			<div class="properties-section">
 				<div class="section-header">
-					<h2>🔥 Property Specials</h2>
-					<button id="addSpecialBtn" class="btn btn-primary">+ Add Special</button>
+					<h2>🏢 Properties & Specials</h2>
+					<div style="display: flex; gap: 10px;">
+						<button id="addPropertyContactBtn" class="btn btn-primary">+ Add Property Contact</button>
+						<button id="addSpecialBtn" class="btn btn-primary">+ Add Special</button>
+					</div>
 				</div>
 
 				<div class="table-actions">
-					<input id="specialsSearch" type="search" placeholder="Search property name or special" />
+					<input id="propertiesSearch" type="search" placeholder="Search properties, contacts, or specials..." />
 				</div>
 
 				<div class="table-container">
-					<table id="specialsTable" class="data-table">
-						<thead>
-							<tr>
-								<th data-sort="property_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
-								<th>Current Special</th>
-								<th data-sort="commission_rate" class="sortable">Commission Rate <span class="sort-icon">↕</span></th>
-								<th data-sort="expiration_date" class="sortable">Expiration Date <span class="sort-icon">↕</span></th>
-								<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
-								<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
-								<th>Actions</th>
-							</tr>
-						</thead>
-						<tbody id="specialsTbody">
-							<!-- Specials will be populated here -->
-						</tbody>
-					</table>
-				</div>
-			</div>
-
-			<!-- Property Contact Info Section -->
-			<div class="properties-section" style="margin-top: 40px;">
-				<div class="section-header">
-					<h2>📞 Property Contact Information</h2>
-					<button id="addPropertyContactBtn" class="btn btn-primary">+ Add Property Contact</button>
-				</div>
-
-				<div class="table-actions">
-					<input id="contactsSearch" type="search" placeholder="Search property name" />
-				</div>
-
-				<div class="table-container">
-					<table id="contactsTable" class="data-table">
+					<table id="propertiesTable" class="data-table">
 						<thead>
 							<tr>
 								<th data-sort="community_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
 								<th>Address</th>
-								<th>Contact Name</th>
-								<th>Email</th>
+								<th>Contact Info</th>
 								<th>Phone</th>
-								<th>Office Hours</th>
+								<th>Current Special(s)</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
-						<tbody id="contactsTbody">
-							<!-- Property contacts will be populated here -->
+						<tbody id="propertiesTbody">
+							<!-- Properties with contacts and specials will be populated here -->
 						</tbody>
 					</table>
 				</div>
@@ -1434,6 +1405,34 @@
 			<div class="modal-footer">
 				<button id="saveAddSpecialBtn" class="btn btn-primary">Add Special</button>
 				<button id="cancelAddSpecialBtn" class="btn btn-secondary">Cancel</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- View Property Specials Modal -->
+	<div id="viewSpecialsModal" class="modal hidden">
+		<div class="modal-card">
+			<div class="modal-header">
+				<h3>🔥 Specials for <span id="viewSpecialsPropertyName"></span></h3>
+				<button id="closeViewSpecialsModal" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<table class="data-table">
+					<thead>
+						<tr>
+							<th>Special</th>
+							<th>Commission</th>
+							<th>Expires</th>
+							<th>Actions</th>
+						</tr>
+					</thead>
+					<tbody id="viewSpecialsTbody">
+						<!-- Specials will be populated here -->
+					</tbody>
+				</table>
+			</div>
+			<div class="modal-footer">
+				<button id="closeViewSpecialsBtn" class="btn btn-secondary">Close</button>
 			</div>
 		</div>
 	</div>

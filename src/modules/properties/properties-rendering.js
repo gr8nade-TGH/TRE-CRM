@@ -1,11 +1,211 @@
 // Properties Rendering Functions - EXACT COPY from script.js lines 2340-2488
 
+/**
+ * Render the unified properties table with contacts and specials merged
+ */
 export async function renderProperties(options) {
-	const { renderPropertyContacts, renderSpecials } = options;
-	
-	console.log('renderProperties called');
-	await renderPropertyContacts();
-	await renderSpecials();
+	const { SupabaseAPI, toast, state } = options;
+
+	console.log('renderProperties called - rendering merged table');
+	const tbody = document.getElementById('propertiesTbody');
+	if (!tbody) {
+		console.error('propertiesTbody not found');
+		return;
+	}
+
+	try {
+		// Fetch properties and specials in parallel
+		const [properties, specialsData] = await Promise.all([
+			SupabaseAPI.getProperties({ search: '', market: 'all' }),
+			SupabaseAPI.getSpecials({ search: '', sortKey: 'expiration_date', sortOrder: 'asc' })
+		]);
+
+		const specials = specialsData.items || [];
+		console.log('Fetched properties:', properties.length, 'specials:', specials.length);
+
+		// Filter valid properties (exclude test entries)
+		const validProperties = properties.filter(prop => {
+			const name = prop.community_name || prop.name;
+			const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
+			const hasValidName = name && name.trim() !== '' && !isTestEntry;
+			return hasValidName;
+		});
+
+		// Merge specials into properties
+		const propertiesWithSpecials = validProperties.map(prop => {
+			const propName = prop.community_name || prop.name;
+
+			// Find all specials for this property
+			const propSpecials = specials.filter(s => s.property_name === propName);
+
+			// Filter active specials (not expired)
+			const activeSpecials = propSpecials.filter(s => {
+				const expDate = new Date(s.expiration_date);
+				return expDate > new Date();
+			});
+
+			return {
+				...prop,
+				allSpecials: propSpecials,
+				activeSpecials: activeSpecials
+			};
+		});
+
+		console.log('Properties with specials merged:', propertiesWithSpecials.length);
+
+		// Clear table
+		tbody.innerHTML = '';
+
+		// Render each property
+		propertiesWithSpecials.forEach(prop => {
+			const tr = document.createElement('tr');
+
+			// Property name
+			const name = prop.community_name || prop.name;
+
+			// Address
+			const address = prop.address || '<span class="muted">—</span>';
+
+			// Contact info
+			const contactName = prop.contact_name || '';
+			const contactEmail = prop.contact_email || '';
+			let contactInfo = '';
+			if (contactName || contactEmail) {
+				contactInfo = `
+					<div>${contactName || '<span class="muted">—</span>'}</div>
+					${contactEmail ? `<div class="muted" style="font-size: 11px;">${contactEmail}</div>` : ''}
+				`;
+			} else {
+				contactInfo = '<span class="muted">—</span>';
+			}
+
+			// Phone
+			const phone = prop.contact_phone || '<span class="muted">—</span>';
+
+			// Specials column
+			let specialsHtml = '';
+			if (prop.activeSpecials.length === 0) {
+				specialsHtml = '<span class="muted">No active special</span>';
+			} else if (prop.activeSpecials.length === 1) {
+				const special = prop.activeSpecials[0];
+				const expDate = new Date(special.expiration_date).toLocaleDateString();
+				specialsHtml = `
+					<div style="line-height: 1.4;">
+						<div>🔥 ${special.current_special}</div>
+						<div class="muted" style="font-size: 11px;">Expires: ${expDate}</div>
+					</div>
+				`;
+			} else {
+				specialsHtml = `
+					<div style="line-height: 1.4;">
+						<div>🔥 ${prop.activeSpecials.length} active specials</div>
+						<button class="btn-link" onclick="window.viewPropertySpecials('${prop.id}', '${name.replace(/'/g, "\\'")}')">
+							View Details
+						</button>
+					</div>
+				`;
+			}
+
+			// Actions
+			const actionsHtml = `
+				<button class="icon-btn" onclick="window.editPropertyContact('${prop.id}', '${name.replace(/'/g, "\\'")}')}" title="Edit Contact">
+					✏️
+				</button>
+				<button class="icon-btn" onclick="window.addSpecialForProperty('${name.replace(/'/g, "\\'")}')}" title="Add Special">
+					🔥
+				</button>
+			`;
+
+			tr.innerHTML = `
+				<td><strong>${name}</strong></td>
+				<td>${address}</td>
+				<td>${contactInfo}</td>
+				<td>${phone}</td>
+				<td>${specialsHtml}</td>
+				<td>${actionsHtml}</td>
+			`;
+
+			tbody.appendChild(tr);
+		});
+
+		console.log(`Rendered ${propertiesWithSpecials.length} properties in merged table`);
+	} catch (error) {
+		console.error('Error rendering properties:', error);
+		toast('Error loading properties. Please try again.', 'error');
+	}
+}
+
+/**
+ * Open modal to add a special for a specific property
+ */
+export function addSpecialForProperty(propertyName, options) {
+	const { showModal, populateSpecialPropertyDropdown } = options;
+
+	// Open the Add Special modal
+	showModal('addSpecialModal');
+
+	// Reset form
+	document.getElementById('addSpecialForm').reset();
+
+	// Set default expiration date to 30 days from now
+	const defaultDate = new Date();
+	defaultDate.setDate(defaultDate.getDate() + 30);
+	document.getElementById('specialExpirationDate').value = defaultDate.toISOString().split('T')[0];
+
+	// Populate dropdown and pre-select the property
+	populateSpecialPropertyDropdown().then(() => {
+		const select = document.getElementById('specialPropertyName');
+		if (select && propertyName) {
+			select.value = propertyName;
+		}
+	});
+}
+
+/**
+ * View all specials for a specific property
+ */
+export async function viewPropertySpecials(propertyId, propertyName, options) {
+	const { SupabaseAPI, showModal } = options;
+
+	try {
+		// Fetch all specials for this property
+		const specialsData = await SupabaseAPI.getSpecials({ search: propertyName });
+		const specials = specialsData.items || [];
+
+		// Filter specials for this property
+		const propertySpecials = specials.filter(s => s.property_name === propertyName);
+
+		// Populate modal
+		const modalTitle = document.getElementById('viewSpecialsPropertyName');
+		const tbody = document.getElementById('viewSpecialsTbody');
+
+		if (modalTitle) modalTitle.textContent = propertyName;
+		if (tbody) {
+			tbody.innerHTML = '';
+
+			propertySpecials.forEach(special => {
+				const tr = document.createElement('tr');
+				const expDate = new Date(special.expiration_date).toLocaleDateString();
+				const isExpired = new Date(special.expiration_date) < new Date();
+
+				tr.innerHTML = `
+					<td>${special.current_special}</td>
+					<td>${special.commission_rate || '—'}</td>
+					<td ${isExpired ? 'style="color: var(--danger);"' : ''}>${expDate} ${isExpired ? '(Expired)' : ''}</td>
+					<td>
+						<button class="icon-btn" onclick="window.deleteSpecial('${special.id}')" title="Delete">🗑️</button>
+					</td>
+				`;
+
+				tbody.appendChild(tr);
+			});
+		}
+
+		// Show modal
+		showModal('viewSpecialsModal');
+	} catch (error) {
+		console.error('Error loading property specials:', error);
+	}
 }
 
 export async function renderPropertyContacts(options) {

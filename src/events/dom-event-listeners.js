@@ -940,6 +940,22 @@ export function setupAllEventListeners(deps) {
 			});
 		}
 
+		// View Specials Modal
+		const closeViewSpecialsModal = document.getElementById('closeViewSpecialsModal');
+		const closeViewSpecialsBtn = document.getElementById('closeViewSpecialsBtn');
+
+		if (closeViewSpecialsModal) {
+			closeViewSpecialsModal.addEventListener('click', () => {
+				hideModal('viewSpecialsModal');
+			});
+		}
+
+		if (closeViewSpecialsBtn) {
+			closeViewSpecialsBtn.addEventListener('click', () => {
+				hideModal('viewSpecialsModal');
+			});
+		}
+
 		// Specials search
 		const specialsSearchEl = document.getElementById('specialsSearch');
 		if (specialsSearchEl) {

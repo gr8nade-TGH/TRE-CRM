@@ -22,7 +22,9 @@ export {
 	populatePropertyDropdown,
 	populateSpecialPropertyDropdown,
 	savePropertyContact,
-	editPropertyContact
+	editPropertyContact,
+	addSpecialForProperty,
+	viewPropertySpecials
 } from './properties-rendering.js';
 
 export {

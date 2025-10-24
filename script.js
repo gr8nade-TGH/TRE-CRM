@@ -195,8 +195,9 @@ let api, renderLeads, renderSpecials;
 
 	async function renderProperties() {
 		await Properties.renderProperties({
-			renderPropertyContacts,
-			renderSpecials
+			SupabaseAPI,
+			toast,
+			state
 		});
 	}
 
@@ -209,20 +210,32 @@ let api, renderLeads, renderSpecials;
 	}
 
 	async function renderPropertyContacts() {
-		await Properties.renderPropertyContacts({
-			state,
-			SupabaseAPI,
-			populatePropertyDropdown,
-			toast
-		});
+		// Legacy function - now calls renderProperties
+		await renderProperties();
 	}
 
 	async function savePropertyContact() {
-		await Properties.savePropertyContact({ SupabaseAPI, hideModal, renderPropertyContacts, toast });
+		await Properties.savePropertyContact({ SupabaseAPI, hideModal, renderProperties, toast });
 	}
+
 	async function editPropertyContact(propertyId, communityName) {
 		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
 	}
+
+	// Window functions for inline onclick handlers
+	window.addSpecialForProperty = function(propertyName) {
+		Properties.addSpecialForProperty(propertyName, {
+			showModal,
+			populateSpecialPropertyDropdown
+		});
+	};
+
+	window.viewPropertySpecials = async function(propertyId, propertyName) {
+		await Properties.viewPropertySpecials(propertyId, propertyName, {
+			SupabaseAPI,
+			showModal
+		});
+	};
 
 	// Listing edit modal functions - defined in outer scope so renderListings can access them
 	async function openListingEditModal(property) {
@@ -256,19 +269,15 @@ let api, renderLeads, renderSpecials;
 	}
 
 	renderSpecials = async function(){
-		await Properties.renderSpecials({
-			state,
-			api,
-			formatDate,
-			updateSortHeaders
-		});
+		// Legacy function - now calls renderProperties (merged table)
+		await renderProperties();
 	}
 
 	window.saveNewSpecial = function() {
-		Properties.saveNewSpecial({ api, toast, hideModal, renderSpecials, state });
+		Properties.saveNewSpecial({ api, toast, hideModal, renderSpecials: renderProperties, state });
 	}
 	window.deleteSpecial = function(specialId) {
-		Properties.deleteSpecial(specialId, { api, toast, renderSpecials });
+		Properties.deleteSpecial(specialId, { api, toast, renderSpecials: renderProperties });
 	}
 	async function renderBugs() {
 		await Properties.renderBugs({ api, formatDate });
