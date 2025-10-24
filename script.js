@@ -1,8 +1,4 @@
-﻿// ============================================================================
-// IMPORTS - Modular Architecture
-// ============================================================================
-
-// Import utility functions
+﻿// Utility functions
 import {
 	formatDate,
 	showModal,
@@ -12,13 +8,9 @@ import {
 	hide,
 	updateSortHeaders
 } from './src/utils/helpers.js';
-
-// Import state management
 import {
 	state
 } from './src/state/state.js';
-
-// Import mock data (TEMPORARY - will be removed when Supabase APIs are complete)
 import {
 	mockProperties,
 	mockInterestedLeads,
@@ -26,75 +18,32 @@ import {
 	mockDocumentStatuses,
 	mockClosedLeads
 } from './src/state/mockData.js';
-
-// Import Supabase API (for real data)
 import * as SupabaseAPI from './src/api/supabase-api.js';
-
-// Import API wrapper
 import { createAPI } from './src/api/api-wrapper.js';
-
-// Import utilities
 import { getStepModalContent as getStepModalContentUtil } from './src/utils/step-modal-content.js';
 import { sortTable as sortTableUtil } from './src/utils/table-sorting.js';
 import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase-builder.js';
 import { getCurrentStepFromActivities as getCurrentStepUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
 import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentChangesUtil } from './src/utils/agent-drawer.js';
 import { geocodeAddress } from './src/utils/geocoding.js';
-
-// Import event listeners setup
 import { setupAllEventListeners } from './src/events/dom-event-listeners.js';
 import { createLeadTable as createLeadTableUtil } from './src/renders/lead-table.js';
 import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-modals.js';
-
-// Import dependency injection
 import { createDependencies } from './src/init/dependencies.js';
-
-// Import Leads module
 import * as Leads from './src/modules/leads/index.js';
-
-// Import Listings module
 import * as Listings from './src/modules/listings/index.js';
 import { downloadCSVTemplate, importCSV } from './src/modules/listings/csv-import.js';
-
-// Import Agents module
 import * as Agents from './src/modules/agents/index.js';
-
-// Import Profile module
-import {
-	updateProfile as updateUserProfile,
-	changePassword as changeOwnPassword,
-	updateNotificationPreferences,
-	openProfileModal
-} from './src/modules/profile/profile-actions.js';
-
-// Import Documents module
+import { updateProfile as updateUserProfile, changePassword as changeOwnPassword, updateNotificationPreferences, openProfileModal } from './src/modules/profile/profile-actions.js';
 import * as Documents from './src/modules/documents/index.js';
-
-// Import Admin module
 import * as Admin from './src/modules/admin/index.js';
-
-// Import Properties module
 import * as Properties from './src/modules/properties/index.js';
-
-// Import Modals module
 import * as Modals from './src/modules/modals/index.js';
-
-// Import Showcases module
 import * as Showcases from './src/modules/showcases/index.js';
-
-// Import Routing module
 import * as Routing from './src/routing/index.js';
-
-// Import Initialization module
 import * as Init from './src/init/index.js';
 
-// ============================================================================
-// GLOBAL CONFIGURATION
-// ============================================================================
-
 /* global mapboxgl */
-
-// Forward declarations
 let api, renderLeads, renderSpecials;
 
 (function() {
@@ -262,14 +211,19 @@ let api, renderLeads, renderSpecials;
 	}
 
 	async function submitBugReport() {
-		await Properties.submitBugReport({ api, state, toast, hideModal, renderBugs, getBrowserInfo, getOSInfo });
+		await Properties.submitBugReport({
+			api, state, toast, hideModal, renderBugs,
+			getBrowserInfo: Properties.getBrowserInfo,
+			getOSInfo: Properties.getOSInfo
+		});
 	}
-	function getBrowserInfo() { return Properties.getBrowserInfo(); }
-	function getOSInfo() { return Properties.getOSInfo(); }
 	function addBugFlags() {
-		Properties.addBugFlags({ state, showBugReportModal, updateBugFlagVisibility });
+		Properties.addBugFlags({
+			state,
+			showBugReportModal,
+			updateBugFlagVisibility: () => Properties.updateBugFlagVisibility({ state })
+		});
 	}
-	function updateBugFlagVisibility() { Properties.updateBugFlagVisibility({ state }); }
 	async function showBugDetails(bugId) {
 		await Properties.showBugDetails(bugId, { mockBugs, formatDate, showModal, toast });
 	}
@@ -576,7 +530,7 @@ let api, renderLeads, renderSpecials;
 			renderLeads,
 			initMap: Listings.initMap,
 			updateNavigation: Routing.updateNavigation,
-			updateBugFlagVisibility
+			updateBugFlagVisibility: () => Properties.updateBugFlagVisibility({ state })
 		});
 	}
 
