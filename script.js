@@ -93,6 +93,18 @@ let api, renderLeads, renderSpecials;
 		Listings.updateBulkActionsBar({ state });
 	}
 
+	function selectProperty(prop) {
+		Listings.selectProperty(prop);
+	}
+
+	function clearMarkers() {
+		Listings.clearMarkers();
+	}
+
+	function addMarker(prop) {
+		Listings.addMarker(prop);
+	}
+
 	api = createAPI({
 		mockInterestedLeads,
 		mockBugs
@@ -527,6 +539,10 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function closeBuildShowcase() {
+		Modals.closeBuildShowcase({ hide });
+	}
+
 	function setRoleLabel(page = 'leads'){
 		Routing.setRoleLabel(page, state);
 	}
@@ -588,7 +604,8 @@ let api, renderLeads, renderSpecials;
 			deleteSpecial, createListing, addPropertyNote, saveAgentChanges, saveLeadNote,
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
-			sortTable, toast, formatDate, showPopover,
+			sortTable, toast, formatDate, showPopover, initPopover, hidePopover, toggleLeadTable,
+			updateBulkActionsBar,
 			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
 			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
 			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,
