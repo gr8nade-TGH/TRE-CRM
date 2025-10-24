@@ -17,7 +17,8 @@ export async function renderProperties(options) {
 		// Fetch properties and specials in parallel
 		const [properties, specialsData] = await Promise.all([
 			SupabaseAPI.getProperties({ search: '', market: 'all' }),
-			SupabaseAPI.getSpecials({ search: '', sortKey: 'expiration_date', sortOrder: 'asc' })
+			// Database uses valid_until, not expiration_date
+			SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' })
 		]);
 
 		const specials = specialsData.items || [];
@@ -40,7 +41,8 @@ export async function renderProperties(options) {
 
 			// Filter active specials (not expired)
 			const activeSpecials = propSpecials.filter(s => {
-				const expDate = new Date(s.expiration_date);
+				// Database uses valid_until, not expiration_date
+				const expDate = new Date(s.valid_until || s.expiration_date);
 				return expDate > new Date();
 			});
 
@@ -88,10 +90,13 @@ export async function renderProperties(options) {
 				specialsHtml = '<span class="muted">No active special</span>';
 			} else if (prop.activeSpecials.length === 1) {
 				const special = prop.activeSpecials[0];
-				const expDate = new Date(special.expiration_date).toLocaleDateString();
+				// Database uses valid_until, not expiration_date
+				const expDate = new Date(special.valid_until || special.expiration_date).toLocaleDateString();
+				// Database uses title, not current_special
+				const specialTitle = special.title || special.current_special;
 				specialsHtml = `
 					<div style="line-height: 1.4;">
-						<div>🔥 ${special.current_special}</div>
+						<div>🔥 ${specialTitle}</div>
 						<div class="muted" style="font-size: 11px;">Expires: ${expDate}</div>
 					</div>
 				`;
@@ -185,12 +190,16 @@ export async function viewPropertySpecials(propertyId, propertyName, options) {
 
 			propertySpecials.forEach(special => {
 				const tr = document.createElement('tr');
-				const expDate = new Date(special.expiration_date).toLocaleDateString();
-				const isExpired = new Date(special.expiration_date) < new Date();
+				// Database uses valid_until, not expiration_date
+				const expDate = new Date(special.valid_until || special.expiration_date).toLocaleDateString();
+				const isExpired = new Date(special.valid_until || special.expiration_date) < new Date();
+				// Database uses title and description, not current_special and commission_rate
+				const specialTitle = special.title || special.current_special;
+				const specialDesc = special.description || special.commission_rate || '—';
 
 				tr.innerHTML = `
-					<td>${special.current_special}</td>
-					<td>${special.commission_rate || '—'}</td>
+					<td>${specialTitle}</td>
+					<td>${specialDesc}</td>
 					<td ${isExpired ? 'style="color: var(--danger);"' : ''}>${expDate} ${isExpired ? '(Expired)' : ''}</td>
 					<td>
 						<button class="icon-btn" onclick="window.deleteSpecial('${special.id}')" title="Delete">🗑️</button>
