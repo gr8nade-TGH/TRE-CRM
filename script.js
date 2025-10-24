@@ -49,6 +49,9 @@ import { setupAllEventListeners } from './src/events/dom-event-listeners.js';
 import { createLeadTable as createLeadTableUtil } from './src/renders/lead-table.js';
 import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-modals.js';
 
+// Import dependency injection
+import { createDependencies } from './src/init/dependencies.js';
+
 // Import Leads module
 import * as Leads from './src/modules/leads/index.js';
 
@@ -78,6 +81,9 @@ import * as Properties from './src/modules/properties/index.js';
 
 // Import Modals module
 import * as Modals from './src/modules/modals/index.js';
+
+// Import Showcases module
+import * as Showcases from './src/modules/showcases/index.js';
 
 // Import Routing module
 import * as Routing from './src/routing/index.js';
@@ -685,74 +691,11 @@ let api, renderLeads, renderSpecials;
 
 	// ---- Interested Leads Modal ----
 	async function openInterestedLeads(propertyId, propertyName) {
-		console.log('=== OPENING INTERESTED LEADS ===');
-		console.log('propertyId:', propertyId);
-		console.log('propertyName:', propertyName);
-
-		const modal = document.getElementById('interestedLeadsModal');
-		console.log('Modal element:', modal);
-
-		if (!modal) {
-			console.error('Modal not found!');
-			return;
-		}
-
-		document.getElementById('propertyName').textContent = propertyName;
-
-		try {
-			const interests = await api.getInterestedLeads(propertyId);
-			console.log('Fetched interests:', interests);
-			renderInterestedLeads(interests);
-			show(modal);
-			console.log('Modal should be visible now');
-		} catch (error) {
-			console.error('Error loading interested leads:', error);
-			// Show empty state if no data
-			renderInterestedLeads([]);
-			show(modal);
-			console.log('Modal should be visible now (empty state)');
-		}
+		await Showcases.openInterestedLeads(propertyId, propertyName, { api, show });
 	}
 
 	function closeInterestedLeads() {
-		hide(document.getElementById('interestedLeadsModal'));
-	}
-
-	function renderInterestedLeads(interests) {
-		console.log('renderInterestedLeads called with:', interests);
-		const content = document.getElementById('interestedLeadsList');
-
-		if (interests.length === 0) {
-			console.log('No interests found, showing empty state');
-			content.innerHTML = `
-				<div style="text-align: center; padding: 40px; color: #6b7280;">
-					<svg width="48" height="48" viewBox="0 0 24 24" fill="currentColor" style="margin-bottom: 16px; opacity: 0.5;">
-						<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-					</svg>
-					<p>No interested leads yet</p>
-					<p style="font-size: 0.875rem; margin-top: 8px;">Send showcases to generate interest!</p>
-				</div>
-			`;
-			return;
-		}
-
-		console.log('Rendering', interests.length, 'interests');
-		content.innerHTML = interests.map(interest => `
-			<div class="interested-lead-item">
-				<div class="interest-icon">
-					${interest.leadName.charAt(0).toUpperCase()}
-				</div>
-				<div class="lead-info">
-					<div class="lead-name">${interest.leadName}</div>
-					<div class="lead-contact">Lead ID: ${interest.leadId}</div>
-					<div class="lead-agent">via ${interest.agentName}</div>
-				</div>
-				<div class="interest-details">
-					<div class="interest-date">${formatDate(interest.date)}</div>
-					<div class="interest-status ${interest.status}">${interest.status.replace('_', ' ')}</div>
-				</div>
-			</div>
-		`).join('');
+		Showcases.closeInterestedLeads({ hide });
 	}
 
 	async function sendShowcaseEmail(){
@@ -854,39 +797,12 @@ let api, renderLeads, renderSpecials;
 			listing_ids,
 			message: document.getElementById('showcaseMessage').value
 		});
-		const html = renderPublicShowcaseHTML({ showcaseId: showcase_id });
+		const html = Showcases.renderPublicShowcaseHTML(showcase_id, { state, realAgents, mockProperties });
 		await api.sendEmail({ to: lead.email, subject: document.getElementById('showcaseSubject').value, html, showcase_id });
 		toast('ShowCase sent and recorded');
 		closeShowcase();
 		closeMatches();
 		window.prompt('Copy public link:', public_url);
-	}
-
-	function renderPublicShowcaseHTML({ showcaseId }){
-		const sc = state.showcases[showcaseId];
-		const leads = state.leads || [];
-		const lead = leads.find(l => l.id === sc.lead_id);
-		const agent = realAgents.find(a => a.id === sc.agent_id);
-		const listings = sc.listing_ids.map(id => mockProperties.find(p => p.id === id));
-		const items = listings.map(item => `
-			<div class="public-card">
-				<div><strong>${item.name}</strong> — ${item.neighborhoods[0] || ''}</div>
-				<div class="subtle">$${item.rent_min} - $${item.rent_max} · ${item.beds_min}-${item.beds_max} bd / ${item.baths_min}-${item.baths_max} ba · ${item.sqft_min}-${item.sqft_max} sqft</div>
-				<div class="subtle">${item.specials_text || ''} ${item.bonus_text ? `· ${item.bonus_text}` : ''}</div>
-				<div><a href="${item.website}" target="_blank" rel="noopener">Website</a> · ${item.address}</div>
-			</div>
-		`).join('');
-		return `
-			<div class="public-wrap">
-				<div class="public-header">
-					<h2>${agent.name} — Top Listings for ${lead.name}</h2>
-					<div class="public-banner">${state.publicBanner}</div>
-				</div>
-				<div class="public-body">
-					${items}
-				</div>
-			</div>
-		`;
 	}
 
 	// ---- Routing ----
@@ -946,115 +862,31 @@ let api, renderLeads, renderSpecials;
 			}
 		});
 
-		setupAllEventListeners({
-			// State and global variables
-			state,
-			realAgents,
-			realUsers,
-			api,
-			mockClosedLeads,
-			SupabaseAPI,
-
-			// Render functions
-			renderLeads,
-			renderListings,
-			renderAgents,
-			renderDocuments,
-			renderSpecials,
-			renderBugs,
-			renderAdmin,
-			renderLeadsTable,
-			renderProperties,
-			renderAuditLog,
-
-			// Drawer and modal functions
-			openDrawer,
-			closeDrawer,
-			openAgentDrawer,
-			closeAgentDrawer,
-			openMatches,
-			closeMatches,
-			showModal,
-			hideModal,
-			closeLeadDetailsModal,
-			closeLeadNotesModal,
-			closeActivityLogModal,
-			closeAgentEditModal,
-			closeShowcase,
-			closeHistory,
-			closeEmailPreview,
-			closeInterestedLeads,
-			closeListingEditModal,
-			openInterestedLeads,
-			openPropertyNotesModal,
-			closePropertyNotesModal,
-			openAddListingModal,
-			closeAddListingModal,
-			openBuildShowcaseModal,
-			openShowcasePreview,
-
-			// CRUD operation functions
-			saveNewLead,
-			savePropertyContact,
-			editPropertyContact,
-			saveNewSpecial,
-			deleteSpecial,
-			createListing,
-			addPropertyNote,
-			saveAgentChanges,
-			saveLeadNote,
-			updateUser,
-			createUser,
-			changeUserPassword,
-			saveListingEdit,
-			deleteListing,
-
-			// Profile functions
-			updateProfile: updateUserProfile,
-			changePassword: changeOwnPassword,
-			updateNotificationPreferences,
-			openProfileModal,
-
-			// Utility functions
-			sortTable,
-			toast,
-			formatDate,
-			initPopover,
-			showPopover,
-			hidePopover,
-			toggleLeadTable,
-			updateBulkActionsBar,
-			updateBuildShowcaseButton,
-
-			// Bulk actions functions
-			bulkMarkAsUnavailable,
-			bulkDeleteListings,
-
-			// CSV import/export functions
-			downloadCSVTemplate,
-			importCSV,
-
-			// Bug tracker functions
-			submitBugReport,
-			saveBugChanges,
-			addBugFlags,
-			handleBugFieldChange,
-			showBugDetails,
-
-			// Showcase functions
-			sendBuildShowcase,
-			sendShowcase,
-			closeBuildShowcase,
-			updateSelectionSummary,
-			openEmailPreview,
-
-			// Other functions
-			previewLandingPage,
-			openHistory,
-			closeDocumentDetails,
-			sendShowcaseEmail,
-			openHistoryDocumentDetails
+		// Create and inject all dependencies
+		const deps = createDependencies({
+			state, realAgents, realUsers, api, mockClosedLeads, SupabaseAPI,
+			renderLeads, renderListings, renderAgents, renderDocuments, renderSpecials,
+			renderBugs, renderAdmin, renderLeadsTable, renderProperties, renderAuditLog,
+			openDrawer, closeDrawer, openAgentDrawer, closeAgentDrawer, openMatches,
+			closeMatches, showModal, hideModal, closeLeadDetailsModal, closeLeadNotesModal,
+			closeActivityLogModal, closeAgentEditModal, closeShowcase, closeHistory,
+			closeEmailPreview, closeInterestedLeads, closeListingEditModal, openInterestedLeads,
+			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
+			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
+			saveNewLead, savePropertyContact, editPropertyContact, saveNewSpecial,
+			deleteSpecial, createListing, addPropertyNote, saveAgentChanges, saveLeadNote,
+			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
+			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
+			sortTable, toast, formatDate, initPopover, showPopover, hidePopover,
+			toggleLeadTable, updateBulkActionsBar, updateBuildShowcaseButton,
+			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
+			submitBugReport, saveBugChanges, addBugFlags, handleBugFieldChange, showBugDetails,
+			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
+			openEmailPreview, previewLandingPage, openHistory, closeDocumentDetails,
+			sendShowcaseEmail, openHistoryDocumentDetails
 		});
+
+		setupAllEventListeners(deps);
 	});
 
 	// Initialize routing (called by initializeApp after auth) - wrapper function
