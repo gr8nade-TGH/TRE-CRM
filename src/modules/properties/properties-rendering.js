@@ -86,7 +86,9 @@ export async function renderProperties(options) {
 
 			// Specials column
 			let specialsHtml = '';
-			if (prop.activeSpecials.length === 0) {
+			const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
+
+			if (!hasActiveSpecials) {
 				specialsHtml = '<span class="muted">No active special</span>';
 			} else if (prop.activeSpecials.length === 1) {
 				const special = prop.activeSpecials[0];
