@@ -32,9 +32,17 @@ export async function renderPropertyContacts(options) {
 			return;
 		}
 
+		// Filter out invalid properties (must have address and valid name)
+		const validProperties = properties.filter(prop => {
+			const name = prop.community_name || prop.name;
+			const hasAddress = prop.address && prop.address.trim() !== '';
+			const hasValidName = name && name.trim() !== '' && !name.toLowerCase().includes('test') && !name.toLowerCase().includes('act4');
+			return hasAddress && hasValidName;
+		});
+
 		// Group by community_name (only show unique communities)
 		const communities = new Map();
-		properties.forEach(prop => {
+		validProperties.forEach(prop => {
 			const communityName = prop.community_name || prop.name;
 			if (!communities.has(communityName)) {
 				communities.set(communityName, prop);
@@ -51,6 +59,7 @@ export async function renderPropertyContacts(options) {
 					<div class="property-name">${communityName}</div>
 					${!hasContact ? '<div class="no-contact-badge">No contact info</div>' : ''}
 				</td>
+				<td>${property.address || '<span class="text-muted">—</span>'}</td>
 				<td>${property.contact_name || '<span class="text-muted">—</span>'}</td>
 				<td>${property.contact_email || '<span class="text-muted">—</span>'}</td>
 				<td>${property.contact_phone || '<span class="text-muted">—</span>'}</td>
@@ -70,6 +79,63 @@ export async function renderPropertyContacts(options) {
 	} catch (error) {
 		console.error('Error loading property contacts:', error);
 		toast('Error loading property contacts. Please try again.');
+	}
+}
+
+/**
+ * Populate the property dropdown in the Add Special modal
+ */
+export async function populateSpecialPropertyDropdown(SupabaseAPI) {
+	const select = document.getElementById('specialPropertyName');
+	const warningDiv = document.getElementById('noPropertyWarning');
+	if (!select) return;
+
+	try {
+		// Fetch all properties
+		const properties = await SupabaseAPI.getProperties({
+			search: '',
+			market: 'all'
+		});
+
+		// Filter valid properties (same logic as property contacts)
+		const validProperties = properties.filter(prop => {
+			const name = prop.community_name || prop.name;
+			const hasAddress = prop.address && prop.address.trim() !== '';
+			const hasValidName = name && name.trim() !== '' && !name.toLowerCase().includes('test') && !name.toLowerCase().includes('act4');
+			return hasAddress && hasValidName;
+		});
+
+		// Get unique community names
+		const communities = new Map();
+		validProperties.forEach(prop => {
+			const communityName = prop.community_name || prop.name;
+			if (!communities.has(communityName)) {
+				communities.set(communityName, prop);
+			}
+		});
+
+		// Clear existing options except the first one
+		select.innerHTML = '<option value="">Select a property...</option>';
+
+		// Add property options
+		Array.from(communities.keys()).sort().forEach(name => {
+			const option = document.createElement('option');
+			option.value = name;
+			option.textContent = name;
+			select.appendChild(option);
+		});
+
+		// Show warning if no properties available
+		if (communities.size === 0 && warningDiv) {
+			warningDiv.style.display = 'block';
+		} else if (warningDiv) {
+			warningDiv.style.display = 'none';
+		}
+	} catch (error) {
+		console.error('Error populating special property dropdown:', error);
+		if (warningDiv) {
+			warningDiv.style.display = 'block';
+		}
 	}
 }
 

@@ -20,6 +20,7 @@ export {
 	renderProperties,
 	renderPropertyContacts,
 	populatePropertyDropdown,
+	populateSpecialPropertyDropdown,
 	savePropertyContact,
 	editPropertyContact
 } from './properties-rendering.js';

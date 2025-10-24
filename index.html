@@ -438,6 +438,7 @@
 						<thead>
 							<tr>
 								<th data-sort="community_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
+								<th>Address</th>
 								<th>Contact Name</th>
 								<th>Email</th>
 								<th>Phone</th>
@@ -1407,7 +1408,12 @@
 				<form id="addSpecialForm">
 					<div class="field">
 						<label for="specialPropertyName">Property Name *</label>
-						<input type="text" id="specialPropertyName" required placeholder="Enter property name">
+						<select id="specialPropertyName" required>
+							<option value="">Select a property...</option>
+						</select>
+						<div id="noPropertyWarning" class="helper-text warning" style="display: none; margin-top: 8px;">
+							⚠️ Property not found? <a href="#" id="addPropertyContactLink" style="color: var(--accent); text-decoration: underline;">Add property contact info here</a>
+						</div>
 					</div>
 					<div class="field">
 						<label for="specialCurrentSpecial">Current Special *</label>

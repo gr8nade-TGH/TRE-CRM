@@ -891,13 +891,30 @@ export function setupAllEventListeners(deps) {
 
 		// Add Special button
 		if (addSpecialBtn) {
-			addSpecialBtn.addEventListener('click', () => {
+			addSpecialBtn.addEventListener('click', async () => {
 				showModal('addSpecialModal');
 				document.getElementById('addSpecialForm').reset();
 				// Set default expiration date to 30 days from now
 				const defaultDate = new Date();
 				defaultDate.setDate(defaultDate.getDate() + 30);
 				document.getElementById('specialExpirationDate').value = defaultDate.toISOString().split('T')[0];
+
+				// Populate property dropdown
+				await populateSpecialPropertyDropdown();
+			});
+		}
+
+		// Add Property Contact link in Add Special modal
+		const addPropertyContactLink = document.getElementById('addPropertyContactLink');
+		if (addPropertyContactLink) {
+			addPropertyContactLink.addEventListener('click', (e) => {
+				e.preventDefault();
+				hideModal('addSpecialModal');
+				// Scroll to property contacts section
+				const contactsSection = document.querySelector('.property-contacts-section');
+				if (contactsSection) {
+					contactsSection.scrollIntoView({ behavior: 'smooth' });
+				}
 			});
 		}
 

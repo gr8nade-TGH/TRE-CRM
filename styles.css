@@ -861,6 +861,26 @@ body {
 .field input, .field textarea, .field select { width: 100%; padding: 8px 10px; border: 1px solid #d0d5dd; border-radius: 8px; }
 .field .value { font-weight: 600; }
 
+/* Helper text for form fields */
+.helper-text {
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: #f3f4f6;
+  color: #4b5563;
+}
+
+.helper-text.warning {
+  background: #fef3c7;
+  color: #92400e;
+  border: 1px solid #fde68a;
+}
+
+.helper-text a {
+  font-weight: 600;
+}
+
 .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 2000; }
 .modal-card { background: #fff; width: 900px; max-width: 100%; border-radius: 12px; border: 1px solid #e4e7ec; overflow: hidden; }
 

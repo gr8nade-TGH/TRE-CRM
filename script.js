@@ -204,6 +204,10 @@ let api, renderLeads, renderSpecials;
 		Properties.populatePropertyDropdown(communityNames);
 	}
 
+	async function populateSpecialPropertyDropdown() {
+		await Properties.populateSpecialPropertyDropdown(SupabaseAPI);
+	}
+
 	async function renderPropertyContacts() {
 		await Properties.renderPropertyContacts({
 			state,
