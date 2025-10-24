@@ -716,6 +716,8 @@ let api, renderLeads, renderSpecials;
 			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
 			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
 			saveNewLead, savePropertyContact, editPropertyContact, saveNewSpecial,
+			saveEditedSpecial: Properties.saveEditedSpecial,
+			deleteEditedSpecial: Properties.deleteEditedSpecial,
 			deleteSpecial, createListing, addPropertyNote, saveAgentChanges, saveLeadNote,
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
