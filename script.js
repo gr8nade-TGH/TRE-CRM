@@ -597,6 +597,38 @@ let api, renderLeads, renderSpecials;
 			}
 		});
 
+		// Define listing edit modal functions BEFORE createDependencies
+		// These need to be defined before being passed to setupAllEventListeners
+		async function openListingEditModal(property) {
+			await Modals.openListingEditModal(property, {
+				state,
+				showModal,
+				SupabaseAPI
+			});
+		}
+
+		function closeListingEditModal() {
+			Modals.closeListingEditModal({ hideModal });
+		}
+
+		async function deleteListing() {
+			await Modals.deleteListing({
+				SupabaseAPI,
+				toast,
+				closeListingEditModal,
+				renderListings
+			});
+		}
+
+		async function saveListingEdit() {
+			await Modals.saveListingEdit({
+				SupabaseAPI,
+				toast,
+				closeListingEditModal,
+				renderListings
+			});
+		}
+
 		// Create and inject all dependencies
 		const deps = createDependencies({
 			state, realAgents, realUsers, api, mockClosedLeads, SupabaseAPI,
@@ -604,7 +636,7 @@ let api, renderLeads, renderSpecials;
 			renderBugs, renderAdmin, renderLeadsTable, renderProperties, renderAuditLog,
 			openDrawer, closeDrawer, openAgentDrawer, openMatches,
 			closeMatches, showModal, hideModal, closeLeadDetailsModal, closeLeadNotesModal,
-			closeAgentEditModal,
+			closeAgentEditModal, closeListingEditModal,
 			openInterestedLeads,
 			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
 			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
@@ -624,32 +656,6 @@ let api, renderLeads, renderSpecials;
 
 		setupAllEventListeners(deps);
 	});
-
-	async function openListingEditModal(property) {
-		await Modals.openListingEditModal(property, {
-			state,
-			showModal,
-			SupabaseAPI
-		});
-	}
-
-	async function deleteListing() {
-		await Modals.deleteListing({
-			SupabaseAPI,
-			toast,
-			closeListingEditModal: () => Modals.closeListingEditModal({ hideModal }),
-			renderListings
-		});
-	}
-
-	async function saveListingEdit() {
-		await Modals.saveListingEdit({
-			SupabaseAPI,
-			toast,
-			closeListingEditModal: () => Modals.closeListingEditModal({ hideModal }),
-			renderListings
-		});
-	}
 
 	// initializeHealthStatus removed - was using mockLeads
 	// Health status is now calculated from real Supabase data
