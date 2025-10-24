@@ -7,7 +7,7 @@ let autocompleteCleanup = null;
 
 export function openAddListingModal(options) {
 	const { showModal } = options;
-	
+
 	const form = document.getElementById('addListingForm');
 
 	// Reset form
@@ -19,6 +19,38 @@ export function openAddListingModal(options) {
 	const lastUpdatedInput = document.getElementById('listingLastUpdated');
 	if (lastUpdatedInput) {
 		lastUpdatedInput.valueAsDate = new Date();
+	}
+
+	// Initialize address autocomplete
+	const streetAddressInput = document.getElementById('listingStreetAddress');
+	console.log('🔍 Looking for listingStreetAddress input:', streetAddressInput);
+
+	if (streetAddressInput) {
+		// Clean up previous autocomplete if exists
+		if (autocompleteCleanup) {
+			console.log('🧹 Cleaning up previous autocomplete');
+			autocompleteCleanup();
+		}
+
+		console.log('🚀 Initializing autocomplete on street address input');
+		// Initialize new autocomplete
+		autocompleteCleanup = initAddressAutocomplete(streetAddressInput, {
+			onSelect: (addressComponents) => {
+				console.log('✅ Address selected:', addressComponents);
+
+				// Fill in the address fields
+				document.getElementById('listingMarket').value = addressComponents.city;
+				document.getElementById('listingZipCode').value = addressComponents.zipCode;
+
+				// Store coordinates for saving
+				document.getElementById('listingMapLat').value = addressComponents.lat;
+				document.getElementById('listingMapLng').value = addressComponents.lng;
+
+				console.log('📍 Stored coordinates:', { lat: addressComponents.lat, lng: addressComponents.lng });
+			}
+		});
+	} else {
+		console.error('❌ Could not find listingStreetAddress input element!');
 	}
 
 	showModal('addListingModal');

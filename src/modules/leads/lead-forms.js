@@ -58,8 +58,8 @@ export async function saveNewLead(options) {
 		found_by_agent_id: state.agentId || null,
 		submitted_at: now,
 		created_at: now,
-		updated_at: now,
-		last_activity_at: now // Set last_activity_at to prevent "5 hours ago" timezone issue
+		updated_at: now
+		// Note: last_activity_at column does not exist in leads table - removed
 	};
 
 	try {

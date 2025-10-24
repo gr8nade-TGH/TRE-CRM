@@ -888,7 +888,7 @@ export async function detectInactiveLeads() {
         // Get all active leads (not closed or lost)
         const { data: leads, error: leadsError } = await supabase
             .from('leads')
-            .select('id, health_status, health_score, last_activity_at, name, email')
+            .select('id, health_status, health_score, name, email')
             .not('health_status', 'in', '("closed","lost")');
 
         if (leadsError) {
@@ -901,22 +901,23 @@ export async function detectInactiveLeads() {
         const updates = [];
 
         for (const lead of leads) {
-            const lastActivity = lead.last_activity_at ? new Date(lead.last_activity_at) : new Date(0);
-            const hoursSinceActivity = (now - lastActivity) / (1000 * 60 * 60);
+            // Note: last_activity_at column does not exist in leads table
+            // Calculate last activity from lead_activities table instead
 
-            // Get the last activity to check if it was an inactivity_detected event
-            const { data: lastActivityRecord } = await supabase
+            // Get the last NON-inactivity activity
+            const { data: lastRealActivityRecord } = await supabase
                 .from('lead_activities')
-                .select('activity_type, created_at')
+                .select('created_at')
                 .eq('lead_id', lead.id)
+                .neq('activity_type', 'inactivity_detected')
                 .order('created_at', { ascending: false })
                 .limit(1)
-                .single();
+                .maybeSingle();
 
-            // Skip if last activity was an inactivity_detected event (don't count those)
-            const lastRealActivity = lastActivityRecord?.activity_type === 'inactivity_detected'
-                ? new Date(lastActivityRecord.created_at)
-                : lastActivity;
+            // If no real activity found, use lead creation date as fallback
+            const lastRealActivity = lastRealActivityRecord
+                ? new Date(lastRealActivityRecord.created_at)
+                : new Date(0); // Very old date if no activities
 
             const hoursSinceRealActivity = (now - lastRealActivity) / (1000 * 60 * 60);
 
