@@ -224,6 +224,37 @@ let api, renderLeads, renderSpecials;
 		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
 	}
 
+	// Listing edit modal functions - defined in outer scope so renderListings can access them
+	async function openListingEditModal(property) {
+		await Modals.openListingEditModal(property, {
+			state,
+			showModal,
+			SupabaseAPI
+		});
+	}
+
+	function closeListingEditModal() {
+		Modals.closeListingEditModal({ hideModal });
+	}
+
+	async function deleteListing() {
+		await Modals.deleteListing({
+			SupabaseAPI,
+			toast,
+			closeListingEditModal,
+			renderListings
+		});
+	}
+
+	async function saveListingEdit() {
+		await Modals.saveListingEdit({
+			SupabaseAPI,
+			toast,
+			closeListingEditModal,
+			renderListings
+		});
+	}
+
 	renderSpecials = async function(){
 		await Properties.renderSpecials({
 			state,
@@ -596,38 +627,6 @@ let api, renderLeads, renderSpecials;
 				renderListings();
 			}
 		});
-
-		// Define listing edit modal functions BEFORE createDependencies
-		// These need to be defined before being passed to setupAllEventListeners
-		async function openListingEditModal(property) {
-			await Modals.openListingEditModal(property, {
-				state,
-				showModal,
-				SupabaseAPI
-			});
-		}
-
-		function closeListingEditModal() {
-			Modals.closeListingEditModal({ hideModal });
-		}
-
-		async function deleteListing() {
-			await Modals.deleteListing({
-				SupabaseAPI,
-				toast,
-				closeListingEditModal,
-				renderListings
-			});
-		}
-
-		async function saveListingEdit() {
-			await Modals.saveListingEdit({
-				SupabaseAPI,
-				toast,
-				closeListingEditModal,
-				renderListings
-			});
-		}
 
 		// Create and inject all dependencies
 		const deps = createDependencies({
