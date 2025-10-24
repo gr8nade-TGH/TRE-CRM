@@ -35,7 +35,6 @@ export function createDependencies(context) {
 		openDrawer,
 		closeDrawer,
 		openAgentDrawer,
-		closeAgentDrawer,
 		openMatches,
 		closeMatches,
 		showModal,
@@ -46,7 +45,6 @@ export function createDependencies(context) {
 		closeAgentEditModal,
 		closeShowcase,
 		closeHistory,
-		closeEmailPreview,
 		closeInterestedLeads,
 		closeListingEditModal,
 		openInterestedLeads,
@@ -102,7 +100,6 @@ export function createDependencies(context) {
 		submitBugReport,
 		saveBugChanges,
 		addBugFlags,
-		handleBugFieldChange,
 		showBugDetails,
 		
 		// Showcase functions
@@ -145,7 +142,6 @@ export function createDependencies(context) {
 		openDrawer,
 		closeDrawer,
 		openAgentDrawer,
-		closeAgentDrawer,
 		openMatches,
 		closeMatches,
 		showModal,
@@ -156,7 +152,6 @@ export function createDependencies(context) {
 		closeAgentEditModal,
 		closeShowcase,
 		closeHistory,
-		closeEmailPreview,
 		closeInterestedLeads,
 		closeListingEditModal,
 		openInterestedLeads,
@@ -193,10 +188,7 @@ export function createDependencies(context) {
 		sortTable,
 		toast,
 		formatDate,
-		initPopover,
 		showPopover,
-		hidePopover,
-		toggleLeadTable,
 		updateBulkActionsBar,
 		updateBuildShowcaseButton,
 		
@@ -212,7 +204,6 @@ export function createDependencies(context) {
 		submitBugReport,
 		saveBugChanges,
 		addBugFlags,
-		handleBugFieldChange,
 		showBugDetails,
 		
 		// Showcase functions
