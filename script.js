@@ -565,6 +565,12 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function closeHistory() {
+		Modals.closeHistory({
+			hide
+		});
+	}
+
 	async function openMatches(leadId){
 		await Modals.openMatches(leadId, {
 			state,
