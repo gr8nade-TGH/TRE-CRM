@@ -496,6 +496,12 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function closeActivityLogModal() {
+		Modals.closeActivityLogModal({
+			hideModal
+		});
+	}
+
 	function renderActivityLog(activities) {
 		return Modals.renderActivityLog(activities, {
 			getActivityIcon: Modals.getActivityIcon,
@@ -731,7 +737,7 @@ let api, renderLeads, renderSpecials;
 			renderBugs, renderAdmin, renderLeadsTable, renderProperties, renderAuditLog,
 			openDrawer, closeDrawer, openAgentDrawer, openMatches,
 			closeMatches, showModal, hideModal, closeLeadDetailsModal, closeLeadNotesModal,
-			closeAgentEditModal, closeListingEditModal,
+			closeActivityLogModal, closeAgentEditModal, closeListingEditModal,
 			openInterestedLeads,
 			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
 			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
