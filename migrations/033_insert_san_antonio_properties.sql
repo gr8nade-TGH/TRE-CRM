@@ -1,7 +1,7 @@
 -- Insert 50 San Antonio apartment complexes into the properties table
 -- Run this in Supabase SQL Editor
 
-INSERT INTO public.properties (community_name, address, contact_phone, market, contact_name, contact_email, contact_hours)
+INSERT INTO public.properties (community_name, address, phone, market, contact_name, contact_email, office_hours)
 VALUES
 	('Paloma Luxury Apartments', '1800 Broadway, San Antonio, TX 78215', '(210) 354-7000', 'San Antonio', NULL, NULL, NULL),
 	('Greyson Luxury Living', '123 E Houston St, San Antonio, TX 78205', '(210) 277-7000', 'San Antonio', NULL, NULL, NULL),
