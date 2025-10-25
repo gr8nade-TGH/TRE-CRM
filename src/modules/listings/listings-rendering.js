@@ -80,78 +80,73 @@ export async function renderListings(options) {
 			return prop.is_available !== false;
 		});
 
-		// Fetch floor plans and units for each property
-		const propertiesWithData = await Promise.all(
-			availableProperties.map(async (prop) => {
-				try {
-					// Get notes count
-					const notes = await SupabaseAPI.getPropertyNotes(prop.id);
+		// OPTIMIZED: Batch fetch all data for all properties (3 queries instead of N*3 queries)
+		const propertyIds = availableProperties.map(prop => prop.id);
 
-					// Get floor plans for this property
-					const floorPlans = await SupabaseAPI.getFloorPlans(prop.id);
+		const [propertyNotesCountsMap, floorPlansMap, unitsMap] = await Promise.all([
+			SupabaseAPI.getBatchPropertyNotesCounts(propertyIds),
+			SupabaseAPI.getBatchFloorPlans(propertyIds),
+			SupabaseAPI.getBatchUnits(propertyIds, { isActive: null })
+		]);
 
-					// Get units for this property (include inactive units - isActive: null means get all)
-					const units = await SupabaseAPI.getUnits({ propertyId: prop.id, isActive: null });
+		// OPTIMIZED: Batch fetch unit notes counts for ALL units across ALL properties (1 query instead of N*M queries)
+		const allUnits = Object.values(unitsMap).flat();
+		const unitIds = allUnits.map(unit => unit.id);
+		const unitNotesCountsMap = await SupabaseAPI.getBatchUnitNotesCounts(unitIds);
 
-					// Fetch notes count for each unit
-					const unitsWithNotes = await Promise.all(
-						(units || []).map(async (unit) => {
-							try {
-								const unitNotes = await SupabaseAPI.getUnitNotes(unit.id);
-								return {
-									...unit,
-									notesCount: unitNotes.length
-								};
-							} catch (error) {
-								console.warn('Error fetching unit notes:', error);
-								return {
-									...unit,
-									notesCount: 0
-								};
-							}
-						})
-					);
+		// Build properties with all data from batch queries
+		const propertiesWithData = availableProperties.map(prop => {
+			try {
+				// Get data from batch query results
+				const notesCount = propertyNotesCountsMap[prop.id] || 0;
+				const floorPlans = floorPlansMap[prop.id] || [];
+				const units = unitsMap[prop.id] || [];
 
-					// Calculate rent range from units
-					let rentMin = prop.rent_range_min || 0;
-					let rentMax = prop.rent_range_max || 0;
+				// Add notes count to each unit
+				const unitsWithNotes = units.map(unit => ({
+					...unit,
+					notesCount: unitNotesCountsMap[unit.id] || 0
+				}));
 
-					if (units && units.length > 0) {
-						const rents = units.map(u => u.rent).filter(r => r > 0);
-						if (rents.length > 0) {
-							rentMin = Math.min(...rents);
-							rentMax = Math.max(...rents);
-						}
+				// Calculate rent range from units
+				let rentMin = prop.rent_range_min || 0;
+				let rentMax = prop.rent_range_max || 0;
+
+				if (units && units.length > 0) {
+					const rents = units.map(u => u.rent).filter(r => r > 0);
+					if (rents.length > 0) {
+						rentMin = Math.min(...rents);
+						rentMax = Math.max(...rents);
 					}
-
-					// Find active specials for this property
-					const propName = prop.community_name || prop.name;
-					const propSpecials = specials.filter(s => s.property_name === propName);
-					const activeSpecials = propSpecials.filter(s => {
-						const expDate = new Date(s.valid_until || s.expiration_date);
-						return expDate > new Date();
-					});
-
-					return {
-						...prop,
-						notesCount: notes.length,
-						floorPlans: floorPlans || [],
-						activeSpecials: activeSpecials,
-						units: unitsWithNotes || [],
-						rent_range_min: rentMin,
-						rent_range_max: rentMax
-					};
-				} catch (error) {
-					console.warn('Error fetching property data:', error);
-					return {
-						...prop,
-						notesCount: 0,
-						floorPlans: [],
-						units: []
-					};
 				}
-			})
-		);
+
+				// Find active specials for this property
+				const propName = prop.community_name || prop.name;
+				const propSpecials = specials.filter(s => s.property_name === propName);
+				const activeSpecials = propSpecials.filter(s => {
+					const expDate = new Date(s.valid_until || s.expiration_date);
+					return expDate > new Date();
+				});
+
+				return {
+					...prop,
+					notesCount,
+					floorPlans,
+					activeSpecials,
+					units: unitsWithNotes,
+					rent_range_min: rentMin,
+					rent_range_max: rentMax
+				};
+			} catch (error) {
+				console.warn('Error processing property data:', error);
+				return {
+					...prop,
+					notesCount: 0,
+					floorPlans: [],
+					units: []
+				};
+			}
+		});
 
 		let filtered = propertiesWithData;
 

@@ -1340,6 +1340,175 @@ export async function getUnitNotes(unitId, { limit = 50, offset = 0 } = {}) {
     return data || [];
 }
 
+/**
+ * PERFORMANCE OPTIMIZATION: Batch query for property notes counts
+ * Reduces N queries to 1 query for N properties
+ *
+ * @param {Array<string>} propertyIds - Array of property IDs
+ * @returns {Promise<Object>} Map of propertyId -> count
+ */
+export async function getBatchPropertyNotesCounts(propertyIds) {
+    if (!propertyIds || propertyIds.length === 0) {
+        return {};
+    }
+
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('property_notes')
+        .select('property_id')
+        .in('property_id', propertyIds);
+
+    if (error) {
+        console.error('Error fetching batch property notes counts:', error);
+        return {};
+    }
+
+    // Count notes per property
+    const countsMap = {};
+    propertyIds.forEach(id => countsMap[id] = 0);
+
+    if (data) {
+        data.forEach(note => {
+            countsMap[note.property_id] = (countsMap[note.property_id] || 0) + 1;
+        });
+    }
+
+    return countsMap;
+}
+
+/**
+ * PERFORMANCE OPTIMIZATION: Batch query for floor plans
+ * Reduces N queries to 1 query for N properties
+ *
+ * @param {Array<string>} propertyIds - Array of property IDs
+ * @returns {Promise<Object>} Map of propertyId -> floor plans array
+ */
+export async function getBatchFloorPlans(propertyIds) {
+    if (!propertyIds || propertyIds.length === 0) {
+        return {};
+    }
+
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('floor_plans')
+        .select('*')
+        .in('property_id', propertyIds)
+        .order('beds')
+        .order('baths');
+
+    if (error) {
+        console.error('Error fetching batch floor plans:', error);
+        return {};
+    }
+
+    // Group floor plans by property_id
+    const floorPlansMap = {};
+    propertyIds.forEach(id => floorPlansMap[id] = []);
+
+    if (data) {
+        data.forEach(floorPlan => {
+            if (!floorPlansMap[floorPlan.property_id]) {
+                floorPlansMap[floorPlan.property_id] = [];
+            }
+            floorPlansMap[floorPlan.property_id].push(floorPlan);
+        });
+    }
+
+    return floorPlansMap;
+}
+
+/**
+ * PERFORMANCE OPTIMIZATION: Batch query for units with floor plan data
+ * Reduces N queries to 1 query for N properties
+ *
+ * @param {Array<string>} propertyIds - Array of property IDs
+ * @param {Object} options - Query options
+ * @returns {Promise<Object>} Map of propertyId -> units array
+ */
+export async function getBatchUnits(propertyIds, { isActive = null } = {}) {
+    if (!propertyIds || propertyIds.length === 0) {
+        return {};
+    }
+
+    const supabase = getSupabase();
+
+    let query = supabase
+        .from('units')
+        .select(`
+            *,
+            floor_plan:floor_plans(*)
+        `)
+        .in('property_id', propertyIds);
+
+    // Soft delete filter
+    if (isActive !== null) {
+        query = query.eq('is_active', isActive);
+    }
+
+    query = query.order('unit_number');
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('Error fetching batch units:', error);
+        return {};
+    }
+
+    // Group units by property_id
+    const unitsMap = {};
+    propertyIds.forEach(id => unitsMap[id] = []);
+
+    if (data) {
+        data.forEach(unit => {
+            if (!unitsMap[unit.property_id]) {
+                unitsMap[unit.property_id] = [];
+            }
+            unitsMap[unit.property_id].push(unit);
+        });
+    }
+
+    return unitsMap;
+}
+
+/**
+ * PERFORMANCE OPTIMIZATION: Batch query for unit notes counts
+ * Reduces N queries to 1 query for N units
+ *
+ * @param {Array<string>} unitIds - Array of unit IDs
+ * @returns {Promise<Object>} Map of unitId -> count
+ */
+export async function getBatchUnitNotesCounts(unitIds) {
+    if (!unitIds || unitIds.length === 0) {
+        return {};
+    }
+
+    const supabase = getSupabase();
+
+    const { data, error} = await supabase
+        .from('unit_notes')
+        .select('unit_id')
+        .in('unit_id', unitIds);
+
+    if (error) {
+        console.error('Error fetching batch unit notes counts:', error);
+        return {};
+    }
+
+    // Count notes per unit
+    const countsMap = {};
+    unitIds.forEach(id => countsMap[id] = 0);
+
+    if (data) {
+        data.forEach(note => {
+            countsMap[note.unit_id] = (countsMap[note.unit_id] || 0) + 1;
+        });
+    }
+
+    return countsMap;
+}
+
 export async function createUnitNote(noteData) {
     console.log('🔵 createUnitNote called with:', noteData);
     const supabase = getSupabase();
