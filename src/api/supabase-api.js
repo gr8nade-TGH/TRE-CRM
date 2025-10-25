@@ -352,7 +352,14 @@ export async function getProperties({ search, market, minPrice, maxPrice, beds, 
         throw error;
     }
 
-    return data || [];
+    // Transform map_lat/map_lng to lat/lng for backward compatibility with map markers
+    const properties = (data || []).map(prop => ({
+        ...prop,
+        lat: prop.map_lat,
+        lng: prop.map_lng
+    }));
+
+    return properties;
 }
 
 /**
