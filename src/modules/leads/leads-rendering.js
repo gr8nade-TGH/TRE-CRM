@@ -64,6 +64,10 @@ export async function renderLeads(options) {
 	const tbody = document.getElementById('leadsTbody');
 	const loadingIndicator = document.getElementById('leadsLoadingIndicator');
 
+	// Clear existing rows but keep loading indicator
+	const existingRows = tbody.querySelectorAll('tr:not(#leadsLoadingIndicator)');
+	existingRows.forEach(row => row.remove());
+
 	// Show loading indicator (table row)
 	if (loadingIndicator) {
 		loadingIndicator.style.display = 'table-row';
@@ -83,7 +87,6 @@ export async function renderLeads(options) {
 			filters: state.filters
 		});
 		console.log('API returned:', { items, total }); // Debug
-		tbody.innerHTML = '';
 
 	// OPTIMIZED: Batch fetch notes counts and activities for all leads (if using Supabase)
 	if (!USE_MOCK_DATA) {
