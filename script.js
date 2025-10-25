@@ -245,6 +245,10 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// Window functions for inline onclick handlers
+	window.editPropertyContact = async function(propertyId, communityName) {
+		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
+	};
+
 	window.addSpecialForProperty = function(propertyName) {
 		Properties.addSpecialForProperty(propertyName, {
 			showModal,
