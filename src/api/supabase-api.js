@@ -853,6 +853,41 @@ export async function getLeadNotesCount(leadId) {
 }
 
 /**
+ * OPTIMIZED: Batch fetch notes counts for multiple leads
+ * @param {Array<string>} leadIds - Array of lead IDs
+ * @returns {Promise<Object>} Map of leadId -> count
+ */
+export async function getBatchLeadNotesCounts(leadIds) {
+    if (!leadIds || leadIds.length === 0) {
+        return {};
+    }
+
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('lead_notes')
+        .select('lead_id')
+        .in('lead_id', leadIds);
+
+    if (error) {
+        console.error('Error fetching batch lead notes counts:', error);
+        return {};
+    }
+
+    // Count notes per lead
+    const countsMap = {};
+    leadIds.forEach(id => countsMap[id] = 0); // Initialize all to 0
+
+    if (data) {
+        data.forEach(note => {
+            countsMap[note.lead_id] = (countsMap[note.lead_id] || 0) + 1;
+        });
+    }
+
+    return countsMap;
+}
+
+/**
  * Lead Activities API
  */
 export async function getLeadActivities(leadId) {
@@ -872,6 +907,45 @@ export async function getLeadActivities(leadId) {
 
     console.log('✅ getLeadActivities returning:', data);
     return data || [];
+}
+
+/**
+ * OPTIMIZED: Batch fetch activities for multiple leads
+ * @param {Array<string>} leadIds - Array of lead IDs
+ * @returns {Promise<Object>} Map of leadId -> activities array
+ */
+export async function getBatchLeadActivities(leadIds) {
+    if (!leadIds || leadIds.length === 0) {
+        return {};
+    }
+
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('lead_activities')
+        .select('*')
+        .in('lead_id', leadIds)
+        .order('created_at', { ascending: false });
+
+    if (error) {
+        console.error('Error fetching batch lead activities:', error);
+        return {};
+    }
+
+    // Group activities by lead_id
+    const activitiesMap = {};
+    leadIds.forEach(id => activitiesMap[id] = []); // Initialize all to empty array
+
+    if (data) {
+        data.forEach(activity => {
+            if (!activitiesMap[activity.lead_id]) {
+                activitiesMap[activity.lead_id] = [];
+            }
+            activitiesMap[activity.lead_id].push(activity);
+        });
+    }
+
+    return activitiesMap;
 }
 
 export async function createLeadActivity(activityData) {

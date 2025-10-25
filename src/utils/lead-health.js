@@ -6,11 +6,15 @@ import { getLeadActivities } from '../api/supabase-api.js';
 /**
  * Get current step from lead activities
  * @param {string} leadId - Lead ID
+ * @param {Array} activities - Optional pre-fetched activities array (for batch optimization)
  * @returns {Promise<number>} Current step number (1-8)
  */
-export async function getCurrentStepFromActivities(leadId) {
+export async function getCurrentStepFromActivities(leadId, activities = null) {
 	try {
-		const activities = await getLeadActivities(leadId);
+		// If activities not provided, fetch them
+		if (!activities) {
+			activities = await getLeadActivities(leadId);
+		}
 
 		// Map activity types to step numbers
 		// Note: 'showcase_response' is optional and doesn't advance the step counter

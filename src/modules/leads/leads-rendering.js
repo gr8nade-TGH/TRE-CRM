@@ -76,38 +76,27 @@ export async function renderLeads(options) {
 	console.log('API returned:', { items, total }); // Debug
 	tbody.innerHTML = '';
 
-	// Fetch notes counts and current steps for all leads in parallel (if using Supabase)
+	// OPTIMIZED: Batch fetch notes counts and activities for all leads (if using Supabase)
 	if (!USE_MOCK_DATA) {
-		const notesCountsPromises = items.map(lead =>
-			SupabaseAPI.getLeadNotesCount(lead.id).then(count => ({ leadId: lead.id, count }))
-		);
-		const currentStepsPromises = items.map(lead =>
-			getCurrentStepFromActivities(lead.id).then(step => ({ leadId: lead.id, step }))
-		);
+		const leadIds = items.map(lead => lead.id);
 
-		const [notesCounts, currentSteps] = await Promise.all([
-			Promise.all(notesCountsPromises),
-			Promise.all(currentStepsPromises)
+		// Fetch notes counts and activities in 2 batch queries instead of N*2 queries
+		const [notesCountMap, activitiesMap] = await Promise.all([
+			SupabaseAPI.getBatchLeadNotesCounts(leadIds),
+			SupabaseAPI.getBatchLeadActivities(leadIds)
 		]);
 
-		const notesCountMap = {};
-		notesCounts.forEach(({ leadId, count }) => {
-			notesCountMap[leadId] = count;
-		});
-
+		// Calculate current step from activities for each lead
 		const currentStepMap = {};
-		currentSteps.forEach(({ leadId, step }) => {
-			currentStepMap[leadId] = step;
-		});
+		for (const leadId of leadIds) {
+			const activities = activitiesMap[leadId] || [];
+			currentStepMap[leadId] = await getCurrentStepFromActivities(leadId, activities);
+		}
 
 		// Apply current steps and calculate health status for each lead
 		items.forEach(lead => {
 			lead.current_step = currentStepMap[lead.id] || 1;
 			lead.health_status = calculateHealthStatus(lead);
-		});
-
-		// Store notesCountMap for later use
-		items.forEach(lead => {
 			lead._notesCount = notesCountMap[lead.id] || 0;
 		});
 	} else {
