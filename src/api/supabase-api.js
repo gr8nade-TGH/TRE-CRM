@@ -684,10 +684,10 @@ export async function updatePropertyContact(contactData) {
         try {
             await logPropertyActivity({
                 property_id: data[0].id,
-                community_name: community_name,
                 activity_type: 'contact_info_updated',
                 description: `Contact information updated for ${community_name}`,
                 metadata: {
+                    community_name: community_name,
                     contact_name,
                     contact_email,
                     contact_phone,
@@ -714,7 +714,6 @@ export async function logPropertyActivity(activityData) {
         .from('property_activities')
         .insert({
             property_id: activityData.property_id,
-            community_name: activityData.community_name,
             activity_type: activityData.activity_type,
             description: activityData.description,
             metadata: activityData.metadata || {},

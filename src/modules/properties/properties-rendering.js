@@ -474,8 +474,8 @@ export function populatePropertyDropdown(communityNames) {
 }
 
 export async function savePropertyContact(options) {
-	const { SupabaseAPI, hideModal, renderPropertyContacts, toast } = options;
-	
+	const { SupabaseAPI, hideModal, renderProperties, toast } = options;
+
 	const form = document.getElementById('addPropertyContactForm');
 	if (!form.checkValidity()) {
 		form.reportValidity();
@@ -502,7 +502,7 @@ export async function savePropertyContact(options) {
 
 		toast('✅ Contact info saved & activity logged!', 'success');
 		hideModal('addPropertyContactModal');
-		await renderPropertyContacts();
+		await renderProperties();
 	} catch (error) {
 		console.error('Error saving property contact:', error);
 		toast('Error saving contact info. Please try again.', 'error');
