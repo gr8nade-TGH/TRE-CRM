@@ -510,11 +510,16 @@ export async function savePropertyContact(options) {
 }
 
 export async function editPropertyContact(propertyId, communityName, options) {
-	const { SupabaseAPI, showModal, toast } = options;
-	
+	const { SupabaseAPI, showModal, toast, populatePropertyDropdownForContact } = options;
+
 	try {
 		// Fetch the property details
 		const property = await SupabaseAPI.getProperty(propertyId);
+
+		// Populate the property dropdown first
+		if (populatePropertyDropdownForContact) {
+			await populatePropertyDropdownForContact();
+		}
 
 		// Populate the form
 		document.getElementById('contactPropertySelect').value = communityName;

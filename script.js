@@ -241,12 +241,22 @@ let api, renderLeads, renderSpecials;
 	}
 
 	async function editPropertyContact(propertyId, communityName) {
-		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
+		await Properties.editPropertyContact(propertyId, communityName, {
+			SupabaseAPI,
+			showModal,
+			toast,
+			populatePropertyDropdownForContact
+		});
 	}
 
 	// Window functions for inline onclick handlers
 	window.editPropertyContact = async function(propertyId, communityName) {
-		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
+		await Properties.editPropertyContact(propertyId, communityName, {
+			SupabaseAPI,
+			showModal,
+			toast,
+			populatePropertyDropdownForContact
+		});
 	};
 
 	window.addSpecialForProperty = function(propertyName) {
