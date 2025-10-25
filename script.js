@@ -499,9 +499,9 @@ let api, renderLeads, renderSpecials;
 
 	function renderActivityLog(activities) {
 		return Modals.renderActivityLog(activities, {
-			getActivityIcon,
-			formatTimeAgo,
-			renderActivityMetadata
+			getActivityIcon: Modals.getActivityIcon,
+			formatTimeAgo: Modals.formatTimeAgo,
+			renderActivityMetadata: Modals.renderActivityMetadata
 		});
 	}
 
