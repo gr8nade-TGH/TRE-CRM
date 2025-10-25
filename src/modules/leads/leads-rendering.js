@@ -63,14 +63,10 @@ export async function renderLeads(options) {
 	console.log('renderLeads called'); // Debug
 	const tbody = document.getElementById('leadsTbody');
 	const loadingIndicator = document.getElementById('leadsLoadingIndicator');
-	const tableWrapper = tbody?.closest('.table-wrapper');
 
-	// Show loading indicator
+	// Show loading indicator (table row)
 	if (loadingIndicator) {
-		loadingIndicator.style.display = 'flex';
-	}
-	if (tableWrapper) {
-		tableWrapper.classList.add('loading');
+		loadingIndicator.style.display = 'table-row';
 	}
 
 	console.log('tbody element:', tbody); // Debug
@@ -199,14 +195,14 @@ export async function renderLeads(options) {
 
 	} catch (error) {
 		console.error('Error rendering leads:', error);
-		tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error loading leads. Please try again.</td></tr>';
+		// Keep loading indicator row, just update it to show error
+		if (loadingIndicator) {
+			loadingIndicator.innerHTML = '<td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error loading leads. Please try again.</td>';
+		}
 	} finally {
 		// Hide loading indicator
 		if (loadingIndicator) {
 			loadingIndicator.style.display = 'none';
-		}
-		if (tableWrapper) {
-			tableWrapper.classList.remove('loading');
 		}
 	}
 }

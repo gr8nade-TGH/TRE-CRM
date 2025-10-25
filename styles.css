@@ -4975,9 +4975,6 @@ input[type="radio"] {
 	align-items: center;
 	justify-content: center;
 	padding: 60px 20px;
-	background: var(--panel);
-	border-radius: 8px;
-	margin: 20px 0;
 }
 
 .loading-indicator p {
@@ -5006,14 +5003,18 @@ input[type="radio"] {
 	}
 }
 
-/* Loading state for tables */
-.table-wrapper.loading {
-	position: relative;
-	min-height: 200px;
+/* Loading row inside table */
+.loading-row {
+	background: transparent !important;
 }
 
-.table-wrapper.loading .data-table {
-	opacity: 0.3;
-	pointer-events: none;
+.loading-row:hover {
+	background: transparent !important;
+}
+
+.loading-cell {
+	text-align: center;
+	padding: 0 !important;
+	border: none !important;
 }
 
