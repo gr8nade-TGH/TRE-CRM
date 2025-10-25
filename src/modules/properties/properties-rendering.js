@@ -115,15 +115,15 @@ export async function renderProperties(options) {
 
 			// Actions
 			const actionsHtml = `
-				<button class="icon-btn" onclick="window.editPropertyContact('${prop.id}', '${name.replace(/'/g, "\\'")}')}" title="Edit Contact Info">
+				<button class="icon-btn" onclick="window.editPropertyContact('${prop.id}', '${name.replace(/'/g, "\\'")}')" title="Edit Contact Info">
 					📞
 				</button>
 				${hasActiveSpecials ? `
-					<button class="icon-btn" onclick="window.editPropertySpecial('${prop.activeSpecials[0].id}', '${name.replace(/'/g, "\\'")}')}" title="Edit Special">
+					<button class="icon-btn" onclick="window.editPropertySpecial('${prop.activeSpecials[0].id}', '${name.replace(/'/g, "\\'")}')" title="Edit Special">
 						🔥
 					</button>
 				` : `
-					<button class="icon-btn" onclick="window.addSpecialForProperty('${name.replace(/'/g, "\\'")}')}" title="Add Special">
+					<button class="icon-btn" onclick="window.addSpecialForProperty('${name.replace(/'/g, "\\'")}')" title="Add Special">
 						🔥
 					</button>
 				`}

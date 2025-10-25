@@ -28,7 +28,7 @@ export async function saveNewSpecial(options) {
 	const specialId = `special_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
 	// Map form fields to database schema
-	// Database expects: id, property_id, property_name, market, title, description, valid_from, valid_until, active, featured, terms
+	// Database expects: id, property_id, property_name, market, title, description, valid_from, valid_until, active, featured, terms, created_by
 	// Form provides: property_name, current_special (title), commission_rate (description), expiration_date (valid_until)
 	const newSpecial = {
 		id: specialId,
@@ -41,7 +41,8 @@ export async function saveNewSpecial(options) {
 		valid_until: expirationDate, // Map expiration_date to valid_until
 		active: true,
 		featured: false,
-		terms: null
+		terms: null,
+		created_by: window.currentUser?.id || state?.agentId // Add user ID for RLS policy
 	};
 
 	try {
