@@ -483,6 +483,7 @@ export async function savePropertyContact(options) {
 	}
 
 	const communityName = document.getElementById('contactPropertySelect').value;
+	const address = document.getElementById('contactAddress').value;
 	const contactName = document.getElementById('contactName').value;
 	const contactEmail = document.getElementById('contactEmail').value;
 	const contactPhone = document.getElementById('contactPhone').value;
@@ -493,6 +494,7 @@ export async function savePropertyContact(options) {
 		// Update all properties with this community name
 		await SupabaseAPI.updatePropertyContact({
 			community_name: communityName,
+			address: address,
 			contact_name: contactName,
 			contact_email: contactEmail,
 			contact_phone: contactPhone,
@@ -523,6 +525,7 @@ export async function editPropertyContact(propertyId, communityName, options) {
 
 		// Populate the form
 		document.getElementById('contactPropertySelect').value = communityName;
+		document.getElementById('contactAddress').value = property.address || '';
 		document.getElementById('contactName').value = property.contact_name || '';
 		document.getElementById('contactEmail').value = property.contact_email || '';
 		document.getElementById('contactPhone').value = property.contact_phone || '';

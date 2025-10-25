@@ -658,19 +658,43 @@ export async function updateProperty(id, propertyData, performedBy = null, perfo
 export async function updatePropertyContact(contactData) {
     const supabase = getSupabase();
 
-    const { community_name, contact_name, contact_email, contact_phone, office_hours, contact_notes } = contactData;
+    const { community_name, address, contact_name, contact_email, contact_phone, office_hours, contact_notes } = contactData;
+
+    // Build update object - only include fields that are provided
+    const updateData = {
+        updated_at: new Date().toISOString()
+    };
+
+    // If address is provided, update both the combined address field and parse into separate fields
+    if (address !== undefined && address) {
+        updateData.address = address;
+
+        // Try to parse the address into separate fields for consistency
+        // Expected format: "Street, City, State Zip"
+        const addressParts = address.split(',').map(p => p.trim());
+        if (addressParts.length >= 2) {
+            updateData.street_address = addressParts[0]; // First part is street
+            updateData.city = addressParts[1]; // Second part is city
+
+            // Third part might be "State Zip"
+            if (addressParts.length >= 3) {
+                const stateZip = addressParts[2].trim().split(/\s+/);
+                if (stateZip.length >= 1) updateData.state = stateZip[0];
+                if (stateZip.length >= 2) updateData.zip_code = stateZip[1];
+            }
+        }
+    }
+
+    if (contact_name !== undefined) updateData.contact_name = contact_name;
+    if (contact_email !== undefined) updateData.contact_email = contact_email;
+    if (contact_phone !== undefined) updateData.contact_phone = contact_phone;
+    if (office_hours !== undefined) updateData.office_hours = office_hours;
+    if (contact_notes !== undefined) updateData.contact_notes = contact_notes;
 
     // Update all properties with this community name
     const { data, error } = await supabase
         .from('properties')
-        .update({
-            contact_name,
-            contact_email,
-            contact_phone,
-            office_hours,
-            contact_notes,
-            updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('community_name', community_name)
         .select();
 
@@ -688,6 +712,7 @@ export async function updatePropertyContact(contactData) {
                 description: `Contact information updated for ${community_name}`,
                 metadata: {
                     community_name: community_name,
+                    address_updated: !!address,
                     contact_name,
                     contact_email,
                     contact_phone,

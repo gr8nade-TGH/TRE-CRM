@@ -431,6 +431,9 @@ export async function saveListingEdit(options) {
 
 		console.log('✅ Using coordinates:', { lat, lng, source: property.tempLat ? 'autocomplete' : 'existing' });
 
+		// Build combined address for sync with Properties page
+		const combinedAddress = `${streetAddress}, ${city}, ${state} ${zipCode}`.trim();
+
 		// Build form data - ONLY use new schema field names
 		const formData = {
 			community_name: document.getElementById('editPropertyName').value.trim(),
@@ -438,6 +441,7 @@ export async function saveListingEdit(options) {
 			city: city,
 			state: state,
 			zip_code: zipCode,
+			address: combinedAddress, // Combined address for sync with Properties page
 			lat: lat,
 			lng: lng,
 			phone: document.getElementById('editPhone').value.trim(),
