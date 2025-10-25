@@ -26,6 +26,7 @@ import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase
 import { getCurrentStepFromActivities as getCurrentStepUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
 import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentChangesUtil } from './src/utils/agent-drawer.js';
 import { geocodeAddress } from './src/utils/geocoding.js';
+import { initSpeedInsights } from './src/utils/speed-insights.js';
 import { setupAllEventListeners } from './src/events/dom-event-listeners.js';
 import { createLeadTable as createLeadTableUtil } from './src/renders/lead-table.js';
 import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-modals.js';
@@ -713,6 +714,9 @@ let api, renderLeads, renderSpecials;
 
 	document.addEventListener('DOMContentLoaded', () => {
 		console.log('DOM loaded, waiting for authentication...');
+
+		// Initialize Vercel Speed Insights
+		initSpeedInsights();
 
 		import('./src/modules/modals/unit-modals.js').then(module => {
 			module.initializeUnitModalListeners();
