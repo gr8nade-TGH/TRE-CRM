@@ -18,7 +18,7 @@ export const state = {
 	
 	// Pagination state
 	page: 1,
-	pageSize: 10,
+	pageSize: 50, // Increased from 10 for better performance
 	
 	// Sorting state
 	sort: { 
@@ -85,7 +85,7 @@ export function resetState() {
 	state.agentId = 'agent_1';
 	state.currentPage = 'leads';
 	state.page = 1;
-	state.pageSize = 10;
+	state.pageSize = 50;
 	state.sort = { key: 'submitted_at', dir: 'desc' };
 	state.search = '';
 	state.selectedLeadId = null;

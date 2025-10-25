@@ -62,19 +62,32 @@ export async function renderLeads(options) {
 
 	console.log('renderLeads called'); // Debug
 	const tbody = document.getElementById('leadsTbody');
+	const loadingIndicator = document.getElementById('leadsLoadingIndicator');
+	const tableWrapper = tbody?.closest('.table-wrapper');
+
+	// Show loading indicator
+	if (loadingIndicator) {
+		loadingIndicator.style.display = 'flex';
+	}
+	if (tableWrapper) {
+		tableWrapper.classList.add('loading');
+	}
+
 	console.log('tbody element:', tbody); // Debug
-	const { items, total } = await api.getLeads({
-		role: state.role,
-		agentId: state.agentId,
-		search: state.search,
-		sortKey: state.sort.key,
-		sortDir: state.sort.dir,
-		page: state.page,
-		pageSize: state.pageSize,
-		filters: state.filters
-	});
-	console.log('API returned:', { items, total }); // Debug
-	tbody.innerHTML = '';
+
+	try {
+		const { items, total } = await api.getLeads({
+			role: state.role,
+			agentId: state.agentId,
+			search: state.search,
+			sortKey: state.sort.key,
+			sortDir: state.sort.dir,
+			page: state.page,
+			pageSize: state.pageSize,
+			filters: state.filters
+		});
+		console.log('API returned:', { items, total }); // Debug
+		tbody.innerHTML = '';
 
 	// OPTIMIZED: Batch fetch notes counts and activities for all leads (if using Supabase)
 	if (!USE_MOCK_DATA) {
@@ -183,5 +196,18 @@ export async function renderLeads(options) {
 
 	// Update sort headers
 	updateSortHeaders('leadsTable');
+
+	} catch (error) {
+		console.error('Error rendering leads:', error);
+		tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: var(--danger);">Error loading leads. Please try again.</td></tr>';
+	} finally {
+		// Hide loading indicator
+		if (loadingIndicator) {
+			loadingIndicator.style.display = 'none';
+		}
+		if (tableWrapper) {
+			tableWrapper.classList.remove('loading');
+		}
+	}
 }
 
