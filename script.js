@@ -820,16 +820,24 @@ async function loadAuditLog() {
 }
 
 async function createUser(userData) {
-	return await Admin.createUser(userData, {
+	const result = await Admin.createUser(userData, {
 		loadUsers
 	});
+	// Reset pagination to page 1 after creating user
+	Admin.resetUsersPagination();
+	Admin.resetAuditLogPagination();
+	return result;
 }
 
 async function updateUser(userId, userData) {
-	return await Admin.updateUser(userId, userData, {
+	const result = await Admin.updateUser(userId, userData, {
 		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
 		renderUsersTable
 	});
+	// Reset pagination to page 1 after updating user
+	Admin.resetUsersPagination();
+	Admin.resetAuditLogPagination();
+	return result;
 }
 
 async function deleteUserFromAPI(userId) {
@@ -838,12 +846,17 @@ async function deleteUserFromAPI(userId) {
 		renderUsersTable,
 		loadAuditLog
 	});
+	// Reset pagination to page 1 after deleting user
+	Admin.resetUsersPagination();
+	Admin.resetAuditLogPagination();
 }
 
 async function changeUserPassword(userId, newPassword) {
 	await Admin.changeUserPassword(userId, newPassword, {
 		loadAuditLog
 	});
+	// Reset audit log pagination to page 1 after password change
+	Admin.resetAuditLogPagination();
 }
 
 async function renderAdmin() {

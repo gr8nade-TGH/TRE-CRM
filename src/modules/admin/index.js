@@ -13,6 +13,6 @@ export {
 
 // Re-export individual functions for convenience
 export { loadUsers, loadAuditLog, createUser, updateUser, deleteUserFromAPI, changeUserPassword } from './admin-api.js';
-export { renderAdmin, renderUsersTable, renderAuditLog } from './admin-rendering.js';
+export { renderAdmin, renderUsersTable, renderAuditLog, resetUsersPagination, resetAuditLogPagination } from './admin-rendering.js';
 export { editUser, changePassword, deleteUser } from './admin-actions.js';
 
