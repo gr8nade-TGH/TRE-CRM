@@ -1,0 +1,54 @@
+-- Fix San Antonio properties that have NULL community_name
+-- This updates properties based on their address to set the correct community_name
+
+UPDATE public.properties SET community_name = 'Paloma Luxury Apartments' WHERE address = '1800 Broadway, San Antonio, TX 78215' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Greyson Luxury Living' WHERE address = '123 E Houston St, San Antonio, TX 78205' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Tin Top Flats at the Creamery' WHERE address = '1202 S Flores St, San Antonio, TX 78204' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Boulder Creek Apartments' WHERE address = '5959 Bowens Crossing, San Antonio, TX 78250' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Hardy Oak Apartments' WHERE address = '20323 Hardy Oak Blvd, San Antonio, TX 78258' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'District at Medical Center' WHERE address = '8550 Datapoint Dr, San Antonio, TX 78229' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Cellars at Pearl' WHERE address = '312 Pearl Pkwy, San Antonio, TX 78215' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Addison Medical Center Apartments' WHERE address = '7950 Floyd Curl Dr, San Antonio, TX 78229' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Broadstone Ranch' WHERE address = '24165 Wilderness Oak, San Antonio, TX 78258' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'The San Miguel' WHERE address = '1919 San Pedro Ave, San Antonio, TX 78212' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'San Antonio Station' WHERE address = '18730 Stone Oak Pkwy, San Antonio, TX 78258' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Babcock' WHERE address = '3803 Babcock Rd, San Antonio, TX 78229' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Alon' WHERE address = '13130 Blanco Rd, San Antonio, TX 78216' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas de Alamo Ranch' WHERE address = '5803 Alamo Downs Pkwy, San Antonio, TX 78253' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Enclave at Parc Crest' WHERE address = '1255 SW Loop 410, San Antonio, TX 78227' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Bandera' WHERE address = '6611 Bandera Rd, San Antonio, TX 78238' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Briggs Ranch' WHERE address = '5565 Mansions Bluff, San Antonio, TX 78245' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Westover Hills' WHERE address = '1530 NW Crossroads, San Antonio, TX 78251' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Perrin Ranch' WHERE address = '7550 Culebra Rd, San Antonio, TX 78251' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Parkside' WHERE address = '8615 Datapoint Dr, San Antonio, TX 78229' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Stone Oak' WHERE address = '1122 E Sonterra Blvd, San Antonio, TX 78258' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Scenic Loop' WHERE address = '23303 Scenic Loop Rd, San Antonio, TX 78255' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Dominion' WHERE address = '23450 Dominion Dr, San Antonio, TX 78257' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Huebner Oaks' WHERE address = '11745 Huebner Rd, San Antonio, TX 78230' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Sonterra' WHERE address = '555 E Sonterra Blvd, San Antonio, TX 78258' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Thousand Oaks' WHERE address = '2323 Thousand Oaks Dr, San Antonio, TX 78232' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Shavano Park' WHERE address = '3939 NW Loop 410, San Antonio, TX 78229' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Wurzbach' WHERE address = '8989 Wurzbach Rd, San Antonio, TX 78240' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Blanco Vista' WHERE address = '15303 Blanco Rd, San Antonio, TX 78232' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Callaghan' WHERE address = '5959 Callaghan Rd, San Antonio, TX 78228' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Wilderness Oak' WHERE address = '24500 Wilderness Oak, San Antonio, TX 78258' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Eilan' WHERE address = '17902 La Cantera Pkwy, San Antonio, TX 78256' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Silverado' WHERE address = '8700 Silverado, San Antonio, TX 78254' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Rim Pointe' WHERE address = '17803 La Cantera Pkwy, San Antonio, TX 78256' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Cielo Vista' WHERE address = '6767 Cielo Vista, San Antonio, TX 78218' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Walzem' WHERE address = '5959 Walzem Rd, San Antonio, TX 78218' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Windcrest' WHERE address = '8585 Midcrown Dr, San Antonio, TX 78239' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Nacogdoches' WHERE address = '6767 Nacogdoches Rd, San Antonio, TX 78209' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Broadway' WHERE address = '4545 Broadway, San Antonio, TX 78209' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Alamo Heights' WHERE address = '6060 Broadway, San Antonio, TX 78209' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Terrell Hills' WHERE address = '909 E Mulberry Ave, San Antonio, TX 78209' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Olmos Park' WHERE address = '120 W Olmos Dr, San Antonio, TX 78212' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Monte Vista' WHERE address = '1919 W Ashby Pl, San Antonio, TX 78201' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Southtown' WHERE address = '1515 S Flores St, San Antonio, TX 78204' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at King William' WHERE address = '123 King William St, San Antonio, TX 78204' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at La Cantera' WHERE address = '16800 La Cantera Pkwy, San Antonio, TX 78256' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at The Rim' WHERE address = '17902 La Cantera Pkwy, San Antonio, TX 78257' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at Six Flags' WHERE address = '17500 La Cantera Pkwy, San Antonio, TX 78257' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Estates at Fiesta Texas' WHERE address = '17000 I-10 W, San Antonio, TX 78257' AND market = 'San Antonio';
+UPDATE public.properties SET community_name = 'Villas at SeaWorld' WHERE address = '10500 SeaWorld Dr, San Antonio, TX 78251' AND market = 'San Antonio';
+

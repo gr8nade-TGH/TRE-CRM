@@ -234,6 +234,8 @@ let api, renderLeads, renderSpecials;
 	async function renderPropertyContacts() {
 		// Legacy function - now calls renderProperties
 		await renderProperties();
+		// Populate dropdown after rendering
+		await populatePropertyDropdownForContact();
 	}
 
 	async function savePropertyContact() {
