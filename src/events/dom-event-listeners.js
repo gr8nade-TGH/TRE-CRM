@@ -1647,6 +1647,71 @@ export function setupAllEventListeners(deps) {
 		// Initialize bug flags
 		addBugFlags();
 
+		// Email dashboard event listeners
+		const emailStatusFilter = document.getElementById('emailStatusFilter');
+		const emailSearch = document.getElementById('emailSearch');
+		const emailsPrevPage = document.getElementById('emailsPrevPage');
+		const emailsNextPage = document.getElementById('emailsNextPage');
+
+		if (emailStatusFilter) {
+			emailStatusFilter.addEventListener('change', async () => {
+				const { Emails } = await import('../modules/emails/index.js');
+				Emails.resetEmailsPagination();
+				await Emails.renderEmailLogs({ api, state, showEmailPreview });
+			});
+		}
+
+		if (emailSearch) {
+			emailSearch.addEventListener('input', async (e) => {
+				// Debounce search
+				clearTimeout(emailSearch._searchTimeout);
+				emailSearch._searchTimeout = setTimeout(async () => {
+					const { Emails } = await import('../modules/emails/index.js');
+					Emails.resetEmailsPagination();
+					await Emails.renderEmailLogs({ api, state, showEmailPreview });
+				}, 300);
+			});
+		}
+
+		if (emailsPrevPage) {
+			emailsPrevPage.addEventListener('click', async () => {
+				const { Emails } = await import('../modules/emails/index.js');
+				if (Emails.previousEmailsPage()) {
+					await Emails.renderEmailLogs({ api, state, showEmailPreview });
+				}
+			});
+		}
+
+		if (emailsNextPage) {
+			emailsNextPage.addEventListener('click', async () => {
+				const { Emails } = await import('../modules/emails/index.js');
+				if (Emails.nextEmailsPage()) {
+					await Emails.renderEmailLogs({ api, state, showEmailPreview });
+				}
+			});
+		}
+
+		// Email table delegation
+		document.addEventListener('click', async (e) => {
+			// View email details
+			if (e.target.closest('.view-email-details')) {
+				const emailId = e.target.closest('.view-email-details').dataset.emailId;
+				const { Emails } = await import('../modules/emails/index.js');
+				await Emails.showEmailDetails(emailId, { api, showModal, formatDate });
+				e.preventDefault();
+				return;
+			}
+
+			// Preview email template
+			if (e.target.closest('.preview-template')) {
+				const templateId = e.target.closest('.preview-template').dataset.templateId;
+				const { Emails } = await import('../modules/emails/index.js');
+				await Emails.showTemplatePreview(templateId, { api, showModal });
+				e.preventDefault();
+				return;
+			}
+		});
+
 		// Add event listeners for bug field changes
 		document.addEventListener('change', (e) => {
 			if (e.target.classList.contains('bug-status-select') || e.target.classList.contains('bug-priority-select')) {

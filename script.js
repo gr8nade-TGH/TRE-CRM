@@ -39,6 +39,7 @@ import * as Admin from './src/modules/admin/index.js';
 import * as Properties from './src/modules/properties/index.js';
 import * as Modals from './src/modules/modals/index.js';
 import * as Showcases from './src/modules/showcases/index.js';
+import * as Emails from './src/modules/emails/index.js';
 import * as Routing from './src/routing/index.js';
 import * as Init from './src/init/index.js';
 
@@ -381,6 +382,12 @@ let api, renderLeads, renderSpecials;
 	async function renderBugs() {
 		await Properties.renderBugs({ api, formatDate });
 	}
+	async function renderEmails() {
+		await Emails.renderEmails({ api, state, showEmailPreview });
+	}
+	function showEmailPreview(emailId) {
+		Emails.showEmailDetails(emailId, { api, showModal, formatDate });
+	}
 	function showBugReportModal(context = {}) {
 		Properties.showBugReportModal(context, { state, showModal });
 	}
@@ -718,6 +725,7 @@ let api, renderLeads, renderSpecials;
 			renderProperties,
 			renderAdmin,
 			renderBugs,
+			renderEmails,
 			renderLeads,
 			initMap: Listings.initMap,
 			updateNavigation: Routing.updateNavigation,

@@ -1907,7 +1907,7 @@ export async function getEmailLogs({ status, recipientEmail, page = 1, pageSize 
 
     let query = supabase
         .from('email_logs')
-        .select('*', { count: 'exact' });
+        .select('*, sent_by_user:users!email_logs_sent_by_fkey(name)', { count: 'exact' });
 
     if (status) {
         query = query.eq('status', status);
@@ -1930,10 +1930,16 @@ export async function getEmailLogs({ status, recipientEmail, page = 1, pageSize 
         throw error;
     }
 
-    console.log('✅ getEmailLogs returning:', { items: data?.length, total: count });
+    // Add sent_by_name to each email log
+    const items = (data || []).map(log => ({
+        ...log,
+        sent_by_name: log.sent_by_user?.name || null
+    }));
+
+    console.log('✅ getEmailLogs returning:', { items: items.length, total: count });
 
     return {
-        items: data || [],
+        items: items,
         total: count || 0
     };
 }

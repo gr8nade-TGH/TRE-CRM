@@ -18,6 +18,7 @@
  * @param {Function} deps.renderProperties - Function to render properties page
  * @param {Function} deps.renderAdmin - Function to render admin page
  * @param {Function} deps.renderBugs - Function to render bugs page
+ * @param {Function} deps.renderEmails - Function to render emails page
  * @param {Function} deps.renderLeads - Function to render leads page
  * @param {Function} deps.initMap - Function to initialize map
  * @param {Function} deps.updateNavigation - Function to update navigation
@@ -35,6 +36,7 @@ export function route(deps) {
 		renderProperties,
 		renderAdmin,
 		renderBugs,
+		renderEmails,
 		renderLeads,
 		initMap,
 		updateNavigation,
@@ -114,6 +116,11 @@ export function route(deps) {
 		show(document.getElementById('bugsView'));
 		setRoleLabel('bugs');
 		renderBugs();
+	} else if (hash === '/emails') {
+		state.currentPage = 'emails';
+		show(document.getElementById('emailsView'));
+		setRoleLabel('emails');
+		renderEmails();
 	} else {
 		// default: leads
 		state.currentPage = 'leads';
