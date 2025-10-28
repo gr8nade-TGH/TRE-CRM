@@ -104,6 +104,7 @@ export async function submitBugReport(options) {
 	const currentPage = getCurrentPageName();
 
 	const bugData = {
+		id: `bug_${Date.now()}`,
 		title,
 		description,
 		expected: expected || null,
