@@ -24,7 +24,10 @@ export {
 	savePropertyContact,
 	editPropertyContact,
 	addSpecialForProperty,
-	viewPropertySpecials
+	viewPropertySpecials,
+	editPropertySpecial,
+	saveEditedSpecial,
+	deleteEditedSpecial
 } from './properties-rendering.js';
 
 export {

@@ -1,5 +1,10 @@
 // Properties Rendering Functions - EXACT COPY from script.js lines 2340-2488
 
+// Pagination state
+let currentPropertiesPage = 1;
+const PROPERTIES_PER_PAGE = 15;
+let allPropertiesData = [];
+
 /**
  * Render the unified properties table with contacts and specials merged
  */
@@ -55,11 +60,39 @@ export async function renderProperties(options) {
 
 		console.log('Properties with specials merged:', propertiesWithSpecials.length);
 
-		// Clear table
-		tbody.innerHTML = '';
+		// Store all properties data for pagination
+		allPropertiesData = propertiesWithSpecials;
 
-		// Render each property
-		propertiesWithSpecials.forEach(prop => {
+		// Render first page
+		renderPropertiesPage(currentPropertiesPage);
+
+	} catch (error) {
+		console.error('Error rendering properties:', error);
+		toast('Error loading properties. Please try again.', 'error');
+	}
+}
+
+/**
+ * Render a specific page of properties
+ */
+function renderPropertiesPage(page) {
+	const tbody = document.getElementById('propertiesTbody');
+	if (!tbody) return;
+
+	// Clear table
+	tbody.innerHTML = '';
+
+	// Calculate pagination
+	const totalProperties = allPropertiesData.length;
+	const totalPages = Math.ceil(totalProperties / PROPERTIES_PER_PAGE);
+	const startIndex = (page - 1) * PROPERTIES_PER_PAGE;
+	const endIndex = Math.min(startIndex + PROPERTIES_PER_PAGE, totalProperties);
+	const pageProperties = allPropertiesData.slice(startIndex, endIndex);
+
+	console.log(`Rendering page ${page} of ${totalPages} (${pageProperties.length} properties)`);
+
+	// Render properties for this page
+	pageProperties.forEach(prop => {
 			const tr = document.createElement('tr');
 
 			// Property name
@@ -141,11 +174,60 @@ export async function renderProperties(options) {
 			tbody.appendChild(tr);
 		});
 
-		console.log(`Rendered ${propertiesWithSpecials.length} properties in merged table`);
-	} catch (error) {
-		console.error('Error rendering properties:', error);
-		toast('Error loading properties. Please try again.', 'error');
+	// Update pagination controls
+	updatePropertiesPagination(page, totalPages, totalProperties);
+
+	console.log(`Rendered ${pageProperties.length} properties (page ${page} of ${totalPages})`);
+}
+
+/**
+ * Update pagination controls
+ */
+function updatePropertiesPagination(currentPage, totalPages, totalProperties) {
+	const paginationDiv = document.getElementById('propertiesPagination');
+	const prevBtn = document.getElementById('propertiesPrevBtn');
+	const nextBtn = document.getElementById('propertiesNextBtn');
+	const pageInfo = document.getElementById('propertiesPageInfo');
+
+	if (!paginationDiv || !prevBtn || !nextBtn || !pageInfo) return;
+
+	// Show/hide pagination based on total properties
+	if (totalProperties <= PROPERTIES_PER_PAGE) {
+		paginationDiv.style.display = 'none';
+		return;
 	}
+
+	paginationDiv.style.display = 'block';
+
+	// Update page info
+	const startIndex = (currentPage - 1) * PROPERTIES_PER_PAGE + 1;
+	const endIndex = Math.min(currentPage * PROPERTIES_PER_PAGE, totalProperties);
+	pageInfo.textContent = `Showing ${startIndex}-${endIndex} of ${totalProperties} properties (Page ${currentPage} of ${totalPages})`;
+
+	// Enable/disable buttons
+	prevBtn.disabled = currentPage === 1;
+	nextBtn.disabled = currentPage === totalPages;
+
+	// Remove old event listeners by cloning
+	const newPrevBtn = prevBtn.cloneNode(true);
+	const newNextBtn = nextBtn.cloneNode(true);
+	prevBtn.parentNode.replaceChild(newPrevBtn, prevBtn);
+	nextBtn.parentNode.replaceChild(newNextBtn, nextBtn);
+
+	// Add new event listeners
+	newPrevBtn.addEventListener('click', () => {
+		if (currentPropertiesPage > 1) {
+			currentPropertiesPage--;
+			renderPropertiesPage(currentPropertiesPage);
+		}
+	});
+
+	newNextBtn.addEventListener('click', () => {
+		if (currentPropertiesPage < totalPages) {
+			currentPropertiesPage++;
+			renderPropertiesPage(currentPropertiesPage);
+		}
+	});
 }
 
 /**
