@@ -102,14 +102,19 @@ export function createDependencies(context) {
 		saveBugChanges,
 		addBugFlags,
 		showBugDetails,
-		
+		handleBugFieldChange,
+
+		// Email dashboard functions
+		showEmailPreview,
+		showTemplatePreview,
+
 		// Showcase functions
 		sendBuildShowcase,
 		sendShowcase,
 		closeBuildShowcase,
 		updateSelectionSummary,
 		openEmailPreview,
-		
+
 		// Other functions
 		previewLandingPage,
 		openHistory,
@@ -210,14 +215,19 @@ export function createDependencies(context) {
 		saveBugChanges,
 		addBugFlags,
 		showBugDetails,
-		
+		handleBugFieldChange,
+
+		// Email dashboard functions
+		showEmailPreview,
+		showTemplatePreview,
+
 		// Showcase functions
 		sendBuildShowcase,
 		sendShowcase,
 		closeBuildShowcase,
 		updateSelectionSummary,
 		openEmailPreview,
-		
+
 		// Other functions
 		previewLandingPage,
 		openHistory,

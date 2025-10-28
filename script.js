@@ -415,6 +415,9 @@ let api, renderLeads, renderSpecials;
 	async function saveBugChanges(bugId) {
 		await Properties.saveBugChanges(bugId, { api, toast, renderBugs });
 	}
+	function handleBugFieldChange(bugId) {
+		Properties.handleBugFieldChange(bugId);
+	}
 	function renderLeadsTable(searchTerm = '', searchType = 'both'){
 		Documents.renderLeadsTable(searchTerm, searchType, {
 			state,
@@ -780,7 +783,7 @@ let api, renderLeads, renderSpecials;
 			updateBulkActionsBar, populateSpecialPropertyDropdown, populatePropertyDropdownForContact,
 			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
 			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
-			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,
+			submitBugReport, saveBugChanges, addBugFlags, showBugDetails, handleBugFieldChange,
 			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
 			openEmailPreview, previewLandingPage, openHistory,
 			sendShowcaseEmail, openHistoryDocumentDetails,
