@@ -1095,13 +1095,22 @@
 							<option value="accountant">Accountant</option>
 						</select>
 					</div>
-					<div class="field">
-						<label for="userPassword">Password *</label>
-						<input type="password" id="userPassword" required>
+
+					<!-- Password change permission warning -->
+					<div id="userPasswordWarning" style="display: none; padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px; color: #856404;">
+						You do not have permission to change this user's password.
 					</div>
-					<div class="field">
-						<label for="userConfirmPassword">Confirm Password *</label>
-						<input type="password" id="userConfirmPassword" required>
+
+					<!-- Password fields container (can be hidden based on permissions) -->
+					<div id="userPasswordFields">
+						<div class="field">
+							<label for="userPassword">Password <span style="font-size: 0.9em; color: #666;">(leave blank to keep current)</span></label>
+							<input type="password" id="userPassword">
+						</div>
+						<div class="field">
+							<label for="userConfirmPassword">Confirm Password</label>
+							<input type="password" id="userConfirmPassword">
+						</div>
 					</div>
 					<!-- Email invitation feature disabled for now -->
 					<!-- <div class="field">

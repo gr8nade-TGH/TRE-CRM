@@ -98,6 +98,9 @@ export async function updateUser(userId, userData, options) {
 	try {
 		console.log('Updating user with Supabase:', userId, userData);
 
+		// Get current user info for permission validation
+		const currentUser = window.currentUser;
+
 		// Call our serverless function to update the user
 		const response = await fetch(`/api/update-user?userId=${userId}`, {
 			method: 'PUT',
@@ -108,7 +111,9 @@ export async function updateUser(userId, userData, options) {
 				email: userData.email,
 				password: userData.password, // Optional - only sent if provided
 				name: userData.name,
-				role: userData.role
+				role: userData.role,
+				currentUserId: currentUser?.id,
+				currentUserRole: currentUser?.role
 			})
 		});
 

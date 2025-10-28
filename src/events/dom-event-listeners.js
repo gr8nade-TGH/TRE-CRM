@@ -2,10 +2,50 @@
  * DOM Event Listeners Setup Module
  * Extracted from script.js to reduce file size and improve maintainability
  * Sets up all event listeners for the TRE CRM application
- * 
+ *
  * This module contains ~1,300 lines of event listener setup code
  * that was previously in the DOMContentLoaded handler in script.js
  */
+
+/**
+ * Check if current user has permission to change target user's password
+ * @param {Object} currentUser - The logged-in user
+ * @param {string} targetUserId - The ID of the user being edited
+ * @param {Array} allUsers - Array of all users (optional, will use deps.realUsers if not provided)
+ * @returns {boolean} - True if current user can change target user's password
+ */
+function checkPasswordChangePermission(currentUser, targetUserId, allUsers = null) {
+	if (!currentUser || !targetUserId) return false;
+
+	// User can always change their own password
+	if (currentUser.id === targetUserId) {
+		return true;
+	}
+
+	// Get target user's role - try from provided array or global
+	let targetUser = null;
+	if (allUsers && Array.isArray(allUsers)) {
+		targetUser = allUsers.find(u => u.id === targetUserId);
+	}
+
+	if (!targetUser) return false;
+
+	const currentRole = currentUser.role?.toLowerCase();
+	const targetRole = targetUser.role?.toLowerCase();
+
+	// Super user can change anyone's password
+	if (currentRole === 'super_user') {
+		return true;
+	}
+
+	// Manager can only change agent passwords
+	if (currentRole === 'manager') {
+		return targetRole === 'agent';
+	}
+
+	// Agent cannot change other users' passwords
+	return false;
+}
 
 export function setupAllEventListeners(deps) {
 	// Destructure all dependencies from the deps object
@@ -692,8 +732,18 @@ export function setupAllEventListeners(deps) {
 							role: userData.role
 						};
 
-						// Only include password if it was provided
+						// Only include password if it was provided AND user has permission
 						if (userData.password) {
+							// Check password change permission
+							const allUsers = realUsers.value || realUsers;
+							const canChangePassword = checkPasswordChangePermission(window.currentUser, userId, allUsers);
+
+							if (!canChangePassword) {
+								console.log('❌ Permission denied: User cannot change this password');
+								toast('You do not have permission to change this user\'s password', 'error');
+								return;
+							}
+
 							updateData.password = userData.password;
 						}
 

@@ -22,7 +22,7 @@ export default async function handler(req, res) {
 	const { userId } = req.query;
 
 	// Get update data from request body
-	const { email, password, name, role } = req.body;
+	const { email, password, name, role, currentUserId, currentUserRole } = req.body;
 
 	// Validate required fields
 	if (!userId) {
@@ -39,6 +39,42 @@ export default async function handler(req, res) {
 		const validRoles = ['agent', 'manager', 'super_user'];
 		if (!validRoles.includes(role)) {
 			return res.status(400).json({ error: `Invalid role. Must be one of: ${validRoles.join(', ')}` });
+		}
+	}
+
+	// Server-side password change permission validation
+	if (password && currentUserId && currentUserRole) {
+		// Get target user's current role to validate permissions
+		try {
+			const getUserResponse = await fetch(`${SUPABASE_URL}/auth/v1/admin/users/${userId}`, {
+				method: 'GET',
+				headers: {
+					'Content-Type': 'application/json',
+					'apikey': SUPABASE_SERVICE_ROLE_KEY,
+					'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
+				}
+			});
+
+			if (getUserResponse.ok) {
+				const targetUser = await getUserResponse.json();
+				const targetRole = targetUser.user_metadata?.role?.toLowerCase();
+				const currentRole = currentUserRole.toLowerCase();
+
+				// Check permissions
+				const isOwnPassword = currentUserId === userId;
+				const isSuperUser = currentRole === 'super_user';
+				const isManagerChangingAgent = currentRole === 'manager' && targetRole === 'agent';
+
+				if (!isOwnPassword && !isSuperUser && !isManagerChangingAgent) {
+					console.log('❌ Permission denied: User cannot change this password');
+					return res.status(403).json({
+						error: 'You do not have permission to change this user\'s password'
+					});
+				}
+			}
+		} catch (permissionError) {
+			console.error('Error checking permissions:', permissionError);
+			// Continue anyway - frontend validation should have caught this
 		}
 	}
 

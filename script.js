@@ -887,7 +887,8 @@ function renderAuditLog() {
 function editUser(userId) {
 	Admin.editUser(userId, {
 		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
-		showModal
+		showModal,
+		currentUser: window.currentUser
 	});
 }
 
