@@ -1825,3 +1825,155 @@ export async function getBug(bugId) {
     return data;
 }
 
+// ============================================================================
+// EMAIL API FUNCTIONS
+// ============================================================================
+
+/**
+ * Get email templates
+ * @param {Object} options - Query options
+ * @param {string} options.category - Filter by category (optional)
+ * @param {boolean} options.activeOnly - Only return active templates (default: true)
+ * @returns {Promise<Array>} Array of email templates
+ */
+export async function getEmailTemplates({ category, activeOnly = true } = {}) {
+    const supabase = getSupabase();
+
+    console.log('📧 getEmailTemplates called with:', { category, activeOnly });
+
+    let query = supabase
+        .from('email_templates')
+        .select('*');
+
+    if (activeOnly) {
+        query = query.eq('active', true);
+    }
+
+    if (category) {
+        query = query.eq('category', category);
+    }
+
+    query = query.order('name', { ascending: true });
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('❌ Error fetching email templates:', error);
+        throw error;
+    }
+
+    console.log('✅ getEmailTemplates returning:', data?.length, 'templates');
+    return data || [];
+}
+
+/**
+ * Get single email template
+ * @param {string} templateId - Template ID
+ * @returns {Promise<Object>} Email template
+ */
+export async function getEmailTemplate(templateId) {
+    const supabase = getSupabase();
+
+    console.log('📧 getEmailTemplate called with:', templateId);
+
+    const { data, error } = await supabase
+        .from('email_templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+
+    if (error) {
+        console.error('❌ Error fetching email template:', error);
+        throw error;
+    }
+
+    console.log('✅ getEmailTemplate returning:', data);
+    return data;
+}
+
+/**
+ * Get email logs
+ * @param {Object} options - Query options
+ * @param {string} options.status - Filter by status (optional)
+ * @param {string} options.recipientEmail - Filter by recipient email (optional)
+ * @param {number} options.page - Page number (default: 1)
+ * @param {number} options.pageSize - Page size (default: 50)
+ * @returns {Promise<Object>} { items: Array, total: number }
+ */
+export async function getEmailLogs({ status, recipientEmail, page = 1, pageSize = 50 } = {}) {
+    const supabase = getSupabase();
+
+    console.log('📧 getEmailLogs called with:', { status, recipientEmail, page, pageSize });
+
+    let query = supabase
+        .from('email_logs')
+        .select('*', { count: 'exact' });
+
+    if (status) {
+        query = query.eq('status', status);
+    }
+
+    if (recipientEmail) {
+        query = query.eq('recipient_email', recipientEmail);
+    }
+
+    query = query.order('created_at', { ascending: false });
+
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+        console.error('❌ Error fetching email logs:', error);
+        throw error;
+    }
+
+    console.log('✅ getEmailLogs returning:', { items: data?.length, total: count });
+
+    return {
+        items: data || [],
+        total: count || 0
+    };
+}
+
+/**
+ * Send email via serverless function
+ * @param {Object} emailData - Email data
+ * @param {string} emailData.templateId - Email template ID
+ * @param {string} emailData.recipientEmail - Recipient email
+ * @param {string} emailData.recipientName - Recipient name
+ * @param {Object} emailData.variables - Template variables
+ * @param {Object} emailData.metadata - Additional metadata
+ * @param {string} emailData.sentBy - User ID who triggered the email
+ * @returns {Promise<Object>} { success: boolean, emailLogId: string, resendId: string }
+ */
+export async function sendEmail(emailData) {
+    console.log('📧 sendEmail called with:', emailData);
+
+    try {
+        const response = await fetch('/api/send-email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(emailData)
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            console.error('❌ Error sending email:', result);
+            throw new Error(result.error || 'Failed to send email');
+        }
+
+        console.log('✅ sendEmail successful:', result);
+        return result;
+
+    } catch (error) {
+        console.error('❌ Error calling send-email API:', error);
+        throw error;
+    }
+}
+

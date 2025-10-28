@@ -230,6 +230,23 @@ export function createAPI({ mockInterestedLeads }) {
 
 		async getBug(bugId) {
 			return await SupabaseAPI.getBug(bugId);
+		},
+
+		// Email API functions
+		async getEmailTemplates(options) {
+			return await SupabaseAPI.getEmailTemplates(options);
+		},
+
+		async getEmailTemplate(templateId) {
+			return await SupabaseAPI.getEmailTemplate(templateId);
+		},
+
+		async getEmailLogs(options) {
+			return await SupabaseAPI.getEmailLogs(options);
+		},
+
+		async sendEmail(emailData) {
+			return await SupabaseAPI.sendEmail(emailData);
 		}
 	};
 }
