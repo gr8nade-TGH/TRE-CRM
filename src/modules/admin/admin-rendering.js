@@ -135,7 +135,7 @@ function renderUsersPage(page, options) {
 	// Render users for this page
 	tbody.innerHTML = pageUsers.map(user => {
 		const createdBy = user.created_by === 'system' ? 'System' :
-			users.find(u => u.id === user.created_by)?.name || 'Unknown';
+			allUsersData.find(u => u.id === user.created_by)?.name || 'Unknown';
 
 		return `
 			<tr>
