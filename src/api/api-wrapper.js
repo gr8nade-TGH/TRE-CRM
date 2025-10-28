@@ -7,10 +7,9 @@ import * as SupabaseAPI from './supabase-api.js';
  * Create API wrapper object
  * @param {Object} options - Dependencies
  * @param {Object} options.mockInterestedLeads - Mock interested leads data (temporary)
- * @param {Array} options.mockBugs - Mock bugs data (temporary)
  * @returns {Object} API object with all methods
  */
-export function createAPI({ mockInterestedLeads, mockBugs }) {
+export function createAPI({ mockInterestedLeads }) {
 	// Helper function to handle API responses
 	async function handleResponse(response) {
 		if (!response.ok) {
@@ -213,58 +212,24 @@ export function createAPI({ mockInterestedLeads, mockBugs }) {
 		},
 
 		// Bugs API functions
-		// Note: Bugs table exists but no Supabase API methods yet
-		// Keeping mock data implementation for now (will be fixed later)
 		async getBugs({ status, priority, page, pageSize } = {}) {
-			console.log('Using mock data for bugs, count:', mockBugs.length);
-			let filteredBugs = [...mockBugs];
-
-			// Filter by status
-			if (status) {
-				filteredBugs = filteredBugs.filter(bug => bug.status === status);
-			}
-
-			// Filter by priority
-			if (priority) {
-				filteredBugs = filteredBugs.filter(bug => bug.priority === priority);
-			}
-
-			// Sort by created date (newest first)
-			filteredBugs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-			return {
-				items: filteredBugs,
-				total: filteredBugs.length
-			};
+			return await SupabaseAPI.getBugs({ status, priority, page, pageSize });
 		},
 
 		async createBug(bugData) {
-			const newBug = {
-				id: `bug_${Date.now()}`,
-				...bugData,
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString()
-			};
-			mockBugs.unshift(newBug);
-			return newBug;
+			return await SupabaseAPI.createBug(bugData);
 		},
 
-		async updateBug(id, bugData) {
-			const index = mockBugs.findIndex(b => b.id === id);
-			if (index !== -1) {
-				mockBugs[index] = { ...mockBugs[index], ...bugData, updated_at: new Date().toISOString() };
-				return mockBugs[index];
-			}
-			throw new Error('Bug not found');
+		async updateBug(bugId, updates) {
+			return await SupabaseAPI.updateBug(bugId, updates);
 		},
 
-		async deleteBug(id) {
-			const index = mockBugs.findIndex(b => b.id === id);
-			if (index !== -1) {
-				mockBugs.splice(index, 1);
-				return { success: true };
-			}
-			throw new Error('Bug not found');
+		async deleteBug(bugId) {
+			return await SupabaseAPI.deleteBug(bugId);
+		},
+
+		async getBug(bugId) {
+			return await SupabaseAPI.getBug(bugId);
 		}
 	};
 }

@@ -1686,17 +1686,142 @@ export async function updateSpecial(id, specialData) {
 
 export async function deleteSpecial(id) {
     const supabase = getSupabase();
-    
+
     const { error } = await supabase
         .from('specials')
         .delete()
         .eq('id', id);
-    
+
     if (error) {
         console.error('Error deleting special:', error);
         throw error;
     }
-    
+
     return { success: true };
+}
+
+/**
+ * Bugs API
+ */
+export async function getBugs({ status, priority, page = 1, pageSize = 50 } = {}) {
+    const supabase = getSupabase();
+
+    console.log('🐛 getBugs called with:', { status, priority, page, pageSize });
+
+    let query = supabase
+        .from('bugs')
+        .select('*', { count: 'exact' });
+
+    // Filter by status
+    if (status && status !== '') {
+        query = query.eq('status', status);
+    }
+
+    // Filter by priority
+    if (priority && priority !== '') {
+        query = query.eq('priority', priority);
+    }
+
+    // Sort by created date (newest first)
+    query = query.order('created_at', { ascending: false });
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to);
+
+    const { data, error, count } = await query;
+
+    if (error) {
+        console.error('❌ Error fetching bugs:', error);
+        throw error;
+    }
+
+    console.log('✅ getBugs returning:', { items: data?.length, total: count });
+
+    return {
+        items: data || [],
+        total: count || 0
+    };
+}
+
+export async function createBug(bugData) {
+    const supabase = getSupabase();
+
+    console.log('🐛 createBug called with:', bugData);
+
+    const { data, error } = await supabase
+        .from('bugs')
+        .insert([bugData])
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error creating bug:', error);
+        throw error;
+    }
+
+    console.log('✅ createBug returning:', data);
+    return data;
+}
+
+export async function updateBug(bugId, updates) {
+    const supabase = getSupabase();
+
+    console.log('🐛 updateBug called with:', { bugId, updates });
+
+    const { data, error } = await supabase
+        .from('bugs')
+        .update(updates)
+        .eq('id', bugId)
+        .select()
+        .single();
+
+    if (error) {
+        console.error('❌ Error updating bug:', error);
+        throw error;
+    }
+
+    console.log('✅ updateBug returning:', data);
+    return data;
+}
+
+export async function deleteBug(bugId) {
+    const supabase = getSupabase();
+
+    console.log('🐛 deleteBug called with:', bugId);
+
+    const { error } = await supabase
+        .from('bugs')
+        .delete()
+        .eq('id', bugId);
+
+    if (error) {
+        console.error('❌ Error deleting bug:', error);
+        throw error;
+    }
+
+    console.log('✅ deleteBug successful');
+    return { success: true };
+}
+
+export async function getBug(bugId) {
+    const supabase = getSupabase();
+
+    console.log('🐛 getBug called with:', bugId);
+
+    const { data, error } = await supabase
+        .from('bugs')
+        .select('*')
+        .eq('id', bugId)
+        .single();
+
+    if (error) {
+        console.error('❌ Error fetching bug:', error);
+        throw error;
+    }
+
+    console.log('✅ getBug returning:', data);
+    return data;
 }
 

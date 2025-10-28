@@ -223,11 +223,11 @@ export function updateBugFlagVisibility(options) {
 }
 
 export async function showBugDetails(bugId, options) {
-	const { mockBugs, formatDate, showModal, toast } = options;
+	const { api, formatDate, showModal, toast } = options;
 
 	try {
-		// Find bug in mock data
-		const bug = mockBugs.find(b => b.id === bugId);
+		// Fetch bug from database
+		const bug = await api.getBug(bugId);
 		if (!bug) {
 			toast('Bug not found', 'error');
 			return;

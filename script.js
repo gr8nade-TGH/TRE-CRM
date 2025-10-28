@@ -14,7 +14,6 @@ import {
 import {
 	mockProperties,
 	mockInterestedLeads,
-	mockBugs,
 	mockDocumentStatuses,
 	mockClosedLeads
 } from './src/state/mockData.js';
@@ -106,8 +105,7 @@ let api, renderLeads, renderSpecials;
 	}
 
 	api = createAPI({
-		mockInterestedLeads,
-		mockBugs
+		mockInterestedLeads
 	});
 
 	renderLeads = async function(){
