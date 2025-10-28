@@ -61,7 +61,7 @@ CREATE POLICY "Managers can delete bugs" ON public.bugs
         EXISTS (
             SELECT 1 FROM public.users
             WHERE users.id = auth.uid()::text
-            AND users.role IN ('manager', 'super_user')
+            AND users.role IN ('MANAGER', 'SUPER_USER')
         )
     );
 
