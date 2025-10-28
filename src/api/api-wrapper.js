@@ -247,6 +247,15 @@ export function createAPI({ mockInterestedLeads }) {
 
 		async sendEmail(emailData) {
 			return await SupabaseAPI.sendEmail(emailData);
+		},
+
+		// Users API functions
+		async getUsers() {
+			return await SupabaseAPI.getUsers();
+		},
+
+		async getUser(userId) {
+			return await SupabaseAPI.getUser(userId);
 		}
 	};
 }

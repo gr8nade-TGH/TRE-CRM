@@ -272,23 +272,64 @@ export async function updateLead(id, leadData, performedBy = null, performedByNa
 }
 
 /**
+ * Users API
+ */
+export async function getUsers() {
+    try {
+        console.log('📋 Fetching users from Supabase auth...');
+
+        // Call our serverless function to list users
+        const response = await fetch('/api/list-users');
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Failed to fetch users');
+        }
+
+        const result = await response.json();
+        console.log('✅ Loaded users from Supabase:', result.users?.length || 0);
+        return result.users || [];
+    } catch (error) {
+        console.error('❌ Error fetching users:', error);
+        throw error;
+    }
+}
+
+export async function getUser(userId) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+    if (error) {
+        console.error('Error fetching user:', error);
+        throw error;
+    }
+
+    return data;
+}
+
+/**
  * Agents API (uses users table with role filter)
  */
 export async function getAgents() {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('role', 'AGENT')
         .eq('active', true)
         .order('name');
-    
+
     if (error) {
         console.error('Error fetching agents:', error);
         throw error;
     }
-    
+
     // Map to expected format (id, name, email, etc.)
     return data || [];
 }
