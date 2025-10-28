@@ -283,6 +283,24 @@ let api, renderLeads, renderSpecials;
 		});
 	};
 
+	async function saveEditedSpecial() {
+		await Properties.saveEditedSpecial({
+			SupabaseAPI,
+			toast,
+			hideModal,
+			renderProperties
+		});
+	}
+
+	async function deleteEditedSpecial() {
+		await Properties.deleteEditedSpecial({
+			SupabaseAPI,
+			toast,
+			hideModal,
+			renderProperties
+		});
+	}
+
 	// View property specials from listing table (specials data already loaded)
 	window.viewPropertySpecialsFromListing = function(propertyId, propertyName, specialsData) {
 		// Show modal with specials
@@ -744,8 +762,8 @@ let api, renderLeads, renderSpecials;
 			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
 			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
 			saveNewLead, savePropertyContact, editPropertyContact, saveNewSpecial,
-			saveEditedSpecial: Properties.saveEditedSpecial,
-			deleteEditedSpecial: Properties.deleteEditedSpecial,
+			saveEditedSpecial,
+			deleteEditedSpecial,
 			deleteSpecial, createListing, addPropertyNote, saveAgentChanges, saveLeadNote,
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
