@@ -150,6 +150,10 @@ export function setupAllEventListeners(deps) {
 		handleBugFieldChange,
 		showBugDetails,
 
+		// Email dashboard functions
+		showEmailPreview,
+		showTemplatePreview,
+
 		// Showcase functions
 		sendBuildShowcase,
 		sendShowcase,
@@ -1649,12 +1653,21 @@ export function setupAllEventListeners(deps) {
 
 		// Email dashboard event listeners
 		const emailStatusFilter = document.getElementById('emailStatusFilter');
+		const emailAgentFilter = document.getElementById('emailAgentFilter');
 		const emailSearch = document.getElementById('emailSearch');
 		const emailsPrevPage = document.getElementById('emailsPrevPage');
 		const emailsNextPage = document.getElementById('emailsNextPage');
 
 		if (emailStatusFilter) {
 			emailStatusFilter.addEventListener('change', async () => {
+				const { Emails } = await import('../modules/emails/index.js');
+				Emails.resetEmailsPagination();
+				await Emails.renderEmailLogs({ api, state, showEmailPreview });
+			});
+		}
+
+		if (emailAgentFilter) {
+			emailAgentFilter.addEventListener('change', async () => {
 				const { Emails } = await import('../modules/emails/index.js');
 				Emails.resetEmailsPagination();
 				await Emails.renderEmailLogs({ api, state, showEmailPreview });
@@ -1696,8 +1709,7 @@ export function setupAllEventListeners(deps) {
 			// View email details
 			if (e.target.closest('.view-email-details')) {
 				const emailId = e.target.closest('.view-email-details').dataset.emailId;
-				const { Emails } = await import('../modules/emails/index.js');
-				await Emails.showEmailDetails(emailId, { api, showModal, formatDate });
+				showEmailPreview(emailId);
 				e.preventDefault();
 				return;
 			}
@@ -1705,8 +1717,7 @@ export function setupAllEventListeners(deps) {
 			// Preview email template
 			if (e.target.closest('.preview-template')) {
 				const templateId = e.target.closest('.preview-template').dataset.templateId;
-				const { Emails } = await import('../modules/emails/index.js');
-				await Emails.showTemplatePreview(templateId, { api, showModal });
+				await showTemplatePreview(templateId);
 				e.preventDefault();
 				return;
 			}

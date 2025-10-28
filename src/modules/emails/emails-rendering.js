@@ -21,9 +21,12 @@ const EMAILS_PER_PAGE = 20;
  */
 export async function renderEmails(options) {
     const { api, state, showEmailPreview } = options;
-    
+
     console.log('📧 renderEmails called');
-    
+
+    // Populate agent filter dropdown first
+    await populateAgentFilter({ api, state });
+
     // Render all sections
     await Promise.all([
         renderEmailStatistics({ api, state }),
@@ -33,18 +36,67 @@ export async function renderEmails(options) {
 }
 
 /**
+ * Populate agent filter dropdown
+ * @param {Object} options - Options
+ * @returns {Promise<void>}
+ */
+async function populateAgentFilter(options) {
+    const { api, state } = options;
+
+    const agentFilter = document.getElementById('emailAgentFilter');
+    if (!agentFilter) return;
+
+    try {
+        // Fetch all users
+        const users = await api.getUsers();
+
+        // Filter to only agents and managers (people who can send emails)
+        const agents = users.filter(u =>
+            u.role === 'AGENT' || u.role === 'agent' ||
+            u.role === 'MANAGER' || u.role === 'manager' ||
+            u.role === 'SUPER_USER' || u.role === 'super_user'
+        );
+
+        // Sort by name
+        agents.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+
+        // Clear existing options except "All Agents"
+        agentFilter.innerHTML = '<option value="">All Agents</option>';
+
+        // Add "System" option for automated emails
+        agentFilter.innerHTML += '<option value="system">System (Automated)</option>';
+
+        // For agents, only show their own name
+        if (state.role === 'AGENT' || state.role === 'agent') {
+            const currentUser = agents.find(a => a.id === window.currentUser?.id);
+            if (currentUser) {
+                agentFilter.innerHTML += `<option value="${currentUser.id}">${currentUser.name}</option>`;
+            }
+        } else {
+            // For managers/super users, show all agents
+            agents.forEach(agent => {
+                agentFilter.innerHTML += `<option value="${agent.id}">${agent.name}</option>`;
+            });
+        }
+
+    } catch (error) {
+        console.error('❌ Error populating agent filter:', error);
+    }
+}
+
+/**
  * Render email statistics cards
  * @param {Object} options - Rendering options
  * @returns {Promise<void>}
  */
 export async function renderEmailStatistics(options) {
     const { api, state } = options;
-    
+
     console.log('📊 Rendering email statistics');
-    
+
     const statsContainer = document.getElementById('emailStatsContainer');
     if (!statsContainer) return;
-    
+
     try {
         // Fetch all email logs (we'll filter client-side for stats)
         const { items: allEmails } = await api.getEmailLogs({ pageSize: 1000 });
@@ -79,7 +131,53 @@ export async function renderEmailStatistics(options) {
         
         const mostUsedTemplate = Object.entries(templateCounts)
             .sort((a, b) => b[1] - a[1])[0];
-        
+
+        // Count emails by agent (for managers/super users)
+        let agentBreakdownHTML = '';
+        if (state.role === 'MANAGER' || state.role === 'manager' ||
+            state.role === 'SUPER_USER' || state.role === 'super_user') {
+
+            // Fetch users to get agent names
+            const users = await api.getUsers();
+            const userMap = {};
+            users.forEach(u => userMap[u.id] = u.name);
+
+            // Count emails by agent
+            const agentCounts = {};
+            let systemCount = 0;
+
+            filteredEmails.forEach(email => {
+                if (!email.sent_by) {
+                    systemCount++;
+                } else {
+                    const agentName = userMap[email.sent_by] || 'Unknown';
+                    agentCounts[agentName] = (agentCounts[agentName] || 0) + 1;
+                }
+            });
+
+            // Sort by count
+            const sortedAgents = Object.entries(agentCounts)
+                .sort((a, b) => b[1] - a[1])
+                .slice(0, 5); // Top 5 agents
+
+            if (sortedAgents.length > 0 || systemCount > 0) {
+                agentBreakdownHTML = `
+                    <div class="stat-card agent-breakdown">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <div class="stat-label">Emails by Agent</div>
+                            <div class="agent-stats-list">
+                                ${systemCount > 0 ? `<div class="agent-stat-item"><span>System</span><span class="agent-count">${systemCount}</span></div>` : ''}
+                                ${sortedAgents.map(([name, count]) =>
+                                    `<div class="agent-stat-item"><span>${name}</span><span class="agent-count">${count}</span></div>`
+                                ).join('')}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
         // Render statistics cards
         statsContainer.innerHTML = `
             <div class="stats-grid">
@@ -90,7 +188,7 @@ export async function renderEmailStatistics(options) {
                         <div class="stat-value">${todayEmails.length}</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-icon">📅</div>
                     <div class="stat-content">
@@ -98,7 +196,7 @@ export async function renderEmailStatistics(options) {
                         <div class="stat-value">${weekEmails.length}</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-icon">📊</div>
                     <div class="stat-content">
@@ -106,7 +204,7 @@ export async function renderEmailStatistics(options) {
                         <div class="stat-value">${monthEmails.length}</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-icon">✅</div>
                     <div class="stat-content">
@@ -115,7 +213,7 @@ export async function renderEmailStatistics(options) {
                         <div class="stat-detail">${successfulEmails.length} / ${filteredEmails.length}</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-icon">❌</div>
                     <div class="stat-content">
@@ -123,7 +221,7 @@ export async function renderEmailStatistics(options) {
                         <div class="stat-value">${failedEmails.length}</div>
                     </div>
                 </div>
-                
+
                 <div class="stat-card">
                     <div class="stat-icon">🏆</div>
                     <div class="stat-content">
@@ -132,6 +230,8 @@ export async function renderEmailStatistics(options) {
                         <div class="stat-detail">${mostUsedTemplate ? mostUsedTemplate[1] + ' sent' : ''}</div>
                     </div>
                 </div>
+
+                ${agentBreakdownHTML}
             </div>
         `;
         
@@ -157,22 +257,34 @@ export async function renderEmailLogs(options) {
     try {
         // Get filter values
         const statusFilter = document.getElementById('emailStatusFilter')?.value || '';
+        const agentFilter = document.getElementById('emailAgentFilter')?.value || '';
         const searchTerm = document.getElementById('emailSearch')?.value || '';
-        
+
         // Fetch email logs
         const { items, total } = await api.getEmailLogs({
             status: statusFilter || undefined,
             page: currentEmailsPage,
             pageSize: EMAILS_PER_PAGE
         });
-        
+
         // Filter by role
         let filteredEmails = filterEmailsByRole(items, state);
-        
+
+        // Filter by agent (client-side)
+        if (agentFilter) {
+            if (agentFilter === 'system') {
+                // Show only system emails (sent_by is null)
+                filteredEmails = filteredEmails.filter(email => !email.sent_by);
+            } else {
+                // Show only emails sent by specific agent
+                filteredEmails = filteredEmails.filter(email => email.sent_by === agentFilter);
+            }
+        }
+
         // Filter by search term (client-side)
         if (searchTerm) {
             const search = searchTerm.toLowerCase();
-            filteredEmails = filteredEmails.filter(email => 
+            filteredEmails = filteredEmails.filter(email =>
                 email.recipient_email?.toLowerCase().includes(search) ||
                 email.recipient_name?.toLowerCase().includes(search) ||
                 email.subject?.toLowerCase().includes(search)

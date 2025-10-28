@@ -5084,6 +5084,49 @@ input[type="radio"] {
 	margin-top: 5px;
 }
 
+/* Agent Breakdown Card */
+.stat-card.agent-breakdown {
+	grid-column: span 2;
+	flex-direction: column;
+	align-items: flex-start;
+}
+
+.stat-card.agent-breakdown .stat-content {
+	width: 100%;
+}
+
+.agent-stats-list {
+	margin-top: 10px;
+	width: 100%;
+}
+
+.agent-stat-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 8px 0;
+	border-bottom: 1px solid var(--rule);
+	font-size: 14px;
+}
+
+.agent-stat-item:last-child {
+	border-bottom: none;
+}
+
+.agent-stat-item span:first-child {
+	color: var(--text-dark);
+	font-weight: 500;
+}
+
+.agent-count {
+	background: var(--primary);
+	color: white;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+}
+
 /* Email Filters */
 .email-filters {
 	display: flex;
