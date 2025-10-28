@@ -43,7 +43,7 @@ export async function renderBugs(options) {
 				</select>
 			</td>
 			<td data-sort="page" class="mono">${bug.page}</td>
-			<td data-sort="reported_by" class="mono">${bug.reported_by}</td>
+			<td data-sort="reported_by" class="mono">${bug.reported_by_name || bug.reported_by || 'Unknown User'}</td>
 			<td data-sort="created_at" class="mono">${formatDate(bug.created_at)}</td>
 			<td>
 				<div class="action-buttons">
@@ -241,7 +241,7 @@ export async function showBugDetails(bugId, options) {
 				<p><strong>Priority:</strong> <span class="bug-priority ${bug.priority}">${bug.priority}</span></p>
 				<p><strong>Category:</strong> ${bug.category}</p>
 				<p><strong>Page:</strong> ${bug.page}</p>
-				<p><strong>Reported by:</strong> ${bug.reported_by}</p>
+				<p><strong>Reported by:</strong> ${bug.reported_by_name || bug.reported_by || 'Unknown User'}</p>
 				<p><strong>Created:</strong> ${formatDate(bug.created_at)}</p>
 				<p><strong>Last updated:</strong> ${formatDate(bug.updated_at)}</p>
 			</div>
