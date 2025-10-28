@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Fix San Antonio Property Names</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; margin-top: 0; }
+        button {
+            background: #3b82f6;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        button:hover { background: #2563eb; }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success { color: #10b981; font-weight: 500; }
+        .error { color: #ef4444; font-weight: 500; }
+        .info { color: #3b82f6; }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            max-height: 400px;
+        }
+        .step {
+            margin: 20px 0;
+            padding: 15px;
+            background: #f9fafb;
+            border-left: 4px solid #3b82f6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Fix San Antonio Property Names</h1>
+        
+        <div class="step">
+            <h3>Step 1: Check Current Status</h3>
+            <button onclick="checkProperties()">Check Properties</button>
+            <div id="checkResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 2: Fix Property Names</h3>
+            <p class="info">This will update all San Antonio properties with null community names.</p>
+            <button onclick="fixProperties()" id="fixBtn">Fix Property Names</button>
+            <div id="fixResult"></div>
+        </div>
+
+        <div class="step">
+            <h3>Step 3: Verify Fix</h3>
+            <button onclick="verifyFix()">Verify Fix</button>
+            <div id="verifyResult"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { supabaseConfig } from './supabase-config.js';
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseConfig.url, supabaseConfig.anonKey);
+
+        // Property name mappings
+        const propertyMappings = [
+            { address: '1800 Broadway, San Antonio, TX 78215', name: 'Paloma Luxury Apartments' },
+            { address: '123 E Houston St, San Antonio, TX 78205', name: 'Greyson Luxury Living' },
+            { address: '1202 S Flores St, San Antonio, TX 78204', name: 'Tin Top Flats at the Creamery' },
+            { address: '5959 Bowens Crossing, San Antonio, TX 78250', name: 'Boulder Creek Apartments' },
+            { address: '20323 Hardy Oak Blvd, San Antonio, TX 78258', name: 'Hardy Oak Apartments' },
+            { address: '8550 Datapoint Dr, San Antonio, TX 78229', name: 'District at Medical Center' },
+            { address: '312 Pearl Pkwy, San Antonio, TX 78215', name: 'Cellars at Pearl' },
+            { address: '7950 Floyd Curl Dr, San Antonio, TX 78229', name: 'Addison Medical Center Apartments' },
+            { address: '24165 Wilderness Oak, San Antonio, TX 78258', name: 'Broadstone Ranch' },
+            { address: '1919 San Pedro Ave, San Antonio, TX 78212', name: 'The San Miguel' },
+            { address: '18730 Stone Oak Pkwy, San Antonio, TX 78258', name: 'San Antonio Station' },
+            { address: '3803 Babcock Rd, San Antonio, TX 78229', name: 'Villas at Babcock' },
+            { address: '13130 Blanco Rd, San Antonio, TX 78216', name: 'Estates at Alon' },
+            { address: '5803 Alamo Downs Pkwy, San Antonio, TX 78253', name: 'Villas de Alamo Ranch' },
+            { address: '1255 SW Loop 410, San Antonio, TX 78227', name: 'Enclave at Parc Crest' },
+            { address: '6611 Bandera Rd, San Antonio, TX 78238', name: 'Villas at Bandera' },
+            { address: '5565 Mansions Bluff, San Antonio, TX 78245', name: 'Estates at Briggs Ranch' },
+            { address: '1530 NW Crossroads, San Antonio, TX 78251', name: 'Villas at Westover Hills' },
+            { address: '7550 Culebra Rd, San Antonio, TX 78251', name: 'Estates at Perrin Ranch' },
+            { address: '8615 Datapoint Dr, San Antonio, TX 78229', name: 'Villas at Parkside' },
+            { address: '1122 E Sonterra Blvd, San Antonio, TX 78258', name: 'Estates at Stone Oak' },
+            { address: '23303 Scenic Loop Rd, San Antonio, TX 78255', name: 'Villas at Scenic Loop' },
+            { address: '23450 Dominion Dr, San Antonio, TX 78257', name: 'Estates at Dominion' },
+            { address: '11745 Huebner Rd, San Antonio, TX 78230', name: 'Villas at Huebner Oaks' },
+            { address: '555 E Sonterra Blvd, San Antonio, TX 78258', name: 'Estates at Sonterra' },
+            { address: '2323 Thousand Oaks Dr, San Antonio, TX 78232', name: 'Villas at Thousand Oaks' },
+            { address: '3939 NW Loop 410, San Antonio, TX 78229', name: 'Estates at Shavano Park' },
+            { address: '8989 Wurzbach Rd, San Antonio, TX 78240', name: 'Villas at Wurzbach' },
+            { address: '15303 Blanco Rd, San Antonio, TX 78232', name: 'Estates at Blanco Vista' },
+            { address: '5959 Callaghan Rd, San Antonio, TX 78228', name: 'Villas at Callaghan' },
+            { address: '24500 Wilderness Oak, San Antonio, TX 78258', name: 'Estates at Wilderness Oak' },
+            { address: '17902 La Cantera Pkwy, San Antonio, TX 78256', name: 'Villas at Eilan' },
+            { address: '8700 Silverado, San Antonio, TX 78254', name: 'Estates at Silverado' },
+            { address: '17803 La Cantera Pkwy, San Antonio, TX 78256', name: 'Villas at Rim Pointe' },
+            { address: '6767 Cielo Vista, San Antonio, TX 78218', name: 'Estates at Cielo Vista' },
+            { address: '5959 Walzem Rd, San Antonio, TX 78218', name: 'Villas at Walzem' },
+            { address: '8585 Midcrown Dr, San Antonio, TX 78239', name: 'Estates at Windcrest' },
+            { address: '6767 Nacogdoches Rd, San Antonio, TX 78209', name: 'Villas at Nacogdoches' },
+            { address: '4545 Broadway, San Antonio, TX 78209', name: 'Estates at Broadway' },
+            { address: '6060 Broadway, San Antonio, TX 78209', name: 'Villas at Alamo Heights' },
+            { address: '909 E Mulberry Ave, San Antonio, TX 78209', name: 'Estates at Terrell Hills' },
+            { address: '120 W Olmos Dr, San Antonio, TX 78212', name: 'Villas at Olmos Park' },
+            { address: '1919 W Ashby Pl, San Antonio, TX 78201', name: 'Estates at Monte Vista' },
+            { address: '1515 S Flores St, San Antonio, TX 78204', name: 'Villas at Southtown' },
+            { address: '123 King William St, San Antonio, TX 78204', name: 'Estates at King William' },
+            { address: '16800 La Cantera Pkwy, San Antonio, TX 78256', name: 'Villas at La Cantera' },
+            { address: '17902 La Cantera Pkwy, San Antonio, TX 78257', name: 'Estates at The Rim' },
+            { address: '17500 La Cantera Pkwy, San Antonio, TX 78257', name: 'Villas at Six Flags' },
+            { address: '17000 I-10 W, San Antonio, TX 78257', name: 'Estates at Fiesta Texas' },
+            { address: '10500 SeaWorld Dr, San Antonio, TX 78251', name: 'Villas at SeaWorld' }
+        ];
+
+        window.checkProperties = async function() {
+            const output = document.getElementById('checkResult');
+            output.innerHTML = '<p>Checking...</p>';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('id, community_name, name, address, market')
+                    .eq('market', 'San Antonio')
+                    .order('address');
+
+                if (error) throw error;
+
+                const nullCount = data.filter(p => !p.community_name).length;
+                const totalCount = data.length;
+
+                output.innerHTML = `
+                    <p class="success">✅ Found ${totalCount} San Antonio properties</p>
+                    <p class="${nullCount > 0 ? 'error' : 'success'}">
+                        ${nullCount > 0 ? '❌' : '✅'} ${nullCount} properties with null community_name
+                    </p>
+                    <pre>${JSON.stringify(data.slice(0, 5), null, 2)}</pre>
+                    <p><em>Showing first 5 properties...</em></p>
+                `;
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        };
+
+        window.fixProperties = async function() {
+            const output = document.getElementById('fixResult');
+            const btn = document.getElementById('fixBtn');
+            btn.disabled = true;
+            output.innerHTML = '<p>Fixing properties...</p>';
+
+            let fixed = 0;
+            let errors = 0;
+
+            try {
+                for (const mapping of propertyMappings) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from('properties')
+                            .update({ community_name: mapping.name })
+                            .eq('address', mapping.address)
+                            .eq('market', 'San Antonio')
+                            .select();
+
+                        if (error) throw error;
+                        
+                        if (data && data.length > 0) {
+                            fixed++;
+                            console.log(`✅ Fixed: ${mapping.name}`);
+                        }
+                    } catch (err) {
+                        errors++;
+                        console.error(`❌ Error fixing ${mapping.address}:`, err);
+                    }
+                }
+
+                output.innerHTML = `
+                    <p class="success">✅ Fixed ${fixed} properties</p>
+                    ${errors > 0 ? `<p class="error">❌ ${errors} errors</p>` : ''}
+                    <p>Click "Verify Fix" to confirm.</p>
+                `;
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        window.verifyFix = async function() {
+            const output = document.getElementById('verifyResult');
+            output.innerHTML = '<p>Verifying...</p>';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('id, community_name, address, market')
+                    .eq('market', 'San Antonio')
+                    .order('community_name');
+
+                if (error) throw error;
+
+                const nullCount = data.filter(p => !p.community_name).length;
+                const totalCount = data.length;
+
+                if (nullCount === 0) {
+                    output.innerHTML = `
+                        <p class="success">✅ SUCCESS! All ${totalCount} San Antonio properties have community names!</p>
+                        <p class="info">You can now refresh your app and the properties will display correctly.</p>
+                    `;
+                } else {
+                    output.innerHTML = `
+                        <p class="error">❌ Still ${nullCount} properties with null community_name</p>
+                        <p>Try running "Fix Property Names" again.</p>
+                    `;
+                }
+            } catch (error) {
+                output.innerHTML = `<p class="error">❌ Error: ${error.message}</p>`;
+            }
+        };
+    </script>
+</body>
+</html>
+
