@@ -638,6 +638,9 @@ export function setupAllEventListeners(deps) {
 
 				console.log('User data collected:', { ...userData, password: '***', confirmPassword: '***' });
 
+				const userId = document.getElementById('userModal').getAttribute('data-user-id');
+				const isEditing = !!userId;
+
 				// Basic validation
 				if (!userData.name || !userData.email || !userData.role) {
 					console.log('❌ Validation failed: missing required fields');
@@ -645,32 +648,51 @@ export function setupAllEventListeners(deps) {
 					return;
 				}
 
-				if (!userData.password) {
-					console.log('❌ Validation failed: password required');
-					toast('Password is required', 'error');
-					return;
-				}
+				// Password validation: required for new users, optional for editing
+				if (!isEditing) {
+					// Creating new user - password is required
+					if (!userData.password) {
+						console.log('❌ Validation failed: password required for new user');
+						toast('Password is required', 'error');
+						return;
+					}
 
-				if (userData.password !== userData.confirmPassword) {
-					console.log('❌ Validation failed: passwords do not match');
-					toast('Passwords do not match', 'error');
-					return;
+					if (userData.password !== userData.confirmPassword) {
+						console.log('❌ Validation failed: passwords do not match');
+						toast('Passwords do not match', 'error');
+						return;
+					}
+				} else {
+					// Editing existing user - password is optional
+					// Only validate if password was entered
+					if (userData.password || userData.confirmPassword) {
+						if (userData.password !== userData.confirmPassword) {
+							console.log('❌ Validation failed: passwords do not match');
+							toast('Passwords do not match', 'error');
+							return;
+						}
+					}
 				}
 
 				console.log('✅ Validation passed');
 
 				try {
-					const userId = document.getElementById('userModal').getAttribute('data-user-id');
-
 					// Use Supabase to create/update users
-					if (userId) {
+					if (isEditing) {
 						console.log('Updating existing user:', userId);
 						// Update existing user
-						await updateUser(userId, {
+						const updateData = {
 							name: userData.name,
 							email: userData.email,
 							role: userData.role
-						});
+						};
+
+						// Only include password if it was provided
+						if (userData.password) {
+							updateData.password = userData.password;
+						}
+
+						await updateUser(userId, updateData);
 						toast('User updated successfully');
 					} else {
 						console.log('Creating new user...');

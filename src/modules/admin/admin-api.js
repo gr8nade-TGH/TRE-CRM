@@ -94,27 +94,43 @@ export async function createUser(userData, options) {
 
 export async function updateUser(userId, userData, options) {
 	const { realUsers, renderUsersTable } = options;
-	
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
 
-		const response = await fetch(`${apiBase}/users/${userId}`, {
+	try {
+		console.log('Updating user with Supabase:', userId, userData);
+
+		// Call our serverless function to update the user
+		const response = await fetch(`/api/update-user?userId=${userId}`, {
 			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
+			headers: {
+				'Content-Type': 'application/json'
+			},
 			body: JSON.stringify({
-				...userData,
-				updatedBy: 'system' // In production, get from auth token
+				email: userData.email,
+				password: userData.password, // Optional - only sent if provided
+				name: userData.name,
+				role: userData.role
 			})
 		});
-		if (!response.ok) throw new Error('Failed to update user');
-		const updatedUser = await response.json();
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || 'Failed to update user');
+		}
+
+		const result = await response.json();
+		console.log('✅ User updated successfully:', result.user);
+
+		// Update local state
 		const index = realUsers.value.findIndex(u => u.id === userId);
-		if (index !== -1) realUsers.value[index] = updatedUser;
+		if (index !== -1) {
+			realUsers.value[index] = {
+				...realUsers.value[index],
+				...result.user
+			};
+		}
+
 		renderUsersTable();
-		return updatedUser;
+		return result.user;
 	} catch (error) {
 		console.error('Error updating user:', error);
 		throw error;
@@ -123,22 +139,29 @@ export async function updateUser(userId, userData, options) {
 
 export async function deleteUserFromAPI(userId, options) {
 	const { realUsers, renderUsersTable, loadAuditLog } = options;
-	
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
 
-		const response = await fetch(`${apiBase}/users/${userId}`, {
+	try {
+		console.log('Deleting user with Supabase:', userId);
+
+		// Call our serverless function to delete the user
+		const response = await fetch(`/api/delete-user?userId=${userId}`, {
 			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				deletedBy: 'system' // In production, get from auth token
-			})
+			headers: {
+				'Content-Type': 'application/json'
+			}
 		});
-		if (!response.ok) throw new Error('Failed to delete user');
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || 'Failed to delete user');
+		}
+
+		const result = await response.json();
+		console.log('✅ User deleted successfully:', result);
+
+		// Remove from local state
 		realUsers.value = realUsers.value.filter(u => u.id !== userId);
+
 		renderUsersTable();
 		await loadAuditLog(); // Refresh audit log
 	} catch (error) {
