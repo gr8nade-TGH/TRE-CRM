@@ -85,9 +85,10 @@ export default async function handler(req, res) {
 		const updatedUser = await response.json();
 		console.log('✅ User updated successfully:', updatedUser.id);
 
-		// Return success
+		// Return success with info about what was updated
 		return res.status(200).json({
 			success: true,
+			passwordChanged: !!password, // Flag to indicate if password was changed
 			user: {
 				id: updatedUser.id,
 				email: updatedUser.email,

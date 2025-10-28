@@ -130,7 +130,12 @@ export async function updateUser(userId, userData, options) {
 		}
 
 		renderUsersTable();
-		return result.user;
+
+		// Return both user data and passwordChanged flag
+		return {
+			user: result.user,
+			passwordChanged: result.passwordChanged
+		};
 	} catch (error) {
 		console.error('Error updating user:', error);
 		throw error;

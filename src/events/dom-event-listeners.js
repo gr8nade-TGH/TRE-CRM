@@ -680,6 +680,11 @@ export function setupAllEventListeners(deps) {
 					// Use Supabase to create/update users
 					if (isEditing) {
 						console.log('Updating existing user:', userId);
+
+						// Check if user is updating their own password
+						const currentUserId = window.currentUser?.id;
+						const isUpdatingOwnAccount = (userId === currentUserId);
+
 						// Update existing user
 						const updateData = {
 							name: userData.name,
@@ -692,7 +697,31 @@ export function setupAllEventListeners(deps) {
 							updateData.password = userData.password;
 						}
 
-						await updateUser(userId, updateData);
+						const result = await updateUser(userId, updateData);
+
+						// If user changed their own password, log them out
+						if (isUpdatingOwnAccount && result.passwordChanged) {
+							console.log('🔐 User changed their own password - logging out...');
+							hideModal('userModal');
+							document.getElementById('userModal').removeAttribute('data-user-id');
+
+							toast('Password updated successfully! Please log in with your new password.', 'success');
+
+							// Wait a moment for the toast to be visible
+							await new Promise(resolve => setTimeout(resolve, 1500));
+
+							// Clear session and show login
+							window.currentUser = null;
+							document.getElementById('loginPortal').style.display = 'flex';
+							document.getElementById('mainAppContent').style.display = 'none';
+
+							// Clear login form
+							document.getElementById('loginEmail').value = '';
+							document.getElementById('loginPassword').value = '';
+
+							return; // Exit early
+						}
+
 						toast('User updated successfully');
 					} else {
 						console.log('Creating new user...');
