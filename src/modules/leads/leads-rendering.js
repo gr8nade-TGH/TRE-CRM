@@ -148,6 +148,12 @@ export async function renderLeads(options) {
 
 		const tr = document.createElement('tr');
 		tr.innerHTML = `
+			<td style="text-align: center;">
+				<label class="checkbox-label" style="margin: 0;">
+					<input type="checkbox" class="lead-checkbox" data-lead-id="${lead.id}" style="display: none;">
+					<span class="checkmark"></span>
+				</label>
+			</td>
 			<td>
 				<a href="#" class="lead-name" data-id="${lead.id}">${lead.name}</a>${notesIcon}${activityIcon}
 				<div class="subtle mono">${lead.email} · ${lead.phone}</div>

@@ -365,6 +365,24 @@ export function setupAllEventListeners(deps) {
 					toast('Lead assignment updated');
 					renderLeads();
 				}
+
+				// Handle lead checkbox changes for bulk send
+				const leadCheckbox = e.target.closest('.lead-checkbox');
+				if (leadCheckbox) {
+					console.log('Lead checkbox changed');
+					updateLeadBulkActionsBar();
+				}
+
+				// Handle select all checkbox
+				const selectAllCheckbox = e.target.closest('#selectAllLeads');
+				if (selectAllCheckbox) {
+					console.log('Select all leads checkbox changed');
+					const isChecked = selectAllCheckbox.checked;
+					document.querySelectorAll('.lead-checkbox').forEach(checkbox => {
+						checkbox.checked = isChecked;
+					});
+					updateLeadBulkActionsBar();
+				}
 			});
 		}
 
@@ -1806,6 +1824,14 @@ export function setupAllEventListeners(deps) {
 				console.log('Bulk Delete clicked!');
 				e.preventDefault();
 				bulkDeleteListings();
+				return;
+			}
+
+			// Handle bulk send Smart Match button
+			if (e.target.id === 'bulkSendSmartMatchBtn' || e.target.closest('#bulkSendSmartMatchBtn')) {
+				console.log('Bulk Send Smart Match clicked!');
+				e.preventDefault();
+				bulkSendSmartMatch();
 				return;
 			}
 		});

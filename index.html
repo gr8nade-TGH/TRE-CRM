@@ -158,6 +158,15 @@
 
 			<div class="table-actions">
 				<input id="leadSearch" type="search" placeholder="Search name, email, phone" />
+				<div class="bulk-actions-group" style="display: none;">
+					<button id="bulkSendSmartMatchBtn" class="btn btn-primary">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+							<path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+						</svg>
+						Bulk Send Smart Matches
+					</button>
+					<span id="bulkLeadsCount" class="bulk-selection-count">0 selected</span>
+				</div>
 				<button id="addLeadBtn" class="btn btn-primary">+ Add Lead</button>
 			</div>
 
@@ -194,6 +203,12 @@
 				<table id="leadsTable" class="data-table">
 					<thead>
 						<tr>
+							<th style="width: 40px;">
+								<label class="checkbox-label" style="margin: 0;">
+									<input type="checkbox" id="selectAllLeads" class="select-all-checkbox" style="display: none;">
+									<span class="checkmark"></span>
+								</label>
+							</th>
 							<th data-sort="name" class="sortable">Lead Name <span class="sort-icon">↕</span></th>
 							<th>View/Edit</th>
 							<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span></th>
@@ -206,7 +221,7 @@
 					<tbody id="leadsTbody">
 						<!-- Loading indicator inside table -->
 						<tr id="leadsLoadingIndicator" class="loading-row" style="display: none;">
-							<td colspan="7" class="loading-cell">
+							<td colspan="8" class="loading-cell">
 								<div class="loading-indicator">
 									<div class="spinner"></div>
 									<p>Loading leads...</p>

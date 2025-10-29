@@ -695,6 +695,14 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function updateLeadBulkActionsBar() {
+		Leads.updateLeadBulkActionsBar();
+	}
+
+	async function bulkSendSmartMatch() {
+		await Leads.bulkSendSmartMatch();
+	}
+
 	async function sendBuildShowcase() {
 		await sendBuildShowcaseUtil({
 			state,
