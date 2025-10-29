@@ -1989,6 +1989,40 @@ body {
 	color: #374151;
 }
 
+/* Lead checkbox styling - custom checkmark */
+.lead-checkbox,
+.select-all-checkbox {
+	display: none !important;
+}
+
+.lead-checkbox + .checkmark,
+.select-all-checkbox + .checkmark {
+	width: 20px;
+	height: 20px;
+	border: 2px solid #d1d5db;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+	cursor: pointer;
+	background: white;
+}
+
+.lead-checkbox:checked + .checkmark,
+.select-all-checkbox:checked + .checkmark {
+	background: #3b82f6;
+	border-color: #3b82f6;
+}
+
+.lead-checkbox:checked + .checkmark::after,
+.select-all-checkbox:checked + .checkmark::after {
+	content: '✓';
+	color: white;
+	font-weight: bold;
+	font-size: 14px;
+}
+
 /* Disabled checkboxes for off-market units */
 .unit-checkbox:disabled {
 	cursor: not-allowed;
