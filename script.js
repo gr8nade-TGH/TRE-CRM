@@ -391,6 +391,9 @@ let api, renderLeads, renderSpecials;
 	async function showTemplatePreview(templateId) {
 		await Emails.showTemplatePreview(templateId, { api, showModal });
 	}
+	async function sendTestEmail(templateId) {
+		await Emails.sendTestEmail(templateId, { api, toast });
+	}
 	function showBugReportModal(context = {}) {
 		Properties.showBugReportModal(context, { state, showModal });
 	}
@@ -787,7 +790,7 @@ let api, renderLeads, renderSpecials;
 			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
 			openEmailPreview, previewLandingPage, openHistory,
 			sendShowcaseEmail, openHistoryDocumentDetails,
-			showEmailPreview, showTemplatePreview
+			showEmailPreview, showTemplatePreview, sendTestEmail
 		});
 
 		setupAllEventListeners(deps);

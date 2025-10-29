@@ -107,6 +107,7 @@ export function createDependencies(context) {
 		// Email dashboard functions
 		showEmailPreview,
 		showTemplatePreview,
+		sendTestEmail,
 
 		// Showcase functions
 		sendBuildShowcase,
@@ -220,6 +221,7 @@ export function createDependencies(context) {
 		// Email dashboard functions
 		showEmailPreview,
 		showTemplatePreview,
+		sendTestEmail,
 
 		// Showcase functions
 		sendBuildShowcase,

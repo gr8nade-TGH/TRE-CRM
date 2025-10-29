@@ -153,6 +153,7 @@ export function setupAllEventListeners(deps) {
 		// Email dashboard functions
 		showEmailPreview,
 		showTemplatePreview,
+		sendTestEmail,
 
 		// Showcase functions
 		sendBuildShowcase,
@@ -1726,6 +1727,14 @@ export function setupAllEventListeners(deps) {
 			if (e.target.closest('.preview-template')) {
 				const templateId = e.target.closest('.preview-template').dataset.templateId;
 				await showTemplatePreview(templateId);
+				e.preventDefault();
+				return;
+			}
+
+			// Test send email template
+			if (e.target.closest('.test-send-template')) {
+				const templateId = e.target.closest('.test-send-template').dataset.templateId;
+				await sendTestEmail(templateId);
 				e.preventDefault();
 				return;
 			}

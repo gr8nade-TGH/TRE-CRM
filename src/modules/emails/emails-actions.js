@@ -206,6 +206,101 @@ export async function showTemplatePreview(templateId, options) {
 }
 
 /**
+ * Send test email from template
+ * @param {string} templateId - Template ID
+ * @param {Object} options - Options
+ * @param {Object} options.api - API wrapper instance
+ * @param {Function} options.toast - Toast notification function
+ * @returns {Promise<void>}
+ */
+export async function sendTestEmail(templateId, options) {
+    const { api, toast } = options;
+
+    console.log('📤 Sending test email for template:', templateId);
+
+    try {
+        // Prompt for email address
+        const email = prompt('Enter email address to send test email to:');
+
+        if (!email) {
+            console.log('Test email cancelled - no email provided');
+            return;
+        }
+
+        // Basic email validation
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+            toast('Invalid email address', 'error');
+            return;
+        }
+
+        // Fetch template
+        const template = await api.getEmailTemplate(templateId);
+
+        if (!template) {
+            toast('Template not found', 'error');
+            return;
+        }
+
+        // Create sample data for all variables
+        const variables = template.variables || [];
+        const sampleData = {};
+        variables.forEach(v => {
+            // Provide realistic sample data based on variable name
+            if (v.toLowerCase().includes('name')) {
+                sampleData[v] = 'John Doe';
+            } else if (v.toLowerCase().includes('email')) {
+                sampleData[v] = 'agent@tre-crm.com';
+            } else if (v.toLowerCase().includes('phone')) {
+                sampleData[v] = '(555) 123-4567';
+            } else if (v.toLowerCase().includes('date')) {
+                sampleData[v] = new Date().toLocaleDateString();
+            } else if (v.toLowerCase().includes('budget')) {
+                sampleData[v] = '$1,500 - $2,000';
+            } else if (v.toLowerCase().includes('url')) {
+                sampleData[v] = 'https://tre-crm.com';
+            } else {
+                sampleData[v] = `[Sample ${v}]`;
+            }
+        });
+
+        // Replace variables in HTML content
+        let htmlContent = template.html_content;
+        Object.entries(sampleData).forEach(([key, value]) => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            htmlContent = htmlContent.replace(regex, value);
+        });
+
+        // Replace variables in subject
+        let subject = template.subject;
+        Object.entries(sampleData).forEach(([key, value]) => {
+            const regex = new RegExp(`{{${key}}}`, 'g');
+            subject = subject.replace(regex, value);
+        });
+
+        // Send test email
+        toast('Sending test email...', 'info');
+
+        await api.sendEmail({
+            to: email,
+            subject: `[TEST] ${subject}`,
+            html: htmlContent,
+            template_id: template.id,
+            metadata: {
+                test_email: true,
+                template_id: template.id
+            }
+        });
+
+        toast(`Test email sent successfully to ${email}!`, 'success');
+
+    } catch (error) {
+        console.error('❌ Error sending test email:', error);
+        toast('Failed to send test email. Please try again.', 'error');
+    }
+}
+
+/**
  * Escape HTML for display
  * @param {string} html - HTML string
  * @returns {string} Escaped HTML

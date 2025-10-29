@@ -25,6 +25,7 @@ export {
 export {
     showEmailDetails,
     showTemplatePreview,
+    sendTestEmail,
     filterEmailsByStatus,
     searchEmails
 } from './emails-actions.js';

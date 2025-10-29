@@ -404,6 +404,9 @@ export async function renderEmailTemplates(options) {
                     <button class="btn btn-secondary btn-sm preview-template" data-template-id="${template.id}">
                         👁️ Preview
                     </button>
+                    <button class="btn btn-primary btn-sm test-send-template" data-template-id="${template.id}">
+                        📤 Test Send
+                    </button>
                 </div>
             `;
             
