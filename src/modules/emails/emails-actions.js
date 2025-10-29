@@ -1,9 +1,12 @@
 /**
  * Emails Actions Module
  * Handles email-related actions like viewing details, previewing templates
- * 
+ *
  * @module emails/actions
  */
+
+import { getVerifiedSenders, getDefaultSender } from '../../config/email-senders.js';
+import { showModal, hideModal } from '../../utils/helpers.js';
 
 /**
  * Show email details modal
@@ -219,22 +222,7 @@ export async function sendTestEmail(templateId, options) {
     console.log('📤 Sending test email for template:', templateId);
 
     try {
-        // Prompt for email address
-        const email = prompt('Enter email address to send test email to:');
-
-        if (!email) {
-            console.log('Test email cancelled - no email provided');
-            return;
-        }
-
-        // Basic email validation
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(email)) {
-            toast('Invalid email address', 'error');
-            return;
-        }
-
-        // Fetch template
+        // Fetch template first to get default sender
         const template = await api.getEmailTemplate(templateId);
 
         if (!template) {
@@ -242,61 +230,140 @@ export async function sendTestEmail(templateId, options) {
             return;
         }
 
-        // Create sample data for all variables
-        const variables = template.variables || [];
-        const sampleData = {};
-        variables.forEach(v => {
-            // Provide realistic sample data based on variable name
-            if (v.toLowerCase().includes('name')) {
-                sampleData[v] = 'John Doe';
-            } else if (v.toLowerCase().includes('email')) {
-                sampleData[v] = 'agent@tre-crm.com';
-            } else if (v.toLowerCase().includes('phone')) {
-                sampleData[v] = '(555) 123-4567';
-            } else if (v.toLowerCase().includes('date')) {
-                sampleData[v] = new Date().toLocaleDateString();
-            } else if (v.toLowerCase().includes('budget')) {
-                sampleData[v] = '$1,500 - $2,000';
-            } else if (v.toLowerCase().includes('url')) {
-                sampleData[v] = 'https://tre-crm.com';
-            } else {
-                sampleData[v] = `[Sample ${v}]`;
+        // Get verified senders
+        const verifiedSenders = getVerifiedSenders();
+        const defaultSender = template.default_sender || getDefaultSender().email;
+
+        // Build sender options HTML
+        const senderOptions = verifiedSenders.map(sender => `
+            <option value="${sender.email}" ${sender.email === defaultSender ? 'selected' : ''}>
+                ${sender.name} (${sender.email})
+            </option>
+        `).join('');
+
+        // Show modal with form
+        const modalContent = `
+            <form id="testEmailForm" style="max-width: 500px;">
+                <div style="margin-bottom: 20px;">
+                    <label for="testEmailRecipient" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        Recipient Email Address:
+                    </label>
+                    <input
+                        type="email"
+                        id="testEmailRecipient"
+                        class="form-control"
+                        placeholder="recipient@example.com"
+                        required
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+                    />
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label for="testEmailSender" style="display: block; margin-bottom: 8px; font-weight: 600;">
+                        From (Sender Address):
+                    </label>
+                    <select
+                        id="testEmailSender"
+                        class="form-control"
+                        style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"
+                    >
+                        ${senderOptions}
+                    </select>
+                    <small style="color: #666; display: block; margin-top: 4px;">
+                        Default sender for this template: ${defaultSender}
+                    </small>
+                </div>
+
+                <div style="background: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+                    <strong>📋 Template:</strong> ${template.name}<br>
+                    <strong>📧 Subject:</strong> [TEST] ${template.subject}
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" id="cancelTestEmail" class="btn btn-secondary">
+                        Cancel
+                    </button>
+                    <button type="submit" class="btn btn-primary">
+                        📤 Send Test Email
+                    </button>
+                </div>
+            </form>
+        `;
+
+        showModal('Send Test Email', modalContent, { wide: false });
+
+        // Handle form submission
+        const form = document.getElementById('testEmailForm');
+        const cancelBtn = document.getElementById('cancelTestEmail');
+
+        cancelBtn.addEventListener('click', () => {
+            hideModal('dynamicModal');
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const recipientEmail = document.getElementById('testEmailRecipient').value;
+            const senderEmail = document.getElementById('testEmailSender').value;
+
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(recipientEmail)) {
+                toast('Invalid recipient email address', 'error');
+                return;
+            }
+
+            // Close modal
+            hideModal('dynamicModal');
+
+            // Create sample data for all variables
+            const variables = template.variables || [];
+            const sampleData = {};
+            variables.forEach(v => {
+                // Provide realistic sample data based on variable name
+                if (v.toLowerCase().includes('name')) {
+                    sampleData[v] = 'John Doe';
+                } else if (v.toLowerCase().includes('email')) {
+                    sampleData[v] = 'agent@tre-crm.com';
+                } else if (v.toLowerCase().includes('phone')) {
+                    sampleData[v] = '(555) 123-4567';
+                } else if (v.toLowerCase().includes('date')) {
+                    sampleData[v] = new Date().toLocaleDateString();
+                } else if (v.toLowerCase().includes('budget')) {
+                    sampleData[v] = '$1,500 - $2,000';
+                } else if (v.toLowerCase().includes('url')) {
+                    sampleData[v] = 'https://tre-crm.com';
+                } else {
+                    sampleData[v] = `[Sample ${v}]`;
+                }
+            });
+
+            // Send test email
+            toast('Sending test email...', 'info');
+
+            try {
+                await api.sendEmail({
+                    templateId: template.id,
+                    recipientEmail: recipientEmail,
+                    recipientName: 'Test Recipient',
+                    variables: sampleData,
+                    metadata: {
+                        test_email: true,
+                        template_id: template.id
+                    },
+                    fromEmail: senderEmail
+                });
+
+                toast(`Test email sent successfully to ${recipientEmail} from ${senderEmail}!`, 'success');
+            } catch (error) {
+                console.error('❌ Error sending test email:', error);
+                toast('Failed to send test email. Please try again.', 'error');
             }
         });
-
-        // Replace variables in HTML content
-        let htmlContent = template.html_content;
-        Object.entries(sampleData).forEach(([key, value]) => {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            htmlContent = htmlContent.replace(regex, value);
-        });
-
-        // Replace variables in subject
-        let subject = template.subject;
-        Object.entries(sampleData).forEach(([key, value]) => {
-            const regex = new RegExp(`{{${key}}}`, 'g');
-            subject = subject.replace(regex, value);
-        });
-
-        // Send test email
-        toast('Sending test email...', 'info');
-
-        await api.sendEmail({
-            to: email,
-            subject: `[TEST] ${subject}`,
-            html: htmlContent,
-            template_id: template.id,
-            metadata: {
-                test_email: true,
-                template_id: template.id
-            }
-        });
-
-        toast(`Test email sent successfully to ${email}!`, 'success');
 
     } catch (error) {
-        console.error('❌ Error sending test email:', error);
-        toast('Failed to send test email. Please try again.', 'error');
+        console.error('❌ Error preparing test email:', error);
+        toast('Failed to prepare test email. Please try again.', 'error');
     }
 }
 

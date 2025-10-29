@@ -1,8 +1,8 @@
 /**
  * Serverless Function: Send Email via Resend API
- * 
+ *
  * This function handles sending emails through Resend and logs them to the database.
- * 
+ *
  * Request Body:
  * {
  *   templateId: string,           // Email template ID from email_templates table
@@ -10,9 +10,10 @@
  *   recipientName: string,         // Recipient name
  *   variables: object,             // Template variables (e.g., { leadName: "John", agentName: "Jane" })
  *   metadata: object,              // Additional context (e.g., { lead_id: "123", agent_id: "456" })
- *   sentBy: string                 // User ID who triggered the email (optional)
+ *   sentBy: string,                // User ID who triggered the email (optional)
+ *   fromEmail: string              // Sender email address (optional, uses template default or env default)
  * }
- * 
+ *
  * Response:
  * {
  *   success: true,
@@ -58,14 +59,14 @@ export default async function handler(req, res) {
 	const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 	try {
-		const { templateId, recipientEmail, recipientName, variables, metadata, sentBy } = req.body;
+		const { templateId, recipientEmail, recipientName, variables, metadata, sentBy, fromEmail } = req.body;
 
 		// Validate required fields
 		if (!templateId || !recipientEmail) {
 			return res.status(400).json({ error: 'Missing required fields: templateId, recipientEmail' });
 		}
 
-		console.log('📧 Sending email:', { templateId, recipientEmail, recipientName });
+		console.log('📧 Sending email:', { templateId, recipientEmail, recipientName, fromEmail });
 
 		// 1. Fetch email template from database
 		const { data: template, error: templateError } = await supabase
@@ -79,6 +80,10 @@ export default async function handler(req, res) {
 			console.error('Template not found:', templateError);
 			return res.status(404).json({ error: 'Email template not found or inactive' });
 		}
+
+		// Determine sender email: fromEmail param > template default > env default
+		const senderEmail = fromEmail || template.default_sender || EMAIL_FROM;
+		console.log('📧 Using sender email:', senderEmail);
 
 		// 2. Replace variables in template
 		let htmlContent = template.html_content;
@@ -105,7 +110,8 @@ export default async function handler(req, res) {
 				subject: subject,
 				status: 'pending',
 				metadata: metadata || {},
-				sent_by: sentBy || null
+				sent_by: sentBy || null,
+				sender_email: senderEmail
 			}])
 			.select()
 			.single();
@@ -124,7 +130,7 @@ export default async function handler(req, res) {
 					'Authorization': `Bearer ${RESEND_API_KEY}`
 				},
 				body: JSON.stringify({
-					from: `${EMAIL_FROM_NAME} <${EMAIL_FROM}>`,
+					from: `${EMAIL_FROM_NAME} <${senderEmail}>`,
 					to: [recipientEmail],
 					subject: subject,
 					html: htmlContent,
