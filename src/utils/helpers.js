@@ -27,11 +27,42 @@ export function formatDate(iso) {
 
 /**
  * Show a modal by removing the 'hidden' class
- * @param {string} modalId - ID of the modal element
+ * Can also be used to show a dynamic modal with title and content
+ * @param {string} modalIdOrTitle - ID of the modal element, or title for dynamic modal
+ * @param {string} content - Optional HTML content for dynamic modal
+ * @param {Object} options - Optional configuration (e.g., { wide: true })
  */
-export function showModal(modalId) {
-	const modal = document.getElementById(modalId);
-	if (modal) modal.classList.remove('hidden');
+export function showModal(modalIdOrTitle, content = null, options = {}) {
+	// If content is provided, use the dynamic modal
+	if (content !== null) {
+		const modal = document.getElementById('dynamicModal');
+		const modalCard = document.getElementById('dynamicModalCard');
+		const title = document.getElementById('dynamicModalTitle');
+		const contentEl = document.getElementById('dynamicModalContent');
+
+		if (!modal || !title || !contentEl) {
+			console.error('Dynamic modal elements not found');
+			return;
+		}
+
+		// Set title and content
+		title.textContent = modalIdOrTitle;
+		contentEl.innerHTML = content;
+
+		// Apply wide class if requested
+		if (options.wide) {
+			modalCard.classList.add('wide');
+		} else {
+			modalCard.classList.remove('wide');
+		}
+
+		// Show the modal
+		modal.classList.remove('hidden');
+	} else {
+		// Traditional behavior - show modal by ID
+		const modal = document.getElementById(modalIdOrTitle);
+		if (modal) modal.classList.remove('hidden');
+	}
 }
 
 /**

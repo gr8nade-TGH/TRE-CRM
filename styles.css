@@ -4349,6 +4349,12 @@ main#appRoot {
 	width: 90vw;
 }
 
+/* Wide modal for email templates and other wide content */
+.modal-card.wide {
+	max-width: 1200px;
+	width: 95vw;
+}
+
 /* Bug table dropdowns */
 .bug-status-select,
 .bug-priority-select {

@@ -1648,6 +1648,14 @@ export function setupAllEventListeners(deps) {
 			});
 		}
 
+		// Dynamic Modal close functionality
+		const closeDynamicModal = document.getElementById('closeDynamicModal');
+		if (closeDynamicModal) {
+			closeDynamicModal.addEventListener('click', () => {
+				hideModal('dynamicModal');
+			});
+		}
+
 		// Initialize bug flags
 		addBugFlags();
 
