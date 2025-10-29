@@ -1,54 +1,54 @@
-community_name,street_address,city,state,zip,market,beds,baths,sqft,market_rent,starting_at,unit_number,available_from,commission_pct,is_pumi,has_concession,concession_description
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",1,1,650,1100,1050,"101","2025-11-01",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",1,1,650,1100,1050,"201","2025-11-15",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",1,1,650,1100,1050,"301","2025-12-01",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"102","2025-11-01",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"202","2025-11-10",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"302","2025-11-20",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"402","2025-12-01",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"103","2025-11-01",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"203","2025-11-05",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"303","2025-11-15",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"403","2025-12-01",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"503","2025-12-15",4.5,true,true,"First month $65 off market rent"
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",3,2,1200,1750,1700,"104","2025-11-01",4.5,true,false,""
-"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",3,2,1200,1750,1700,"204","2025-12-01",4.5,true,false,""
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",1,1,700,1150,1100,"A101","2025-11-01",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",1,1,700,1150,1100,"A201","2025-11-10",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",1,1,700,1150,1100,"A301","2025-11-20",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B102","2025-11-01",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B202","2025-11-05",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B302","2025-11-15",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B402","2025-12-01",3.5,false,true,"$500 off first month"
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",3,2,1150,1650,1600,"C103","2025-11-01",3.5,false,false,""
-"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",3,2,1150,1650,1600,"C203","2025-11-20",3.5,false,false,""
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",1,1,600,1050,1000,"1A","2025-11-01",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",1,1,600,1050,1000,"2A","2025-11-10",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",1,1,600,1050,1000,"3A","2025-11-15",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,1,800,1250,1200,"1B","2025-11-01",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,1,800,1250,1200,"2B","2025-11-05",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,1,800,1250,1200,"3B","2025-11-20",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,2,950,1450,1400,"1C","2025-11-01",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,2,950,1450,1400,"2C","2025-11-10",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,2,950,1450,1400,"3C","2025-12-01",4.0,true,true,"First 2 months free"
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",3,2,1100,1600,1550,"1D","2025-11-15",4.0,true,false,""
-"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",3,2,1100,1600,1550,"2D","2025-12-01",4.0,true,false,""
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",1,1,680,1125,1075,"101","2025-11-01",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",1,1,680,1125,1075,"201","2025-11-15",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",1,1,680,1125,1075,"301","2025-12-01",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"102","2025-11-01",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"202","2025-11-10",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"302","2025-11-20",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"402","2025-12-01",2.5,false,true,"One month free"
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",3,2,1050,1550,1500,"103","2025-11-01",2.5,false,false,""
-"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",3,2,1050,1550,1500,"203","2025-11-15",2.5,false,false,""
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",1,1,750,1200,1150,"L101","2025-11-01",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",1,1,750,1200,1150,"L201","2025-11-10",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",1,1,750,1200,1150,"L301","2025-11-20",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L102","2025-11-01",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L202","2025-11-05",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L302","2025-11-15",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L402","2025-12-01",4.5,true,true,"Two months free rent"
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",3,2.5,1300,1850,1800,"L103","2025-11-01",4.5,true,false,""
-"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",3,2.5,1300,1850,1800,"L203","2025-11-20",4.5,true,false,""
+community_name,street_address,city,state,zip,market,beds,baths,sqft,market_rent,starting_at,unit_number,available_from,commission_pct,is_pumi,has_concession,concession_description,map_lat,map_lng
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",1,1,650,1100,1050,"A101","2025-11-01",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",1,1,650,1100,1050,"A201","2025-11-15",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",1,1,650,1100,1050,"A301","2025-12-01",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"B102","2025-11-01",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"B202","2025-11-10",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"B302","2025-11-20",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,1,850,1300,1250,"B402","2025-12-01",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"C103","2025-11-01",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"C203","2025-11-05",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"C303","2025-11-15",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"C403","2025-12-01",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",2,2,950,1450,1400,"C503","2025-12-15",4.5,TRUE,TRUE,"First month $65 off market rent",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",3,2,1200,1750,1700,"D104","2025-11-01",4.5,TRUE,FALSE,"",29.5994,-98.6506
+"Linden at The Rim","17803 La Cantera Pkwy","San Antonio","TX","78257","San Antonio",3,2,1200,1750,1700,"D204","2025-12-01",4.5,TRUE,FALSE,"",29.5994,-98.6506
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",1,1,700,1150,1100,"A101","2025-11-01",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",1,1,700,1150,1100,"A201","2025-11-10",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",1,1,700,1150,1100,"A301","2025-11-20",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B102","2025-11-01",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B202","2025-11-05",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B302","2025-11-15",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",2,2,900,1400,1350,"B402","2025-12-01",3.5,FALSE,TRUE,"$500 off first month",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",3,2,1150,1650,1600,"C103","2025-11-01",3.5,FALSE,FALSE,"",29.4825,-98.7453
+"The Estates at Briggs Ranch","5565 Mansions Bluff","San Antonio","TX","78245","San Antonio",3,2,1150,1650,1600,"C203","2025-11-20",3.5,FALSE,FALSE,"",29.4825,-98.7453
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",1,1,600,1050,1000,"1A","2025-11-01",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",1,1,600,1050,1000,"2A","2025-11-10",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",1,1,600,1050,1000,"3A","2025-11-15",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,1,800,1250,1200,"1B","2025-11-01",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,1,800,1250,1200,"2B","2025-11-05",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,1,800,1250,1200,"3B","2025-11-20",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,2,950,1450,1400,"1C","2025-11-01",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,2,950,1450,1400,"2C","2025-11-10",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",2,2,950,1450,1400,"3C","2025-12-01",4.0,TRUE,TRUE,"First 2 months free",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",3,2,1100,1600,1550,"1D","2025-11-15",4.0,TRUE,FALSE,"",29.5108,-98.5697
+"Villas at Babcock","2803 Babcock Rd","San Antonio","TX","78229","San Antonio",3,2,1100,1600,1550,"2D","2025-12-01",4.0,TRUE,FALSE,"",29.5108,-98.5697
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",1,1,680,1125,1075,"101","2025-11-01",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",1,1,680,1125,1075,"201","2025-11-15",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",1,1,680,1125,1075,"301","2025-12-01",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"102","2025-11-01",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"202","2025-11-10",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"302","2025-11-20",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",2,2,875,1375,1325,"402","2025-12-01",2.5,FALSE,TRUE,"One month free",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",3,2,1050,1550,1500,"103","2025-11-01",2.5,FALSE,FALSE,"",29.5247,-98.6453
+"Alamo Ranch Apartments","5803 Alamo Ranch Pkwy","San Antonio","TX","78253","San Antonio",3,2,1050,1550,1500,"203","2025-11-15",2.5,FALSE,FALSE,"",29.5247,-98.6453
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",1,1,750,1200,1150,"L101","2025-11-01",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",1,1,750,1200,1150,"L201","2025-11-10",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",1,1,750,1200,1150,"L301","2025-11-20",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L102","2025-11-01",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L202","2025-11-05",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L302","2025-11-15",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",2,2,1000,1500,1450,"L402","2025-12-01",4.5,TRUE,TRUE,"Two months free rent",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",3,2.5,1300,1850,1800,"L103","2025-11-01",4.5,TRUE,FALSE,"",29.6191,-98.4864
+"Stone Oak Luxury Lofts","20323 Stone Oak Pkwy","San Antonio","TX","78258","San Antonio",3,2.5,1300,1850,1800,"L203","2025-11-20",4.5,TRUE,FALSE,"",29.6191,-98.4864
 
