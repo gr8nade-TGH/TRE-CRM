@@ -820,8 +820,9 @@ let api, renderLeads, renderSpecials;
 
 	// Bulk actions event listeners moved to dom-event-listeners.js
 
-	// Expose state to global scope
+	// Expose state and SupabaseAPI to global scope
 	window.state = state;
+	window.SupabaseAPI = SupabaseAPI;
 })();
 
 // Admin page functions - defined in global scope

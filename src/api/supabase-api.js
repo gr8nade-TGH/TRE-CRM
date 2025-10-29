@@ -2141,6 +2141,112 @@ export async function getSmartMatches(leadId, limit = 10) {
 }
 
 /**
+ * Get the last Smart Match email send time for a lead
+ * Checks email_logs table for the most recent Smart Match email sent to this lead
+ * @param {string} leadId - Lead ID
+ * @returns {Promise<Object|null>} { sent_at: string, hours_ago: number } or null if never sent
+ */
+export async function getLastSmartMatchEmailTime(leadId) {
+    const supabase = getSupabase();
+
+    console.log('🕐 getLastSmartMatchEmailTime called for lead:', leadId);
+
+    try {
+        // Query email_logs for Smart Match emails sent to this lead
+        // Filter by template_id = 'smart_match_email' and metadata->>'lead_id' = leadId
+        const { data, error } = await supabase
+            .from('email_logs')
+            .select('sent_at, created_at, status')
+            .eq('template_id', 'smart_match_email')
+            .eq('metadata->>lead_id', leadId)
+            .in('status', ['sent', 'delivered']) // Only count successfully sent emails
+            .order('created_at', { ascending: false })
+            .limit(1);
+
+        if (error) {
+            console.error('❌ Error fetching last Smart Match email time:', error);
+            throw error;
+        }
+
+        if (!data || data.length === 0) {
+            console.log('✅ No previous Smart Match email found for lead:', leadId);
+            return null;
+        }
+
+        const lastEmail = data[0];
+        const sentAt = new Date(lastEmail.sent_at || lastEmail.created_at);
+        const now = new Date();
+        const hoursAgo = (now - sentAt) / (1000 * 60 * 60); // Convert milliseconds to hours
+
+        console.log('✅ Last Smart Match email found:', {
+            leadId,
+            sent_at: sentAt.toISOString(),
+            hours_ago: hoursAgo.toFixed(2),
+            status: lastEmail.status
+        });
+
+        return {
+            sent_at: sentAt.toISOString(),
+            hours_ago: hoursAgo,
+            status: lastEmail.status
+        };
+
+    } catch (error) {
+        console.error('❌ Error in getLastSmartMatchEmailTime:', error);
+        throw error;
+    }
+}
+
+/**
+ * Check if a lead is within the Smart Match email cooldown period
+ * @param {string} leadId - Lead ID
+ * @param {number} cooldownHours - Cooldown period in hours (default: 12)
+ * @returns {Promise<Object>} { canSend: boolean, lastSent: Object|null, hoursRemaining: number }
+ */
+export async function checkSmartMatchCooldown(leadId, cooldownHours = 12) {
+    console.log('🕐 checkSmartMatchCooldown called for lead:', leadId, 'cooldown:', cooldownHours);
+
+    try {
+        const lastEmail = await getLastSmartMatchEmailTime(leadId);
+
+        if (!lastEmail) {
+            // Never sent before - can send
+            return {
+                canSend: true,
+                lastSent: null,
+                hoursRemaining: 0
+            };
+        }
+
+        const hoursRemaining = Math.max(0, cooldownHours - lastEmail.hours_ago);
+        const canSend = lastEmail.hours_ago >= cooldownHours;
+
+        console.log('✅ Cooldown check result:', {
+            leadId,
+            canSend,
+            hours_ago: lastEmail.hours_ago.toFixed(2),
+            hours_remaining: hoursRemaining.toFixed(2)
+        });
+
+        return {
+            canSend,
+            lastSent: lastEmail,
+            hoursRemaining
+        };
+
+    } catch (error) {
+        console.error('❌ Error in checkSmartMatchCooldown:', error);
+        // On error, allow sending (fail open)
+        return {
+            canSend: true,
+            lastSent: null,
+            hoursRemaining: 0,
+            error: error.message
+        };
+    }
+}
+
+/**
  * Send Smart Match email to a lead
  * Fetches top Smart Match properties and sends personalized email
  *
@@ -2148,18 +2254,35 @@ export async function getSmartMatches(leadId, limit = 10) {
  * @param {Object} options - Email options
  * @param {number} options.propertyCount - Number of properties to include (default: 5, max: 6)
  * @param {string} options.sentBy - User ID who triggered the email
+ * @param {boolean} options.skipCooldownCheck - Skip cooldown check (default: false)
  * @returns {Promise<Object>} { success: boolean, emailLogId: string, resendId: string }
  */
 export async function sendSmartMatchEmail(leadId, options = {}) {
     const supabase = getSupabase();
-    const { propertyCount = 5, sentBy } = options;
+    const { propertyCount = 5, sentBy, skipCooldownCheck = false } = options;
 
-    console.log('📧 sendSmartMatchEmail called with:', { leadId, propertyCount, sentBy });
+    console.log('📧 sendSmartMatchEmail called with:', { leadId, propertyCount, sentBy, skipCooldownCheck });
 
     // Validate property count (max 6)
     const validPropertyCount = Math.min(Math.max(propertyCount, 1), 6);
 
     try {
+        // Step 0: Check cooldown (unless explicitly skipped)
+        if (!skipCooldownCheck) {
+            const cooldownCheck = await checkSmartMatchCooldown(leadId);
+            if (!cooldownCheck.canSend) {
+                const hoursRemaining = cooldownCheck.hoursRemaining.toFixed(1);
+                console.warn(`⏳ Lead ${leadId} is in cooldown period. ${hoursRemaining} hours remaining.`);
+                return {
+                    success: false,
+                    skipped: true,
+                    reason: 'cooldown',
+                    hoursRemaining: cooldownCheck.hoursRemaining,
+                    message: `Lead is in cooldown period. Please wait ${hoursRemaining} more hours.`
+                };
+            }
+        }
+
         // Step 1: Fetch lead data
         const { data: lead, error: leadError } = await supabase
             .from('leads')
