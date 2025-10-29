@@ -2140,3 +2140,163 @@ export async function getSmartMatches(leadId, limit = 10) {
     return sanitizedMatches;
 }
 
+/**
+ * Send Smart Match email to a lead
+ * Fetches top Smart Match properties and sends personalized email
+ *
+ * @param {string} leadId - Lead ID
+ * @param {Object} options - Email options
+ * @param {number} options.propertyCount - Number of properties to include (default: 5, max: 6)
+ * @param {string} options.sentBy - User ID who triggered the email
+ * @returns {Promise<Object>} { success: boolean, emailLogId: string, resendId: string }
+ */
+export async function sendSmartMatchEmail(leadId, options = {}) {
+    const supabase = getSupabase();
+    const { propertyCount = 5, sentBy } = options;
+
+    console.log('📧 sendSmartMatchEmail called with:', { leadId, propertyCount, sentBy });
+
+    // Validate property count (max 6)
+    const validPropertyCount = Math.min(Math.max(propertyCount, 1), 6);
+
+    try {
+        // Step 1: Fetch lead data
+        const { data: lead, error: leadError } = await supabase
+            .from('leads')
+            .select('*')
+            .eq('id', leadId)
+            .single();
+
+        if (leadError || !lead) {
+            console.error('❌ Error fetching lead:', leadError);
+            throw new Error('Lead not found');
+        }
+
+        // Step 2: Fetch assigned agent
+        let agent = null;
+        if (lead.assigned_agent_id) {
+            const { data: agentData, error: agentError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', lead.assigned_agent_id)
+                .single();
+
+            if (!agentError && agentData) {
+                agent = agentData;
+            }
+        }
+
+        // Fallback to current user if no agent assigned
+        if (!agent && sentBy) {
+            const { data: userData, error: userError } = await supabase
+                .from('users')
+                .select('*')
+                .eq('id', sentBy)
+                .single();
+
+            if (!userError && userData) {
+                agent = userData;
+            }
+        }
+
+        // Step 3: Get Smart Match properties (unsanitized - we need commission/PUMI for email generation)
+        const { getSmartMatches: calculateSmartMatches } = await import('../utils/smart-match.js');
+
+        const { data: units, error: unitsError } = await supabase
+            .from('units')
+            .select(`
+                *,
+                floor_plan:floor_plans(*),
+                property:properties(*)
+            `)
+            .eq('is_available', true)
+            .eq('is_active', true)
+            .eq('status', 'available');
+
+        if (unitsError) {
+            console.error('❌ Error fetching units:', unitsError);
+            throw unitsError;
+        }
+
+        if (!units || units.length === 0) {
+            throw new Error('No available properties found');
+        }
+
+        const unitsWithDetails = units.map(unit => ({
+            unit: {
+                id: unit.id,
+                unit_number: unit.unit_number,
+                floor: unit.floor,
+                rent: unit.rent,
+                market_rent: unit.market_rent,
+                available_from: unit.available_from,
+                is_available: unit.is_available,
+                status: unit.status,
+                notes: unit.notes
+            },
+            floorPlan: unit.floor_plan,
+            property: unit.property
+        }));
+
+        const matches = calculateSmartMatches(lead, unitsWithDetails, validPropertyCount);
+
+        if (matches.length === 0) {
+            throw new Error('No matching properties found for this lead');
+        }
+
+        console.log('✅ Found', matches.length, 'Smart Match properties');
+
+        // Step 4: Generate email content using smart-match-email utility
+        const { generateSmartMatchEmail, validateSmartMatchEmailData } = await import('../utils/smart-match-email.js');
+
+        // Validate data before generating email
+        const validation = validateSmartMatchEmailData(lead, matches, agent);
+        if (!validation.valid) {
+            console.error('❌ Email data validation failed:', validation.errors);
+            throw new Error(`Email data validation failed: ${validation.errors.join(', ')}`);
+        }
+
+        const emailContent = generateSmartMatchEmail(lead, matches, agent);
+
+        // Step 5: Send email via sendEmail function
+        const emailData = {
+            templateId: emailContent.templateId,
+            recipientEmail: lead.email,
+            recipientName: lead.name,
+            variables: emailContent.variables,
+            metadata: {
+                lead_id: leadId,
+                agent_id: agent?.id || null,
+                email_type: 'smart_match',
+                property_count: matches.length,
+                property_ids: matches.map(m => m.property.id)
+            },
+            sentBy: sentBy || null
+        };
+
+        const result = await sendEmail(emailData);
+
+        console.log('✅ Smart Match email sent successfully:', result);
+
+        // Step 6: Log activity to lead_activities
+        if (result.success) {
+            await createLeadActivity({
+                lead_id: leadId,
+                activity_type: 'email_sent',
+                activity_description: `Smart Match email sent with ${matches.length} properties`,
+                performed_by: sentBy || null,
+                metadata: {
+                    email_log_id: result.emailLogId,
+                    property_count: matches.length
+                }
+            });
+        }
+
+        return result;
+
+    } catch (error) {
+        console.error('❌ Error sending Smart Match email:', error);
+        throw error;
+    }
+}
+
