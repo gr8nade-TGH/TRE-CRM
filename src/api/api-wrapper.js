@@ -49,6 +49,58 @@ export function createAPI({ mockInterestedLeads }) {
 		},
 
 		async getMatches(lead_id, limit = 10) {
+			// Use Smart Match algorithm to get intelligent property matches
+			const smartMatches = await SupabaseAPI.getSmartMatches(lead_id, limit);
+
+			// Transform Smart Match results to match expected UI structure
+			return smartMatches.map(match => {
+				const { unit, floorPlan, property, matchScore } = match;
+
+				// Calculate rent (use unit.rent if available, otherwise floor_plan.starting_at)
+				const rent = unit.rent || floorPlan.starting_at;
+				const marketRent = unit.market_rent || floorPlan.market_rent;
+
+				// Build specials text from floor plan concessions
+				let specialsText = 'Available Now';
+				if (floorPlan.has_concession && floorPlan.concession_description) {
+					specialsText = floorPlan.concession_description;
+				}
+
+				// Build bonus text from property amenities or location
+				let bonusText = property.city || 'Great Location';
+				if (property.amenities && property.amenities.length > 0) {
+					bonusText = property.amenities.slice(0, 2).join(' • ');
+				}
+
+				// Use property image or placeholder
+				const imageUrl = property.image_url || floorPlan.image_url ||
+					'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop';
+
+				return {
+					id: unit.id,
+					name: property.name || property.community_name || 'Property',
+					rent_min: rent,
+					rent_max: rent,
+					beds_min: floorPlan.beds,
+					beds_max: floorPlan.beds,
+					baths_min: floorPlan.baths,
+					baths_max: floorPlan.baths,
+					sqft_min: floorPlan.sqft || 0,
+					sqft_max: floorPlan.sqft || 0,
+					effective_commission_pct: 0, // Hidden for privacy (not shown to leads)
+					specials_text: specialsText,
+					bonus_text: bonusText,
+					image_url: imageUrl,
+					// Include match score for internal use (not displayed to leads)
+					_matchScore: matchScore.totalScore,
+					_unit_number: unit.unit_number,
+					_floor_plan_name: floorPlan.name
+				};
+			});
+		},
+
+		// Legacy mock data (kept for reference, not used)
+		async _getMatchesMock(lead_id, limit = 10) {
 			// Return example listings for now
 			return [
 				{

@@ -2024,3 +2024,119 @@ export async function sendEmail(emailData) {
     }
 }
 
+// ============================================================================
+// SMART MATCH API FUNCTIONS
+// ============================================================================
+
+/**
+ * Get smart matches for a lead
+ * Uses intelligent scoring algorithm to match leads with property units based on:
+ * - Lead preferences (bedrooms, bathrooms, price, location, move-in date)
+ * - Business priorities (commission percentage, PUMI status)
+ *
+ * Returns only one unit per property (highest-scoring unit)
+ *
+ * @param {string} leadId - Lead ID
+ * @param {number} limit - Maximum number of properties to return (default: 10)
+ * @returns {Promise<Array>} Array of matched units with scores
+ */
+export async function getSmartMatches(leadId, limit = 10) {
+    const supabase = getSupabase();
+
+    console.log('🎯 getSmartMatches called with:', { leadId, limit });
+
+    // Import smart match utility (dynamic import to avoid circular dependencies)
+    const { getSmartMatches: calculateSmartMatches } = await import('../utils/smart-match.js');
+
+    // Step 1: Fetch lead with all preferences
+    const { data: lead, error: leadError } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', leadId)
+        .single();
+
+    if (leadError) {
+        console.error('❌ Error fetching lead:', leadError);
+        throw leadError;
+    }
+
+    if (!lead) {
+        console.error('❌ Lead not found:', leadId);
+        throw new Error('Lead not found');
+    }
+
+    console.log('✅ Lead fetched:', lead.name);
+
+    // Step 2: Fetch all available units with floor_plan and property data
+    // Join: units → floor_plans → properties
+    const { data: units, error: unitsError } = await supabase
+        .from('units')
+        .select(`
+            *,
+            floor_plan:floor_plans(*),
+            property:properties(*)
+        `)
+        .eq('is_available', true)
+        .eq('is_active', true)
+        .eq('status', 'available');
+
+    if (unitsError) {
+        console.error('❌ Error fetching units:', unitsError);
+        throw unitsError;
+    }
+
+    console.log('✅ Fetched', units?.length || 0, 'available units');
+
+    if (!units || units.length === 0) {
+        console.log('⚠️ No available units found');
+        return [];
+    }
+
+    // Step 3: Transform data structure for smart match algorithm
+    const unitsWithDetails = units.map(unit => ({
+        unit: {
+            id: unit.id,
+            unit_number: unit.unit_number,
+            floor: unit.floor,
+            rent: unit.rent,
+            market_rent: unit.market_rent,
+            available_from: unit.available_from,
+            is_available: unit.is_available,
+            status: unit.status,
+            notes: unit.notes
+        },
+        floorPlan: unit.floor_plan,
+        property: unit.property
+    }));
+
+    // Step 4: Calculate smart matches using scoring algorithm
+    const matches = calculateSmartMatches(lead, unitsWithDetails, limit);
+
+    console.log('✅ getSmartMatches returning', matches.length, 'properties');
+
+    // Step 5: Transform results to include all necessary data for display
+    // Remove commission_pct and is_pumi from property data (privacy)
+    const sanitizedMatches = matches.map(match => {
+        const { commission_pct, is_pumi, ...sanitizedProperty } = match.property;
+
+        return {
+            unit: match.unit,
+            floorPlan: match.floorPlan,
+            property: sanitizedProperty,
+            matchScore: {
+                // Include score breakdown but NOT commission/pumi details
+                bedrooms: match.matchScore.bedrooms,
+                bathrooms: match.matchScore.bathrooms,
+                price: match.matchScore.price,
+                location: match.matchScore.location,
+                moveInDate: match.matchScore.moveInDate,
+                baseScore: match.matchScore.baseScore,
+                totalScore: match.matchScore.totalScore
+                // Intentionally exclude: commission, pumi, bonusScore
+            }
+        };
+    });
+
+    return sanitizedMatches;
+}
+

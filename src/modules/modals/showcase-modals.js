@@ -19,10 +19,16 @@ export async function openMatches(leadId, options) {
 	list.forEach(item => {
 		const card = document.createElement('article');
 		card.className = 'listing-card';
+
+		// Build commission badge (only show if > 0, for internal agent use only)
+		const commissionBadge = item.effective_commission_pct > 0
+			? `<div class="listing-badge">${item.effective_commission_pct}% Commission</div>`
+			: '';
+
 		card.innerHTML = `
 			<div class="listing-image">
 				<img src="${item.image_url}" alt="${item.name}" loading="lazy">
-				<div class="listing-badge">${item.effective_commission_pct}% Commission</div>
+				${commissionBadge}
 			</div>
 			<div class="listing-content">
 				<div class="listing-header">
