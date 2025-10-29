@@ -48,7 +48,7 @@ export async function openMatches(leadId, options) {
 				</div>
 				<div class="listing-footer">
 					<label class="listing-checkbox">
-						<input type="checkbox" class="listing-check" data-id="${item.id}">
+						<input type="checkbox" class="listing-check" data-id="${item.id}" style="display: none;">
 						<span class="checkmark"></span>
 						<span class="checkbox-text">Select Property</span>
 					</label>
