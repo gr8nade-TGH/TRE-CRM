@@ -206,6 +206,8 @@ export function createDependencies(context) {
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
 		bulkDeleteListings,
+		updateLeadBulkActionsBar,
+		bulkSendSmartMatch,
 		
 		// CSV import/export functions
 		downloadCSVTemplate,
