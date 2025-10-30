@@ -209,6 +209,9 @@ export async function renderLeads(options) {
 	// Update sort headers
 	updateSortHeaders('leadsTable');
 
+	// Update statistics banner
+	updateLeadStatistics(state.leads);
+
 	} catch (error) {
 		console.error('Error rendering leads:', error);
 		// Keep loading indicator row, just update it to show error
@@ -221,5 +224,56 @@ export async function renderLeads(options) {
 			loadingIndicator.style.display = 'none';
 		}
 	}
+}
+
+/**
+ * Update statistics banner with lead metrics
+ * Calculates and displays:
+ * - Total Leads: All leads in the system
+ * - Active Leads: Leads with status not 'closed' or 'lost'
+ * - New This Week: Leads created in the last 7 days
+ * - Needs Attention: Leads with health status 'red' or 'yellow'
+ *
+ * @param {Array} leads - Array of all leads
+ */
+export function updateLeadStatistics(leads) {
+	if (!leads || !Array.isArray(leads)) {
+		console.warn('updateLeadStatistics: Invalid leads array');
+		return;
+	}
+
+	// Calculate Total Leads
+	const totalLeads = leads.length;
+
+	// Calculate Active Leads (not closed or lost)
+	const activeLeads = leads.filter(lead =>
+		lead.status !== 'closed' && lead.status !== 'lost'
+	).length;
+
+	// Calculate New This Week (created in last 7 days)
+	const oneWeekAgo = new Date();
+	oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+	const newThisWeek = leads.filter(lead => {
+		if (!lead.created_at) return false;
+		const createdDate = new Date(lead.created_at);
+		return createdDate >= oneWeekAgo;
+	}).length;
+
+	// Calculate Needs Attention (health status red or yellow)
+	const needsAttention = leads.filter(lead => {
+		const health = calculateHealthStatus(lead);
+		return health === 'red' || health === 'yellow';
+	}).length;
+
+	// Update DOM elements
+	const statTotalLeads = document.getElementById('statTotalLeads');
+	const statActiveLeads = document.getElementById('statActiveLeads');
+	const statNewThisWeek = document.getElementById('statNewThisWeek');
+	const statNeedsAttention = document.getElementById('statNeedsAttention');
+
+	if (statTotalLeads) statTotalLeads.textContent = totalLeads;
+	if (statActiveLeads) statActiveLeads.textContent = activeLeads;
+	if (statNewThisWeek) statNewThisWeek.textContent = newThisWeek;
+	if (statNeedsAttention) statNeedsAttention.textContent = needsAttention;
 }
 

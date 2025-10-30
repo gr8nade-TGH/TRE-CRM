@@ -156,6 +156,63 @@
 				<div id="roleLabel" class="role-label"></div>
 			</div>
 
+			<!-- Statistics Banner -->
+			<div class="stats-banner">
+				<div class="stat-box stat-box-total">
+					<div class="stat-icon">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+							<circle cx="9" cy="7" r="4"></circle>
+							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+						</svg>
+					</div>
+					<div class="stat-content">
+						<div class="stat-value" id="statTotalLeads">0</div>
+						<div class="stat-label">Total Leads</div>
+					</div>
+				</div>
+
+				<div class="stat-box stat-box-active">
+					<div class="stat-icon">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<circle cx="12" cy="12" r="10"></circle>
+							<polyline points="12 6 12 12 16 14"></polyline>
+						</svg>
+					</div>
+					<div class="stat-content">
+						<div class="stat-value" id="statActiveLeads">0</div>
+						<div class="stat-label">Active Leads</div>
+					</div>
+				</div>
+
+				<div class="stat-box stat-box-new">
+					<div class="stat-icon">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+						</svg>
+					</div>
+					<div class="stat-content">
+						<div class="stat-value" id="statNewThisWeek">0</div>
+						<div class="stat-label">New This Week</div>
+					</div>
+				</div>
+
+				<div class="stat-box stat-box-attention">
+					<div class="stat-icon">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+							<line x1="12" y1="9" x2="12" y2="13"></line>
+							<line x1="12" y1="17" x2="12.01" y2="17"></line>
+						</svg>
+					</div>
+					<div class="stat-content">
+						<div class="stat-value" id="statNeedsAttention">0</div>
+						<div class="stat-label">Needs Attention</div>
+					</div>
+				</div>
+			</div>
+
 			<div class="table-actions">
 				<input id="leadSearch" type="search" placeholder="Search name, email, phone" />
 				<div class="bulk-actions-group" style="display: none;">
