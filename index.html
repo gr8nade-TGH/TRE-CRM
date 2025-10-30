@@ -213,20 +213,7 @@
 				</div>
 			</div>
 
-			<div class="table-actions">
-				<div class="bulk-actions-group" style="display: none;">
-					<button id="bulkSendSmartMatchBtn" class="btn btn-primary">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
-							<path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-						</svg>
-						Bulk Send Smart Matches
-					</button>
-					<span id="bulkLeadsCount" class="bulk-selection-count">0 selected</span>
-				</div>
-				<button id="addLeadBtn" class="btn btn-primary">+ Add Lead</button>
-			</div>
-
-			<!-- Filters -->
+			<!-- Filters and Actions -->
 			<div class="filters" id="leadsFilters">
 				<div class="filter-group">
 					<label for="leadSearch">Search</label>
@@ -252,7 +239,17 @@
 					<input type="date" id="toDate" class="filter-input">
 				</div>
 				<div class="filter-spacer"></div>
+				<div class="bulk-actions-group" style="display: none;">
+					<button id="bulkSendSmartMatchBtn" class="btn btn-primary">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
+							<path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+						</svg>
+						Bulk Send Smart Matches
+					</button>
+					<span id="bulkLeadsCount" class="bulk-selection-count">0 selected</span>
+				</div>
 				<button id="clearFilters" class="btn btn-secondary">Clear</button>
+				<button id="addLeadBtn" class="btn btn-primary">+ Add Lead</button>
 			</div>
 
 			<div class="table-wrapper">

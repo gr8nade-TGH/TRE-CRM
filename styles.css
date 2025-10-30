@@ -421,16 +421,7 @@ body {
   }
 }
 
-.table-actions {
-  display: flex;
-  gap: 12px;
-  padding: 20px 24px;
-  background: var(--panel);
-  border-bottom: 1px solid var(--rule);
-  justify-content: flex-end;
-}
-
-/* Filters */
+/* Filters and Actions Row */
 .filters {
   display: flex;
   align-items: end;
@@ -453,6 +444,12 @@ body {
 /* Search input in filters */
 .filter-group input[type="search"] {
   min-width: 240px;
+}
+
+/* Buttons in filters row */
+.filters .btn {
+  align-self: flex-end;
+  margin-bottom: 0;
 }
 
 .filter-group label {
