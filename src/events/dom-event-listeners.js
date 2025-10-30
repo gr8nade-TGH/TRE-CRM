@@ -138,6 +138,8 @@ export function setupAllEventListeners(deps) {
 		// Bulk actions functions
 		bulkMarkAsUnavailable,
 		bulkDeleteListings,
+		updateLeadBulkActionsBar,
+		bulkSendSmartMatch,
 
 		// CSV import/export functions
 		downloadCSVTemplate,
