@@ -214,7 +214,6 @@
 			</div>
 
 			<div class="table-actions">
-				<input id="leadSearch" type="search" placeholder="Search name, email, phone" />
 				<div class="bulk-actions-group" style="display: none;">
 					<button id="bulkSendSmartMatchBtn" class="btn btn-primary">
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px;">
@@ -229,6 +228,10 @@
 
 			<!-- Filters -->
 			<div class="filters" id="leadsFilters">
+				<div class="filter-group">
+					<label for="leadSearch">Search</label>
+					<input id="leadSearch" type="search" placeholder="Search name, email, phone" class="filter-input" />
+				</div>
 				<div class="filter-group">
 					<label for="statusFilter">Status</label>
 					<select id="statusFilter" class="filter-select">
