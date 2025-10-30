@@ -426,7 +426,7 @@ body {
   display: flex;
   align-items: end;
   gap: 16px;
-  margin: 0 24px 20px;
+  margin: 20px 24px 20px;
   padding: 16px;
   background: var(--panel);
   border: 1px solid var(--rule);

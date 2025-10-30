@@ -87,15 +87,47 @@ export async function getLeads({ role, agentId, search, sortKey, sortDir, page =
     };
 }
 
+/**
+ * Get all leads for statistics (no pagination)
+ * Used for calculating statistics banner metrics
+ */
+export async function getAllLeadsForStats({ role, agentId }) {
+    const supabase = getSupabase();
+
+    console.log('📊 getAllLeadsForStats called with:', { role, agentId });
+
+    // Start query - select only fields needed for statistics
+    let query = supabase
+        .from('leads')
+        .select('id, status, created_at, assigned_agent_id, found_by_agent_id, health_status, last_activity_at');
+
+    // Filter by agent if role is agent
+    if (role === 'agent' && agentId) {
+        console.log('📊 Filtering stats for agent:', agentId);
+        query = query.or(`assigned_agent_id.eq.${agentId},found_by_agent_id.eq.${agentId}`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+        console.error('❌ Error fetching leads for stats:', error);
+        throw error;
+    }
+
+    console.log('✅ Stats query successful! Found', data?.length, 'leads');
+
+    return data || [];
+}
+
 export async function getLead(id) {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('leads')
         .select('*')
         .eq('id', id)
         .single();
-    
+
     if (error) {
         console.error('Error fetching lead:', error);
         throw error;

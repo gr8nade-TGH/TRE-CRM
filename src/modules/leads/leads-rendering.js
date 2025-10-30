@@ -209,8 +209,14 @@ export async function renderLeads(options) {
 	// Update sort headers
 	updateSortHeaders('leadsTable');
 
-	// Update statistics banner (role-aware)
-	updateLeadStatistics(state.leads, state);
+	// Fetch ALL leads for statistics (without pagination)
+	const allLeadsForStats = await SupabaseAPI.getAllLeadsForStats({
+		role: state.role,
+		agentId: state.agentId
+	});
+
+	// Update statistics banner (role-aware) - use all leads, not just paginated items
+	updateLeadStatistics(allLeadsForStats, state);
 
 	} catch (error) {
 		console.error('Error rendering leads:', error);
@@ -249,40 +255,31 @@ export function updateLeadStatistics(leads, state) {
 		return;
 	}
 
-	// Filter leads based on role
-	let filteredLeads = leads;
-	if (state.role === 'agent' && state.agentId) {
-		// For agents: only show leads assigned to them
-		filteredLeads = leads.filter(lead =>
-			lead.assigned_agent_id === state.agentId ||
-			lead.found_by_agent_id === state.agentId
-		);
-		console.log(`📊 Statistics filtered for agent ${state.agentId}: ${filteredLeads.length} of ${leads.length} leads`);
-	} else {
-		// For managers: show all leads
-		console.log(`📊 Statistics showing all leads (manager view): ${leads.length} leads`);
-	}
+	// Note: Leads are already filtered by role in getAllLeadsForStats API call
+	// No need to filter again here
+	console.log(`📊 Statistics for ${state.role} (${state.role === 'agent' ? state.agentId : 'all'}): ${leads.length} leads`);
 
 	// Calculate Total Leads
-	const totalLeads = filteredLeads.length;
+	const totalLeads = leads.length;
 
 	// Calculate Active Leads (not closed or lost)
-	const activeLeads = filteredLeads.filter(lead =>
+	const activeLeads = leads.filter(lead =>
 		lead.status !== 'closed' && lead.status !== 'lost'
 	).length;
 
 	// Calculate New This Week (created in last 7 days)
 	const oneWeekAgo = new Date();
 	oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-	const newThisWeek = filteredLeads.filter(lead => {
+	const newThisWeek = leads.filter(lead => {
 		if (!lead.created_at) return false;
 		const createdDate = new Date(lead.created_at);
 		return createdDate >= oneWeekAgo;
 	}).length;
 
 	// Calculate Needs Attention (health status red or yellow)
-	const needsAttention = filteredLeads.filter(lead => {
-		const health = calculateHealthStatus(lead);
+	// Use health_status field directly (already calculated in DB or previous step)
+	const needsAttention = leads.filter(lead => {
+		const health = lead.health_status || calculateHealthStatus(lead);
 		return health === 'red' || health === 'yellow';
 	}).length;
 
