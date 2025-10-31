@@ -71,7 +71,22 @@ export function showModal(modalIdOrTitle, content = null, options = {}) {
  */
 export function hideModal(modalId) {
 	const modal = document.getElementById(modalId);
-	if (modal) modal.classList.add('hidden');
+	if (modal) {
+		modal.classList.add('hidden');
+
+		// Cleanup for userModal when closing
+		if (modalId === 'userModal') {
+			// Re-enable role select (in case it was disabled from Agents page)
+			const roleSelect = document.getElementById('userRole');
+			if (roleSelect) {
+				roleSelect.disabled = false;
+			}
+
+			// Remove data attributes
+			modal.removeAttribute('data-from-agents-page');
+			modal.removeAttribute('data-user-id');
+		}
+	}
 }
 
 /**
@@ -156,7 +171,7 @@ export function debounce(func, wait) {
  */
 export function throttle(func, limit) {
 	let inThrottle;
-	return function(...args) {
+	return function (...args) {
 		if (!inThrottle) {
 			func.apply(this, args);
 			inThrottle = true;
