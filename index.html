@@ -552,6 +552,7 @@
 									<th>Address</th>
 									<th>Contact Info</th>
 									<th>Phone</th>
+									<th>Leniency</th>
 									<th>Current Special(s)</th>
 									<th>Actions</th>
 								</tr>
@@ -1731,6 +1732,19 @@
 							<label for="contactOfficeHours">Office Hours</label>
 							<input type="text" id="contactOfficeHours"
 								placeholder="e.g., Mon-Fri 9am-5pm, Sat 10am-2pm">
+						</div>
+						<div class="field">
+							<label for="contactLeniency">Application Leniency</label>
+							<select id="contactLeniency">
+								<option value="">Not Set</option>
+								<option value="LOW">🔴 Low - Strict requirements (high credit score, full income
+									verification)</option>
+								<option value="MEDIUM">🟡 Medium - Moderate requirements (some flexibility)</option>
+								<option value="HIGH">🟢 High - Lenient requirements (easier approval, flexible on
+									credit/income)</option>
+							</select>
+							<small class="field-hint">💡 Indicates how flexible this property is with application
+								requirements (credit score, income verification, background checks, etc.)</small>
 						</div>
 						<div class="field">
 							<label for="contactNotes">Notes</label>

@@ -93,50 +93,62 @@ function renderPropertiesPage(page) {
 
 	// Render properties for this page
 	pageProperties.forEach(prop => {
-			const tr = document.createElement('tr');
+		const tr = document.createElement('tr');
 
-			// Property name
-			const name = prop.community_name || prop.name;
+		// Property name
+		const name = prop.community_name || prop.name;
 
-			// Address
-			const address = prop.address || '<span class="muted">—</span>';
+		// Address
+		const address = prop.address || '<span class="muted">—</span>';
 
-			// Contact info
-			const contactName = prop.contact_name || '';
-			const contactEmail = prop.contact_email || '';
-			let contactInfo = '';
-			if (contactName || contactEmail) {
-				contactInfo = `
+		// Contact info
+		const contactName = prop.contact_name || '';
+		const contactEmail = prop.contact_email || '';
+		let contactInfo = '';
+		if (contactName || contactEmail) {
+			contactInfo = `
 					<div>${contactName || '<span class="muted">—</span>'}</div>
 					${contactEmail ? `<div class="muted" style="font-size: 11px;">${contactEmail}</div>` : ''}
 				`;
-			} else {
-				contactInfo = '<span class="muted">—</span>';
-			}
+		} else {
+			contactInfo = '<span class="muted">—</span>';
+		}
 
-			// Phone
-			const phone = prop.contact_phone || '<span class="muted">—</span>';
+		// Phone
+		const phone = prop.contact_phone || '<span class="muted">—</span>';
 
-			// Specials column
-			let specialsHtml = '';
-			const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
+		// Leniency badge
+		let leniencyHtml = '';
+		if (prop.leniency === 'LOW') {
+			leniencyHtml = '<span class="leniency-badge leniency-low">Low</span>';
+		} else if (prop.leniency === 'MEDIUM') {
+			leniencyHtml = '<span class="leniency-badge leniency-medium">Medium</span>';
+		} else if (prop.leniency === 'HIGH') {
+			leniencyHtml = '<span class="leniency-badge leniency-high">High</span>';
+		} else {
+			leniencyHtml = '<span class="muted">—</span>';
+		}
 
-			if (!hasActiveSpecials) {
-				specialsHtml = '<span class="muted">No active special</span>';
-			} else if (prop.activeSpecials.length === 1) {
-				const special = prop.activeSpecials[0];
-				// Database uses valid_until, not expiration_date
-				const expDate = new Date(special.valid_until || special.expiration_date).toLocaleDateString();
-				// Database uses title, not current_special
-				const specialTitle = special.title || special.current_special;
-				specialsHtml = `
+		// Specials column
+		let specialsHtml = '';
+		const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
+
+		if (!hasActiveSpecials) {
+			specialsHtml = '<span class="muted">No active special</span>';
+		} else if (prop.activeSpecials.length === 1) {
+			const special = prop.activeSpecials[0];
+			// Database uses valid_until, not expiration_date
+			const expDate = new Date(special.valid_until || special.expiration_date).toLocaleDateString();
+			// Database uses title, not current_special
+			const specialTitle = special.title || special.current_special;
+			specialsHtml = `
 					<div style="line-height: 1.4;">
 						<div>🔥 ${specialTitle}</div>
 						<div class="muted" style="font-size: 11px;">Expires: ${expDate}</div>
 					</div>
 				`;
-			} else {
-				specialsHtml = `
+		} else {
+			specialsHtml = `
 					<div style="line-height: 1.4;">
 						<div>🔥 ${prop.activeSpecials.length} active specials</div>
 						<button class="btn-link" onclick="window.viewPropertySpecials('${prop.id}', '${name.replace(/'/g, "\\'")}')">
@@ -144,10 +156,10 @@ function renderPropertiesPage(page) {
 						</button>
 					</div>
 				`;
-			}
+		}
 
-			// Actions
-			const actionsHtml = `
+		// Actions
+		const actionsHtml = `
 				<button class="icon-btn" onclick="window.editPropertyContact('${prop.id}', '${name.replace(/'/g, "\\'")}')" title="Edit Contact Info">
 					📞
 				</button>
@@ -162,17 +174,18 @@ function renderPropertiesPage(page) {
 				`}
 			`;
 
-			tr.innerHTML = `
+		tr.innerHTML = `
 				<td><strong>${name}</strong></td>
 				<td>${address}</td>
 				<td>${contactInfo}</td>
 				<td>${phone}</td>
+				<td>${leniencyHtml}</td>
 				<td>${specialsHtml}</td>
 				<td>${actionsHtml}</td>
 			`;
 
-			tbody.appendChild(tr);
-		});
+		tbody.appendChild(tr);
+	});
 
 	// Update pagination controls
 	updatePropertiesPagination(page, totalPages, totalProperties);
@@ -400,7 +413,7 @@ export async function deleteEditedSpecial(options) {
 
 export async function renderPropertyContacts(options) {
 	const { state, SupabaseAPI, populatePropertyDropdown, toast } = options;
-	
+
 	console.log('renderPropertyContacts called');
 	const tbody = document.getElementById('contactsTbody');
 	if (!tbody) return;
@@ -570,6 +583,7 @@ export async function savePropertyContact(options) {
 	const contactEmail = document.getElementById('contactEmail').value;
 	const contactPhone = document.getElementById('contactPhone').value;
 	const officeHours = document.getElementById('contactOfficeHours').value;
+	const leniency = document.getElementById('contactLeniency').value || null;
 	const contactNotes = document.getElementById('contactNotes').value;
 
 	try {
@@ -581,6 +595,7 @@ export async function savePropertyContact(options) {
 			contact_email: contactEmail,
 			contact_phone: contactPhone,
 			office_hours: officeHours,
+			leniency: leniency,
 			contact_notes: contactNotes
 		});
 
@@ -612,6 +627,7 @@ export async function editPropertyContact(propertyId, communityName, options) {
 		document.getElementById('contactEmail').value = property.contact_email || '';
 		document.getElementById('contactPhone').value = property.contact_phone || '';
 		document.getElementById('contactOfficeHours').value = property.office_hours || '';
+		document.getElementById('contactLeniency').value = property.leniency || '';
 		document.getElementById('contactNotes').value = property.contact_notes || '';
 
 		// Disable the property select (can't change which property)

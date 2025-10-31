@@ -1579,6 +1579,35 @@ body {
 	box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
+/* Leniency badges for properties table */
+.leniency-badge {
+	display: inline-block;
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.leniency-low {
+	background: #fee2e2;
+	color: #991b1b;
+	border: 1px solid #fecaca;
+}
+
+.leniency-medium {
+	background: #fef3c7;
+	color: #92400e;
+	border: 1px solid #fde68a;
+}
+
+.leniency-high {
+	background: #d1fae5;
+	color: #065f46;
+	border: 1px solid #a7f3d0;
+}
+
 .listing-content {
 	padding: 20px;
 	display: grid;

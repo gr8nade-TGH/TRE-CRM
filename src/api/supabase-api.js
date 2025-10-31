@@ -738,7 +738,7 @@ export async function updateProperty(id, propertyData, performedBy = null, perfo
 export async function updatePropertyContact(contactData) {
     const supabase = getSupabase();
 
-    const { community_name, address, contact_name, contact_email, contact_phone, office_hours, contact_notes } = contactData;
+    const { community_name, address, contact_name, contact_email, contact_phone, office_hours, contact_notes, leniency } = contactData;
 
     // Build update object - only include fields that are provided
     const updateData = {
@@ -770,6 +770,7 @@ export async function updatePropertyContact(contactData) {
     if (contact_phone !== undefined) updateData.contact_phone = contact_phone;
     if (office_hours !== undefined) updateData.office_hours = office_hours;
     if (contact_notes !== undefined) updateData.contact_notes = contact_notes;
+    if (leniency !== undefined) updateData.leniency = leniency || null; // Allow empty string to clear leniency
 
     // Update all properties with this community name
     const { data, error } = await supabase
