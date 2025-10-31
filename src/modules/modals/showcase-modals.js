@@ -16,16 +16,27 @@ export async function openMatches(leadId, options) {
 	document.getElementById('sendLeadName').textContent = lead.name;
 
 	// Add smart match criteria banner
+	const bedroomText = lead.bedrooms ? `${lead.bedrooms} bedroom${lead.bedrooms !== '1' ? 's' : ''}` : 'any bedrooms';
+	const bathroomText = lead.bathrooms ? `${lead.bathrooms} bathroom${lead.bathrooms !== '1' ? 's' : ''}` : 'any bathrooms';
+	const locationText = lead.area_of_town || lead.desired_neighborhoods || 'any location';
+
 	const criteriaBanner = `
 		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: start;">
 			<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
 				<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
 			</svg>
 			<div style="flex: 1;">
-				<div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">Smart Match Criteria</div>
-				<div style="font-size: 14px; color: #1e3a8a; line-height: 1.5;">
-					<strong>Hard Requirements:</strong> Units filtered by exact bedroom match (${lead.bedrooms || 'any'}), exact bathroom match (${lead.bathrooms || 'any'}), and location (${lead.area_of_town || lead.desired_neighborhoods || 'any'}).<br>
-					<strong>Ranked By:</strong> Price match, move-in date availability, commission percentage, and PUMI status.
+				<div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 15px;">🎯 How These Matches Were Selected</div>
+				<div style="font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+					<div style="margin-bottom: 6px;"><strong>Step 1 - Hard Filters:</strong> Only units matching <strong>${bedroomText}</strong>, <strong>${bathroomText}</strong>, and <strong>${locationText}</strong></div>
+					<div style="margin-bottom: 6px;"><strong>Step 2 - Scoring:</strong></div>
+					<ul style="margin: 4px 0 0 20px; padding: 0;">
+						<li><strong>Price Match:</strong> Up to 25 pts (within budget gets full points)</li>
+						<li><strong>Move-in Date:</strong> Up to 10 pts (available by desired date)</li>
+						<li><strong>Commission:</strong> Up to 80+ pts (4%+ commission gets 80 pts base, +1 pt per % above)</li>
+						<li><strong>PUMI Property:</strong> +20 pts bonus (preferred partner properties)</li>
+					</ul>
+					<div style="margin-top: 6px; font-size: 12px; color: #475569;">💡 Results sorted by total score (highest first). Commission heavily weighted to prioritize your earnings.</div>
 				</div>
 			</div>
 		</div>
@@ -37,8 +48,9 @@ export async function openMatches(leadId, options) {
 		card.className = 'listing-card';
 
 		// Build commission badge (only show if > 0, for internal agent use only)
+		// Position in top-left corner to avoid overlap with match score
 		const commissionBadge = item.effective_commission_pct > 0
-			? `<div class="listing-badge">${item.effective_commission_pct}% Commission</div>`
+			? `<div class="listing-badge" style="left: 8px !important; right: auto !important;">${item.effective_commission_pct}% Commission</div>`
 			: '';
 
 		// Build match score badge (show in top-right corner)
