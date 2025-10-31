@@ -119,32 +119,101 @@ export async function openEmailPreview(options) {
 		state.selectedMatches.has(prop.id)
 	);
 
-	// Update email content
-	document.getElementById('previewLeadName').textContent = lead.name;
-	document.getElementById('previewAgentEmail').textContent = 'agent@trecrm.com';
-	document.getElementById('agentEmail').textContent = 'agent@trecrm.com';
-	document.getElementById('emailRecipient').textContent = `To: ${lead.email}`;
-	document.getElementById('previewAgentName').textContent = 'Your Agent';
+	// Get current user/agent info
+	const currentUser = window.currentUser || {};
+	const agentName = currentUser.user_metadata?.name || currentUser.email || 'Your Agent';
+	const agentEmail = currentUser.email || 'agent@texasrelocationexperts.com';
+	const agentPhone = currentUser.user_metadata?.phone || '(555) 123-4567';
 
-	// Render selected properties
+	// Update email header info
+	document.getElementById('previewLeadName').textContent = lead.name;
+	document.getElementById('previewAgentEmail').textContent = agentEmail;
+	document.getElementById('agentEmail').textContent = agentEmail;
+	document.getElementById('emailRecipient').textContent = lead.email;
+	document.getElementById('previewAgentName').textContent = agentName;
+
+	// Update agent phone if element exists
+	const agentPhoneEl = document.getElementById('previewAgentPhone');
+	if (agentPhoneEl) {
+		agentPhoneEl.textContent = agentPhone;
+	}
+
+	// Update all inline lead name references
+	const leadNameInlineEls = document.querySelectorAll('.lead-name-inline');
+	leadNameInlineEls.forEach(el => {
+		el.textContent = lead.name;
+	});
+
+	// Update all inline agent email references
+	const agentEmailInlineEls = document.querySelectorAll('.agent-email-inline');
+	agentEmailInlineEls.forEach(el => {
+		el.textContent = agentEmail;
+	});
+
+	// Update property count
+	const propertyCountEls = document.querySelectorAll('.property-count');
+	propertyCountEls.forEach(el => {
+		el.textContent = selectedProperties.length;
+	});
+
+	// Render selected properties with enhanced styling
 	const propertiesGrid = document.getElementById('previewProperties');
 	propertiesGrid.innerHTML = '';
 
-	selectedProperties.forEach(property => {
+	selectedProperties.forEach((property, index) => {
 		const card = document.createElement('div');
-		card.className = 'preview-property-card';
+		card.className = 'preview-property-card enhanced';
+
+		// Build specials badge if available
+		let specialBadge = '';
+		if (property.has_special || property.current_special) {
+			specialBadge = `
+				<div class="property-special-badge">
+					🎉 SPECIAL
+				</div>
+			`;
+		}
+
+		// Calculate rent display
+		const rentDisplay = property.rent_min === property.rent_max
+			? `$${property.rent_min.toLocaleString()}/mo`
+			: `$${property.rent_min.toLocaleString()} - $${property.rent_max.toLocaleString()}/mo`;
+
 		card.innerHTML = `
 			<div class="preview-property-image">
-				<img src="${property.image_url}" alt="${property.name}" loading="lazy">
+				${specialBadge}
+				<img src="${property.image_url || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop'}"
+					 alt="${property.name}"
+					 loading="lazy"
+					 onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop'">
 			</div>
 			<div class="preview-property-content">
-				<div class="preview-property-name">${property.name}</div>
-				<div class="preview-property-price">$${property.rent_min.toLocaleString()} - $${property.rent_max.toLocaleString()}/mo</div>
-				<div class="preview-property-specs">${property.beds_min}-${property.beds_max} bd • ${property.baths_min}-${property.baths_max} ba</div>
+				<div class="preview-property-header">
+					<div class="preview-property-name">${property.name}</div>
+					<div class="preview-property-price">${rentDisplay}</div>
+				</div>
+				<div class="preview-property-specs">
+					<span class="spec-item">🛏️ ${property.beds_min}-${property.beds_max} bed</span>
+					<span class="spec-divider">•</span>
+					<span class="spec-item">🚿 ${property.baths_min}-${property.baths_max} bath</span>
+					<span class="spec-divider">•</span>
+					<span class="spec-item">📐 ${property.sqft_min || '—'}-${property.sqft_max || '—'} sqft</span>
+				</div>
+				${property.current_special ? `
+					<div class="preview-property-special">
+						<strong>🎉 Special:</strong> ${property.current_special}
+					</div>
+				` : ''}
 			</div>
 		`;
 		propertiesGrid.appendChild(card);
 	});
+
+	// Update property count
+	const propertyCountEl = document.querySelector('.property-count');
+	if (propertyCountEl) {
+		propertyCountEl.textContent = selectedProperties.length;
+	}
 
 	// Close matches modal and open email preview
 	closeMatches();
@@ -155,6 +224,25 @@ export function closeEmailPreview(options) {
 	const { hide } = options;
 
 	hide(document.getElementById('emailPreviewModal'));
+}
+
+// ---- Preview Mode Toggle ----
+export function togglePreviewMode(mode) {
+	const container = document.getElementById('emailPreviewContainer');
+	const desktopBtn = document.getElementById('desktopPreviewBtn');
+	const mobileBtn = document.getElementById('mobilePreviewBtn');
+
+	if (mode === 'mobile') {
+		container.classList.remove('desktop-mode');
+		container.classList.add('mobile-mode');
+		desktopBtn.classList.remove('active');
+		mobileBtn.classList.add('active');
+	} else {
+		container.classList.remove('mobile-mode');
+		container.classList.add('desktop-mode');
+		mobileBtn.classList.remove('active');
+		desktopBtn.classList.add('active');
+	}
 }
 
 export function previewLandingPage(options) {

@@ -79,6 +79,7 @@ export {
 	closeMatches,
 	openEmailPreview,
 	closeEmailPreview,
+	togglePreviewMode,
 	previewLandingPage,
 	sendShowcaseEmail,
 	updateSelectionSummary,

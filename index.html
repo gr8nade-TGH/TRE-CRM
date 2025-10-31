@@ -1139,8 +1139,24 @@
 		<div id="emailPreviewModal" class="modal hidden">
 			<div class="modal-card email-preview-card">
 				<div class="modal-header">
-					<h3>Email Preview</h3>
+					<h3>📧 Email Preview</h3>
 					<div class="modal-actions">
+						<div class="preview-mode-toggle">
+							<button id="desktopPreviewBtn" class="preview-mode-btn active" title="Desktop View">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path
+										d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z" />
+								</svg>
+								Desktop
+							</button>
+							<button id="mobilePreviewBtn" class="preview-mode-btn" title="Mobile View">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path
+										d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" />
+								</svg>
+								Mobile
+							</button>
+						</div>
 						<button id="previewLandingBtn" class="btn btn-secondary btn-small">Preview Landing Page</button>
 						<button id="closeEmailPreview" class="icon-btn" aria-label="Close">×</button>
 					</div>
@@ -1150,40 +1166,91 @@
 						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
 							<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
 						</svg>
-						Send from <span id="agentEmail">agent@company.com</span>
+						Send Email
 					</button>
 					<div class="email-info">
-						<span id="emailRecipient">To: lead@example.com</span>
+						<div class="email-info-row">
+							<strong>To:</strong> <span id="emailRecipient">lead@example.com</span>
+						</div>
+						<div class="email-info-row">
+							<strong>From:</strong> <span id="agentEmail">agent@company.com</span>
+						</div>
 					</div>
 				</div>
 				<div class="modal-body email-preview-body">
-					<div class="email-preview">
-						<div class="email-header">
-							<div class="email-subject">Top options hand picked for you</div>
-							<div class="email-from">From: <span id="previewAgentEmail">agent@company.com</span></div>
-						</div>
-						<div class="email-content">
-							<div class="email-greeting">Hi <span id="previewLeadName">Lead Name</span>,</div>
-							<div class="email-message">
-								<p>We have some great fits for you! Go through me and you'll get these perks:</p>
-								<ul class="perks-list">
-									<li>🎯 <strong>Exclusive access</strong> to properties before they hit the market
-									</li>
-									<li>💰 <strong>Better pricing</strong> through our direct relationships</li>
-									<li>⚡ <strong>Priority scheduling</strong> for property tours</li>
-									<li>🛡️ <strong>Expert guidance</strong> throughout your search</li>
-								</ul>
-								<p>Here's a list of options based on what you're looking for. Click which ones you're
-									interested in and hit submit, and then we'll schedule you to go take a look at them!
-								</p>
-							</div>
-							<div class="email-properties">
-								<div id="previewProperties" class="preview-properties-grid">
-									<!-- Selected properties will be shown here -->
+					<div class="email-preview-container-wrapper">
+						<div id="emailPreviewContainer" class="email-preview-container desktop-mode">
+							<div class="email-preview">
+								<div class="email-header">
+									<div class="email-subject">🏠 <span id="previewLeadName">Lead Name</span>, We Found
+										Your
+										Perfect Match!</div>
+									<div class="email-from">From: <span id="previewAgentEmail">agent@company.com</span>
+									</div>
 								</div>
-							</div>
-							<div class="email-footer">
-								<p>Best regards,<br><span id="previewAgentName">Agent Name</span><br>TRE CRM Team</p>
+								<div class="email-content">
+									<div class="email-intro">
+										<div class="email-greeting">Hi <span class="lead-name-inline">Lead Name</span>!
+											👋</div>
+										<p class="email-intro-text">Great news! Our Smart Match system analyzed your
+											preferences
+											and found <strong><span class="property-count">5</span> properties</strong>
+											that are
+											perfect for you.</p>
+										<p class="email-intro-subtext">These aren't just random listings – they're
+											intelligently
+											matched based on your budget, location preferences, and move-in timeline.
+										</p>
+									</div>
+
+									<div class="match-badge">✨ Personalized Just For You</div>
+
+									<div class="email-properties">
+										<div id="previewProperties" class="preview-properties-grid">
+											<!-- Selected properties will be shown here -->
+										</div>
+									</div>
+
+									<div class="email-cta-section">
+										<h3 style="margin-top: 0; color: #111827; font-size: 18px;">Ready to Find Your
+											New Home?
+										</h3>
+										<p style="color: #6b7280; margin-bottom: 20px;">Let's schedule a tour of your
+											favorite
+											properties!</p>
+										<a href="#" class="email-cta-button">📅 Schedule a Tour</a>
+									</div>
+
+									<div class="email-agent-card">
+										<div class="agent-card-header">Your Dedicated Relocation Expert</div>
+										<div class="agent-card-body">
+											<div class="agent-info-item">
+												<strong>Name:</strong> <span id="previewAgentName">Agent Name</span>
+											</div>
+											<div class="agent-info-item">
+												<strong>Email:</strong> <span
+													class="agent-email-inline">agent@company.com</span>
+											</div>
+											<div class="agent-info-item">
+												<strong>Phone:</strong> <span id="previewAgentPhone">(555)
+													123-4567</span>
+											</div>
+										</div>
+										<p class="agent-card-footer">Questions? Reply to this email or give me a call
+											anytime. I'm
+											here to help you find the perfect place to call home!</p>
+									</div>
+
+									<div class="email-footer">
+										<p><strong>Texas Relocation Experts</strong></p>
+										<p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">© 2025 TRE CRM. All
+											rights
+											reserved.</p>
+										<p style="font-size: 11px; color: #9ca3af; margin-top: 4px;">You received this
+											email
+											because you requested property recommendations from us.</p>
+									</div>
+								</div>
 							</div>
 						</div>
 					</div>

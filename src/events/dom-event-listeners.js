@@ -1255,6 +1255,22 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	// Preview mode toggle buttons
+	const desktopPreviewBtn = document.getElementById('desktopPreviewBtn');
+	if (desktopPreviewBtn) {
+		desktopPreviewBtn.addEventListener('click', async () => {
+			const { Modals } = await import('../modules/modals/index.js');
+			Modals.togglePreviewMode('desktop');
+		});
+	}
+	const mobilePreviewBtn = document.getElementById('mobilePreviewBtn');
+	if (mobilePreviewBtn) {
+		mobilePreviewBtn.addEventListener('click', async () => {
+			const { Modals } = await import('../modules/modals/index.js');
+			Modals.togglePreviewMode('mobile');
+		});
+	}
+
 	const previewLandingBtnEl = document.getElementById('previewLandingBtn');
 	if (previewLandingBtnEl) {
 		previewLandingBtnEl.addEventListener('click', previewLandingPage);
