@@ -99,7 +99,7 @@ export async function getAllLeadsForStats({ role, agentId }) {
     // Start query - select only fields needed for statistics
     let query = supabase
         .from('leads')
-        .select('id, status, created_at, assigned_agent_id, found_by_agent_id, health_status, last_activity_at');
+        .select('id, status, created_at, assigned_agent_id, found_by_agent_id, health_status');
 
     // Filter by agent if role is agent
     if (role === 'agent' && agentId) {
@@ -132,7 +132,7 @@ export async function getLead(id) {
         console.error('Error fetching lead:', error);
         throw error;
     }
-    
+
     return data;
 }
 
@@ -368,19 +368,19 @@ export async function getAgents() {
 
 export async function getAgent(id) {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('users')
         .select('*')
         .eq('id', id)
         .eq('role', 'AGENT')
         .single();
-    
+
     if (error) {
         console.error('Error fetching agent:', error);
         throw error;
     }
-    
+
     return data;
 }
 
@@ -1559,7 +1559,7 @@ export async function getBatchUnitNotesCounts(unitIds) {
 
     const supabase = getSupabase();
 
-    const { data, error} = await supabase
+    const { data, error } = await supabase
         .from('unit_notes')
         .select('unit_id')
         .in('unit_id', unitIds);
@@ -1684,38 +1684,38 @@ export async function createUnitActivity(activityData) {
  */
 export async function getSpecials({ role, agentId, search, sortKey, sortDir, page = 1, pageSize = 10 } = {}) {
     const supabase = getSupabase();
-    
+
     let query = supabase
         .from('specials')
         .select('*', { count: 'exact' });
-    
+
     // Filter by active
     query = query.eq('active', true);
-    
+
     // Apply search
     if (search) {
         query = query.or(`title.ilike.%${search}%,description.ilike.%${search}%,property_name.ilike.%${search}%`);
     }
-    
+
     // Apply sorting
     if (sortKey && sortDir && sortDir !== 'none') {
         query = query.order(sortKey, { ascending: sortDir === 'asc' });
     } else {
         query = query.order('valid_until', { ascending: false });
     }
-    
+
     // Apply pagination
     const from = (page - 1) * pageSize;
     const to = from + pageSize - 1;
     query = query.range(from, to);
-    
+
     const { data, error, count } = await query;
-    
+
     if (error) {
         console.error('Error fetching specials:', error);
         throw error;
     }
-    
+
     return {
         items: data || [],
         total: count || 0
@@ -1724,36 +1724,36 @@ export async function getSpecials({ role, agentId, search, sortKey, sortDir, pag
 
 export async function createSpecial(specialData) {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('specials')
         .insert([specialData])
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error creating special:', error);
         throw error;
     }
-    
+
     return data;
 }
 
 export async function updateSpecial(id, specialData) {
     const supabase = getSupabase();
-    
+
     const { data, error } = await supabase
         .from('specials')
         .update(specialData)
         .eq('id', id)
         .select()
         .single();
-    
+
     if (error) {
         console.error('Error updating special:', error);
         throw error;
     }
-    
+
     return data;
 }
 
