@@ -333,133 +333,168 @@
 					<div id="listingsRoleLabel" class="role-label"></div>
 				</div>
 
-				<!-- Listings Filters -->
-				<div class="filters" id="listingsFilters">
-					<div class="filter-group">
-						<label for="listingsSearchInput">Search</label>
-						<input type="text" id="listingsSearchInput" placeholder="Community, neighborhood, amenities"
-							class="filter-input">
+				<!-- Listings Filters - Two-Row Layout -->
+				<div class="listings-filter-bar" id="listingsFilters">
+					<!-- Row 1: Filter Controls -->
+					<div class="filter-controls-row">
+						<div class="filter-group">
+							<label for="listingsSearchInput">Search</label>
+							<input type="text" id="listingsSearchInput" placeholder="Community, neighborhood, amenities"
+								class="filter-input">
+						</div>
+						<div class="filter-group">
+							<label for="marketFilter">Market</label>
+							<select id="marketFilter" class="filter-select">
+								<option value="all">All Markets</option>
+								<option value="Austin">Austin</option>
+								<option value="Dallas">Dallas</option>
+								<option value="Houston">Houston</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label for="minPrice">Min Price</label>
+							<input type="number" id="minPrice" placeholder="e.g., 1000" class="filter-input">
+						</div>
+						<div class="filter-group">
+							<label for="maxPrice">Max Price</label>
+							<input type="number" id="maxPrice" placeholder="e.g., 2000" class="filter-input">
+						</div>
+						<div class="filter-group">
+							<label for="bedsFilter">Beds</label>
+							<select id="bedsFilter" class="filter-select">
+								<option value="any">Any</option>
+								<option value="0">Studio</option>
+								<option value="1">1+</option>
+								<option value="2">2+</option>
+								<option value="3">3+</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label for="commissionFilter">Commission</label>
+							<select id="commissionFilter" class="filter-select">
+								<option value="0">Any</option>
+								<option value="1">1%+</option>
+								<option value="2">2%+</option>
+								<option value="3">3%+</option>
+								<option value="4">4%+</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label for="amenitiesFilter">Amenities</label>
+							<select id="amenitiesFilter" class="filter-select">
+								<option value="any">Any</option>
+								<option value="pool">Pool</option>
+								<option value="gym">Gym</option>
+								<option value="pet">Pet Friendly</option>
+								<option value="ev">EV Charging</option>
+							</select>
+						</div>
+						<div class="filter-group pumi-filter-group">
+							<label class="pumi-filter-label">
+								<input type="checkbox" id="pumiOnlyFilter" class="pumi-filter-checkbox">
+								<span class="pumi-filter-icon">PUMI</span>
+								<span class="pumi-filter-text">PUMI Only</span>
+							</label>
+						</div>
 					</div>
-					<div class="filter-group">
-						<label for="marketFilter">Market</label>
-						<select id="marketFilter" class="filter-select">
-							<option value="all">All Markets</option>
-							<option value="Austin">Austin</option>
-							<option value="Dallas">Dallas</option>
-							<option value="Houston">Houston</option>
-						</select>
-					</div>
-					<div class="filter-group">
-						<label for="minPrice">Min Price</label>
-						<input type="number" id="minPrice" placeholder="e.g., 1000" class="filter-input">
-					</div>
-					<div class="filter-group">
-						<label for="maxPrice">Max Price</label>
-						<input type="number" id="maxPrice" placeholder="e.g., 2000" class="filter-input">
-					</div>
-					<div class="filter-group">
-						<label for="bedsFilter">Beds</label>
-						<select id="bedsFilter" class="filter-select">
-							<option value="any">Any</option>
-							<option value="0">Studio</option>
-							<option value="1">1+</option>
-							<option value="2">2+</option>
-							<option value="3">3+</option>
-						</select>
-					</div>
-					<div class="filter-group">
-						<label for="commissionFilter">Min Commission</label>
-						<select id="commissionFilter" class="filter-select">
-							<option value="0">Any</option>
-							<option value="1">1%+</option>
-							<option value="2">2%+</option>
-							<option value="3">3%+</option>
-							<option value="4">4%+</option>
-						</select>
-					</div>
-					<div class="filter-group">
-						<label for="amenitiesFilter">Amenities</label>
-						<select id="amenitiesFilter" class="filter-select">
-							<option value="any">Any</option>
-							<option value="pool">Pool</option>
-							<option value="gym">Gym</option>
-							<option value="pet">Pet Friendly</option>
-							<option value="ev">EV Charging</option>
-						</select>
-					</div>
-					<div class="filter-group">
-						<label class="pumi-filter-label">
-							<input type="checkbox" id="pumiOnlyFilter" class="pumi-filter-checkbox">
-							<span class="pumi-filter-icon">PUMI</span>
-							<span class="pumi-filter-text">PUMI Only</span>
-						</label>
-					</div>
-					<div class="filter-spacer"></div>
-					<button id="clearListingsFilters" class="btn btn-secondary">Clear</button>
-					<button id="addListingBtn" class="btn btn-primary">+ Add New Property</button>
-					<button id="addContactInfoBtn" class="btn btn-outline" title="Add property contact information">📞
-						Contact Info</button>
 
-					<!-- CSV Import/Export Buttons -->
-					<button id="downloadCSVTemplateBtn" class="btn btn-outline"
-						title="Download CSV template for bulk import">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-							stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-							<polyline points="7 10 12 15 17 10"></polyline>
-							<line x1="12" y1="15" x2="12" y2="3"></line>
-						</svg>
-						CSV Template
-					</button>
-					<button id="uploadCSVBtn" class="btn btn-outline" title="Upload CSV file to bulk import listings">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-							stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-							<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-							<polyline points="17 8 12 3 7 8"></polyline>
-							<line x1="12" y1="3" x2="12" y2="15"></line>
-						</svg>
-						Upload CSV
-					</button>
+					<!-- Row 2: Action Buttons -->
+					<div class="filter-actions-row">
+						<!-- Primary Actions Group -->
+						<div class="action-group action-group-primary">
+							<button id="addListingBtn" class="btn btn-primary">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 6px;">
+									<line x1="12" y1="5" x2="12" y2="19"></line>
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+								</svg>
+								Add Property
+							</button>
+							<button id="addContactInfoBtn" class="btn btn-outline"
+								title="Add property contact information">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 6px;">
+									<path
+										d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+									</path>
+								</svg>
+								Contact Info
+							</button>
+						</div>
 
-					<!-- Bulk Action Buttons (all require checkbox selections) -->
-					<button id="buildShowcaseBtn" class="btn btn-success" disabled
-						title="Select listings to build showcase">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-							stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
-							<rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-							<path d="M9 9h6v6H9z" />
-							<path d="M9 3v6" />
-							<path d="M9 15v6" />
-							<path d="M15 3v6" />
-							<path d="M15 15v6" />
-							<path d="M3 9h6" />
-							<path d="M15 9h6" />
-							<path d="M3 15h6" />
-							<path d="M15 15h6" />
-						</svg>
-						Build Showcase
-					</button>
-					<button id="bulkMarkUnavailableBtn" class="btn btn-secondary" disabled
-						title="Select listings to mark as unavailable">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-							stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-							<circle cx="12" cy="12" r="10" />
-							<line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
-						</svg>
-						Mark Unavailable
-					</button>
-					<button id="bulkDeleteBtn" class="btn btn-danger" disabled
-						title="Select listings to delete permanently">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-							stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-							<polyline points="3 6 5 6 21 6" />
-							<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-							<line x1="10" y1="11" x2="10" y2="17" />
-							<line x1="14" y1="11" x2="14" y2="17" />
-						</svg>
-						Delete
-					</button>
-					<span id="bulkActionsCount" class="bulk-selection-count">0 selected</span>
+						<!-- Utility Actions Group -->
+						<div class="action-group action-group-utility">
+							<button id="downloadCSVTemplateBtn" class="btn btn-outline btn-sm"
+								title="Download CSV template for bulk import">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+									<polyline points="7 10 12 15 17 10"></polyline>
+									<line x1="12" y1="15" x2="12" y2="3"></line>
+								</svg>
+								CSV Template
+							</button>
+							<button id="uploadCSVBtn" class="btn btn-outline btn-sm"
+								title="Upload CSV file to bulk import listings">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+									<polyline points="17 8 12 3 7 8"></polyline>
+									<line x1="12" y1="3" x2="12" y2="15"></line>
+								</svg>
+								Upload CSV
+							</button>
+							<button id="clearListingsFilters" class="btn btn-secondary btn-sm">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<line x1="18" y1="6" x2="6" y2="18"></line>
+									<line x1="6" y1="6" x2="18" y2="18"></line>
+								</svg>
+								Clear
+							</button>
+						</div>
+
+						<!-- Bulk Actions Group (shown when selections made) -->
+						<div class="action-group action-group-bulk">
+							<span id="bulkActionsCount" class="bulk-selection-count">0 selected</span>
+							<button id="buildShowcaseBtn" class="btn btn-success btn-sm" disabled
+								title="Select listings to build showcase">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+									<path d="M9 9h6v6H9z" />
+								</svg>
+								Build Showcase
+							</button>
+							<button id="bulkMarkUnavailableBtn" class="btn btn-secondary btn-sm" disabled
+								title="Select listings to mark as unavailable">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<circle cx="12" cy="12" r="10" />
+									<line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+								</svg>
+								Mark Unavailable
+							</button>
+							<button id="bulkDeleteBtn" class="btn btn-danger btn-sm" disabled
+								title="Select listings to delete permanently">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<polyline points="3 6 5 6 21 6" />
+									<path
+										d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+								</svg>
+								Delete
+							</button>
+						</div>
+					</div>
 				</div>
 
 				<div class="listings-layout">
