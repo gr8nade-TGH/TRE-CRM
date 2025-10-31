@@ -139,6 +139,13 @@ export async function renderManagerDocuments(options) {
 
 		// Render progress table with real data
 		renderProgressTable('documentsTbody', transformedLeads);
+
+		// Update lead count badge
+		const leadCountBadge = document.getElementById('leadCountBadge');
+		if (leadCountBadge) {
+			const count = transformedLeads.length;
+			leadCountBadge.textContent = `${count} ${count === 1 ? 'lead' : 'leads'}`;
+		}
 	} catch (error) {
 		console.error('Error loading documents:', error);
 		toast('Error loading documents. Please try again.');
@@ -221,6 +228,13 @@ export async function renderAgentDocuments(options) {
 
 		// Render progress table with real data
 		renderProgressTable('agentDocumentsTbody', transformedLeads);
+
+		// Update lead count badge
+		const agentLeadCountBadge = document.getElementById('agentLeadCountBadge');
+		if (agentLeadCountBadge) {
+			const count = transformedLeads.length;
+			agentLeadCountBadge.textContent = `${count} ${count === 1 ? 'lead' : 'leads'}`;
+		}
 	} catch (error) {
 		console.error('Error loading agent documents:', error);
 		toast('Error loading documents. Please try again.');
