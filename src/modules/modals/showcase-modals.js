@@ -25,6 +25,11 @@ export async function openMatches(leadId, options) {
 			? `<div class="listing-badge">${item.effective_commission_pct}% Commission</div>`
 			: '';
 
+		// Build unit details subtitle (show unit number if available)
+		const unitSubtitle = item._unit_number
+			? `<div class="listing-subtitle">Unit ${item._unit_number}</div>`
+			: '';
+
 		card.innerHTML = `
 			<div class="listing-image">
 				<img src="${item.image_url}" alt="${item.name}" loading="lazy">
@@ -33,14 +38,11 @@ export async function openMatches(leadId, options) {
 			<div class="listing-content">
 				<div class="listing-header">
 					<h3 class="listing-name">${item.name}</h3>
-					<div class="listing-rating">
-						<span class="stars">★★★★☆</span>
-						<span class="rating-text">4.2</span>
-					</div>
+					${unitSubtitle}
 				</div>
 				<div class="listing-price">
-					<div class="price-amount">$${item.rent_min.toLocaleString()} - $${item.rent_max.toLocaleString()}/mo</div>
-					<div class="listing-specs">${item.beds_min}-${item.beds_max} bd • ${item.baths_min}-${item.baths_max} ba • ${item.sqft_min.toLocaleString()}-${item.sqft_max.toLocaleString()} sqft</div>
+					<div class="price-amount">$${item.rent_min.toLocaleString()}/mo</div>
+					<div class="listing-specs">${item.beds_min} bd • ${item.baths_min} ba • ${item.sqft_min.toLocaleString()} sqft</div>
 				</div>
 				<div class="listing-features">
 					<div class="feature-tag">${item.specials_text}</div>
