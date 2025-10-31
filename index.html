@@ -1162,12 +1162,21 @@
 					</div>
 				</div>
 				<div class="modal-sticky-header">
-					<button id="sendEmailBtn" class="btn btn-primary showcase-btn">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-							<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-						</svg>
-						Send Email
-					</button>
+					<div class="email-actions-group">
+						<button id="sendTestEmailBtn" class="btn btn-secondary">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path
+									d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+							</svg>
+							Send Test to Me
+						</button>
+						<button id="sendEmailBtn" class="btn btn-primary showcase-btn">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+							</svg>
+							Send to Lead
+						</button>
+					</div>
 					<div class="email-info">
 						<div class="email-info-row">
 							<strong>To:</strong> <span id="emailRecipient">lead@example.com</span>

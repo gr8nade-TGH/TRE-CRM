@@ -1271,6 +1271,17 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	// Send test email button
+	const sendTestEmailBtn = document.getElementById('sendTestEmailBtn');
+	if (sendTestEmailBtn) {
+		sendTestEmailBtn.addEventListener('click', async () => {
+			const selected = Array.from(state.selectedMatches);
+			if (selected.length > 0) {
+				await sendTestEmail();
+			}
+		});
+	}
+
 	const previewLandingBtnEl = document.getElementById('previewLandingBtn');
 	if (previewLandingBtnEl) {
 		previewLandingBtnEl.addEventListener('click', previewLandingPage);

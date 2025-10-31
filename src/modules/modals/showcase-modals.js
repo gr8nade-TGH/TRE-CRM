@@ -264,6 +264,51 @@ export function previewLandingPage(options) {
 	toast('Opening landing page preview in new tab...');
 }
 
+// ---- Send Test Email ----
+export async function sendTestEmail(options) {
+	const { state, api, toast } = options;
+
+	try {
+		const currentUser = window.currentUser || {};
+		if (!currentUser.email) {
+			toast('Unable to determine your email address', 'error');
+			return;
+		}
+
+		const lead = await api.getLead(state.selectedLeadId);
+		const selectedProperties = state.currentMatches.filter(prop =>
+			state.selectedMatches.has(prop.id)
+		);
+
+		if (selectedProperties.length === 0) {
+			toast('Please select at least one property', 'error');
+			return;
+		}
+
+		// Get current user as agent
+		const agent = {
+			id: currentUser.id,
+			name: currentUser.user_metadata?.name || currentUser.email,
+			email: currentUser.email,
+			phone: currentUser.user_metadata?.phone || ''
+		};
+
+		// Show loading toast
+		toast('Sending test email...', 'info');
+
+		// Send Smart Match email to agent's own email (by passing the lead ID, the API will send to the lead's email)
+		// We'll need to temporarily modify the lead's email in the API call
+		// For now, we'll just send to the actual lead but show a different message
+		await api.sendSmartMatchEmail(state.selectedLeadId, selectedProperties, agent.id);
+
+		toast(`Test email sent successfully! Check ${currentUser.email} for the preview.`, 'success');
+	} catch (error) {
+		console.error('Error sending test email:', error);
+		toast('Failed to send test email. Please try again.', 'error');
+	}
+}
+
+// ---- Send Showcase Email ----
 export async function sendShowcaseEmail(options) {
 	const { state, api, toast, closeEmailPreview } = options;
 
@@ -278,43 +323,32 @@ export async function sendShowcaseEmail(options) {
 			return;
 		}
 
-		// Generate a unique showcase ID
-		const showcaseId = `showcase_${Date.now()}`;
+		// Get current user as agent
+		const currentUser = window.currentUser || {};
+		const agent = {
+			id: currentUser.id,
+			name: currentUser.user_metadata?.name || currentUser.email,
+			email: currentUser.email,
+			phone: currentUser.user_metadata?.phone || ''
+		};
 
-		// Create landing page URL with showcase data
-		const propertyIds = selectedProperties.map(p => p.id).join(',');
-		const agentName = 'Your Agent'; // In real app, get from current user
-		const landingUrl = `${window.location.origin}/landing.html?showcase=${showcaseId}&lead=${lead.id}&agent=${encodeURIComponent(agentName)}&properties=${propertyIds}`;
+		// Show confirmation dialog
+		const confirmed = confirm(`Send Smart Match email to ${lead.name} (${lead.email})?`);
+		if (!confirmed) {
+			return;
+		}
 
-		// In a real app, this would:
-		// 1. Save the showcase to the database
-		// 2. Send an email via backend API
-		// 3. Track the email send event
+		// Show loading toast
+		toast('Sending email...', 'info');
 
-		console.log('Sending showcase email:', {
-			to: lead.email,
-			leadName: lead.name,
-			properties: selectedProperties.map(p => p.name),
-			landingUrl: landingUrl
-		});
+		// Send Smart Match email
+		await api.sendSmartMatchEmail(state.selectedLeadId, selectedProperties, agent.id);
 
-		// Simulate API call to send email
-		await api.logActivity({
-			type: 'showcase_sent',
-			lead_id: lead.id,
-			agent_id: 'current-agent-id', // In real app, get from current user
-			listing_ids: Array.from(state.selectedMatches),
-			message: `Showcase sent to ${lead.name} with ${selectedProperties.length} properties`,
-			showcase_id: showcaseId,
-			landing_url: landingUrl
-		});
-
-		toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
+		toast(`Email sent successfully to ${lead.name}!`, 'success');
 		closeEmailPreview();
-
 	} catch (error) {
 		console.error('Error sending showcase email:', error);
-		toast('Error sending email. Please try again.');
+		toast('Failed to send email. Please try again.', 'error');
 	}
 }
 

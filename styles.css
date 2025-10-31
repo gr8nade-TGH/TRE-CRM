@@ -2229,6 +2229,16 @@ body {
 	font-weight: 600;
 }
 
+.email-actions-group {
+	display: flex;
+	gap: 12px;
+	align-items: center;
+}
+
+.email-actions-group .btn {
+	white-space: nowrap;
+}
+
 /* Interested Leads Modal Styles */
 .interested-lead-item {
 	display: flex;
