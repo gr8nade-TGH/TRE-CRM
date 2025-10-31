@@ -15,7 +15,23 @@ export async function openMatches(leadId, options) {
 	document.getElementById('leadNameTitle2').textContent = lead.name;
 	document.getElementById('sendLeadName').textContent = lead.name;
 
-	grid.innerHTML = '';
+	// Add smart match criteria banner
+	const criteriaBanner = `
+		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: start;">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
+				<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+			</svg>
+			<div style="flex: 1;">
+				<div style="font-weight: 600; color: #1e40af; margin-bottom: 4px;">Smart Match Criteria</div>
+				<div style="font-size: 14px; color: #1e3a8a; line-height: 1.5;">
+					<strong>Hard Requirements:</strong> Units filtered by exact bedroom match (${lead.bedrooms || 'any'}), exact bathroom match (${lead.bathrooms || 'any'}), and location (${lead.area_of_town || lead.desired_neighborhoods || 'any'}).<br>
+					<strong>Ranked By:</strong> Price match, move-in date availability, commission percentage, and PUMI status.
+				</div>
+			</div>
+		</div>
+	`;
+
+	grid.innerHTML = criteriaBanner;
 	list.forEach(item => {
 		const card = document.createElement('article');
 		card.className = 'listing-card';
@@ -25,15 +41,21 @@ export async function openMatches(leadId, options) {
 			? `<div class="listing-badge">${item.effective_commission_pct}% Commission</div>`
 			: '';
 
+		// Build match score badge (show in top-right corner)
+		const matchScore = item._matchScore !== undefined
+			? `<div class="match-score-badge" style="position: absolute; top: 8px; right: 8px; background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">Score: ${Math.round(item._matchScore)} pts</div>`
+			: '';
+
 		// Build unit details subtitle (show unit number if available)
 		const unitSubtitle = item._unit_number
-			? `<div class="listing-subtitle">Unit ${item._unit_number}</div>`
+			? `<div class="listing-subtitle" style="font-size: 13px; color: #6b7280; margin-top: 2px;">Unit ${item._unit_number}</div>`
 			: '';
 
 		card.innerHTML = `
-			<div class="listing-image">
+			<div class="listing-image" style="position: relative;">
 				<img src="${item.image_url}" alt="${item.name}" loading="lazy">
 				${commissionBadge}
+				${matchScore}
 			</div>
 			<div class="listing-content">
 				<div class="listing-header">
@@ -49,8 +71,8 @@ export async function openMatches(leadId, options) {
 					<div class="feature-tag secondary">${item.bonus_text}</div>
 				</div>
 				<div class="listing-footer">
-					<label class="listing-checkbox">
-						<input type="checkbox" class="listing-check" data-id="${item.id}" style="display: none;">
+					<label class="listing-checkbox" style="cursor: pointer;">
+						<input type="checkbox" class="listing-check" data-id="${item.id}">
 						<span class="checkmark"></span>
 						<span class="checkbox-text">Select Property</span>
 					</label>

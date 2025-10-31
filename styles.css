@@ -1766,11 +1766,12 @@ body {
 	color: #374151;
 }
 
-.listing-checkbox input[type="checkbox"] {
-	display: none;
+.listing-checkbox input[type="checkbox"],
+.listing-checkbox .listing-check {
+	display: none !important;
 }
 
-.checkmark {
+.listing-checkbox .checkmark {
 	width: 20px;
 	height: 20px;
 	border: 2px solid #d1d5db;
@@ -1780,14 +1781,18 @@ body {
 	justify-content: center;
 	transition: all 0.2s ease;
 	position: relative;
+	cursor: pointer;
+	background: white;
 }
 
-.listing-checkbox input[type="checkbox"]:checked+.checkmark {
+.listing-checkbox input[type="checkbox"]:checked+.checkmark,
+.listing-checkbox .listing-check:checked+.checkmark {
 	background: #3b82f6;
 	border-color: #3b82f6;
 }
 
-.listing-checkbox input[type="checkbox"]:checked+.checkmark::after {
+.listing-checkbox input[type="checkbox"]:checked+.checkmark::after,
+.listing-checkbox .listing-check:checked+.checkmark::after {
 	content: '✓';
 	color: white;
 	font-weight: bold;
@@ -2554,6 +2559,36 @@ body {
 .checkbox-label span {
 	font-size: 14px;
 	color: #374151;
+}
+
+/* Bonus checkboxes - custom checkmark pattern */
+.bonus-checkbox {
+	display: none !important;
+}
+
+.bonus-checkbox+.checkmark {
+	width: 20px;
+	height: 20px;
+	border: 2px solid #d1d5db;
+	border-radius: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+	cursor: pointer;
+	background: white;
+}
+
+.bonus-checkbox:checked+.checkmark {
+	background: #3b82f6;
+	border-color: #3b82f6;
+}
+
+.bonus-checkbox:checked+.checkmark::after {
+	content: '✓';
+	color: white;
+	font-weight: bold;
+	font-size: 14px;
 }
 
 /* Lead checkbox styling - custom checkmark */
