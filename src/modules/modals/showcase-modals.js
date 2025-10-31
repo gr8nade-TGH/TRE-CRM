@@ -3,7 +3,7 @@
 // ---- Matches Modal ----
 export async function openMatches(leadId, options) {
 	const { state, api, show, updateSelectionSummary } = options;
-	
+
 	state.selectedLeadId = leadId;
 	state.selectedMatches = new Set();
 	const lead = await api.getLead(leadId);
@@ -70,14 +70,14 @@ export async function openMatches(leadId, options) {
 
 export function closeMatches(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('matchesModal'));
 }
 
 // ---- Email Preview Modal ----
 export async function openEmailPreview(options) {
 	const { state, api, closeMatches, show } = options;
-	
+
 	const lead = await api.getLead(state.selectedLeadId);
 	const selectedProperties = state.currentMatches.filter(prop =>
 		state.selectedMatches.has(prop.id)
@@ -117,13 +117,13 @@ export async function openEmailPreview(options) {
 
 export function closeEmailPreview(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('emailPreviewModal'));
 }
 
 export function previewLandingPage(options) {
 	const { state, toast } = options;
-	
+
 	// Get the selected properties from the current showcase
 	const selectedProperties = Array.from(state.selectedMatches);
 	const propertyIds = selectedProperties.join(',');
@@ -142,7 +142,7 @@ export function previewLandingPage(options) {
 
 export async function sendShowcaseEmail(options) {
 	const { state, api, toast, closeEmailPreview } = options;
-	
+
 	try {
 		const lead = await api.getLead(state.selectedLeadId);
 		const selectedProperties = state.currentMatches.filter(prop =>
@@ -196,7 +196,7 @@ export async function sendShowcaseEmail(options) {
 
 export function updateSelectionSummary(options) {
 	const { state } = options;
-	
+
 	const checkboxes = document.querySelectorAll('.listing-check');
 	const checked = Array.from(checkboxes).filter(cb => cb.checked);
 	const selectedCount = document.getElementById('selectedCount');
@@ -212,7 +212,7 @@ export function updateSelectionSummary(options) {
 
 export function updateCreateShowcaseBtn(options) {
 	const { state } = options;
-	
+
 	const btn = document.getElementById('createShowcase');
 	btn.disabled = state.selectedMatches.size === 0;
 }
@@ -220,7 +220,7 @@ export function updateCreateShowcaseBtn(options) {
 // ---- Showcase ----
 export async function openShowcasePreview(options) {
 	const { state, api, show } = options;
-	
+
 	const lead = await api.getLead(state.selectedLeadId);
 	document.getElementById('showcaseTo').value = lead.email;
 	const selected = Array.from(state.selectedMatches);
@@ -234,14 +234,14 @@ export async function openShowcasePreview(options) {
 
 export function closeShowcase(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('showcaseModal'));
 }
 
 // ---- Build Showcase from Listings ----
 export async function openBuildShowcaseModal(options) {
 	const { state, mockLeads, getSelectedListings, toast, show } = options;
-	
+
 	const selectedListings = getSelectedListings();
 	if (selectedListings.length === 0) {
 		toast('Please select at least one listing', 'error');
@@ -301,17 +301,33 @@ export async function openBuildShowcaseModal(options) {
 
 export function closeBuildShowcase(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('buildShowcaseModal'));
 }
 
 export function getSelectedListings(options) {
 	const { mockProperties } = options;
-	
-	const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-	return Array.from(checkboxes).map(cb => {
-		const listingId = cb.dataset.listingId;
-		return mockProperties.find(prop => prop.id === listingId);
-	}).filter(Boolean);
+
+	// Get selected unit checkboxes
+	const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
+	const selectedUnitIds = Array.from(checkboxes).map(cb => cb.dataset.unitId);
+
+	// Find properties that have selected units
+	const selectedProperties = [];
+	const addedPropertyIds = new Set();
+
+	for (const unitId of selectedUnitIds) {
+		// Find the property that contains this unit
+		const property = mockProperties.find(prop =>
+			prop.units && prop.units.some(unit => unit.id === unitId)
+		);
+
+		if (property && !addedPropertyIds.has(property.id)) {
+			selectedProperties.push(property);
+			addedPropertyIds.add(property.id);
+		}
+	}
+
+	return selectedProperties;
 }
 

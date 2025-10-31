@@ -311,10 +311,10 @@ export function setupAllEventListeners(deps) {
 			}
 		});
 
-		// Handle checkbox changes for bulk actions
+		// Handle checkbox changes for bulk actions (unit checkboxes)
 		listingsTableEl.addEventListener('change', (e) => {
-			if (e.target.classList.contains('listing-checkbox')) {
-				console.log('Listing checkbox changed');
+			if (e.target.classList.contains('unit-checkbox')) {
+				console.log('Unit checkbox changed');
 				updateBulkActionsBar();
 			}
 		});
@@ -583,9 +583,9 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
-	// Individual listing checkboxes
+	// Individual unit checkboxes (for Build Showcase button)
 	document.addEventListener('change', (e) => {
-		if (e.target.classList.contains('listing-checkbox')) {
+		if (e.target.classList.contains('unit-checkbox')) {
 			updateBuildShowcaseButton();
 		}
 	});
