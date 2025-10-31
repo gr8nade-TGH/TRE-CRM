@@ -2146,30 +2146,25 @@ export async function getSmartMatches(leadId, limit = 10) {
 
     console.log('✅ getSmartMatches returning', matches.length, 'properties');
 
-    // Step 5: Transform results to include all necessary data for display
-    // Remove commission_pct and is_pumi from property data (privacy)
-    const sanitizedMatches = matches.map(match => {
-        const { commission_pct, is_pumi, ...sanitizedProperty } = match.property;
-
+    // Step 5: Return matches with full data for internal agent use
+    // Note: Commission and PUMI data are kept for agent display, but should NOT be exposed to leads
+    return matches.map(match => {
         return {
             unit: match.unit,
             floorPlan: match.floorPlan,
-            property: sanitizedProperty,
+            property: match.property, // Keep commission_pct and is_pumi for agent use
             matchScore: {
-                // Include score breakdown but NOT commission/pumi details
-                bedrooms: match.matchScore.bedrooms,
-                bathrooms: match.matchScore.bathrooms,
+                // Include score breakdown (updated for new scoring system)
                 price: match.matchScore.price,
-                location: match.matchScore.location,
                 moveInDate: match.matchScore.moveInDate,
+                commission: match.matchScore.commission,
+                pumi: match.matchScore.pumi,
                 baseScore: match.matchScore.baseScore,
+                bonusScore: match.matchScore.bonusScore,
                 totalScore: match.matchScore.totalScore
-                // Intentionally exclude: commission, pumi, bonusScore
             }
         };
     });
-
-    return sanitizedMatches;
 }
 
 /**

@@ -39,8 +39,8 @@ export function createAPI({ mockInterestedLeads }) {
 			// Get current user info for activity logging
 			const userEmail = window.currentUser?.email || 'unknown';
 			const userName = window.currentUser?.user_metadata?.name ||
-							 window.currentUser?.email ||
-							 'Unknown User';
+				window.currentUser?.email ||
+				'Unknown User';
 
 			return await SupabaseAPI.updateLead(id, {
 				assigned_agent_id: agent_id,
@@ -76,6 +76,9 @@ export function createAPI({ mockInterestedLeads }) {
 				const imageUrl = property.image_url || floorPlan.image_url ||
 					'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop';
 
+				// Get commission percentage (for internal agent use only)
+				const commissionPct = property.commission_pct || 0;
+
 				return {
 					id: unit.id,
 					name: property.name || property.community_name || 'Property',
@@ -87,14 +90,15 @@ export function createAPI({ mockInterestedLeads }) {
 					baths_max: floorPlan.baths,
 					sqft_min: floorPlan.sqft || 0,
 					sqft_max: floorPlan.sqft || 0,
-					effective_commission_pct: 0, // Hidden for privacy (not shown to leads)
+					effective_commission_pct: commissionPct, // For internal agent use (not shown to leads)
 					specials_text: specialsText,
 					bonus_text: bonusText,
 					image_url: imageUrl,
-					// Include match score for internal use (not displayed to leads)
+					// Include match score and unit details for internal use
 					_matchScore: matchScore.totalScore,
 					_unit_number: unit.unit_number,
-					_floor_plan_name: floorPlan.name
+					_floor_plan_name: floorPlan.name,
+					_property_id: property.id
 				};
 			});
 		},
