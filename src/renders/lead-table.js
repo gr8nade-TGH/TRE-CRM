@@ -29,7 +29,12 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 	table.innerHTML = `
 		<div class="lead-table-header">
 			<div class="lead-info">
-				<div class="lead-icon">⚙️</div>
+				<div class="lead-icon">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="3"></circle>
+						<path d="M12 1v6m0 6v6m5.2-13.2l-4.2 4.2m0 6l4.2 4.2M23 12h-6m-6 0H1m18.2 5.2l-4.2-4.2m0-6l4.2-4.2"></path>
+					</svg>
+				</div>
 				<div class="lead-details">
 					<div class="lead-names">
 						<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
@@ -55,26 +60,26 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 						<div class="progress-line-fill" style="width: ${progressPercentage}%"></div>
 						<div class="progress-steps">
 							${progressSteps.map(step => {
-								const stepClass = step.id < lead.currentStep ? 'completed' :
-																 step.id === lead.currentStep ? 'current' : 'pending';
+		const stepClass = step.id < lead.currentStep ? 'completed' :
+			step.id === lead.currentStep ? 'current' : 'pending';
 
-								// For step 2 (Showcase Sent), add optional "Lead Responded" indicator above
-								const leadRespondedIndicator = (step.id === 2 && hasLeadResponded) ? `
+		// For step 2 (Showcase Sent), add optional "Lead Responded" indicator above
+		const leadRespondedIndicator = (step.id === 2 && hasLeadResponded) ? `
 									<div class="lead-responded-indicator" title="Lead Responded">
 										<span class="checkmark">✓</span>
 										<span class="label">Lead Responded</span>
 									</div>
 								` : '';
 
-								// For step 5 (Lease Sent), add optional "Lease Signed!" indicator above
-								const leaseSignedIndicator = (step.id === 5 && hasLeaseSigned) ? `
+		// For step 5 (Lease Sent), add optional "Lease Signed!" indicator above
+		const leaseSignedIndicator = (step.id === 5 && hasLeaseSigned) ? `
 									<div class="lead-responded-indicator" title="Lease Signed!">
 										<span class="checkmark">✓</span>
 										<span class="label">Lease Signed!</span>
 									</div>
 								` : '';
 
-								return `
+		return `
 									<div class="progress-step ${stepClass}"
 										 data-lead-id="${lead.id}"
 										 data-step="${step.id}">
@@ -84,7 +89,7 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 										<div class="progress-step-label">${step.label}</div>
 									</div>
 								`;
-							}).join('')}
+	}).join('')}
 						</div>
 					</div>
 				</div>
