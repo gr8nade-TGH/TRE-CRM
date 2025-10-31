@@ -2,7 +2,7 @@
 
 export async function loadUsers(options) {
 	const { realUsers, renderUsersTable } = options;
-	
+
 	try {
 		console.log('Loading users from Supabase...');
 
@@ -28,7 +28,7 @@ export async function loadUsers(options) {
 
 export async function loadAuditLog(options) {
 	const { realAuditLog, renderAuditLog } = options;
-	
+
 	// Check if we're running locally or on production
 	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 		? 'http://localhost:3001/api'
@@ -55,7 +55,7 @@ export async function loadAuditLog(options) {
 
 export async function createUser(userData, options) {
 	const { loadUsers } = options;
-	
+
 	try {
 		console.log('Creating user with Supabase:', userData);
 
@@ -101,20 +101,30 @@ export async function updateUser(userId, userData, options) {
 		// Get current user info for permission validation
 		const currentUser = window.currentUser;
 
+		// Build request payload
+		const payload = {
+			email: userData.email,
+			password: userData.password, // Optional - only sent if provided
+			name: userData.name,
+			role: userData.role,
+			currentUserId: currentUser?.id,
+			currentUserRole: currentUser?.role
+		};
+
+		// Add agent profile fields if present
+		if (userData.headshot_url !== undefined) payload.headshot_url = userData.headshot_url;
+		if (userData.bio !== undefined) payload.bio = userData.bio;
+		if (userData.facebook_url !== undefined) payload.facebook_url = userData.facebook_url;
+		if (userData.instagram_url !== undefined) payload.instagram_url = userData.instagram_url;
+		if (userData.x_url !== undefined) payload.x_url = userData.x_url;
+
 		// Call our serverless function to update the user
 		const response = await fetch(`/api/update-user?userId=${userId}`, {
 			method: 'PUT',
 			headers: {
 				'Content-Type': 'application/json'
 			},
-			body: JSON.stringify({
-				email: userData.email,
-				password: userData.password, // Optional - only sent if provided
-				name: userData.name,
-				role: userData.role,
-				currentUserId: currentUser?.id,
-				currentUserRole: currentUser?.role
-			})
+			body: JSON.stringify(payload)
 		});
 
 		if (!response.ok) {
@@ -182,7 +192,7 @@ export async function deleteUserFromAPI(userId, options) {
 
 export async function changeUserPassword(userId, newPassword, options) {
 	const { loadAuditLog } = options;
-	
+
 	try {
 		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 			? 'http://localhost:3001/api'

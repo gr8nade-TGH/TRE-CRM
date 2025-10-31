@@ -1467,6 +1467,59 @@
 							</select>
 						</div>
 
+						<!-- Agent Profile Fields (shown only when adding/editing agents) -->
+						<div id="agentProfileFields" style="display: none;">
+							<hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+							<h4 style="margin-bottom: 15px; color: #374151; font-size: 14px; font-weight: 600;">👤 Agent
+								Profile (for Landing Pages)</h4>
+
+							<!-- Headshot Upload -->
+							<div class="field">
+								<label for="userHeadshot">Headshot Photo</label>
+								<div style="display: flex; gap: 12px; align-items: flex-start;">
+									<div id="headshotPreview"
+										style="width: 80px; height: 80px; border-radius: 50%; background: #f3f4f6; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e5e7eb;">
+										<span style="font-size: 32px; color: #9ca3af;">👤</span>
+									</div>
+									<div style="flex: 1;">
+										<input type="file" id="userHeadshot" accept="image/jpeg,image/png,image/webp"
+											style="margin-bottom: 6px;">
+										<p style="font-size: 12px; color: #6b7280; margin: 0;">Recommended: 400x400px,
+											JPG/PNG/WebP, max 2MB</p>
+										<input type="hidden" id="userHeadshotUrl">
+									</div>
+								</div>
+							</div>
+
+							<!-- Bio -->
+							<div class="field">
+								<label for="userBio">Bio / About <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<textarea id="userBio" rows="3"
+									placeholder="Tell leads about your experience and how you can help them find their perfect home..."
+									maxlength="500"></textarea>
+								<p style="font-size: 12px; color: #6b7280; margin: 4px 0 0 0;"><span
+										id="bioCharCount">0</span>/500 characters</p>
+							</div>
+
+							<!-- Social Media Links -->
+							<div class="field">
+								<label for="userFacebook">Facebook URL <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<input type="url" id="userFacebook" placeholder="https://facebook.com/yourprofile">
+							</div>
+							<div class="field">
+								<label for="userInstagram">Instagram URL <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<input type="url" id="userInstagram" placeholder="https://instagram.com/yourprofile">
+							</div>
+							<div class="field">
+								<label for="userX">X (Twitter) URL <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<input type="url" id="userX" placeholder="https://x.com/yourprofile">
+							</div>
+						</div>
+
 						<!-- Password change permission warning -->
 						<div id="userPasswordWarning"
 							style="display: none; padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px; color: #856404;">

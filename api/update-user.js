@@ -22,7 +22,19 @@ export default async function handler(req, res) {
 	const { userId } = req.query;
 
 	// Get update data from request body
-	const { email, password, name, role, currentUserId, currentUserRole } = req.body;
+	const {
+		email,
+		password,
+		name,
+		role,
+		currentUserId,
+		currentUserRole,
+		headshot_url,
+		bio,
+		facebook_url,
+		instagram_url,
+		x_url
+	} = req.body;
 
 	// Validate required fields
 	if (!userId) {
@@ -30,13 +42,13 @@ export default async function handler(req, res) {
 	}
 
 	// At least one field must be provided for update
-	if (!email && !password && !name && !role) {
+	if (!email && !password && !name && !role && !headshot_url && !bio && !facebook_url && !instagram_url && !x_url) {
 		return res.status(400).json({ error: 'At least one field must be provided for update' });
 	}
 
 	// Validate role if provided
 	if (role) {
-		const validRoles = ['agent', 'manager', 'super_user'];
+		const validRoles = ['agent', 'manager', 'super_user', 'accountant'];
 		if (!validRoles.includes(role)) {
 			return res.status(400).json({ error: `Invalid role. Must be one of: ${validRoles.join(', ')}` });
 		}
@@ -83,15 +95,15 @@ export default async function handler(req, res) {
 
 		// Build update payload
 		const updatePayload = {};
-		
+
 		if (email) {
 			updatePayload.email = email;
 		}
-		
+
 		if (password) {
 			updatePayload.password = password;
 		}
-		
+
 		// Update user_metadata if name or role is provided
 		if (name || role) {
 			updatePayload.user_metadata = {};
@@ -113,13 +125,49 @@ export default async function handler(req, res) {
 		if (!response.ok) {
 			const error = await response.json();
 			console.error('Supabase error:', error);
-			return res.status(response.status).json({ 
-				error: error.message || error.msg || 'Failed to update user' 
+			return res.status(response.status).json({
+				error: error.message || error.msg || 'Failed to update user'
 			});
 		}
 
 		const updatedUser = await response.json();
-		console.log('✅ User updated successfully:', updatedUser.id);
+		console.log('✅ User updated in auth.users:', updatedUser.id);
+
+		// Update public.users table with agent profile fields
+		const updateUsersPayload = {};
+		if (name) updateUsersPayload.name = name;
+		if (role) updateUsersPayload.role = role.toUpperCase();
+		if (email) updateUsersPayload.email = email;
+
+		// Add agent profile fields (can be null to clear them)
+		if (headshot_url !== undefined) updateUsersPayload.headshot_url = headshot_url || null;
+		if (bio !== undefined) updateUsersPayload.bio = bio || null;
+		if (facebook_url !== undefined) updateUsersPayload.facebook_url = facebook_url || null;
+		if (instagram_url !== undefined) updateUsersPayload.instagram_url = instagram_url || null;
+		if (x_url !== undefined) updateUsersPayload.x_url = x_url || null;
+
+		// Only update public.users if there are fields to update
+		if (Object.keys(updateUsersPayload).length > 0) {
+			const updateUsersResponse = await fetch(`${SUPABASE_URL}/rest/v1/users?id=eq.${userId}`, {
+				method: 'PATCH',
+				headers: {
+					'Content-Type': 'application/json',
+					'apikey': SUPABASE_SERVICE_ROLE_KEY,
+					'Authorization': `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+					'Prefer': 'return=representation'
+				},
+				body: JSON.stringify(updateUsersPayload)
+			});
+
+			if (!updateUsersResponse.ok) {
+				const updateError = await updateUsersResponse.json();
+				console.error('Error updating users table:', updateError);
+				// Don't fail the whole operation - auth user was updated successfully
+				console.warn('⚠️ User updated in auth but failed to update users table');
+			} else {
+				console.log('✅ User updated in public.users table');
+			}
+		}
 
 		// Return success with info about what was updated
 		return res.status(200).json({
@@ -135,8 +183,8 @@ export default async function handler(req, res) {
 
 	} catch (error) {
 		console.error('Error updating user:', error);
-		return res.status(500).json({ 
-			error: 'Internal server error: ' + error.message 
+		return res.status(500).json({
+			error: 'Internal server error: ' + error.message
 		});
 	}
 }

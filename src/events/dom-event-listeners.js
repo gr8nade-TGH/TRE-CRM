@@ -622,8 +622,73 @@ export function setupAllEventListeners(deps) {
 			document.getElementById('userPassword').required = true;
 			document.getElementById('userConfirmPassword').required = true;
 
+			// Show agent profile fields
+			document.getElementById('agentProfileFields').style.display = 'block';
+
+			// Reset headshot preview
+			const headshotPreview = document.getElementById('headshotPreview');
+			headshotPreview.innerHTML = '<span style="font-size: 32px; color: #9ca3af;">👤</span>';
+			document.getElementById('userHeadshotUrl').value = '';
+
+			// Reset bio character count
+			document.getElementById('bioCharCount').textContent = '0';
+
 			// Show the modal
 			showModal('userModal');
+		});
+	}
+
+	// User role change - show/hide agent profile fields
+	const userRoleSelect = document.getElementById('userRole');
+	if (userRoleSelect) {
+		userRoleSelect.addEventListener('change', (e) => {
+			const agentProfileFields = document.getElementById('agentProfileFields');
+			if (e.target.value === 'agent') {
+				agentProfileFields.style.display = 'block';
+			} else {
+				agentProfileFields.style.display = 'none';
+			}
+		});
+	}
+
+	// Bio character counter
+	const userBioTextarea = document.getElementById('userBio');
+	if (userBioTextarea) {
+		userBioTextarea.addEventListener('input', (e) => {
+			const charCount = e.target.value.length;
+			document.getElementById('bioCharCount').textContent = charCount;
+		});
+	}
+
+	// Headshot image preview
+	const userHeadshotInput = document.getElementById('userHeadshot');
+	if (userHeadshotInput) {
+		userHeadshotInput.addEventListener('change', (e) => {
+			const file = e.target.files[0];
+			if (file) {
+				// Validate file size (max 2MB)
+				if (file.size > 2 * 1024 * 1024) {
+					toast('Image file size must be less than 2MB', 'error');
+					e.target.value = '';
+					return;
+				}
+
+				// Validate file type
+				const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
+				if (!validTypes.includes(file.type)) {
+					toast('Please upload a JPG, PNG, or WebP image', 'error');
+					e.target.value = '';
+					return;
+				}
+
+				// Show preview
+				const reader = new FileReader();
+				reader.onload = (event) => {
+					const headshotPreview = document.getElementById('headshotPreview');
+					headshotPreview.innerHTML = `<img src="${event.target.result}" style="width: 100%; height: 100%; object-fit: cover;" alt="Headshot preview">`;
+				};
+				reader.readAsDataURL(file);
+			}
 		});
 	}
 
@@ -761,6 +826,44 @@ export function setupAllEventListeners(deps) {
 			console.log('✅ Validation passed');
 
 			try {
+				// Handle headshot upload if user is an agent and file is selected
+				let headshotUrl = document.getElementById('userHeadshotUrl').value || null;
+				const headshotFile = document.getElementById('userHeadshot').files[0];
+
+				if (userData.role === 'agent' && headshotFile) {
+					toast('Uploading headshot...', 'info');
+
+					try {
+						// Upload to Supabase Storage
+						const fileExt = headshotFile.name.split('.').pop();
+						const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+						const filePath = `agent-headshots/${fileName}`;
+
+						const { data: uploadData, error: uploadError } = await window.supabase.storage
+							.from('agent-assets')
+							.upload(filePath, headshotFile, {
+								cacheControl: '3600',
+								upsert: false
+							});
+
+						if (uploadError) {
+							console.error('❌ Error uploading headshot:', uploadError);
+							toast('Failed to upload headshot. Continuing without image.', 'warning');
+						} else {
+							// Get public URL
+							const { data: urlData } = window.supabase.storage
+								.from('agent-assets')
+								.getPublicUrl(filePath);
+
+							headshotUrl = urlData.publicUrl;
+							console.log('✅ Headshot uploaded:', headshotUrl);
+						}
+					} catch (uploadErr) {
+						console.error('❌ Error uploading headshot:', uploadErr);
+						toast('Failed to upload headshot. Continuing without image.', 'warning');
+					}
+				}
+
 				// Use Supabase to create/update users
 				if (isEditing) {
 					console.log('Updating existing user:', userId);
@@ -775,6 +878,15 @@ export function setupAllEventListeners(deps) {
 						email: userData.email,
 						role: userData.role
 					};
+
+					// Add agent profile fields if role is agent
+					if (userData.role === 'agent') {
+						updateData.headshot_url = headshotUrl;
+						updateData.bio = document.getElementById('userBio').value || null;
+						updateData.facebook_url = document.getElementById('userFacebook').value || null;
+						updateData.instagram_url = document.getElementById('userInstagram').value || null;
+						updateData.x_url = document.getElementById('userX').value || null;
+					}
 
 					// Only include password if it was provided AND user has permission
 					if (userData.password) {
@@ -819,13 +931,26 @@ export function setupAllEventListeners(deps) {
 					toast('User updated successfully');
 				} else {
 					console.log('Creating new user...');
-					// Create new user
-					await createUser({
+
+					// Prepare user data
+					const newUserData = {
 						name: userData.name,
 						email: userData.email,
 						role: userData.role,
 						password: userData.password
-					});
+					};
+
+					// Add agent profile fields if role is agent
+					if (userData.role === 'agent') {
+						newUserData.headshot_url = headshotUrl;
+						newUserData.bio = document.getElementById('userBio').value || null;
+						newUserData.facebook_url = document.getElementById('userFacebook').value || null;
+						newUserData.instagram_url = document.getElementById('userInstagram').value || null;
+						newUserData.x_url = document.getElementById('userX').value || null;
+					}
+
+					// Create new user
+					await createUser(newUserData);
 
 					// Check if modal was opened from Agents page
 					const fromAgentsPage = document.getElementById('userModal').getAttribute('data-from-agents-page');
