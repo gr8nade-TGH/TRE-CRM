@@ -3819,15 +3819,21 @@ body {
 	padding: 16px 20px;
 	width: 100%;
 	box-sizing: border-box;
+	min-width: 0;
+	/* Allow flex shrinking */
 }
 
 .progress-bar {
 	position: relative;
 	width: 100%;
+	min-width: 100%;
+	/* Ensure full width */
 	height: 8px;
 	background: #e2e8f0;
 	border-radius: 4px;
 	overflow: visible;
+	flex-shrink: 0;
+	/* Prevent shrinking */
 }
 
 .progress-line-fill {
@@ -3845,11 +3851,14 @@ body {
 	top: 50%;
 	left: 0;
 	right: 0;
+	width: 100%;
+	/* Explicitly set width */
 	height: 0;
 	display: flex;
 	justify-content: space-between;
 	transform: translateY(-50%);
 	padding: 0 10px;
+	box-sizing: border-box;
 	z-index: 1;
 }
 

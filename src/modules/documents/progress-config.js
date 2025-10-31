@@ -34,7 +34,7 @@ export const progressSteps = [
  */
 export function renderProgressTable(tbodyId, leads, deps) {
 	const { createLeadTable, showStepDetails } = deps;
-	
+
 	const container = document.getElementById(tbodyId);
 	if (!container) return;
 
@@ -107,16 +107,20 @@ export function toggleLeadTable(leadId) {
 		return;
 	}
 
-	// Toggle visibility
-	const isHidden = content.style.display === 'none';
-	console.log('Current state - isHidden:', isHidden);
+	// Toggle visibility using CSS classes
+	const isCollapsed = content.classList.contains('collapsed');
+	console.log('Current state - isCollapsed:', isCollapsed);
 
-	if (isHidden) {
-		content.style.display = 'table-row-group';
+	if (isCollapsed) {
+		// Expand
+		content.classList.remove('collapsed');
+		content.classList.add('expanded');
 		if (expandIcon) expandIcon.textContent = '▼';
 		console.log('Expanded table');
 	} else {
-		content.style.display = 'none';
+		// Collapse
+		content.classList.remove('expanded');
+		content.classList.add('collapsed');
 		if (expandIcon) expandIcon.textContent = '▶';
 		console.log('Collapsed table');
 	}
