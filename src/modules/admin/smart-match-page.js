@@ -6,7 +6,7 @@
  */
 
 import { getActiveConfig, updateActiveConfig, resetToDefaults } from '../../api/smart-match-config-api.js';
-import { DEFAULT_CONFIG } from '../../utils/smart-match-config-defaults.js';
+import { DEFAULT_SMART_MATCH_CONFIG } from '../../utils/smart-match-config-defaults.js';
 
 /**
  * Initialize the Smart Match configuration page
