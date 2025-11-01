@@ -2886,385 +2886,87 @@
 			</div>
 		</div>
 
-		<!-- Smart Match Customizer Modal -->
-		<div id="smartMatchCustomizerModal" class="modal hidden">
-			<div class="modal-card" style="max-width: 1000px; width: 95%;">
-				<div class="modal-header">
-					<h3>🎯 Smart Match Customizer</h3>
-					<button id="closeSmartMatchCustomizer" class="icon-btn" aria-label="Close">×</button>
-				</div>
-				<div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
-					<form id="smartMatchConfigForm">
-						<!-- Configuration Name -->
-						<div class="form-group">
-							<label for="configNameInput">Configuration Name</label>
-							<input type="text" id="configNameInput" placeholder="e.g., Default Configuration"
-								value="Default Configuration">
-						</div>
 
-						<!-- Section 1: Filtering Criteria -->
-						<div class="config-section">
-							<h4 class="config-section-title">🔍 Filtering Criteria</h4>
-
-							<!-- Bedroom Matching -->
-							<div class="config-subsection">
-								<h5>Bedroom Matching</h5>
-								<div class="form-row">
-									<div class="form-group" style="flex: 2;">
-										<label for="bedroomMatchMode">Match Mode</label>
-										<select id="bedroomMatchMode">
-											<option value="exact">Exact Match</option>
-											<option value="flexible">Flexible (±tolerance)</option>
-											<option value="range">No Filter (Show All)</option>
-										</select>
-									</div>
-									<div class="form-group" style="flex: 1;">
-										<label for="bedroomTolerance">Tolerance</label>
-										<input type="number" id="bedroomTolerance" min="0" max="3" value="0">
-										<small class="form-hint">Bedrooms ± this value</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- Bathroom Matching -->
-							<div class="config-subsection">
-								<h5>Bathroom Matching</h5>
-								<div class="form-row">
-									<div class="form-group" style="flex: 2;">
-										<label for="bathroomMatchMode">Match Mode</label>
-										<select id="bathroomMatchMode">
-											<option value="exact">Exact Match</option>
-											<option value="flexible">Flexible (±tolerance)</option>
-											<option value="range">No Filter (Show All)</option>
-										</select>
-									</div>
-									<div class="form-group" style="flex: 1;">
-										<label for="bathroomTolerance">Tolerance</label>
-										<input type="number" id="bathroomTolerance" min="0" max="2" step="0.5"
-											value="0">
-										<small class="form-hint">Bathrooms ± this value</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- Rent Tolerance -->
-							<div class="config-subsection">
-								<h5>Rent Tolerance</h5>
-								<div class="form-row">
-									<div class="form-group" style="flex: 2;">
-										<label for="rentToleranceMode">Tolerance Mode</label>
-										<select id="rentToleranceMode">
-											<option value="percentage">Percentage (±%)</option>
-											<option value="fixed_amount">Fixed Amount (±$)</option>
-										</select>
-									</div>
-									<div class="form-group" style="flex: 1;">
-										<label for="rentTolerancePercent">Percentage</label>
-										<input type="number" id="rentTolerancePercent" min="0" max="100" value="20">
-										<small class="form-hint">% above/below budget</small>
-									</div>
-									<div class="form-group" style="flex: 1;">
-										<label for="rentToleranceFixed">Fixed Amount</label>
-										<input type="number" id="rentToleranceFixed" min="0" step="50" value="0">
-										<small class="form-hint">$ above/below budget</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- Move-In Flexibility -->
-							<div class="config-subsection">
-								<h5>Move-In Date Flexibility</h5>
-								<div class="form-group">
-									<label for="moveInFlexibilityDays">Flexibility (Days)</label>
-									<input type="number" id="moveInFlexibilityDays" min="0" max="90" value="30">
-									<small class="form-hint">Accept units available within this many days of desired
-										move-in date</small>
-								</div>
-							</div>
-
-							<!-- Pet Policy -->
-							<div class="config-subsection">
-								<h5>Pet Policy Filtering</h5>
-								<div class="form-group">
-									<label for="petPolicyMode">Pet Policy Mode</label>
-									<select id="petPolicyMode">
-										<option value="ignore">Ignore (No Filter)</option>
-										<option value="strict">Strict (Must Match)</option>
-										<option value="lenient">Lenient (Prefer Match)</option>
-									</select>
-									<small class="form-hint">How to handle pet policy requirements</small>
-								</div>
-							</div>
-
-							<!-- Income Requirements -->
-							<div class="config-subsection">
-								<h5>Income Requirements</h5>
-								<div class="form-row">
-									<div class="form-group" style="flex: 2;">
-										<label for="incomeRequirementMode">Income Check Mode</label>
-										<select id="incomeRequirementMode">
-											<option value="ignore">Ignore (No Filter)</option>
-											<option value="strict">Strict (Must Meet)</option>
-											<option value="lenient">Lenient (Prefer Meeting)</option>
-										</select>
-									</div>
-									<div class="form-group" style="flex: 1;">
-										<label for="incomeMultiplier">Income Multiplier</label>
-										<input type="number" id="incomeMultiplier" min="1" max="5" step="0.1"
-											value="3.0">
-										<small class="form-hint">Income must be rent × this value</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- Credit Score -->
-							<div class="config-subsection">
-								<h5>Credit Score Requirements</h5>
-								<div class="form-row">
-									<div class="form-group" style="flex: 2;">
-										<label for="creditScoreMode">Credit Check Mode</label>
-										<select id="creditScoreMode">
-											<option value="ignore">Ignore (No Filter)</option>
-											<option value="strict">Strict (Must Meet)</option>
-											<option value="lenient">Lenient (Prefer Meeting)</option>
-										</select>
-									</div>
-									<div class="form-group" style="flex: 1;">
-										<label for="minCreditScore">Minimum Score</label>
-										<input type="number" id="minCreditScore" min="300" max="850" value="600">
-										<small class="form-hint">Minimum acceptable credit score</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- Background Check -->
-							<div class="config-subsection">
-								<h5>Background Check Requirements</h5>
-								<div class="form-group">
-									<label for="backgroundCheckMode">Background Check Mode</label>
-									<select id="backgroundCheckMode">
-										<option value="ignore">Ignore (No Filter)</option>
-										<option value="strict">Strict (Must Pass)</option>
-										<option value="lenient">Lenient (Prefer Passing)</option>
-									</select>
-									<small class="form-hint">How to handle background check requirements</small>
-								</div>
-							</div>
-						</div>
-
-						<!-- Section 2: Scoring Weights -->
-						<div class="config-section">
-							<h4 class="config-section-title">⭐ Scoring Weights</h4>
-
-							<!-- Price Match Scoring -->
-							<div class="config-subsection">
-								<h5>Price Match Scoring</h5>
-								<div class="form-row">
-									<div class="form-group">
-										<label for="priceMatchPerfectScore">Perfect Match Score</label>
-										<input type="number" id="priceMatchPerfectScore" min="0" max="100" value="25">
-										<small class="form-hint">Points for rent within budget</small>
-									</div>
-									<div class="form-group">
-										<label for="priceMatchCloseScore">Close Match Score</label>
-										<input type="number" id="priceMatchCloseScore" min="0" max="100" value="10">
-										<small class="form-hint">Points for rent within tolerance</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- Move-In Date Bonus -->
-							<div class="config-subsection">
-								<h5>Move-In Date Bonus</h5>
-								<div class="form-group">
-									<label for="moveInDateBonus">Bonus Points</label>
-									<input type="number" id="moveInDateBonus" min="0" max="50" value="10">
-									<small class="form-hint">Points for available by desired date</small>
-								</div>
-							</div>
-
-							<!-- Commission Bonus -->
-							<div class="config-subsection">
-								<h5>Commission Bonus</h5>
-								<div class="form-row">
-									<div class="form-group">
-										<label for="commissionThresholdPct">Threshold (%)</label>
-										<input type="number" id="commissionThresholdPct" min="0" max="10" step="0.1"
-											value="4.0">
-										<small class="form-hint">Minimum commission % for bonus</small>
-									</div>
-									<div class="form-group">
-										<label for="commissionBaseBonus">Base Bonus</label>
-										<input type="number" id="commissionBaseBonus" min="0" max="200" value="80">
-										<small class="form-hint">Points for meeting threshold</small>
-									</div>
-									<div class="form-group">
-										<label for="commissionScaleBonus">Scale Bonus</label>
-										<input type="number" id="commissionScaleBonus" min="0" max="10" value="1">
-										<small class="form-hint">Points per % above threshold</small>
-									</div>
-								</div>
-							</div>
-
-							<!-- PUMI Bonus -->
-							<div class="config-subsection">
-								<h5>PUMI Bonus</h5>
-								<div class="form-group">
-									<label for="pumiBonus">Bonus Points</label>
-									<input type="number" id="pumiBonus" min="0" max="100" value="20">
-									<small class="form-hint">Points for PUMI properties</small>
-								</div>
-							</div>
-
-							<!-- Leniency Bonus -->
-							<div class="config-subsection">
-								<h5>Leniency Factor Bonus</h5>
-								<div class="form-group">
-									<label class="checkbox-label">
-										<input type="checkbox" id="useLeniencyFactor" checked>
-										<span class="checkmark"></span>
-										Use Leniency Factor in Scoring
-									</label>
-								</div>
-								<div class="form-row">
-									<div class="form-group">
-										<label for="leniencyBonusLow">Low Leniency</label>
-										<input type="number" id="leniencyBonusLow" min="0" max="50" value="0">
-										<small class="form-hint">Points for low leniency</small>
-									</div>
-									<div class="form-group">
-										<label for="leniencyBonusMedium">Medium Leniency</label>
-										<input type="number" id="leniencyBonusMedium" min="0" max="50" value="5">
-										<small class="form-hint">Points for medium leniency</small>
-									</div>
-									<div class="form-group">
-										<label for="leniencyBonusHigh">High Leniency</label>
-										<input type="number" id="leniencyBonusHigh" min="0" max="50" value="10">
-										<small class="form-hint">Points for high leniency</small>
-									</div>
-								</div>
-							</div>
-						</div>
-
-						<!-- Section 3: Display Settings -->
-						<div class="config-section">
-							<h4 class="config-section-title">📊 Display Settings</h4>
-
-							<div class="form-row">
-								<div class="form-group">
-									<label for="maxPropertiesToShow">Max Properties to Show</label>
-									<input type="number" id="maxPropertiesToShow" min="1" max="50" value="10">
-									<small class="form-hint">Maximum number of matches to return</small>
-								</div>
-								<div class="form-group">
-									<label for="minScoreThreshold">Minimum Score Threshold</label>
-									<input type="number" id="minScoreThreshold" min="0" max="200" value="0">
-									<small class="form-hint">Minimum score required to show</small>
-								</div>
-								<div class="form-group">
-									<label for="sortBy">Sort Results By</label>
-									<select id="sortBy">
-										<option value="score">Score (Highest First)</option>
-										<option value="rent_low">Rent (Lowest First)</option>
-										<option value="rent_high">Rent (Highest First)</option>
-										<option value="availability">Availability (Soonest First)</option>
-									</select>
-								</div>
-							</div>
-						</div>
-
-					</form>
-				</div>
-				<div class="modal-footer">
-					<button id="resetConfigToDefaults" class="btn btn-secondary" style="margin-right: auto;">Reset to
-						Defaults</button>
-					<button id="cancelSmartMatchConfig" class="btn btn-secondary">Cancel</button>
-					<button id="saveSmartMatchConfig" class="btn btn-primary">Save Configuration</button>
-				</div>
+	<!-- Test Smart Match Modal -->
+	<div id="testSmartMatchModal" class="modal hidden" role="dialog" aria-labelledby="testModalTitle" aria-modal="true">
+		<div class="modal-card" style="max-width: 600px;">
+			<div class="modal-header">
+				<h3 id="testModalTitle">🧪 Test Smart Match Configuration</h3>
+				<button id="closeTestSmartMatch" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="modal-body">
+				<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
+					Enter test criteria to preview how your current configuration settings will match properties.
+					This uses your <strong>current form values</strong> (including unsaved changes).
+				</p>
+				<form id="testSmartMatchForm">
+					<div class="form-group">
+						<label for="testBedrooms">Bedrooms</label>
+						<select id="testBedrooms" class="form-select" required>
+							<option value="">Select bedrooms...</option>
+							<option value="0">Studio</option>
+							<option value="1">1 Bedroom</option>
+							<option value="2" selected>2 Bedrooms</option>
+							<option value="3">3 Bedrooms</option>
+							<option value="4">4+ Bedrooms</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="testBathrooms">Bathrooms</label>
+						<select id="testBathrooms" class="form-select" required>
+							<option value="">Select bathrooms...</option>
+							<option value="1">1 Bathroom</option>
+							<option value="1.5">1.5 Bathrooms</option>
+							<option value="2" selected>2 Bathrooms</option>
+							<option value="2.5">2.5 Bathrooms</option>
+							<option value="3">3+ Bathrooms</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="testBudget">Monthly Budget ($)</label>
+						<input type="number" id="testBudget" class="form-input" placeholder="e.g., 2000" min="0"
+							step="50" value="2000" required>
+						<small style="color: #6b7280; font-size: 12px;">Your maximum monthly rent budget</small>
+					</div>
+					<div class="form-group">
+						<label for="testMoveInDate">Desired Move-in Date</label>
+						<input type="date" id="testMoveInDate" class="form-input" required>
+						<small style="color: #6b7280; font-size: 12px;">When you'd like to move in</small>
+					</div>
+					<div class="form-group">
+						<label for="testPets">Pets</label>
+						<select id="testPets" class="form-select" required>
+							<option value="no" selected>No Pets</option>
+							<option value="yes">Has Pets</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="testParking">Parking Needed</label>
+						<select id="testParking" class="form-select" required>
+							<option value="no" selected>No Parking Needed</option>
+							<option value="yes">Parking Required</option>
+						</select>
+					</div>
+					<div class="form-group">
+						<label for="testCity">Preferred City/Area</label>
+						<input type="text" id="testCity" class="form-input" placeholder="e.g., Austin, TX"
+							value="Austin" required>
+						<small style="color: #6b7280; font-size: 12px;">City or area you're looking in</small>
+					</div>
+				</form>
+			</div>
+			<div class="modal-footer">
+				<button id="cancelTestSmartMatch" class="btn btn-secondary">Cancel</button>
+				<button id="runTestSmartMatch" class="btn btn-primary">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+						style="margin-right: 6px;">
+						<polygon points="5 3 19 12 5 21 5 3"></polygon>
+					</svg>
+					Run Test
+				</button>
 			</div>
 		</div>
-
-		<!-- Test Smart Match Modal -->
-		<div id="testSmartMatchModal" class="modal hidden" role="dialog" aria-labelledby="testModalTitle"
-			aria-modal="true">
-			<div class="modal-card" style="max-width: 600px;">
-				<div class="modal-header">
-					<h3 id="testModalTitle">🧪 Test Smart Match Configuration</h3>
-					<button id="closeTestSmartMatch" class="icon-btn" aria-label="Close">×</button>
-				</div>
-				<div class="modal-body">
-					<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
-						Enter test criteria to preview how your current configuration settings will match properties.
-						This uses your <strong>current form values</strong> (including unsaved changes).
-					</p>
-					<form id="testSmartMatchForm">
-						<div class="form-group">
-							<label for="testBedrooms">Bedrooms</label>
-							<select id="testBedrooms" class="form-select" required>
-								<option value="">Select bedrooms...</option>
-								<option value="0">Studio</option>
-								<option value="1">1 Bedroom</option>
-								<option value="2" selected>2 Bedrooms</option>
-								<option value="3">3 Bedrooms</option>
-								<option value="4">4+ Bedrooms</option>
-							</select>
-						</div>
-						<div class="form-group">
-							<label for="testBathrooms">Bathrooms</label>
-							<select id="testBathrooms" class="form-select" required>
-								<option value="">Select bathrooms...</option>
-								<option value="1">1 Bathroom</option>
-								<option value="1.5">1.5 Bathrooms</option>
-								<option value="2" selected>2 Bathrooms</option>
-								<option value="2.5">2.5 Bathrooms</option>
-								<option value="3">3+ Bathrooms</option>
-							</select>
-						</div>
-						<div class="form-group">
-							<label for="testBudget">Monthly Budget ($)</label>
-							<input type="number" id="testBudget" class="form-input" placeholder="e.g., 2000" min="0"
-								step="50" value="2000" required>
-							<small style="color: #6b7280; font-size: 12px;">Your maximum monthly rent budget</small>
-						</div>
-						<div class="form-group">
-							<label for="testMoveInDate">Desired Move-in Date</label>
-							<input type="date" id="testMoveInDate" class="form-input" required>
-							<small style="color: #6b7280; font-size: 12px;">When you'd like to move in</small>
-						</div>
-						<div class="form-group">
-							<label for="testPets">Pets</label>
-							<select id="testPets" class="form-select" required>
-								<option value="no" selected>No Pets</option>
-								<option value="yes">Has Pets</option>
-							</select>
-						</div>
-						<div class="form-group">
-							<label for="testParking">Parking Needed</label>
-							<select id="testParking" class="form-select" required>
-								<option value="no" selected>No Parking Needed</option>
-								<option value="yes">Parking Required</option>
-							</select>
-						</div>
-						<div class="form-group">
-							<label for="testCity">Preferred City/Area</label>
-							<input type="text" id="testCity" class="form-input" placeholder="e.g., Austin, TX"
-								value="Austin" required>
-							<small style="color: #6b7280; font-size: 12px;">City or area you're looking in</small>
-						</div>
-					</form>
-				</div>
-				<div class="modal-footer">
-					<button id="cancelTestSmartMatch" class="btn btn-secondary">Cancel</button>
-					<button id="runTestSmartMatch" class="btn btn-primary">
-						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-							stroke-width="2" style="margin-right: 6px;">
-							<polygon points="5 3 19 12 5 21 5 3"></polygon>
-						</svg>
-						Run Test
-					</button>
-				</div>
-			</div>
-		</div>
+	</div>
 
 	</div><!-- End mainAppContent -->
 

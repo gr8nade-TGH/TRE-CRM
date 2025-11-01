@@ -350,8 +350,11 @@ export function createMatchCounter(options = {}) {
 				`}
 			</div>
 			<div class="mc-counter-help">
-				Real-time count based on current filter settings
+				Real-time preview • Updates automatically as you adjust filters • Click save to apply changes
 			</div>
+			<button type="button" class="mc-counter-save-btn" id="topSaveConfigBtn">
+				💾 SAVE CONFIGURATION
+			</button>
 		</div>
 	`;
 }

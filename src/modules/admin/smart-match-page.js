@@ -165,11 +165,19 @@ function setupEventListeners() {
 	const form = document.getElementById('smartMatchConfigForm');
 	const resetBtn = document.getElementById('resetConfigBtn');
 	const testBtn = document.getElementById('testSmartMatchBtn');
+	const topSaveBtn = document.getElementById('topSaveConfigBtn');
 
 	// Form submit handler
 	if (form) {
 		form.addEventListener('submit', async (e) => {
 			e.preventDefault();
+			await handleSave();
+		});
+	}
+
+	// Top save button handler (in match counter)
+	if (topSaveBtn) {
+		topSaveBtn.addEventListener('click', async () => {
 			await handleSave();
 		});
 	}
