@@ -1042,6 +1042,14 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	// Manage button - navigate to management page
+	const manageBtn = document.getElementById('manageBtn');
+	if (manageBtn) {
+		manageBtn.addEventListener('click', () => {
+			window.location.hash = '#/manage';
+		});
+	}
+
 	// Profile button and modal
 	const profileBtn = document.getElementById('profileBtn');
 	const profileModal = document.getElementById('profileModal');

@@ -50,9 +50,9 @@ export function route(deps) {
 	}
 
 	const hash = location.hash.slice(1);
-	
+
 	// public showcase route: #/sc_xxxxxx
-	if (hash.startsWith('/sc_')){
+	if (hash.startsWith('/sc_')) {
 		// render public showcase view (read-only)
 		document.body.innerHTML = `
 			<link rel="stylesheet" href="styles.css" />
@@ -111,6 +111,14 @@ export function route(deps) {
 		show(document.getElementById('adminView'));
 		setRoleLabel('admin');
 		renderAdmin();
+	} else if (hash === '/manage') {
+		state.currentPage = 'manage';
+		show(document.getElementById('manageView'));
+		setRoleLabel('manage');
+		// Initialize Smart Match Customizer if available
+		if (window.Admin && window.Admin.initializeCustomizer) {
+			await window.Admin.initializeCustomizer();
+		}
 	} else if (hash === '/bugs') {
 		state.currentPage = 'bugs';
 		show(document.getElementById('bugsView'));

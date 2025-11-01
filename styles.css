@@ -208,6 +208,28 @@ body {
 	gap: 12px;
 }
 
+.btn-icon {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 8px;
+	background: rgba(255, 255, 255, 0.1);
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	color: #fff;
+}
+
+.btn-icon:hover {
+	background: rgba(255, 255, 255, 0.2);
+	transform: translateY(-1px);
+}
+
+.btn-icon svg {
+	display: block;
+}
+
 .user-info {
 	display: flex;
 	align-items: center;
