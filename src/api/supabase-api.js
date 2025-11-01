@@ -7,7 +7,7 @@
 /**
  * Get Supabase client from window (initialized in index.html)
  */
-function getSupabase() {
+export function getSupabase() {
     if (!window.supabase) {
         throw new Error('Supabase client not initialized');
     }
