@@ -1,12 +1,13 @@
 /**
  * Smart Match Configuration Page Module
  * Handles the full-page Smart Match configuration interface
- * 
+ *
  * @module admin/smart-match-page
  */
 
 import { getActiveConfig, updateActiveConfig, resetToDefaults } from '../../api/smart-match-config-api.js';
 import { DEFAULT_SMART_MATCH_CONFIG } from '../../utils/smart-match-config-defaults.js';
+import { initializeMissionControlUI } from './mission-control-ui.js';
 
 /**
  * Initialize the Smart Match configuration page
@@ -29,6 +30,9 @@ export async function initializeConfigPage() {
 		// Set up event listeners
 		setupEventListeners();
 
+		// Initialize mission control UI components (sliders, toggles)
+		initializeMissionControlUI();
+
 		console.log('✅ Smart Match Configuration Page initialized');
 	} catch (error) {
 		console.error('❌ Error initializing config page:', error);
@@ -45,21 +49,21 @@ export async function initializeConfigPage() {
 function updateSummaryCard(config) {
 	// Bedroom mode
 	const bedroomModeMap = {
-		'exact': 'Exact Match',
-		'flexible': 'Allow ±1',
-		'minimum': 'Minimum'
+		'exact': 'EXACT',
+		'flexible': '±1',
+		'minimum': 'MIN'
 	};
 	document.getElementById('summaryBedroomMode').textContent =
-		bedroomModeMap[config.bedroom_match_mode] || 'Exact Match';
+		bedroomModeMap[config.bedroom_match_mode] || 'EXACT';
 
 	// Bathroom mode
 	const bathroomModeMap = {
-		'exact': 'Exact Match',
-		'flexible': 'Allow ±0.5',
-		'minimum': 'Minimum'
+		'exact': 'EXACT',
+		'flexible': '±0.5',
+		'minimum': 'MIN'
 	};
 	document.getElementById('summaryBathroomMode').textContent =
-		bathroomModeMap[config.bathroom_match_mode] || 'Exact Match';
+		bathroomModeMap[config.bathroom_match_mode] || 'EXACT';
 
 	// Rent tolerance
 	document.getElementById('summaryRentTolerance').textContent =
@@ -71,8 +75,8 @@ function updateSummaryCard(config) {
 
 	// Last modified
 	const lastModified = config.updated_at
-		? new Date(config.updated_at).toLocaleDateString()
-		: 'Never';
+		? new Date(config.updated_at).toLocaleDateString().toUpperCase()
+		: 'NEVER';
 	document.getElementById('summaryLastModified').textContent = lastModified;
 }
 
@@ -85,8 +89,23 @@ function populateForm(config) {
 	document.getElementById('bedroomMatchMode').value = config.bedroom_match_mode || 'exact';
 	document.getElementById('bathroomMatchMode').value = config.bathroom_match_mode || 'exact';
 	document.getElementById('rentTolerancePercent').value = config.rent_tolerance_percent || 20;
-	document.getElementById('petPolicyStrict').value = String(config.pet_policy_strict ?? true);
-	document.getElementById('parkingRequired').value = String(config.parking_required ?? false);
+
+	// Pet Policy Toggle
+	const petPolicyValue = config.pet_policy_strict ?? true;
+	document.getElementById('petPolicyStrict').value = String(petPolicyValue);
+	const petPolicyToggle = document.querySelector('[data-input="petPolicyStrict"]');
+	if (petPolicyToggle) {
+		petPolicyToggle.classList.toggle('active', petPolicyValue);
+	}
+
+	// Parking Required Toggle
+	const parkingValue = config.parking_required ?? false;
+	document.getElementById('parkingRequired').value = String(parkingValue);
+	const parkingToggle = document.querySelector('[data-input="parkingRequired"]');
+	if (parkingToggle) {
+		parkingToggle.classList.toggle('active', parkingValue);
+	}
+
 	document.getElementById('availabilityWindowDays').value = config.availability_window_days || 30;
 
 	// Scoring Settings

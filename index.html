@@ -8,6 +8,7 @@
 	<script src="https://js.sentry-cdn.com/3f73a6241615ff5791c9704729e18948.min.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="styles.css" />
 	<link rel="stylesheet" href="auth-styles.css" />
+	<link rel="stylesheet" href="src/styles/mission-control.css" />
 
 	<!-- Vercel Speed Insights (CDN) -->
 	<script>
@@ -930,7 +931,7 @@
 			</section>
 
 			<!-- Route: #/manage -->
-			<section id="manageView" class="route-view hidden">
+			<section id="manageView" class="route-view hidden mission-control-theme">
 				<div class="view-bar mobile-only">
 					<h1>⚙️ Smart Match Configuration</h1>
 					<div id="manageRoleLabel" class="role-label"></div>
@@ -938,47 +939,48 @@
 
 				<div class="page-container">
 					<div class="smart-match-config-page">
-						<div class="config-page-header">
-							<h1 class="page-title">🎯 Smart Match Configuration</h1>
-							<p class="page-subtitle">Customize how properties are filtered, scored, and displayed for
-								leads</p>
+						<!-- Mission Control Header -->
+						<div class="mc-header">
+							<h1 class="mc-title">⚡ SMART MATCH CONTROL CENTER</h1>
+							<p class="mc-subtitle">Advanced Algorithm Configuration & Tuning System</p>
 						</div>
 
-						<!-- Current Configuration Summary -->
-						<div class="config-summary-card">
-							<div class="config-summary-header">
-								<div class="config-summary-title-group">
-									<h3>Current Configuration</h3>
-									<span class="config-status-badge active" id="configStatusBadge">Active</span>
+						<!-- Current Configuration Summary Panel -->
+						<div class="mc-summary-panel">
+							<div class="mc-summary-header">
+								<div class="mc-summary-title-group">
+									<h3>SYSTEM STATUS</h3>
+									<span class="mc-status-indicator" id="configStatusBadge">
+										<span>ONLINE</span>
+									</span>
 								</div>
-								<button type="button" id="testSmartMatchBtn" class="btn btn-test">
-									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-										stroke-width="2">
+								<button type="button" id="testSmartMatchBtn" class="mc-btn mc-btn-test">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<polygon points="5 3 19 12 5 21 5 3"></polygon>
 									</svg>
-									Test Smart Match
+									<span>RUN TEST</span>
 								</button>
 							</div>
-							<div class="config-summary-grid">
-								<div class="config-summary-item">
-									<span class="summary-label">Bedroom Matching</span>
-									<span class="summary-value" id="summaryBedroomMode">Exact Match</span>
+							<div class="mc-summary-grid">
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">BEDROOM MODE</span>
+									<span class="mc-summary-value" id="summaryBedroomMode">EXACT</span>
 								</div>
-								<div class="config-summary-item">
-									<span class="summary-label">Bathroom Matching</span>
-									<span class="summary-value" id="summaryBathroomMode">Exact Match</span>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">BATHROOM MODE</span>
+									<span class="mc-summary-value" id="summaryBathroomMode">EXACT</span>
 								</div>
-								<div class="config-summary-item">
-									<span class="summary-label">Rent Tolerance</span>
-									<span class="summary-value" id="summaryRentTolerance">±20%</span>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">RENT TOLERANCE</span>
+									<span class="mc-summary-value" id="summaryRentTolerance">±20%</span>
 								</div>
-								<div class="config-summary-item">
-									<span class="summary-label">Max Properties</span>
-									<span class="summary-value" id="summaryMaxProperties">10</span>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">MAX RESULTS</span>
+									<span class="mc-summary-value" id="summaryMaxProperties">10</span>
 								</div>
-								<div class="config-summary-item">
-									<span class="summary-label">Last Modified</span>
-									<span class="summary-value" id="summaryLastModified">Never</span>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">LAST SYNC</span>
+									<span class="mc-summary-value" id="summaryLastModified">NEVER</span>
 								</div>
 							</div>
 						</div>
@@ -987,197 +989,358 @@
 						<form id="smartMatchConfigForm" class="config-form">
 
 							<!-- Filtering Settings Section -->
-							<div class="config-section">
-								<div class="config-section-header">
-									<h2>🔍 Filtering Settings</h2>
-									<p class="section-description">Control which properties are included in Smart Match
-										results</p>
+							<div class="mc-control-panel">
+								<div class="mc-panel-header">
+									<div class="mc-panel-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+										</svg>
+									</div>
+									<div class="mc-panel-title-group">
+										<h2>FILTERING CONTROLS</h2>
+										<p class="mc-panel-description">Configure property inclusion criteria and
+											matching rules</p>
+									</div>
 								</div>
 
-								<div class="config-grid">
+								<div class="mc-control-grid">
 									<!-- Bedroom Matching -->
-									<div class="config-field">
-										<label for="bedroomMatchMode" class="field-label">Bedroom Matching Mode</label>
-										<select id="bedroomMatchMode" class="field-input">
-											<option value="exact">Exact Match Only</option>
-											<option value="flexible">Allow ±1 Bedroom</option>
-											<option value="minimum">Minimum Required</option>
-										</select>
-										<p class="field-help">How strictly to match bedroom requirements</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label" for="bedroomMatchMode">Bedroom Matching
+											Mode</label>
+										<div class="mc-select-wrapper">
+											<select id="bedroomMatchMode" class="mc-select">
+												<option value="exact">Exact Match Only</option>
+												<option value="flexible">Allow ±1 Bedroom</option>
+												<option value="minimum">Minimum Required</option>
+											</select>
+										</div>
+										<p class="mc-control-help">How strictly to match bedroom requirements</p>
 									</div>
 
 									<!-- Bathroom Matching -->
-									<div class="config-field">
-										<label for="bathroomMatchMode" class="field-label">Bathroom Matching
+									<div class="mc-control-field">
+										<label class="mc-control-label" for="bathroomMatchMode">Bathroom Matching
 											Mode</label>
-										<select id="bathroomMatchMode" class="field-input">
-											<option value="exact">Exact Match Only</option>
-											<option value="flexible">Allow ±0.5 Bathroom</option>
-											<option value="minimum">Minimum Required</option>
-										</select>
-										<p class="field-help">How strictly to match bathroom requirements</p>
+										<div class="mc-select-wrapper">
+											<select id="bathroomMatchMode" class="mc-select">
+												<option value="exact">Exact Match Only</option>
+												<option value="flexible">Allow ±0.5 Bathroom</option>
+												<option value="minimum">Minimum Required</option>
+											</select>
+										</div>
+										<p class="mc-control-help">How strictly to match bathroom requirements</p>
 									</div>
 
 									<!-- Rent Tolerance -->
-									<div class="config-field">
-										<label for="rentTolerancePercent" class="field-label">Rent Tolerance (%)</label>
-										<input type="number" id="rentTolerancePercent" class="field-input" min="0"
-											max="100" step="5" value="20">
-										<p class="field-help">Percentage above/below budget to include (e.g., 20 = ±20%)
-										</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Rent Tolerance</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">±20%</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 20%"></div>
+													<input type="range" id="rentTolerancePercent" class="mc-slider"
+														min="0" max="100" step="5" value="20" data-suffix="%"
+														data-prefix="±">
+													<div class="mc-slider-thumb" style="left: 20%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0%</span>
+												<span class="mc-slider-label">100%</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Percentage above/below budget to include</p>
 									</div>
 
 									<!-- Pet Policy Matching -->
-									<div class="config-field">
-										<label for="petPolicyStrict" class="field-label">Pet Policy Enforcement</label>
-										<select id="petPolicyStrict" class="field-input">
-											<option value="true">Strict (Must Match)</option>
-											<option value="false">Flexible (Show All)</option>
-										</select>
-										<p class="field-help">Whether to strictly enforce pet policy requirements</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Pet Policy Enforcement</label>
+										<div class="mc-toggle-wrapper">
+											<div class="mc-toggle active" data-input="petPolicyStrict"></div>
+											<span class="mc-toggle-label">Strict Enforcement</span>
+											<input type="hidden" id="petPolicyStrict" value="true">
+										</div>
+										<p class="mc-control-help">Strictly enforce pet policy requirements</p>
 									</div>
 
 									<!-- Parking Matching -->
-									<div class="config-field">
-										<label for="parkingRequired" class="field-label">Parking Requirement</label>
-										<select id="parkingRequired" class="field-input">
-											<option value="true">Required (Must Have)</option>
-											<option value="false">Optional (Preferred)</option>
-										</select>
-										<p class="field-help">Whether parking is mandatory or just preferred</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Parking Requirement</label>
+										<div class="mc-toggle-wrapper">
+											<div class="mc-toggle" data-input="parkingRequired"></div>
+											<span class="mc-toggle-label">Optional</span>
+											<input type="hidden" id="parkingRequired" value="false">
+										</div>
+										<p class="mc-control-help">Whether parking is mandatory or preferred</p>
 									</div>
 
 									<!-- Availability Filter -->
-									<div class="config-field">
-										<label for="availabilityWindowDays" class="field-label">Availability Window
-											(Days)</label>
-										<input type="number" id="availabilityWindowDays" class="field-input" min="0"
-											max="365" step="7" value="30">
-										<p class="field-help">How many days before/after move-in date to include
-											properties</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Availability Window</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">30 days</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 8.2%"></div>
+													<input type="range" id="availabilityWindowDays" class="mc-slider"
+														min="0" max="365" step="7" value="30" data-suffix=" days">
+													<div class="mc-slider-thumb" style="left: 8.2%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 days</span>
+												<span class="mc-slider-label">365 days</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Days before/after move-in date to include properties
+										</p>
 									</div>
 								</div>
 							</div>
 
 							<!-- Scoring Settings Section -->
-							<div class="config-section">
-								<div class="config-section-header">
-									<h2>⭐ Scoring Settings</h2>
-									<p class="section-description">Adjust how properties are ranked and prioritized</p>
+							<div class="mc-control-panel">
+								<div class="mc-panel-header">
+									<div class="mc-panel-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<polygon
+												points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+											</polygon>
+										</svg>
+									</div>
+									<div class="mc-panel-title-group">
+										<h2>SCORING ALGORITHM</h2>
+										<p class="mc-panel-description">Adjust property ranking weights and
+											prioritization factors</p>
+									</div>
 								</div>
 
-								<div class="config-grid">
+								<div class="mc-control-grid">
 									<!-- Price Match Weight -->
-									<div class="config-field">
-										<label for="priceMatchWeight" class="field-label">Price Match Weight</label>
-										<input type="number" id="priceMatchWeight" class="field-input" min="0" max="100"
-											step="5" value="30">
-										<p class="field-help">Importance of matching budget (0-100 points)</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Price Match Weight</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">30 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 30%"></div>
+													<input type="range" id="priceMatchWeight" class="mc-slider" min="0"
+														max="100" step="5" value="30" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 30%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Importance of matching budget</p>
 									</div>
 
 									<!-- Move-in Date Weight -->
-									<div class="config-field">
-										<label for="moveInDateWeight" class="field-label">Move-in Date Weight</label>
-										<input type="number" id="moveInDateWeight" class="field-input" min="0" max="100"
-											step="5" value="25">
-										<p class="field-help">Importance of matching move-in date (0-100 points)</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Move-in Date Weight</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">25 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 25%"></div>
+													<input type="range" id="moveInDateWeight" class="mc-slider" min="0"
+														max="100" step="5" value="25" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 25%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Importance of matching move-in date</p>
 									</div>
 
 									<!-- Commission Weight -->
-									<div class="config-field">
-										<label for="commissionWeight" class="field-label">Commission Weight</label>
-										<input type="number" id="commissionWeight" class="field-input" min="0" max="100"
-											step="5" value="20">
-										<p class="field-help">Importance of commission percentage (0-100 points)</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Commission Weight</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">20 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 20%"></div>
+													<input type="range" id="commissionWeight" class="mc-slider" min="0"
+														max="100" step="5" value="20" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 20%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Importance of commission percentage</p>
 									</div>
 
 									<!-- PUMI Weight -->
-									<div class="config-field">
-										<label for="pumiWeight" class="field-label">PUMI Weight</label>
-										<input type="number" id="pumiWeight" class="field-input" min="0" max="100"
-											step="5" value="15">
-										<p class="field-help">Importance of PUMI status (0-100 points)</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">PUMI Weight</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">15 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 15%"></div>
+													<input type="range" id="pumiWeight" class="mc-slider" min="0"
+														max="100" step="5" value="15" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 15%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Importance of PUMI status</p>
 									</div>
 
 									<!-- Leniency Weight -->
-									<div class="config-field">
-										<label for="leniencyWeight" class="field-label">Leniency Weight</label>
-										<input type="number" id="leniencyWeight" class="field-input" min="0" max="100"
-											step="5" value="10">
-										<p class="field-help">Bonus for flexible properties (0-100 points)</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Leniency Weight</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">10 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 10%"></div>
+													<input type="range" id="leniencyWeight" class="mc-slider" min="0"
+														max="100" step="5" value="10" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 10%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Bonus for flexible properties</p>
 									</div>
 
 									<!-- Commission Threshold -->
-									<div class="config-field">
-										<label for="commissionThreshold" class="field-label">Commission Threshold
-											(%)</label>
-										<input type="number" id="commissionThreshold" class="field-input" min="0"
-											max="20" step="0.5" value="4.0">
-										<p class="field-help">Minimum commission to receive full points</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Commission Threshold</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">4.0%</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 20%"></div>
+													<input type="range" id="commissionThreshold" class="mc-slider"
+														min="0" max="20" step="0.5" value="4.0" data-suffix="%">
+													<div class="mc-slider-thumb" style="left: 20%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0%</span>
+												<span class="mc-slider-label">20%</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Minimum commission to receive full points</p>
 									</div>
 								</div>
 							</div>
 
 							<!-- Display Settings Section -->
-							<div class="config-section">
-								<div class="config-section-header">
-									<h2>📊 Display Settings</h2>
-									<p class="section-description">Control how results are presented to users</p>
+							<div class="mc-control-panel">
+								<div class="mc-panel-header">
+									<div class="mc-panel-icon">
+										<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+											<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+											<line x1="8" y1="21" x2="16" y2="21"></line>
+											<line x1="12" y1="17" x2="12" y2="21"></line>
+										</svg>
+									</div>
+									<div class="mc-panel-title-group">
+										<h2>DISPLAY SETTINGS</h2>
+										<p class="mc-panel-description">Configure result presentation and output
+											parameters</p>
+									</div>
 								</div>
 
-								<div class="config-grid">
+								<div class="mc-control-grid">
 									<!-- Max Results -->
-									<div class="config-field">
-										<label for="maxResults" class="field-label">Maximum Results</label>
-										<input type="number" id="maxResults" class="field-input" min="1" max="50"
-											step="1" value="10">
-										<p class="field-help">Maximum number of properties to show per lead</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Maximum Results</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">10</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 18%"></div>
+													<input type="range" id="maxResults" class="mc-slider" min="1"
+														max="50" step="1" value="10">
+													<div class="mc-slider-thumb" style="left: 18%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">1</span>
+												<span class="mc-slider-label">50</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Maximum number of properties to show per lead</p>
 									</div>
 
 									<!-- Sort By -->
-									<div class="config-field">
-										<label for="sortBy" class="field-label">Sort Results By</label>
-										<select id="sortBy" class="field-input">
-											<option value="score">Match Score (Highest First)</option>
-											<option value="price_asc">Price (Lowest First)</option>
-											<option value="price_desc">Price (Highest First)</option>
-											<option value="date_newest">Date Added (Newest First)</option>
-										</select>
-										<p class="field-help">Default sorting order for results</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label" for="sortBy">Sort Results By</label>
+										<div class="mc-select-wrapper">
+											<select id="sortBy" class="mc-select">
+												<option value="score">Match Score (Highest First)</option>
+												<option value="price_asc">Price (Lowest First)</option>
+												<option value="price_desc">Price (Highest First)</option>
+												<option value="date_newest">Date Added (Newest First)</option>
+											</select>
+										</div>
+										<p class="mc-control-help">Default sorting order for results</p>
 									</div>
 
 									<!-- Minimum Score -->
-									<div class="config-field">
-										<label for="minScoreThreshold" class="field-label">Minimum Score
-											Threshold</label>
-										<input type="number" id="minScoreThreshold" class="field-input" min="0"
-											max="100" step="5" value="50">
-										<p class="field-help">Minimum match score to include in results (0-100)</p>
+									<div class="mc-control-field">
+										<label class="mc-control-label">Minimum Score Threshold</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">50</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 50%"></div>
+													<input type="range" id="minScoreThreshold" class="mc-slider" min="0"
+														max="100" step="5" value="50">
+													<div class="mc-slider-thumb" style="left: 50%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0</span>
+												<span class="mc-slider-label">100</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Minimum match score to include in results</p>
 									</div>
 								</div>
 							</div>
 
 							<!-- Form Actions -->
-							<div class="config-form-actions">
-								<button type="button" id="resetConfigBtn" class="btn btn-secondary">
-									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-										stroke-width="2">
+							<div class="mc-actions">
+								<button type="button" id="resetConfigBtn" class="mc-btn mc-btn-secondary">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
 										<path d="M21 3v5h-5"></path>
 										<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
 										<path d="M3 21v-5h5"></path>
 									</svg>
-									Reset to Defaults
+									<span>RESET TO DEFAULTS</span>
 								</button>
-								<button type="submit" id="saveConfigBtn" class="btn btn-primary">
-									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-										stroke-width="2">
+								<button type="submit" id="saveConfigBtn" class="mc-btn mc-btn-primary">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 										<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z">
 										</path>
 										<polyline points="17 21 17 13 7 13 7 21"></polyline>
 										<polyline points="7 3 7 8 15 8"></polyline>
 									</svg>
-									Save Configuration
+									<span>SAVE CONFIGURATION</span>
 								</button>
 							</div>
 						</form>
