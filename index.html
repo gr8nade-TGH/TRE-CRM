@@ -1059,35 +1059,26 @@
 
 									<!-- Pet Policy Matching -->
 									<div class="mc-control-field">
-										<label class="mc-control-label">Pet Policy Enforcement</label>
-										<div class="mc-toggle-wrapper">
-											<div class="mc-toggle active" data-input="petPolicyStrict"></div>
-											<span class="mc-toggle-label">Strict Enforcement</span>
-											<input type="hidden" id="petPolicyStrict" value="true">
+										<label class="mc-control-label">Pet Policy Mode</label>
+										<div class="mc-select-wrapper">
+											<select id="petPolicyMode" class="mc-select">
+												<option value="ignore">Ignore (No Filter)</option>
+												<option value="strict">Strict (Must Match)</option>
+												<option value="lenient">Lenient (Prefer Match)</option>
+											</select>
 										</div>
-										<p class="mc-control-help">Strictly enforce pet policy requirements</p>
+										<p class="mc-control-help">How to handle pet policy requirements</p>
 									</div>
 
-									<!-- Parking Matching -->
+									<!-- Move-in Flexibility -->
 									<div class="mc-control-field">
-										<label class="mc-control-label">Parking Requirement</label>
-										<div class="mc-toggle-wrapper">
-											<div class="mc-toggle" data-input="parkingRequired"></div>
-											<span class="mc-toggle-label">Optional</span>
-											<input type="hidden" id="parkingRequired" value="false">
-										</div>
-										<p class="mc-control-help">Whether parking is mandatory or preferred</p>
-									</div>
-
-									<!-- Availability Filter -->
-									<div class="mc-control-field">
-										<label class="mc-control-label">Availability Window</label>
+										<label class="mc-control-label">Move-in Flexibility</label>
 										<div class="mc-slider-wrapper">
 											<div class="mc-slider-display">
 												<div class="mc-slider-value">30 days</div>
 												<div class="mc-slider-track">
 													<div class="mc-slider-fill" style="width: 8.2%"></div>
-													<input type="range" id="availabilityWindowDays" class="mc-slider"
+													<input type="range" id="moveInFlexibilityDays" class="mc-slider"
 														min="0" max="365" step="7" value="30" data-suffix=" days">
 													<div class="mc-slider-thumb" style="left: 8.2%"></div>
 												</div>
@@ -1121,37 +1112,16 @@
 								</div>
 
 								<div class="mc-control-grid">
-									<!-- Price Match Weight -->
+									<!-- Price Match Perfect Score -->
 									<div class="mc-control-field">
-										<label class="mc-control-label">Price Match Weight</label>
-										<div class="mc-slider-wrapper">
-											<div class="mc-slider-display">
-												<div class="mc-slider-value">30 pts</div>
-												<div class="mc-slider-track">
-													<div class="mc-slider-fill" style="width: 30%"></div>
-													<input type="range" id="priceMatchWeight" class="mc-slider" min="0"
-														max="100" step="5" value="30" data-suffix=" pts">
-													<div class="mc-slider-thumb" style="left: 30%"></div>
-												</div>
-											</div>
-											<div class="mc-slider-labels">
-												<span class="mc-slider-label">0 pts</span>
-												<span class="mc-slider-label">100 pts</span>
-											</div>
-										</div>
-										<p class="mc-control-help">Importance of matching budget</p>
-									</div>
-
-									<!-- Move-in Date Weight -->
-									<div class="mc-control-field">
-										<label class="mc-control-label">Move-in Date Weight</label>
+										<label class="mc-control-label">Price Match Perfect Score</label>
 										<div class="mc-slider-wrapper">
 											<div class="mc-slider-display">
 												<div class="mc-slider-value">25 pts</div>
 												<div class="mc-slider-track">
 													<div class="mc-slider-fill" style="width: 25%"></div>
-													<input type="range" id="moveInDateWeight" class="mc-slider" min="0"
-														max="100" step="5" value="25" data-suffix=" pts">
+													<input type="range" id="priceMatchPerfectScore" class="mc-slider"
+														min="0" max="100" step="5" value="25" data-suffix=" pts">
 													<div class="mc-slider-thumb" style="left: 25%"></div>
 												</div>
 											</div>
@@ -1160,60 +1130,18 @@
 												<span class="mc-slider-label">100 pts</span>
 											</div>
 										</div>
-										<p class="mc-control-help">Importance of matching move-in date</p>
+										<p class="mc-control-help">Points for rent within budget</p>
 									</div>
 
-									<!-- Commission Weight -->
+									<!-- Move-in Date Bonus -->
 									<div class="mc-control-field">
-										<label class="mc-control-label">Commission Weight</label>
-										<div class="mc-slider-wrapper">
-											<div class="mc-slider-display">
-												<div class="mc-slider-value">20 pts</div>
-												<div class="mc-slider-track">
-													<div class="mc-slider-fill" style="width: 20%"></div>
-													<input type="range" id="commissionWeight" class="mc-slider" min="0"
-														max="100" step="5" value="20" data-suffix=" pts">
-													<div class="mc-slider-thumb" style="left: 20%"></div>
-												</div>
-											</div>
-											<div class="mc-slider-labels">
-												<span class="mc-slider-label">0 pts</span>
-												<span class="mc-slider-label">100 pts</span>
-											</div>
-										</div>
-										<p class="mc-control-help">Importance of commission percentage</p>
-									</div>
-
-									<!-- PUMI Weight -->
-									<div class="mc-control-field">
-										<label class="mc-control-label">PUMI Weight</label>
-										<div class="mc-slider-wrapper">
-											<div class="mc-slider-display">
-												<div class="mc-slider-value">15 pts</div>
-												<div class="mc-slider-track">
-													<div class="mc-slider-fill" style="width: 15%"></div>
-													<input type="range" id="pumiWeight" class="mc-slider" min="0"
-														max="100" step="5" value="15" data-suffix=" pts">
-													<div class="mc-slider-thumb" style="left: 15%"></div>
-												</div>
-											</div>
-											<div class="mc-slider-labels">
-												<span class="mc-slider-label">0 pts</span>
-												<span class="mc-slider-label">100 pts</span>
-											</div>
-										</div>
-										<p class="mc-control-help">Importance of PUMI status</p>
-									</div>
-
-									<!-- Leniency Weight -->
-									<div class="mc-control-field">
-										<label class="mc-control-label">Leniency Weight</label>
+										<label class="mc-control-label">Move-in Date Bonus</label>
 										<div class="mc-slider-wrapper">
 											<div class="mc-slider-display">
 												<div class="mc-slider-value">10 pts</div>
 												<div class="mc-slider-track">
 													<div class="mc-slider-fill" style="width: 10%"></div>
-													<input type="range" id="leniencyWeight" class="mc-slider" min="0"
+													<input type="range" id="moveInDateBonus" class="mc-slider" min="0"
 														max="100" step="5" value="10" data-suffix=" pts">
 													<div class="mc-slider-thumb" style="left: 10%"></div>
 												</div>
@@ -1223,7 +1151,49 @@
 												<span class="mc-slider-label">100 pts</span>
 											</div>
 										</div>
-										<p class="mc-control-help">Bonus for flexible properties</p>
+										<p class="mc-control-help">Bonus if available by desired date</p>
+									</div>
+
+									<!-- Commission Base Bonus -->
+									<div class="mc-control-field">
+										<label class="mc-control-label">Commission Base Bonus</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">80 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 80%"></div>
+													<input type="range" id="commissionBaseBonus" class="mc-slider"
+														min="0" max="100" step="5" value="80" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 80%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Base bonus for high commission properties</p>
+									</div>
+
+									<!-- PUMI Bonus -->
+									<div class="mc-control-field">
+										<label class="mc-control-label">PUMI Bonus</label>
+										<div class="mc-slider-wrapper">
+											<div class="mc-slider-display">
+												<div class="mc-slider-value">20 pts</div>
+												<div class="mc-slider-track">
+													<div class="mc-slider-fill" style="width: 20%"></div>
+													<input type="range" id="pumiBonus" class="mc-slider" min="0"
+														max="100" step="5" value="20" data-suffix=" pts">
+													<div class="mc-slider-thumb" style="left: 20%"></div>
+												</div>
+											</div>
+											<div class="mc-slider-labels">
+												<span class="mc-slider-label">0 pts</span>
+												<span class="mc-slider-label">100 pts</span>
+											</div>
+										</div>
+										<p class="mc-control-help">Bonus points for PUMI properties</p>
 									</div>
 
 									<!-- Commission Threshold -->
@@ -1234,7 +1204,7 @@
 												<div class="mc-slider-value">4.0%</div>
 												<div class="mc-slider-track">
 													<div class="mc-slider-fill" style="width: 20%"></div>
-													<input type="range" id="commissionThreshold" class="mc-slider"
+													<input type="range" id="commissionThresholdPct" class="mc-slider"
 														min="0" max="20" step="0.5" value="4.0" data-suffix="%">
 													<div class="mc-slider-thumb" style="left: 20%"></div>
 												</div>
@@ -1244,7 +1214,7 @@
 												<span class="mc-slider-label">20%</span>
 											</div>
 										</div>
-										<p class="mc-control-help">Minimum commission to receive full points</p>
+										<p class="mc-control-help">Minimum commission % to receive bonus</p>
 									</div>
 								</div>
 							</div>
@@ -1275,8 +1245,8 @@
 												<div class="mc-slider-value">10</div>
 												<div class="mc-slider-track">
 													<div class="mc-slider-fill" style="width: 18%"></div>
-													<input type="range" id="maxResults" class="mc-slider" min="1"
-														max="50" step="1" value="10">
+													<input type="range" id="maxPropertiesToShow" class="mc-slider"
+														min="1" max="50" step="1" value="10">
 													<div class="mc-slider-thumb" style="left: 18%"></div>
 												</div>
 											</div>
@@ -2887,86 +2857,87 @@
 		</div>
 
 
-	<!-- Test Smart Match Modal -->
-	<div id="testSmartMatchModal" class="modal hidden" role="dialog" aria-labelledby="testModalTitle" aria-modal="true">
-		<div class="modal-card" style="max-width: 600px;">
-			<div class="modal-header">
-				<h3 id="testModalTitle">🧪 Test Smart Match Configuration</h3>
-				<button id="closeTestSmartMatch" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
-					Enter test criteria to preview how your current configuration settings will match properties.
-					This uses your <strong>current form values</strong> (including unsaved changes).
-				</p>
-				<form id="testSmartMatchForm">
-					<div class="form-group">
-						<label for="testBedrooms">Bedrooms</label>
-						<select id="testBedrooms" class="form-select" required>
-							<option value="">Select bedrooms...</option>
-							<option value="0">Studio</option>
-							<option value="1">1 Bedroom</option>
-							<option value="2" selected>2 Bedrooms</option>
-							<option value="3">3 Bedrooms</option>
-							<option value="4">4+ Bedrooms</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="testBathrooms">Bathrooms</label>
-						<select id="testBathrooms" class="form-select" required>
-							<option value="">Select bathrooms...</option>
-							<option value="1">1 Bathroom</option>
-							<option value="1.5">1.5 Bathrooms</option>
-							<option value="2" selected>2 Bathrooms</option>
-							<option value="2.5">2.5 Bathrooms</option>
-							<option value="3">3+ Bathrooms</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="testBudget">Monthly Budget ($)</label>
-						<input type="number" id="testBudget" class="form-input" placeholder="e.g., 2000" min="0"
-							step="50" value="2000" required>
-						<small style="color: #6b7280; font-size: 12px;">Your maximum monthly rent budget</small>
-					</div>
-					<div class="form-group">
-						<label for="testMoveInDate">Desired Move-in Date</label>
-						<input type="date" id="testMoveInDate" class="form-input" required>
-						<small style="color: #6b7280; font-size: 12px;">When you'd like to move in</small>
-					</div>
-					<div class="form-group">
-						<label for="testPets">Pets</label>
-						<select id="testPets" class="form-select" required>
-							<option value="no" selected>No Pets</option>
-							<option value="yes">Has Pets</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="testParking">Parking Needed</label>
-						<select id="testParking" class="form-select" required>
-							<option value="no" selected>No Parking Needed</option>
-							<option value="yes">Parking Required</option>
-						</select>
-					</div>
-					<div class="form-group">
-						<label for="testCity">Preferred City/Area</label>
-						<input type="text" id="testCity" class="form-input" placeholder="e.g., Austin, TX"
-							value="Austin" required>
-						<small style="color: #6b7280; font-size: 12px;">City or area you're looking in</small>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="cancelTestSmartMatch" class="btn btn-secondary">Cancel</button>
-				<button id="runTestSmartMatch" class="btn btn-primary">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-						style="margin-right: 6px;">
-						<polygon points="5 3 19 12 5 21 5 3"></polygon>
-					</svg>
-					Run Test
-				</button>
+		<!-- Test Smart Match Modal -->
+		<div id="testSmartMatchModal" class="modal hidden" role="dialog" aria-labelledby="testModalTitle"
+			aria-modal="true">
+			<div class="modal-card" style="max-width: 600px;">
+				<div class="modal-header">
+					<h3 id="testModalTitle">🧪 Test Smart Match Configuration</h3>
+					<button id="closeTestSmartMatch" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
+						Enter test criteria to preview how your current configuration settings will match properties.
+						This uses your <strong>current form values</strong> (including unsaved changes).
+					</p>
+					<form id="testSmartMatchForm">
+						<div class="form-group">
+							<label for="testBedrooms">Bedrooms</label>
+							<select id="testBedrooms" class="form-select" required>
+								<option value="">Select bedrooms...</option>
+								<option value="0">Studio</option>
+								<option value="1">1 Bedroom</option>
+								<option value="2" selected>2 Bedrooms</option>
+								<option value="3">3 Bedrooms</option>
+								<option value="4">4+ Bedrooms</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testBathrooms">Bathrooms</label>
+							<select id="testBathrooms" class="form-select" required>
+								<option value="">Select bathrooms...</option>
+								<option value="1">1 Bathroom</option>
+								<option value="1.5">1.5 Bathrooms</option>
+								<option value="2" selected>2 Bathrooms</option>
+								<option value="2.5">2.5 Bathrooms</option>
+								<option value="3">3+ Bathrooms</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testBudget">Monthly Budget ($)</label>
+							<input type="number" id="testBudget" class="form-input" placeholder="e.g., 2000" min="0"
+								step="50" value="2000" required>
+							<small style="color: #6b7280; font-size: 12px;">Your maximum monthly rent budget</small>
+						</div>
+						<div class="form-group">
+							<label for="testMoveInDate">Desired Move-in Date</label>
+							<input type="date" id="testMoveInDate" class="form-input" required>
+							<small style="color: #6b7280; font-size: 12px;">When you'd like to move in</small>
+						</div>
+						<div class="form-group">
+							<label for="testPets">Pets</label>
+							<select id="testPets" class="form-select" required>
+								<option value="no" selected>No Pets</option>
+								<option value="yes">Has Pets</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testParking">Parking Needed</label>
+							<select id="testParking" class="form-select" required>
+								<option value="no" selected>No Parking Needed</option>
+								<option value="yes">Parking Required</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testCity">Preferred City/Area</label>
+							<input type="text" id="testCity" class="form-input" placeholder="e.g., Austin, TX"
+								value="Austin" required>
+							<small style="color: #6b7280; font-size: 12px;">City or area you're looking in</small>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="cancelTestSmartMatch" class="btn btn-secondary">Cancel</button>
+					<button id="runTestSmartMatch" class="btn btn-primary">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+							stroke-width="2" style="margin-right: 6px;">
+							<polygon points="5 3 19 12 5 21 5 3"></polygon>
+						</svg>
+						Run Test
+					</button>
+				</div>
 			</div>
 		</div>
-	</div>
 
 	</div><!-- End mainAppContent -->
 

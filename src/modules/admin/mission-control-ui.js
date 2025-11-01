@@ -408,9 +408,8 @@ export function initializeMatchCounter() {
 		'bedroomMatchMode',
 		'bathroomMatchMode',
 		'rentTolerancePercent',
-		'petPolicyStrict',
-		'parkingRequired',
-		'availabilityWindowDays'
+		'petPolicyMode',
+		'moveInFlexibilityDays'
 	];
 
 	filterControls.forEach(controlId => {
@@ -442,23 +441,21 @@ function extractFormData() {
 		// Filtering Settings
 		bedroom_match_mode: document.getElementById('bedroomMatchMode')?.value || 'exact',
 		bathroom_match_mode: document.getElementById('bathroomMatchMode')?.value || 'exact',
-		rent_tolerance_percent: parseFloat(document.getElementById('rentTolerancePercent')?.value || 20),
-		pet_policy_strict: document.getElementById('petPolicyStrict')?.value === 'true',
-		parking_required: document.getElementById('parkingRequired')?.value === 'true',
-		availability_window_days: parseInt(document.getElementById('availabilityWindowDays')?.value || 30),
+		rent_tolerance_percent: parseInt(document.getElementById('rentTolerancePercent')?.value || 20),
+		pet_policy_mode: document.getElementById('petPolicyMode')?.value || 'ignore',
+		move_in_flexibility_days: parseInt(document.getElementById('moveInFlexibilityDays')?.value || 30),
 
 		// Scoring Settings (not used for counting, but needed for config structure)
-		price_match_weight: parseFloat(document.getElementById('priceMatchWeight')?.value || 30),
-		move_in_date_weight: parseFloat(document.getElementById('moveInDateWeight')?.value || 25),
-		commission_weight: parseFloat(document.getElementById('commissionWeight')?.value || 20),
-		pumi_weight: parseFloat(document.getElementById('pumiWeight')?.value || 15),
-		leniency_weight: parseFloat(document.getElementById('leniencyWeight')?.value || 10),
-		commission_threshold: parseFloat(document.getElementById('commissionThreshold')?.value || 4.0),
+		price_match_perfect_score: parseInt(document.getElementById('priceMatchPerfectScore')?.value || 25),
+		move_in_date_bonus: parseInt(document.getElementById('moveInDateBonus')?.value || 10),
+		commission_base_bonus: parseInt(document.getElementById('commissionBaseBonus')?.value || 80),
+		pumi_bonus: parseInt(document.getElementById('pumiBonus')?.value || 20),
+		commission_threshold_pct: parseFloat(document.getElementById('commissionThresholdPct')?.value || 4.0),
 
 		// Display Settings
-		max_results: parseInt(document.getElementById('maxResults')?.value || 10),
+		max_properties_to_show: parseInt(document.getElementById('maxPropertiesToShow')?.value || 10),
 		sort_by: document.getElementById('sortBy')?.value || 'score',
-		min_score_threshold: parseFloat(document.getElementById('minScoreThreshold')?.value || 50)
+		min_score_threshold: parseInt(document.getElementById('minScoreThreshold')?.value || 0)
 	};
 }
 

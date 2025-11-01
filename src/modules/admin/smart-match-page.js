@@ -96,35 +96,18 @@ function populateForm(config) {
 	document.getElementById('bedroomMatchMode').value = config.bedroom_match_mode || 'exact';
 	document.getElementById('bathroomMatchMode').value = config.bathroom_match_mode || 'exact';
 	document.getElementById('rentTolerancePercent').value = config.rent_tolerance_percent || 20;
-
-	// Pet Policy Toggle
-	const petPolicyValue = config.pet_policy_strict ?? true;
-	document.getElementById('petPolicyStrict').value = String(petPolicyValue);
-	const petPolicyToggle = document.querySelector('[data-input="petPolicyStrict"]');
-	if (petPolicyToggle) {
-		petPolicyToggle.classList.toggle('active', petPolicyValue);
-	}
-
-	// Parking Required Toggle
-	const parkingValue = config.parking_required ?? false;
-	document.getElementById('parkingRequired').value = String(parkingValue);
-	const parkingToggle = document.querySelector('[data-input="parkingRequired"]');
-	if (parkingToggle) {
-		parkingToggle.classList.toggle('active', parkingValue);
-	}
-
-	document.getElementById('availabilityWindowDays').value = config.availability_window_days || 30;
+	document.getElementById('petPolicyMode').value = config.pet_policy_mode || 'ignore';
+	document.getElementById('moveInFlexibilityDays').value = config.move_in_flexibility_days || 30;
 
 	// Scoring Settings
-	document.getElementById('priceMatchWeight').value = config.price_match_weight || 30;
-	document.getElementById('moveInDateWeight').value = config.move_in_date_weight || 25;
-	document.getElementById('commissionWeight').value = config.commission_weight || 20;
-	document.getElementById('pumiWeight').value = config.pumi_weight || 15;
-	document.getElementById('leniencyWeight').value = config.leniency_weight || 10;
-	document.getElementById('commissionThreshold').value = config.commission_threshold || 4.0;
+	document.getElementById('priceMatchPerfectScore').value = config.price_match_perfect_score || 25;
+	document.getElementById('moveInDateBonus').value = config.move_in_date_bonus || 10;
+	document.getElementById('commissionBaseBonus').value = config.commission_base_bonus || 80;
+	document.getElementById('pumiBonus').value = config.pumi_bonus || 20;
+	document.getElementById('commissionThresholdPct').value = config.commission_threshold_pct || 4.0;
 
 	// Display Settings
-	document.getElementById('maxResults').value = config.max_results || 10;
+	document.getElementById('maxPropertiesToShow').value = config.max_properties_to_show || 10;
 	document.getElementById('sortBy').value = config.sort_by || 'score';
 	document.getElementById('minScoreThreshold').value = config.min_score_threshold || 50;
 }
@@ -138,23 +121,21 @@ function extractFormData() {
 		// Filtering Settings
 		bedroom_match_mode: document.getElementById('bedroomMatchMode').value,
 		bathroom_match_mode: document.getElementById('bathroomMatchMode').value,
-		rent_tolerance_percent: parseFloat(document.getElementById('rentTolerancePercent').value),
-		pet_policy_strict: document.getElementById('petPolicyStrict').value === 'true',
-		parking_required: document.getElementById('parkingRequired').value === 'true',
-		availability_window_days: parseInt(document.getElementById('availabilityWindowDays').value),
+		rent_tolerance_percent: parseInt(document.getElementById('rentTolerancePercent').value),
+		pet_policy_mode: document.getElementById('petPolicyMode').value,
+		move_in_flexibility_days: parseInt(document.getElementById('moveInFlexibilityDays').value),
 
 		// Scoring Settings
-		price_match_weight: parseFloat(document.getElementById('priceMatchWeight').value),
-		move_in_date_weight: parseFloat(document.getElementById('moveInDateWeight').value),
-		commission_weight: parseFloat(document.getElementById('commissionWeight').value),
-		pumi_weight: parseFloat(document.getElementById('pumiWeight').value),
-		leniency_weight: parseFloat(document.getElementById('leniencyWeight').value),
-		commission_threshold: parseFloat(document.getElementById('commissionThreshold').value),
+		price_match_perfect_score: parseInt(document.getElementById('priceMatchPerfectScore').value),
+		move_in_date_bonus: parseInt(document.getElementById('moveInDateBonus').value),
+		commission_base_bonus: parseInt(document.getElementById('commissionBaseBonus').value),
+		pumi_bonus: parseInt(document.getElementById('pumiBonus').value),
+		commission_threshold_pct: parseFloat(document.getElementById('commissionThresholdPct').value),
 
 		// Display Settings
-		max_results: parseInt(document.getElementById('maxResults').value),
+		max_properties_to_show: parseInt(document.getElementById('maxPropertiesToShow').value),
 		sort_by: document.getElementById('sortBy').value,
-		min_score_threshold: parseFloat(document.getElementById('minScoreThreshold').value)
+		min_score_threshold: parseInt(document.getElementById('minScoreThreshold').value)
 	};
 }
 
