@@ -205,6 +205,9 @@ export async function createConfig(configData, userId) {
  */
 export async function updateConfig(configId, updates, userId) {
     try {
+        console.log('🔍 updateConfig called with ID:', configId);
+        console.log('🔍 updateConfig updates:', updates);
+
         // Validate updates
         const validation = validateConfig(updates);
         if (!validation.valid) {
@@ -219,26 +222,38 @@ export async function updateConfig(configId, updates, userId) {
             last_modified_by: userId
         };
 
+        console.log('🔍 Updates with metadata:', updatesWithMetadata);
+
         const { data, error } = await supabase
             .from('smart_match_config')
             .update(updatesWithMetadata)
             .eq('id', configId)
-            .select()
-            .single();
+            .select();
+
+        console.log('🔍 Update response - data:', data);
+        console.log('🔍 Update response - error:', error);
 
         if (error) {
             console.error('Error updating config:', error);
+            console.error('Error code:', error.code);
+            console.error('Error details:', error.details);
             throw error;
         }
 
-        console.log('Smart Match config updated:', configId);
+        // Check if any rows were updated
+        if (!data || data.length === 0) {
+            throw new Error(`No configuration found with ID: ${configId}. The row may not exist or RLS policy may be blocking the update.`);
+        }
+
+        const updatedConfig = data[0];
+        console.log('✅ Smart Match config updated:', configId);
 
         // Clear cache if this is the active config
-        if (data.is_active) {
+        if (updatedConfig.is_active) {
             clearConfigCache();
         }
 
-        return data;
+        return updatedConfig;
 
     } catch (error) {
         console.error('Error in updateConfig:', error);
@@ -257,6 +272,9 @@ export async function updateActiveConfig(updates, userId) {
     try {
         const activeConfig = await getActiveConfig();
 
+        console.log('🔍 Active config retrieved:', activeConfig);
+        console.log('🔍 Active config ID:', activeConfig?.id);
+
         // If no active config exists in database (returned defaults), create one
         if (!activeConfig || !activeConfig.id) {
             console.log('No active config in database, creating new one...');
@@ -267,6 +285,7 @@ export async function updateActiveConfig(updates, userId) {
             }, userId);
         }
 
+        console.log('🔍 Calling updateConfig with ID:', activeConfig.id);
         return await updateConfig(activeConfig.id, updates, userId);
 
     } catch (error) {
