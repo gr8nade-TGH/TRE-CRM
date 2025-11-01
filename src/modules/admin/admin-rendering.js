@@ -25,8 +25,8 @@ export function resetAuditLogPagination() {
 }
 
 export async function renderAdmin(options) {
-	const { loadUsers, loadAuditLog, renderUsersTable, renderAuditLog } = options;
-	
+	const { loadUsers, loadAuditLog, renderUsersTable, renderAuditLog, initializeCustomizer } = options;
+
 	const currentRole = window.state?.role || 'manager';
 	const adminRoleLabel = document.getElementById('adminRoleLabel');
 
@@ -42,6 +42,15 @@ export async function renderAdmin(options) {
 		console.error('Error loading admin data:', error);
 		// Fallback to mock data for demo
 		console.log('Using mock data for admin page');
+	}
+
+	// Initialize Smart Match Customizer
+	if (initializeCustomizer) {
+		try {
+			await initializeCustomizer();
+		} catch (error) {
+			console.error('Error initializing Smart Match Customizer:', error);
+		}
 	}
 
 	// Always render the table (either with real data or mock data)

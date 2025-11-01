@@ -869,6 +869,52 @@
 						</div>
 					</div>
 
+					<!-- Smart Match Configuration Section -->
+					<div class="admin-section" id="smartMatchConfigSection">
+						<div class="section-header">
+							<h2>🎯 Smart Match Configuration</h2>
+							<button id="openSmartMatchCustomizerBtn" class="btn btn-primary">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path
+										d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+								</svg>
+								Configure Smart Match
+							</button>
+						</div>
+						<div class="config-info-card">
+							<div class="config-info-header">
+								<span class="config-status-badge" id="configStatusBadge">Active</span>
+								<span class="config-name" id="configName">Default Configuration</span>
+							</div>
+							<div class="config-info-body">
+								<div class="config-info-row">
+									<span class="config-label">Bedroom Matching:</span>
+									<span class="config-value" id="configBedroomMode">Exact Match</span>
+								</div>
+								<div class="config-info-row">
+									<span class="config-label">Bathroom Matching:</span>
+									<span class="config-value" id="configBathroomMode">Exact Match</span>
+								</div>
+								<div class="config-info-row">
+									<span class="config-label">Rent Tolerance:</span>
+									<span class="config-value" id="configRentTolerance">±20%</span>
+								</div>
+								<div class="config-info-row">
+									<span class="config-label">Commission Threshold:</span>
+									<span class="config-value" id="configCommissionThreshold">4.0%</span>
+								</div>
+								<div class="config-info-row">
+									<span class="config-label">Max Properties:</span>
+									<span class="config-value" id="configMaxProperties">10</span>
+								</div>
+								<div class="config-info-row">
+									<span class="config-label">Last Modified:</span>
+									<span class="config-value" id="configLastModified">Never</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
 					<!-- Audit Log Section -->
 					<div class="admin-section">
 						<div class="section-header">
@@ -2435,6 +2481,304 @@
 				<div class="modal-footer">
 					<button id="saveListingBtn" class="btn btn-primary">Save Listing</button>
 					<button id="cancelAddListing" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Smart Match Customizer Modal -->
+		<div id="smartMatchCustomizerModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 1000px; width: 95%;">
+				<div class="modal-header">
+					<h3>🎯 Smart Match Customizer</h3>
+					<button id="closeSmartMatchCustomizer" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+					<form id="smartMatchConfigForm">
+						<!-- Configuration Name -->
+						<div class="form-group">
+							<label for="configNameInput">Configuration Name</label>
+							<input type="text" id="configNameInput" placeholder="e.g., Default Configuration"
+								value="Default Configuration">
+						</div>
+
+						<!-- Section 1: Filtering Criteria -->
+						<div class="config-section">
+							<h4 class="config-section-title">🔍 Filtering Criteria</h4>
+
+							<!-- Bedroom Matching -->
+							<div class="config-subsection">
+								<h5>Bedroom Matching</h5>
+								<div class="form-row">
+									<div class="form-group" style="flex: 2;">
+										<label for="bedroomMatchMode">Match Mode</label>
+										<select id="bedroomMatchMode">
+											<option value="exact">Exact Match</option>
+											<option value="flexible">Flexible (±tolerance)</option>
+											<option value="range">No Filter (Show All)</option>
+										</select>
+									</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="bedroomTolerance">Tolerance</label>
+										<input type="number" id="bedroomTolerance" min="0" max="3" value="0">
+										<small class="form-hint">Bedrooms ± this value</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- Bathroom Matching -->
+							<div class="config-subsection">
+								<h5>Bathroom Matching</h5>
+								<div class="form-row">
+									<div class="form-group" style="flex: 2;">
+										<label for="bathroomMatchMode">Match Mode</label>
+										<select id="bathroomMatchMode">
+											<option value="exact">Exact Match</option>
+											<option value="flexible">Flexible (±tolerance)</option>
+											<option value="range">No Filter (Show All)</option>
+										</select>
+									</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="bathroomTolerance">Tolerance</label>
+										<input type="number" id="bathroomTolerance" min="0" max="2" step="0.5"
+											value="0">
+										<small class="form-hint">Bathrooms ± this value</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- Rent Tolerance -->
+							<div class="config-subsection">
+								<h5>Rent Tolerance</h5>
+								<div class="form-row">
+									<div class="form-group" style="flex: 2;">
+										<label for="rentToleranceMode">Tolerance Mode</label>
+										<select id="rentToleranceMode">
+											<option value="percentage">Percentage (±%)</option>
+											<option value="fixed_amount">Fixed Amount (±$)</option>
+										</select>
+									</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="rentTolerancePercent">Percentage</label>
+										<input type="number" id="rentTolerancePercent" min="0" max="100" value="20">
+										<small class="form-hint">% above/below budget</small>
+									</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="rentToleranceFixed">Fixed Amount</label>
+										<input type="number" id="rentToleranceFixed" min="0" step="50" value="0">
+										<small class="form-hint">$ above/below budget</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- Move-In Flexibility -->
+							<div class="config-subsection">
+								<h5>Move-In Date Flexibility</h5>
+								<div class="form-group">
+									<label for="moveInFlexibilityDays">Flexibility (Days)</label>
+									<input type="number" id="moveInFlexibilityDays" min="0" max="90" value="30">
+									<small class="form-hint">Accept units available within this many days of desired
+										move-in date</small>
+								</div>
+							</div>
+
+							<!-- Pet Policy -->
+							<div class="config-subsection">
+								<h5>Pet Policy Filtering</h5>
+								<div class="form-group">
+									<label for="petPolicyMode">Pet Policy Mode</label>
+									<select id="petPolicyMode">
+										<option value="ignore">Ignore (No Filter)</option>
+										<option value="strict">Strict (Must Match)</option>
+										<option value="lenient">Lenient (Prefer Match)</option>
+									</select>
+									<small class="form-hint">How to handle pet policy requirements</small>
+								</div>
+							</div>
+
+							<!-- Income Requirements -->
+							<div class="config-subsection">
+								<h5>Income Requirements</h5>
+								<div class="form-row">
+									<div class="form-group" style="flex: 2;">
+										<label for="incomeRequirementMode">Income Check Mode</label>
+										<select id="incomeRequirementMode">
+											<option value="ignore">Ignore (No Filter)</option>
+											<option value="strict">Strict (Must Meet)</option>
+											<option value="lenient">Lenient (Prefer Meeting)</option>
+										</select>
+									</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="incomeMultiplier">Income Multiplier</label>
+										<input type="number" id="incomeMultiplier" min="1" max="5" step="0.1"
+											value="3.0">
+										<small class="form-hint">Income must be rent × this value</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- Credit Score -->
+							<div class="config-subsection">
+								<h5>Credit Score Requirements</h5>
+								<div class="form-row">
+									<div class="form-group" style="flex: 2;">
+										<label for="creditScoreMode">Credit Check Mode</label>
+										<select id="creditScoreMode">
+											<option value="ignore">Ignore (No Filter)</option>
+											<option value="strict">Strict (Must Meet)</option>
+											<option value="lenient">Lenient (Prefer Meeting)</option>
+										</select>
+									</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="minCreditScore">Minimum Score</label>
+										<input type="number" id="minCreditScore" min="300" max="850" value="600">
+										<small class="form-hint">Minimum acceptable credit score</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- Background Check -->
+							<div class="config-subsection">
+								<h5>Background Check Requirements</h5>
+								<div class="form-group">
+									<label for="backgroundCheckMode">Background Check Mode</label>
+									<select id="backgroundCheckMode">
+										<option value="ignore">Ignore (No Filter)</option>
+										<option value="strict">Strict (Must Pass)</option>
+										<option value="lenient">Lenient (Prefer Passing)</option>
+									</select>
+									<small class="form-hint">How to handle background check requirements</small>
+								</div>
+							</div>
+						</div>
+
+						<!-- Section 2: Scoring Weights -->
+						<div class="config-section">
+							<h4 class="config-section-title">⭐ Scoring Weights</h4>
+
+							<!-- Price Match Scoring -->
+							<div class="config-subsection">
+								<h5>Price Match Scoring</h5>
+								<div class="form-row">
+									<div class="form-group">
+										<label for="priceMatchPerfectScore">Perfect Match Score</label>
+										<input type="number" id="priceMatchPerfectScore" min="0" max="100" value="25">
+										<small class="form-hint">Points for rent within budget</small>
+									</div>
+									<div class="form-group">
+										<label for="priceMatchCloseScore">Close Match Score</label>
+										<input type="number" id="priceMatchCloseScore" min="0" max="100" value="10">
+										<small class="form-hint">Points for rent within tolerance</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- Move-In Date Bonus -->
+							<div class="config-subsection">
+								<h5>Move-In Date Bonus</h5>
+								<div class="form-group">
+									<label for="moveInDateBonus">Bonus Points</label>
+									<input type="number" id="moveInDateBonus" min="0" max="50" value="10">
+									<small class="form-hint">Points for available by desired date</small>
+								</div>
+							</div>
+
+							<!-- Commission Bonus -->
+							<div class="config-subsection">
+								<h5>Commission Bonus</h5>
+								<div class="form-row">
+									<div class="form-group">
+										<label for="commissionThresholdPct">Threshold (%)</label>
+										<input type="number" id="commissionThresholdPct" min="0" max="10" step="0.1"
+											value="4.0">
+										<small class="form-hint">Minimum commission % for bonus</small>
+									</div>
+									<div class="form-group">
+										<label for="commissionBaseBonus">Base Bonus</label>
+										<input type="number" id="commissionBaseBonus" min="0" max="200" value="80">
+										<small class="form-hint">Points for meeting threshold</small>
+									</div>
+									<div class="form-group">
+										<label for="commissionScaleBonus">Scale Bonus</label>
+										<input type="number" id="commissionScaleBonus" min="0" max="10" value="1">
+										<small class="form-hint">Points per % above threshold</small>
+									</div>
+								</div>
+							</div>
+
+							<!-- PUMI Bonus -->
+							<div class="config-subsection">
+								<h5>PUMI Bonus</h5>
+								<div class="form-group">
+									<label for="pumiBonus">Bonus Points</label>
+									<input type="number" id="pumiBonus" min="0" max="100" value="20">
+									<small class="form-hint">Points for PUMI properties</small>
+								</div>
+							</div>
+
+							<!-- Leniency Bonus -->
+							<div class="config-subsection">
+								<h5>Leniency Factor Bonus</h5>
+								<div class="form-group">
+									<label class="checkbox-label">
+										<input type="checkbox" id="useLeniencyFactor" checked>
+										<span class="checkmark"></span>
+										Use Leniency Factor in Scoring
+									</label>
+								</div>
+								<div class="form-row">
+									<div class="form-group">
+										<label for="leniencyBonusLow">Low Leniency</label>
+										<input type="number" id="leniencyBonusLow" min="0" max="50" value="0">
+										<small class="form-hint">Points for low leniency</small>
+									</div>
+									<div class="form-group">
+										<label for="leniencyBonusMedium">Medium Leniency</label>
+										<input type="number" id="leniencyBonusMedium" min="0" max="50" value="5">
+										<small class="form-hint">Points for medium leniency</small>
+									</div>
+									<div class="form-group">
+										<label for="leniencyBonusHigh">High Leniency</label>
+										<input type="number" id="leniencyBonusHigh" min="0" max="50" value="10">
+										<small class="form-hint">Points for high leniency</small>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Section 3: Display Settings -->
+						<div class="config-section">
+							<h4 class="config-section-title">📊 Display Settings</h4>
+
+							<div class="form-row">
+								<div class="form-group">
+									<label for="maxPropertiesToShow">Max Properties to Show</label>
+									<input type="number" id="maxPropertiesToShow" min="1" max="50" value="10">
+									<small class="form-hint">Maximum number of matches to return</small>
+								</div>
+								<div class="form-group">
+									<label for="minScoreThreshold">Minimum Score Threshold</label>
+									<input type="number" id="minScoreThreshold" min="0" max="200" value="0">
+									<small class="form-hint">Minimum score required to show</small>
+								</div>
+								<div class="form-group">
+									<label for="sortBy">Sort Results By</label>
+									<select id="sortBy">
+										<option value="score">Score (Highest First)</option>
+										<option value="rent_low">Rent (Lowest First)</option>
+										<option value="rent_high">Rent (Highest First)</option>
+										<option value="availability">Availability (Soonest First)</option>
+									</select>
+								</div>
+							</div>
+						</div>
+
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="resetConfigToDefaults" class="btn btn-secondary" style="margin-right: auto;">Reset to
+						Defaults</button>
+					<button id="cancelSmartMatchConfig" class="btn btn-secondary">Cancel</button>
+					<button id="saveSmartMatchConfig" class="btn btn-primary">Save Configuration</button>
 				</div>
 			</div>
 		</div>

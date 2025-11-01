@@ -2078,8 +2078,20 @@ export async function getSmartMatches(leadId, limit = 10) {
 
     console.log('🎯 getSmartMatches called with:', { leadId, limit });
 
-    // Import smart match utility (dynamic import to avoid circular dependencies)
-    const { getSmartMatches: calculateSmartMatches } = await import('../utils/smart-match.js');
+    // Import smart match utilities (dynamic import to avoid circular dependencies)
+    const { getSmartMatchesWithConfig } = await import('../utils/smart-match-v2.js');
+    const { getActiveConfig } = await import('./smart-match-config-api.js');
+
+    // Step 0: Fetch active Smart Match configuration
+    let config;
+    try {
+        config = await getActiveConfig();
+        console.log('✅ Using Smart Match configuration:', config.name);
+    } catch (error) {
+        console.warn('⚠️ Failed to load Smart Match config, using defaults:', error);
+        const { DEFAULT_SMART_MATCH_CONFIG } = await import('../utils/smart-match-config-defaults.js');
+        config = DEFAULT_SMART_MATCH_CONFIG;
+    }
 
     // Step 1: Fetch lead with all preferences
     const { data: lead, error: leadError } = await supabase
@@ -2142,8 +2154,8 @@ export async function getSmartMatches(leadId, limit = 10) {
         property: unit.property
     }));
 
-    // Step 4: Calculate smart matches using scoring algorithm
-    const matches = calculateSmartMatches(lead, unitsWithDetails, limit);
+    // Step 4: Calculate smart matches using configurable scoring algorithm
+    const matches = getSmartMatchesWithConfig(lead, unitsWithDetails, config);
 
     console.log('✅ getSmartMatches returning', matches.length, 'properties');
 
@@ -2351,7 +2363,19 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
         }
 
         // Step 3: Get Smart Match properties (unsanitized - we need commission/PUMI for email generation)
-        const { getSmartMatches: calculateSmartMatches } = await import('../utils/smart-match.js');
+        const { getSmartMatchesWithConfig } = await import('../utils/smart-match-v2.js');
+        const { getActiveConfig } = await import('./smart-match-config-api.js');
+
+        // Fetch active Smart Match configuration
+        let config;
+        try {
+            config = await getActiveConfig();
+            console.log('✅ Using Smart Match configuration for email:', config.name);
+        } catch (error) {
+            console.warn('⚠️ Failed to load Smart Match config, using defaults:', error);
+            const { DEFAULT_SMART_MATCH_CONFIG } = await import('../utils/smart-match-config-defaults.js');
+            config = DEFAULT_SMART_MATCH_CONFIG;
+        }
 
         const { data: units, error: unitsError } = await supabase
             .from('units')
@@ -2389,7 +2413,9 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             property: unit.property
         }));
 
-        const matches = calculateSmartMatches(lead, unitsWithDetails, validPropertyCount);
+        // Override max_properties_to_show with validPropertyCount for email
+        const emailConfig = { ...config, max_properties_to_show: validPropertyCount };
+        const matches = getSmartMatchesWithConfig(lead, unitsWithDetails, emailConfig);
 
         if (matches.length === 0) {
             throw new Error('No matching properties found for this lead');

@@ -1,5 +1,65 @@
 // Showcase/Email/Matches Modals Functions - EXACT COPY from script.js
 
+/**
+ * Generate dynamic criteria banner based on active Smart Match configuration
+ */
+async function generateCriteriaBanner(lead) {
+	// Fetch active configuration
+	let config;
+	try {
+		const { getActiveConfig } = await import('../../api/smart-match-config-api.js');
+		config = await getActiveConfig();
+	} catch (error) {
+		console.warn('Failed to load Smart Match config for banner, using defaults:', error);
+		const { DEFAULT_SMART_MATCH_CONFIG } = await import('../../utils/smart-match-config-defaults.js');
+		config = DEFAULT_SMART_MATCH_CONFIG;
+	}
+
+	// Build filter descriptions
+	const bedroomText = lead.bedrooms ? `${lead.bedrooms} bedroom${lead.bedrooms !== '1' ? 's' : ''}` : 'any bedrooms';
+	const bathroomText = lead.bathrooms ? `${lead.bathrooms} bathroom${lead.bathrooms !== '1' ? 's' : ''}` : 'any bathrooms';
+	const locationText = lead.area_of_town || lead.desired_neighborhoods || 'any location';
+
+	// Build bedroom match description
+	let bedroomMatchDesc = bedroomText;
+	if (config.bedroom_match_mode === 'flexible' && config.bedroom_tolerance > 0) {
+		bedroomMatchDesc += ` (±${config.bedroom_tolerance} flexible)`;
+	} else if (config.bedroom_match_mode === 'range') {
+		bedroomMatchDesc += ' (range matching)';
+	}
+
+	// Build bathroom match description
+	let bathroomMatchDesc = bathroomText;
+	if (config.bathroom_match_mode === 'flexible' && config.bathroom_tolerance > 0) {
+		bathroomMatchDesc += ` (±${config.bathroom_tolerance} flexible)`;
+	} else if (config.bathroom_match_mode === 'range') {
+		bathroomMatchDesc += ' (range matching)';
+	}
+
+	return `
+		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: start;">
+			<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
+				<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+			</svg>
+			<div style="flex: 1;">
+				<div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 15px;">🎯 How These Matches Were Selected</div>
+				<div style="font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+					<div style="margin-bottom: 6px;"><strong>Step 1 - Hard Filters:</strong> Only units matching <strong>${bedroomMatchDesc}</strong>, <strong>${bathroomMatchDesc}</strong>, and <strong>${locationText}</strong></div>
+					<div style="margin-bottom: 6px;"><strong>Step 2 - Scoring:</strong></div>
+					<ul style="margin: 4px 0 0 20px; padding: 0;">
+						<li><strong>Price Match:</strong> Up to ${config.price_match_perfect_score} pts (within budget gets full points)</li>
+						<li><strong>Move-in Date:</strong> Up to ${config.move_in_date_bonus} pts (available by desired date)</li>
+						<li><strong>Commission:</strong> Up to ${config.commission_base_bonus}+ pts (${config.commission_threshold_pct}%+ commission gets ${config.commission_base_bonus} pts base, +${config.commission_scale_bonus} pt per % above)</li>
+						<li><strong>PUMI Property:</strong> +${config.pumi_bonus} pts bonus (preferred partner properties)</li>
+						${config.use_leniency_factor ? `<li><strong>Leniency Bonus:</strong> Up to ${config.leniency_bonus_high} pts (flexible properties get bonus points)</li>` : ''}
+					</ul>
+					<div style="margin-top: 6px; font-size: 12px; color: #475569;">💡 Results sorted by ${config.sort_by === 'score' ? 'total score (highest first)' : config.sort_by === 'rent_low' ? 'rent (lowest first)' : config.sort_by === 'rent_high' ? 'rent (highest first)' : 'availability date'}. ${config.min_score_threshold > 0 ? `Minimum score: ${config.min_score_threshold} pts.` : ''}</div>
+				</div>
+			</div>
+		</div>
+	`;
+}
+
 // ---- Matches Modal ----
 export async function openMatches(leadId, options) {
 	const { state, api, show, updateSelectionSummary } = options;
@@ -15,32 +75,8 @@ export async function openMatches(leadId, options) {
 	document.getElementById('leadNameTitle2').textContent = lead.name;
 	document.getElementById('sendLeadName').textContent = lead.name;
 
-	// Add smart match criteria banner
-	const bedroomText = lead.bedrooms ? `${lead.bedrooms} bedroom${lead.bedrooms !== '1' ? 's' : ''}` : 'any bedrooms';
-	const bathroomText = lead.bathrooms ? `${lead.bathrooms} bathroom${lead.bathrooms !== '1' ? 's' : ''}` : 'any bathrooms';
-	const locationText = lead.area_of_town || lead.desired_neighborhoods || 'any location';
-
-	const criteriaBanner = `
-		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: start;">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
-				<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-			</svg>
-			<div style="flex: 1;">
-				<div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 15px;">🎯 How These Matches Were Selected</div>
-				<div style="font-size: 13px; color: #1e3a8a; line-height: 1.6;">
-					<div style="margin-bottom: 6px;"><strong>Step 1 - Hard Filters:</strong> Only units matching <strong>${bedroomText}</strong>, <strong>${bathroomText}</strong>, and <strong>${locationText}</strong></div>
-					<div style="margin-bottom: 6px;"><strong>Step 2 - Scoring:</strong></div>
-					<ul style="margin: 4px 0 0 20px; padding: 0;">
-						<li><strong>Price Match:</strong> Up to 25 pts (within budget gets full points)</li>
-						<li><strong>Move-in Date:</strong> Up to 10 pts (available by desired date)</li>
-						<li><strong>Commission:</strong> Up to 80+ pts (4%+ commission gets 80 pts base, +1 pt per % above)</li>
-						<li><strong>PUMI Property:</strong> +20 pts bonus (preferred partner properties)</li>
-					</ul>
-					<div style="margin-top: 6px; font-size: 12px; color: #475569;">💡 Results sorted by total score (highest first). Commission heavily weighted to prioritize your earnings.</div>
-				</div>
-			</div>
-		</div>
-	`;
+	// Add dynamic smart match criteria banner
+	const criteriaBanner = await generateCriteriaBanner(lead);
 
 	grid.innerHTML = criteriaBanner;
 	list.forEach(item => {
