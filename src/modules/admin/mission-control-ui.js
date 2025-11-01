@@ -10,10 +10,10 @@
  */
 export function initializeMissionControlUI() {
 	console.log('🎮 Initializing Mission Control UI...');
-	
+
 	initializeSliders();
 	initializeToggles();
-	
+
 	console.log('✅ Mission Control UI initialized');
 }
 
@@ -22,40 +22,40 @@ export function initializeMissionControlUI() {
  */
 function initializeSliders() {
 	const sliders = document.querySelectorAll('.mc-slider');
-	
+
 	sliders.forEach(slider => {
 		const wrapper = slider.closest('.mc-slider-wrapper');
 		if (!wrapper) return;
-		
+
 		const valueDisplay = wrapper.querySelector('.mc-slider-value');
 		const fill = wrapper.querySelector('.mc-slider-fill');
 		const thumb = wrapper.querySelector('.mc-slider-thumb');
 		const track = wrapper.querySelector('.mc-slider-track');
-		
+
 		if (!valueDisplay || !fill || !thumb || !track) return;
-		
+
 		// Update slider display
 		const updateSlider = () => {
 			const value = parseFloat(slider.value);
 			const min = parseFloat(slider.min) || 0;
 			const max = parseFloat(slider.max) || 100;
 			const percentage = ((value - min) / (max - min)) * 100;
-			
+
 			// Update value display
 			const suffix = slider.dataset.suffix || '';
 			const prefix = slider.dataset.prefix || '';
 			valueDisplay.textContent = `${prefix}${value}${suffix}`;
-			
+
 			// Update fill bar
 			fill.style.width = `${percentage}%`;
-			
+
 			// Update thumb position
 			thumb.style.left = `${percentage}%`;
 		};
-		
+
 		// Initialize
 		updateSlider();
-		
+
 		// Update on input
 		slider.addEventListener('input', updateSlider);
 	});
@@ -66,27 +66,27 @@ function initializeSliders() {
  */
 function initializeToggles() {
 	const toggles = document.querySelectorAll('.mc-toggle');
-	
+
 	toggles.forEach(toggle => {
 		const input = toggle.dataset.input;
 		if (!input) return;
-		
+
 		const inputElement = document.getElementById(input);
 		if (!inputElement) return;
-		
+
 		// Set initial state
 		const isActive = inputElement.value === 'true';
 		if (isActive) {
 			toggle.classList.add('active');
 		}
-		
+
 		// Handle click
 		toggle.addEventListener('click', () => {
 			const currentValue = inputElement.value === 'true';
 			const newValue = !currentValue;
-			
+
 			inputElement.value = String(newValue);
-			
+
 			if (newValue) {
 				toggle.classList.add('active');
 			} else {
@@ -113,7 +113,7 @@ export function createSlider(options) {
 		suffix = '',
 		prefix = ''
 	} = options;
-	
+
 	return `
 		<div class="mc-control-field">
 			<label class="mc-control-label">${label}</label>
@@ -160,7 +160,7 @@ export function createToggle(options) {
 		onLabel = 'Enabled',
 		offLabel = 'Disabled'
 	} = options;
-	
+
 	return `
 		<div class="mc-control-field">
 			<label class="mc-control-label">${label}</label>
@@ -187,14 +187,14 @@ export function createSelect(options) {
 		value = '',
 		choices = []
 	} = options;
-	
+
 	const optionsHTML = choices.map(choice => {
 		const optionValue = typeof choice === 'string' ? choice : choice.value;
 		const optionLabel = typeof choice === 'string' ? choice : choice.label;
 		const selected = optionValue === value ? 'selected' : '';
 		return `<option value="${optionValue}" ${selected}>${optionLabel}</option>`;
 	}).join('');
-	
+
 	return `
 		<div class="mc-control-field">
 			<label class="mc-control-label" for="${id}">${label}</label>
@@ -223,7 +223,7 @@ export function createNumberInput(options) {
 		step = 1,
 		value = 0
 	} = options;
-	
+
 	return `
 		<div class="mc-control-field">
 			<label class="mc-control-label" for="${id}">${label}</label>
@@ -253,10 +253,10 @@ export function createControlPanel(options) {
 		icon = 'settings',
 		controls = []
 	} = options;
-	
+
 	const iconSVG = getIconSVG(icon);
 	const controlsHTML = controls.join('');
-	
+
 	return `
 		<div class="mc-control-panel">
 			<div class="mc-panel-header">
@@ -287,7 +287,212 @@ function getIconSVG(iconName) {
 		star: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
 		display: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>'
 	};
-	
+
 	return icons[iconName] || icons.settings;
+}
+
+// ============================================
+// MATCH COUNTER COMPONENT
+// ============================================
+
+/**
+ * Create match counter indicator
+ * @param {Object} options - Configuration options
+ * @returns {string} HTML string
+ */
+export function createMatchCounter(options = {}) {
+	const {
+		count = 0,
+		loading = false,
+		error = false
+	} = options;
+
+	// Determine status color and text
+	let statusClass = 'mc-counter-none';
+	let statusText = 'NO MATCHES';
+
+	if (!error && !loading) {
+		if (count >= 10) {
+			statusClass = 'mc-counter-good';
+			statusText = 'OPTIMAL';
+		} else if (count >= 1) {
+			statusClass = 'mc-counter-warning';
+			statusText = 'LIMITED';
+		}
+	}
+
+	return `
+		<div class="mc-match-counter ${statusClass}" id="matchCounter">
+			<div class="mc-counter-header">
+				<div class="mc-counter-icon">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+					</svg>
+				</div>
+				<div class="mc-counter-title">
+					<span class="mc-counter-label">FILTER PREVIEW</span>
+					<span class="mc-counter-status">${statusText}</span>
+				</div>
+			</div>
+			<div class="mc-counter-display">
+				${loading ? `
+					<div class="mc-counter-loading">
+						<div class="mc-spinner"></div>
+						<span>SCANNING...</span>
+					</div>
+				` : error ? `
+					<div class="mc-counter-error">
+						<span>ERROR</span>
+					</div>
+				` : `
+					<div class="mc-counter-value">${count}</div>
+					<div class="mc-counter-unit">PROPERTIES</div>
+				`}
+			</div>
+			<div class="mc-counter-help">
+				Real-time count based on current filter settings
+			</div>
+		</div>
+	`;
+}
+
+/**
+ * Initialize match counter functionality
+ * Sets up debounced updates when filter controls change
+ */
+export function initializeMatchCounter() {
+	console.log('🔢 Initializing match counter...');
+
+	let debounceTimer = null;
+	const DEBOUNCE_DELAY = 500; // 500ms
+
+	// Function to update counter
+	async function updateCounter() {
+		const counterEl = document.getElementById('matchCounter');
+		if (!counterEl) {
+			console.warn('Match counter element not found');
+			return;
+		}
+
+		// Show loading state
+		setCounterLoading(true);
+
+		try {
+			// Extract current config from form
+			const config = extractFormData();
+
+			// Count matching properties
+			const { countMatchingProperties } = await import('../../api/smart-match-config-api.js');
+			const count = await countMatchingProperties(config);
+
+			// Update display
+			setCounterValue(count);
+
+		} catch (error) {
+			console.error('❌ Error updating match counter:', error);
+			setCounterError(true);
+		}
+	}
+
+	// Debounced update function
+	function debouncedUpdate() {
+		clearTimeout(debounceTimer);
+		debounceTimer = setTimeout(updateCounter, DEBOUNCE_DELAY);
+	}
+
+	// Attach listeners to all filter controls
+	const filterControls = [
+		'bedroomMatchMode',
+		'bathroomMatchMode',
+		'rentTolerancePercent',
+		'petPolicyStrict',
+		'parkingRequired',
+		'availabilityWindowDays'
+	];
+
+	filterControls.forEach(controlId => {
+		const element = document.getElementById(controlId);
+		if (element) {
+			element.addEventListener('input', debouncedUpdate);
+			element.addEventListener('change', debouncedUpdate);
+		}
+	});
+
+	// Also listen to toggle clicks
+	const toggles = document.querySelectorAll('.mc-toggle');
+	toggles.forEach(toggle => {
+		toggle.addEventListener('click', debouncedUpdate);
+	});
+
+	console.log('✅ Match counter initialized');
+
+	// Initial update
+	updateCounter();
+}
+
+/**
+ * Helper function to extract form data
+ * @returns {Object} Configuration object
+ */
+function extractFormData() {
+	return {
+		// Filtering Settings
+		bedroom_match_mode: document.getElementById('bedroomMatchMode')?.value || 'exact',
+		bathroom_match_mode: document.getElementById('bathroomMatchMode')?.value || 'exact',
+		rent_tolerance_percent: parseFloat(document.getElementById('rentTolerancePercent')?.value || 20),
+		pet_policy_strict: document.getElementById('petPolicyStrict')?.value === 'true',
+		parking_required: document.getElementById('parkingRequired')?.value === 'true',
+		availability_window_days: parseInt(document.getElementById('availabilityWindowDays')?.value || 30),
+
+		// Scoring Settings (not used for counting, but needed for config structure)
+		price_match_weight: parseFloat(document.getElementById('priceMatchWeight')?.value || 30),
+		move_in_date_weight: parseFloat(document.getElementById('moveInDateWeight')?.value || 25),
+		commission_weight: parseFloat(document.getElementById('commissionWeight')?.value || 20),
+		pumi_weight: parseFloat(document.getElementById('pumiWeight')?.value || 15),
+		leniency_weight: parseFloat(document.getElementById('leniencyWeight')?.value || 10),
+		commission_threshold: parseFloat(document.getElementById('commissionThreshold')?.value || 4.0),
+
+		// Display Settings
+		max_results: parseInt(document.getElementById('maxResults')?.value || 10),
+		sort_by: document.getElementById('sortBy')?.value || 'score',
+		min_score_threshold: parseFloat(document.getElementById('minScoreThreshold')?.value || 50)
+	};
+}
+
+/**
+ * Set counter to loading state
+ * @param {boolean} loading - Loading state
+ */
+function setCounterLoading(loading) {
+	const counterEl = document.getElementById('matchCounter');
+	if (!counterEl) return;
+
+	if (loading) {
+		counterEl.innerHTML = createMatchCounter({ loading: true });
+	}
+}
+
+/**
+ * Set counter value
+ * @param {number} count - Property count
+ */
+function setCounterValue(count) {
+	const counterEl = document.getElementById('matchCounter');
+	if (!counterEl) return;
+
+	counterEl.innerHTML = createMatchCounter({ count });
+}
+
+/**
+ * Set counter to error state
+ * @param {boolean} error - Error state
+ */
+function setCounterError(error) {
+	const counterEl = document.getElementById('matchCounter');
+	if (!counterEl) return;
+
+	if (error) {
+		counterEl.innerHTML = createMatchCounter({ error: true });
+	}
 }
 

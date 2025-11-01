@@ -699,6 +699,212 @@
 }
 
 /* ============================================
+   MATCH COUNTER COMPONENT
+   ============================================ */
+
+.mc-match-counter {
+	background: var(--mc-bg-panel);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 8px;
+	padding: 20px;
+	margin-bottom: 24px;
+	transition: all 0.3s ease;
+}
+
+.mc-counter-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.mc-counter-icon {
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 6px;
+}
+
+.mc-counter-icon svg {
+	width: 20px;
+	height: 20px;
+	stroke: var(--mc-accent-cyan);
+}
+
+.mc-counter-title {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.mc-counter-label {
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: 1.5px;
+	color: var(--mc-text-secondary);
+	text-transform: uppercase;
+}
+
+.mc-counter-status {
+	font-size: 14px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+
+.mc-counter-display {
+	text-align: center;
+	padding: 24px;
+	background: rgba(255, 255, 255, 0.02);
+	border-radius: 6px;
+	margin-bottom: 12px;
+	min-height: 120px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.mc-counter-value {
+	font-size: 56px;
+	font-weight: 700;
+	line-height: 1;
+	margin-bottom: 8px;
+	font-family: 'Courier New', monospace;
+	text-shadow: 0 0 20px currentColor;
+}
+
+.mc-counter-unit {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	color: var(--mc-text-secondary);
+	text-transform: uppercase;
+}
+
+.mc-counter-help {
+	font-size: 11px;
+	color: var(--mc-text-secondary);
+	text-align: center;
+	line-height: 1.4;
+}
+
+/* Status Colors */
+.mc-counter-good {
+	border-color: var(--mc-accent-green);
+	box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.mc-counter-good .mc-counter-icon {
+	background: rgba(16, 185, 129, 0.1);
+}
+
+.mc-counter-good .mc-counter-icon svg {
+	stroke: var(--mc-accent-green);
+}
+
+.mc-counter-good .mc-counter-status {
+	color: var(--mc-accent-green);
+}
+
+.mc-counter-good .mc-counter-value {
+	color: var(--mc-accent-green);
+}
+
+.mc-counter-warning {
+	border-color: var(--mc-accent-orange);
+	box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.mc-counter-warning .mc-counter-icon {
+	background: rgba(245, 158, 11, 0.1);
+}
+
+.mc-counter-warning .mc-counter-icon svg {
+	stroke: var(--mc-accent-orange);
+}
+
+.mc-counter-warning .mc-counter-status {
+	color: var(--mc-accent-orange);
+}
+
+.mc-counter-warning .mc-counter-value {
+	color: var(--mc-accent-orange);
+}
+
+.mc-counter-none {
+	border-color: #ef4444;
+	box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.mc-counter-none .mc-counter-icon {
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.mc-counter-none .mc-counter-icon svg {
+	stroke: #ef4444;
+}
+
+.mc-counter-none .mc-counter-status {
+	color: #ef4444;
+}
+
+.mc-counter-none .mc-counter-value {
+	color: #ef4444;
+}
+
+/* Loading State */
+.mc-counter-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+}
+
+.mc-counter-loading span {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	color: var(--mc-accent-cyan);
+	text-transform: uppercase;
+}
+
+.mc-spinner {
+	width: 40px;
+	height: 40px;
+	border: 4px solid rgba(255, 255, 255, 0.1);
+	border-top-color: var(--mc-accent-cyan);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Error State */
+.mc-counter-error {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+.mc-counter-error span {
+	font-size: 16px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	color: #ef4444;
+	text-transform: uppercase;
+}
+
+/* ============================================
    RESPONSIVE DESIGN
    ============================================ */
 @media (max-width: 768px) {
@@ -730,5 +936,13 @@
 	.mc-summary-header {
 		flex-direction: column;
 		align-items: stretch;
+	}
+
+	.mc-counter-value {
+		font-size: 48px;
+	}
+
+	.mc-match-counter {
+		padding: 16px;
 	}
 }

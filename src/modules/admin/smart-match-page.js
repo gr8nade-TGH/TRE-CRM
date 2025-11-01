@@ -7,7 +7,7 @@
 
 import { getActiveConfig, updateActiveConfig, resetToDefaults } from '../../api/smart-match-config-api.js';
 import { DEFAULT_SMART_MATCH_CONFIG } from '../../utils/smart-match-config-defaults.js';
-import { initializeMissionControlUI } from './mission-control-ui.js';
+import { initializeMissionControlUI, createMatchCounter, initializeMatchCounter } from './mission-control-ui.js';
 
 /**
  * Initialize the Smart Match configuration page
@@ -32,6 +32,13 @@ export async function initializeConfigPage() {
 
 		// Initialize mission control UI components (sliders, toggles)
 		initializeMissionControlUI();
+
+		// Render and initialize match counter
+		const counterContainer = document.getElementById('matchCounterContainer');
+		if (counterContainer) {
+			counterContainer.innerHTML = createMatchCounter({ loading: true });
+			initializeMatchCounter();
+		}
 
 		console.log('✅ Smart Match Configuration Page initialized');
 	} catch (error) {

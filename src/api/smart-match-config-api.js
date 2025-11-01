@@ -386,3 +386,134 @@ export async function deleteConfig(configId) {
     }
 }
 
+// ============================================
+// MATCH COUNTER FUNCTIONS
+// ============================================
+
+/**
+ * Cache for available units to avoid repeated database queries
+ */
+let unitsCache = null;
+let unitsCacheTimestamp = null;
+const UNITS_CACHE_DURATION_MS = 60000; // 1 minute cache
+
+/**
+ * Clear the units cache
+ */
+export function clearUnitsCache() {
+    unitsCache = null;
+    unitsCacheTimestamp = null;
+    console.log('Units cache cleared');
+}
+
+/**
+ * Get available units with caching
+ * @returns {Promise<Array>} Array of units with floor plan and property details
+ */
+async function getAvailableUnits() {
+    // Check cache validity
+    const now = Date.now();
+    if (unitsCache && unitsCacheTimestamp && (now - unitsCacheTimestamp) < UNITS_CACHE_DURATION_MS) {
+        console.log('📦 Using cached units data');
+        return unitsCache;
+    }
+
+    console.log('🔄 Fetching fresh units data...');
+
+    try {
+        const supabase = getSupabase();
+
+        const { data: units, error } = await supabase
+            .from('units')
+            .select(`
+                *,
+                floor_plan:floor_plans(*),
+                property:properties(*)
+            `)
+            .eq('is_available', true)
+            .eq('is_active', true)
+            .eq('status', 'available');
+
+        if (error) throw error;
+
+        // Transform to expected format
+        const unitsWithDetails = units.map(u => ({
+            unit: u,
+            floorPlan: u.floor_plan,
+            property: u.property
+        }));
+
+        // Update cache
+        unitsCache = unitsWithDetails;
+        unitsCacheTimestamp = now;
+
+        console.log(`✅ Fetched ${unitsWithDetails.length} available units`);
+        return unitsWithDetails;
+
+    } catch (error) {
+        console.error('❌ Error fetching units:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get default test lead for filter preview
+ * Represents a typical lead with common preferences
+ * @returns {Object} Test lead object
+ */
+export function getDefaultTestLead() {
+    const thirtyDaysFromNow = new Date();
+    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+
+    return {
+        bedrooms: '2',              // 2 bedrooms
+        bathrooms: '2',             // 2 bathrooms
+        price_range: '$1500-$2000', // Mid-range budget
+        move_in_date: thirtyDaysFromNow.toISOString().split('T')[0], // 30 days from now
+        location_preference: 'San Antonio',
+        has_pets: false,
+        needs_parking: false
+    };
+}
+
+/**
+ * Count properties that match filter criteria
+ * Uses same filtering logic as Smart Match but returns only count
+ *
+ * @param {Object} config - Smart Match configuration
+ * @param {Object} testLead - Test lead with preferences (optional)
+ * @returns {Promise<number>} Count of matching properties
+ */
+export async function countMatchingProperties(config, testLead = null) {
+    try {
+        // Use default test lead if none provided
+        const lead = testLead || getDefaultTestLead();
+
+        console.log('🔢 Counting matching properties with config:', {
+            bedroomMode: config.bedroom_match_mode,
+            bathroomMode: config.bathroom_match_mode,
+            rentTolerance: config.rent_tolerance_percent,
+            availabilityWindow: config.availability_window_days
+        });
+
+        // Fetch all available units (with caching)
+        const unitsWithDetails = await getAvailableUnits();
+
+        // Apply configurable filters (reuse existing logic from smart-match-v2.js)
+        const { applyConfigurableFilters } = await import('../utils/smart-match-v2.js');
+        const filteredUnits = applyConfigurableFilters(unitsWithDetails, lead, config);
+
+        // Count unique properties
+        const propertyIds = new Set(filteredUnits.map(item => item.property.id));
+        const count = propertyIds.size;
+
+        console.log(`✅ Found ${count} matching properties (${filteredUnits.length} total units)`);
+
+        return count;
+
+    } catch (error) {
+        console.error('❌ Error counting matching properties:', error);
+        return 0; // Return 0 on error to avoid breaking UI
+    }
+}
+
