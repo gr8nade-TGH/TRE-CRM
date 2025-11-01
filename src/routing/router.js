@@ -117,7 +117,7 @@ export function route(deps) {
 		setRoleLabel('manage');
 		// Initialize Smart Match Customizer if available
 		if (window.Admin && window.Admin.initializeCustomizer) {
-			await window.Admin.initializeCustomizer();
+			window.Admin.initializeCustomizer();
 		}
 	} else if (hash === '/bugs') {
 		state.currentPage = 'bugs';
