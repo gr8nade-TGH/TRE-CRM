@@ -947,8 +947,17 @@
 						<!-- Current Configuration Summary -->
 						<div class="config-summary-card">
 							<div class="config-summary-header">
-								<h3>Current Configuration</h3>
-								<span class="config-status-badge active" id="configStatusBadge">Active</span>
+								<div class="config-summary-title-group">
+									<h3>Current Configuration</h3>
+									<span class="config-status-badge active" id="configStatusBadge">Active</span>
+								</div>
+								<button type="button" id="testSmartMatchBtn" class="btn btn-test">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<polygon points="5 3 19 12 5 21 5 3"></polygon>
+									</svg>
+									Test Smart Match
+								</button>
 							</div>
 							<div class="config-summary-grid">
 								<div class="config-summary-item">
@@ -3005,6 +3014,87 @@
 						Defaults</button>
 					<button id="cancelSmartMatchConfig" class="btn btn-secondary">Cancel</button>
 					<button id="saveSmartMatchConfig" class="btn btn-primary">Save Configuration</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Test Smart Match Modal -->
+		<div id="testSmartMatchModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 600px;">
+				<div class="modal-header">
+					<h3>🧪 Test Smart Match Configuration</h3>
+					<button id="closeTestSmartMatch" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
+						Enter test criteria to preview how your current configuration settings will match properties.
+						This uses your <strong>current form values</strong> (including unsaved changes).
+					</p>
+					<form id="testSmartMatchForm">
+						<div class="form-group">
+							<label for="testBedrooms">Bedrooms</label>
+							<select id="testBedrooms" class="form-select" required>
+								<option value="">Select bedrooms...</option>
+								<option value="0">Studio</option>
+								<option value="1">1 Bedroom</option>
+								<option value="2" selected>2 Bedrooms</option>
+								<option value="3">3 Bedrooms</option>
+								<option value="4">4+ Bedrooms</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testBathrooms">Bathrooms</label>
+							<select id="testBathrooms" class="form-select" required>
+								<option value="">Select bathrooms...</option>
+								<option value="1">1 Bathroom</option>
+								<option value="1.5">1.5 Bathrooms</option>
+								<option value="2" selected>2 Bathrooms</option>
+								<option value="2.5">2.5 Bathrooms</option>
+								<option value="3">3+ Bathrooms</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testBudget">Monthly Budget ($)</label>
+							<input type="number" id="testBudget" class="form-input" placeholder="e.g., 2000" min="0"
+								step="50" value="2000" required>
+							<small style="color: #6b7280; font-size: 12px;">Your maximum monthly rent budget</small>
+						</div>
+						<div class="form-group">
+							<label for="testMoveInDate">Desired Move-in Date</label>
+							<input type="date" id="testMoveInDate" class="form-input" required>
+							<small style="color: #6b7280; font-size: 12px;">When you'd like to move in</small>
+						</div>
+						<div class="form-group">
+							<label for="testPets">Pets</label>
+							<select id="testPets" class="form-select" required>
+								<option value="no" selected>No Pets</option>
+								<option value="yes">Has Pets</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testParking">Parking Needed</label>
+							<select id="testParking" class="form-select" required>
+								<option value="no" selected>No Parking Needed</option>
+								<option value="yes">Parking Required</option>
+							</select>
+						</div>
+						<div class="form-group">
+							<label for="testCity">Preferred City/Area</label>
+							<input type="text" id="testCity" class="form-input" placeholder="e.g., Austin, TX"
+								value="Austin" required>
+							<small style="color: #6b7280; font-size: 12px;">City or area you're looking in</small>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="cancelTestSmartMatch" class="btn btn-secondary">Cancel</button>
+					<button id="runTestSmartMatch" class="btn btn-primary">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+							stroke-width="2" style="margin-right: 6px;">
+							<polygon points="5 3 19 12 5 21 5 3"></polygon>
+						</svg>
+						Run Test
+					</button>
 				</div>
 			</div>
 		</div>
