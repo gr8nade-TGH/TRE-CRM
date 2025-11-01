@@ -269,6 +269,12 @@ function openTestModal() {
 	const modal = document.getElementById('testSmartMatchModal');
 	if (modal) {
 		modal.classList.remove('hidden');
+
+		// Focus first input for accessibility
+		const firstInput = document.getElementById('testBedrooms');
+		if (firstInput) {
+			setTimeout(() => firstInput.focus(), 100);
+		}
 	}
 }
 
@@ -289,6 +295,7 @@ function setupTestModalListeners() {
 	const closeBtn = document.getElementById('closeTestSmartMatch');
 	const cancelBtn = document.getElementById('cancelTestSmartMatch');
 	const runBtn = document.getElementById('runTestSmartMatch');
+	const modal = document.getElementById('testSmartMatchModal');
 
 	if (closeBtn) {
 		closeBtn.addEventListener('click', closeTestModal);
@@ -301,6 +308,15 @@ function setupTestModalListeners() {
 	if (runBtn) {
 		runBtn.addEventListener('click', async () => {
 			await runSmartMatchTest();
+		});
+	}
+
+	// ESC key to close modal
+	if (modal) {
+		document.addEventListener('keydown', (e) => {
+			if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+				closeTestModal();
+			}
 		});
 	}
 }

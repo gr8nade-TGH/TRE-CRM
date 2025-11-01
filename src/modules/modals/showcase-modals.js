@@ -143,7 +143,14 @@ export async function openMatches(leadId, options) {
 export function closeMatches(options) {
 	const { hide } = options;
 
-	hide(document.getElementById('matchesModal'));
+	// Remove test banner if present (from Test Smart Match feature)
+	const modal = document.getElementById('matchesModal');
+	const testBanner = modal.querySelector('.test-results-banner');
+	if (testBanner) {
+		testBanner.remove();
+	}
+
+	hide(modal);
 }
 
 // ---- Email Preview Modal ----
