@@ -476,8 +476,32 @@ async function showTestResults(testLead, matches, config) {
 	// Populate grid
 	const grid = document.getElementById('listingsGrid');
 	if (grid) {
-		grid.innerHTML = transformedMatches.map(prop => `
-			<div class="listing-card">
+		if (transformedMatches.length === 0) {
+			grid.innerHTML = `
+				<div style="grid-column: 1 / -1; text-align: center; padding: 40px 20px; background: #f9fafb; border-radius: 8px; border: 2px dashed #e5e7eb;">
+					<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#9ca3af" stroke-width="2" style="margin: 0 auto 16px;">
+						<circle cx="12" cy="12" r="10"></circle>
+						<line x1="12" y1="8" x2="12" y2="12"></line>
+						<line x1="12" y1="16" x2="12.01" y2="16"></line>
+					</svg>
+					<h3 style="color: #374151; margin: 0 0 8px 0;">No Properties Matched</h3>
+					<p style="color: #6b7280; margin: 0 0 16px 0;">
+						No properties matched your test criteria with the current configuration settings.
+					</p>
+					<div style="background: white; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px; max-width: 500px; margin: 0 auto; text-align: left;">
+						<strong style="color: #111827; display: block; margin-bottom: 8px;">💡 Try adjusting:</strong>
+						<ul style="margin: 0; padding-left: 20px; color: #6b7280; line-height: 1.8;">
+							<li>Lower the <strong>Minimum Score Threshold</strong> (currently ${config.min_score_threshold || 0})</li>
+							<li>Increase <strong>Rent Tolerance</strong> (currently ${config.rent_tolerance_percent || 0}%)</li>
+							<li>Change bedroom/bathroom matching to <strong>Flexible</strong> mode</li>
+							<li>Increase <strong>Move-in Date Flexibility</strong> (currently ${config.move_in_flexibility_days || 0} days)</li>
+						</ul>
+					</div>
+				</div>
+			`;
+		} else {
+			grid.innerHTML = transformedMatches.map(prop => `
+				<div class="listing-card">
 				<div class="listing-header">
 					<h4>${prop.name}</h4>
 					<div class="listing-badges">
@@ -500,14 +524,19 @@ async function showTestResults(testLead, matches, config) {
 				</div>
 			</div>
 		`).join('');
+		}
 	}
 
 	// Show modal
 	modal.classList.remove('hidden');
 
-	// Show success toast
+	// Show success or info toast based on results
 	if (window.toast) {
-		window.toast(`Test complete! Found ${matches.length} matching properties.`, 'success');
+		if (matches.length === 0) {
+			window.toast(`Test complete! No properties matched these criteria. Try adjusting your filters or lowering the minimum score threshold.`, 'info', 5000);
+		} else {
+			window.toast(`Test complete! Found ${matches.length} matching properties.`, 'success');
+		}
 	}
 }
 

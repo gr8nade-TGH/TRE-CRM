@@ -821,9 +821,10 @@ let api, renderLeads, renderSpecials;
 
 	// Bulk actions event listeners moved to dom-event-listeners.js
 
-	// Expose state and SupabaseAPI to global scope
+	// Expose state, SupabaseAPI, and toast to global scope
 	window.state = state;
 	window.SupabaseAPI = SupabaseAPI;
+	window.toast = toast;
 })();
 
 // Admin page functions - defined in global scope
