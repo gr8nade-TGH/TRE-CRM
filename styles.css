@@ -6713,3 +6713,285 @@ input[type="radio"] {
 		padding: 12px;
 	}
 }
+
+/* ============================================
+   SMART MATCH CONFIG FULL PAGE STYLES
+   ============================================ */
+
+/* Manage Dropdown */
+.manage-dropdown-container {
+	position: relative;
+}
+
+.manage-dropdown {
+	position: absolute;
+	top: calc(100% + 8px);
+	right: 0;
+	background: white;
+	border: 1px solid #e5e7eb;
+	border-radius: 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	min-width: 200px;
+	z-index: 1000;
+	overflow: hidden;
+}
+
+.manage-dropdown.hidden {
+	display: none;
+}
+
+.manage-dropdown-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	color: #374151;
+	text-decoration: none;
+	transition: background 0.2s ease;
+	border-bottom: 1px solid #f3f4f6;
+}
+
+.manage-dropdown-item:last-child {
+	border-bottom: none;
+}
+
+.manage-dropdown-item:hover {
+	background: #f9fafb;
+	color: #3b82f6;
+}
+
+.manage-dropdown-item svg {
+	flex-shrink: 0;
+}
+
+/* Config Page Layout */
+.smart-match-config-page {
+	max-width: 1200px;
+	margin: 0 auto;
+}
+
+.config-page-header {
+	margin-bottom: 32px;
+}
+
+.config-page-header .page-title {
+	margin: 0 0 8px 0;
+	font-size: 32px;
+	font-weight: 700;
+	color: #111827;
+}
+
+.page-subtitle {
+	margin: 0;
+	font-size: 16px;
+	color: #6b7280;
+	font-weight: 400;
+}
+
+/* Configuration Summary Card */
+.config-summary-card {
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	border-radius: 12px;
+	padding: 24px;
+	margin-bottom: 32px;
+	box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.config-summary-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 20px;
+}
+
+.config-summary-header h3 {
+	margin: 0;
+	color: white;
+	font-size: 20px;
+	font-weight: 600;
+}
+
+.config-status-badge.active {
+	background: #10b981;
+	color: white;
+	padding: 6px 14px;
+	border-radius: 16px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.config-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+}
+
+.config-summary-item {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.summary-label {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.8);
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.summary-value {
+	font-size: 16px;
+	color: white;
+	font-weight: 700;
+}
+
+/* Configuration Form */
+.config-form {
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	overflow: hidden;
+}
+
+/* Config Section */
+.config-section {
+	padding: 32px;
+	border-bottom: 1px solid #e5e7eb;
+	background: white;
+	margin-bottom: 0;
+}
+
+.config-section:last-of-type {
+	border-bottom: none;
+}
+
+.config-section-header {
+	margin-bottom: 24px;
+}
+
+.config-section-header h2 {
+	margin: 0 0 8px 0;
+	font-size: 22px;
+	font-weight: 700;
+	color: #111827;
+}
+
+.section-description {
+	margin: 0;
+	font-size: 14px;
+	color: #6b7280;
+}
+
+/* Config Grid */
+.config-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+	gap: 24px;
+}
+
+/* Config Field */
+.config-field {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.field-label {
+	font-size: 14px;
+	font-weight: 600;
+	color: #374151;
+	margin: 0;
+}
+
+.field-input {
+	padding: 10px 14px;
+	border: 1px solid #d1d5db;
+	border-radius: 6px;
+	font-size: 14px;
+	font-family: 'Inter', sans-serif;
+	color: #111827;
+	background: white;
+	transition: all 0.2s ease;
+}
+
+.field-input:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.field-input:hover {
+	border-color: #9ca3af;
+}
+
+.field-help {
+	margin: 0;
+	font-size: 12px;
+	color: #6b7280;
+	line-height: 1.4;
+}
+
+/* Form Actions */
+.config-form-actions {
+	display: flex;
+	justify-content: flex-end;
+	gap: 12px;
+	padding: 24px 32px;
+	background: #f9fafb;
+	border-top: 1px solid #e5e7eb;
+}
+
+.config-form-actions .btn {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px 24px;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.config-form-actions .btn svg {
+	width: 16px;
+	height: 16px;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.config-page-header .page-title {
+		font-size: 24px;
+	}
+
+	.page-subtitle {
+		font-size: 14px;
+	}
+
+	.config-summary-card {
+		padding: 20px;
+	}
+
+	.config-summary-grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+
+	.config-section {
+		padding: 20px;
+	}
+
+	.config-grid {
+		grid-template-columns: 1fr;
+		gap: 20px;
+	}
+
+	.config-form-actions {
+		flex-direction: column-reverse;
+		padding: 20px;
+	}
+
+	.config-form-actions .btn {
+		width: 100%;
+		justify-content: center;
+	}
+}

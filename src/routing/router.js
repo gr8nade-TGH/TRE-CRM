@@ -115,10 +115,15 @@ export function route(deps) {
 		state.currentPage = 'manage';
 		show(document.getElementById('manageView'));
 		setRoleLabel('manage');
-		// Initialize Smart Match Customizer if available
-		if (window.Admin && window.Admin.initializeCustomizer) {
-			window.Admin.initializeCustomizer();
-		}
+		// Initialize Smart Match Configuration Page
+		(async () => {
+			try {
+				const { initializeConfigPage } = await import('../modules/admin/smart-match-page.js');
+				await initializeConfigPage();
+			} catch (error) {
+				console.error('Error loading Smart Match config page:', error);
+			}
+		})();
 	} else if (hash === '/bugs') {
 		state.currentPage = 'bugs';
 		show(document.getElementById('bugsView'));

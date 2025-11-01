@@ -125,12 +125,31 @@
 					<span id="headerUserEmail"></span>
 					<span id="headerUserRole" class="role-badge"></span>
 				</div>
-				<button id="manageBtn" class="btn btn-icon btn-sm" title="Management" style="display: none;">
-					<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-						<path
-							d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-					</svg>
-				</button>
+				<div class="manage-dropdown-container" style="position: relative; display: none;">
+					<button id="manageBtn" class="btn btn-icon btn-sm" title="Management">
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+							<path
+								d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+						</svg>
+					</button>
+					<div id="manageDropdown" class="manage-dropdown hidden">
+						<a href="#" class="manage-dropdown-item" data-action="smart-match-config">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+							</svg>
+							Smart Match Config
+						</a>
+						<a href="#" class="manage-dropdown-item" data-action="map-settings">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+								<circle cx="12" cy="10" r="3"></circle>
+							</svg>
+							Map Settings
+						</a>
+					</div>
+				</div>
 				<button id="profileBtn" class="btn btn-secondary btn-sm" title="Profile Settings">
 					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 						<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
@@ -913,62 +932,247 @@
 			<!-- Route: #/manage -->
 			<section id="manageView" class="route-view hidden">
 				<div class="view-bar mobile-only">
-					<h1>⚙️ Management</h1>
+					<h1>⚙️ Smart Match Configuration</h1>
 					<div id="manageRoleLabel" class="role-label"></div>
 				</div>
 
 				<div class="page-container">
-					<h1 class="page-title desktop-only">⚙️ Management</h1>
+					<div class="smart-match-config-page">
+						<div class="config-page-header">
+							<h1 class="page-title">🎯 Smart Match Configuration</h1>
+							<p class="page-subtitle">Customize how properties are filtered, scored, and displayed for
+								leads</p>
+						</div>
 
-					<!-- Smart Match Configuration Section -->
-					<div class="admin-section" id="smartMatchConfigSection">
-						<div class="section-header">
-							<h2>🎯 Smart Match Configuration</h2>
-							<button id="openSmartMatchCustomizerBtn" class="btn btn-primary">
-								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-									<path
-										d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
-								</svg>
-								Configure Smart Match
-							</button>
-						</div>
-						<div class="config-info-card">
-							<div class="config-info-header">
-								<span class="config-status-badge" id="configStatusBadge">Active</span>
-								<span class="config-name" id="configName">Default Configuration</span>
+						<!-- Current Configuration Summary -->
+						<div class="config-summary-card">
+							<div class="config-summary-header">
+								<h3>Current Configuration</h3>
+								<span class="config-status-badge active" id="configStatusBadge">Active</span>
 							</div>
-							<div class="config-info-body">
-								<div class="config-info-row">
-									<span class="config-label">Bedroom Matching:</span>
-									<span class="config-value" id="configBedroomMode">Exact Match</span>
+							<div class="config-summary-grid">
+								<div class="config-summary-item">
+									<span class="summary-label">Bedroom Matching</span>
+									<span class="summary-value" id="summaryBedroomMode">Exact Match</span>
 								</div>
-								<div class="config-info-row">
-									<span class="config-label">Bathroom Matching:</span>
-									<span class="config-value" id="configBathroomMode">Exact Match</span>
+								<div class="config-summary-item">
+									<span class="summary-label">Bathroom Matching</span>
+									<span class="summary-value" id="summaryBathroomMode">Exact Match</span>
 								</div>
-								<div class="config-info-row">
-									<span class="config-label">Rent Tolerance:</span>
-									<span class="config-value" id="configRentTolerance">±20%</span>
+								<div class="config-summary-item">
+									<span class="summary-label">Rent Tolerance</span>
+									<span class="summary-value" id="summaryRentTolerance">±20%</span>
 								</div>
-								<div class="config-info-row">
-									<span class="config-label">Commission Threshold:</span>
-									<span class="config-value" id="configCommissionThreshold">4.0%</span>
+								<div class="config-summary-item">
+									<span class="summary-label">Max Properties</span>
+									<span class="summary-value" id="summaryMaxProperties">10</span>
 								</div>
-								<div class="config-info-row">
-									<span class="config-label">Max Properties:</span>
-									<span class="config-value" id="configMaxProperties">10</span>
-								</div>
-								<div class="config-info-row">
-									<span class="config-label">Last Modified:</span>
-									<span class="config-value" id="configLastModified">Never</span>
+								<div class="config-summary-item">
+									<span class="summary-label">Last Modified</span>
+									<span class="summary-value" id="summaryLastModified">Never</span>
 								</div>
 							</div>
 						</div>
+
+						<!-- Configuration Form -->
+						<form id="smartMatchConfigForm" class="config-form">
+
+							<!-- Filtering Settings Section -->
+							<div class="config-section">
+								<div class="config-section-header">
+									<h2>🔍 Filtering Settings</h2>
+									<p class="section-description">Control which properties are included in Smart Match
+										results</p>
+								</div>
+
+								<div class="config-grid">
+									<!-- Bedroom Matching -->
+									<div class="config-field">
+										<label for="bedroomMatchMode" class="field-label">Bedroom Matching Mode</label>
+										<select id="bedroomMatchMode" class="field-input">
+											<option value="exact">Exact Match Only</option>
+											<option value="flexible">Allow ±1 Bedroom</option>
+											<option value="minimum">Minimum Required</option>
+										</select>
+										<p class="field-help">How strictly to match bedroom requirements</p>
+									</div>
+
+									<!-- Bathroom Matching -->
+									<div class="config-field">
+										<label for="bathroomMatchMode" class="field-label">Bathroom Matching
+											Mode</label>
+										<select id="bathroomMatchMode" class="field-input">
+											<option value="exact">Exact Match Only</option>
+											<option value="flexible">Allow ±0.5 Bathroom</option>
+											<option value="minimum">Minimum Required</option>
+										</select>
+										<p class="field-help">How strictly to match bathroom requirements</p>
+									</div>
+
+									<!-- Rent Tolerance -->
+									<div class="config-field">
+										<label for="rentTolerancePercent" class="field-label">Rent Tolerance (%)</label>
+										<input type="number" id="rentTolerancePercent" class="field-input" min="0"
+											max="100" step="5" value="20">
+										<p class="field-help">Percentage above/below budget to include (e.g., 20 = ±20%)
+										</p>
+									</div>
+
+									<!-- Pet Policy Matching -->
+									<div class="config-field">
+										<label for="petPolicyStrict" class="field-label">Pet Policy Enforcement</label>
+										<select id="petPolicyStrict" class="field-input">
+											<option value="true">Strict (Must Match)</option>
+											<option value="false">Flexible (Show All)</option>
+										</select>
+										<p class="field-help">Whether to strictly enforce pet policy requirements</p>
+									</div>
+
+									<!-- Parking Matching -->
+									<div class="config-field">
+										<label for="parkingRequired" class="field-label">Parking Requirement</label>
+										<select id="parkingRequired" class="field-input">
+											<option value="true">Required (Must Have)</option>
+											<option value="false">Optional (Preferred)</option>
+										</select>
+										<p class="field-help">Whether parking is mandatory or just preferred</p>
+									</div>
+
+									<!-- Availability Filter -->
+									<div class="config-field">
+										<label for="availabilityWindowDays" class="field-label">Availability Window
+											(Days)</label>
+										<input type="number" id="availabilityWindowDays" class="field-input" min="0"
+											max="365" step="7" value="30">
+										<p class="field-help">How many days before/after move-in date to include
+											properties</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Scoring Settings Section -->
+							<div class="config-section">
+								<div class="config-section-header">
+									<h2>⭐ Scoring Settings</h2>
+									<p class="section-description">Adjust how properties are ranked and prioritized</p>
+								</div>
+
+								<div class="config-grid">
+									<!-- Price Match Weight -->
+									<div class="config-field">
+										<label for="priceMatchWeight" class="field-label">Price Match Weight</label>
+										<input type="number" id="priceMatchWeight" class="field-input" min="0" max="100"
+											step="5" value="30">
+										<p class="field-help">Importance of matching budget (0-100 points)</p>
+									</div>
+
+									<!-- Move-in Date Weight -->
+									<div class="config-field">
+										<label for="moveInDateWeight" class="field-label">Move-in Date Weight</label>
+										<input type="number" id="moveInDateWeight" class="field-input" min="0" max="100"
+											step="5" value="25">
+										<p class="field-help">Importance of matching move-in date (0-100 points)</p>
+									</div>
+
+									<!-- Commission Weight -->
+									<div class="config-field">
+										<label for="commissionWeight" class="field-label">Commission Weight</label>
+										<input type="number" id="commissionWeight" class="field-input" min="0" max="100"
+											step="5" value="20">
+										<p class="field-help">Importance of commission percentage (0-100 points)</p>
+									</div>
+
+									<!-- PUMI Weight -->
+									<div class="config-field">
+										<label for="pumiWeight" class="field-label">PUMI Weight</label>
+										<input type="number" id="pumiWeight" class="field-input" min="0" max="100"
+											step="5" value="15">
+										<p class="field-help">Importance of PUMI status (0-100 points)</p>
+									</div>
+
+									<!-- Leniency Weight -->
+									<div class="config-field">
+										<label for="leniencyWeight" class="field-label">Leniency Weight</label>
+										<input type="number" id="leniencyWeight" class="field-input" min="0" max="100"
+											step="5" value="10">
+										<p class="field-help">Bonus for flexible properties (0-100 points)</p>
+									</div>
+
+									<!-- Commission Threshold -->
+									<div class="config-field">
+										<label for="commissionThreshold" class="field-label">Commission Threshold
+											(%)</label>
+										<input type="number" id="commissionThreshold" class="field-input" min="0"
+											max="20" step="0.5" value="4.0">
+										<p class="field-help">Minimum commission to receive full points</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Display Settings Section -->
+							<div class="config-section">
+								<div class="config-section-header">
+									<h2>📊 Display Settings</h2>
+									<p class="section-description">Control how results are presented to users</p>
+								</div>
+
+								<div class="config-grid">
+									<!-- Max Results -->
+									<div class="config-field">
+										<label for="maxResults" class="field-label">Maximum Results</label>
+										<input type="number" id="maxResults" class="field-input" min="1" max="50"
+											step="1" value="10">
+										<p class="field-help">Maximum number of properties to show per lead</p>
+									</div>
+
+									<!-- Sort By -->
+									<div class="config-field">
+										<label for="sortBy" class="field-label">Sort Results By</label>
+										<select id="sortBy" class="field-input">
+											<option value="score">Match Score (Highest First)</option>
+											<option value="price_asc">Price (Lowest First)</option>
+											<option value="price_desc">Price (Highest First)</option>
+											<option value="date_newest">Date Added (Newest First)</option>
+										</select>
+										<p class="field-help">Default sorting order for results</p>
+									</div>
+
+									<!-- Minimum Score -->
+									<div class="config-field">
+										<label for="minScoreThreshold" class="field-label">Minimum Score
+											Threshold</label>
+										<input type="number" id="minScoreThreshold" class="field-input" min="0"
+											max="100" step="5" value="50">
+										<p class="field-help">Minimum match score to include in results (0-100)</p>
+									</div>
+								</div>
+							</div>
+
+							<!-- Form Actions -->
+							<div class="config-form-actions">
+								<button type="button" id="resetConfigBtn" class="btn btn-secondary">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+										<path d="M21 3v5h-5"></path>
+										<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+										<path d="M3 21v-5h5"></path>
+									</svg>
+									Reset to Defaults
+								</button>
+								<button type="submit" id="saveConfigBtn" class="btn btn-primary">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z">
+										</path>
+										<polyline points="17 21 17 13 7 13 7 21"></polyline>
+										<polyline points="7 3 7 8 15 8"></polyline>
+									</svg>
+									Save Configuration
+								</button>
+							</div>
+						</form>
 					</div>
-
-					<!-- Future Management Sections Can Go Here -->
-					<!-- Example: Email Templates, System Settings, etc. -->
-
 				</div>
 			</section>
 		</main>

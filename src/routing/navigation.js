@@ -39,7 +39,7 @@ export function updateNavigation(activePage) {
 export function updateNavVisibility(state) {
 	const agentsNavLink = document.getElementById('agentsNavLink');
 	const adminNavLink = document.getElementById('adminNavLink');
-	const manageBtn = document.getElementById('manageBtn');
+	const manageDropdownContainer = document.querySelector('.manage-dropdown-container');
 
 	if (agentsNavLink) {
 		if (state.role === 'agent') {
@@ -57,12 +57,12 @@ export function updateNavVisibility(state) {
 		}
 	}
 
-	// Show manage button for managers and super_users
-	if (manageBtn) {
+	// Show manage dropdown for managers and super_users
+	if (manageDropdownContainer) {
 		if (state.role === 'manager' || state.role === 'super_user') {
-			manageBtn.style.display = 'flex';
+			manageDropdownContainer.style.display = 'block';
 		} else {
-			manageBtn.style.display = 'none';
+			manageDropdownContainer.style.display = 'none';
 		}
 	}
 }

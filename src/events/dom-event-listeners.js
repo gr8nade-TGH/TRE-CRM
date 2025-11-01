@@ -1042,11 +1042,39 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
-	// Manage button - navigate to management page
+	// Manage button - toggle dropdown menu
 	const manageBtn = document.getElementById('manageBtn');
-	if (manageBtn) {
-		manageBtn.addEventListener('click', () => {
-			window.location.hash = '#/manage';
+	const manageDropdown = document.getElementById('manageDropdown');
+
+	if (manageBtn && manageDropdown) {
+		manageBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			manageDropdown.classList.toggle('hidden');
+		});
+
+		// Close dropdown when clicking outside
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.manage-dropdown-container')) {
+				manageDropdown.classList.add('hidden');
+			}
+		});
+
+		// Handle dropdown item clicks
+		manageDropdown.addEventListener('click', (e) => {
+			const item = e.target.closest('.manage-dropdown-item');
+			if (item) {
+				e.preventDefault();
+				const action = item.dataset.action;
+
+				if (action === 'smart-match-config') {
+					window.location.hash = '#/manage';
+				} else if (action === 'map-settings') {
+					// Future: Navigate to map settings page
+					toast('Map Settings coming soon!', 'info');
+				}
+
+				manageDropdown.classList.add('hidden');
+			}
 		});
 	}
 
