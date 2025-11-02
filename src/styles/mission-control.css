@@ -886,31 +886,33 @@
 	background: var(--mc-bg-panel);
 	border: 2px solid var(--mc-border-primary);
 	border-radius: 8px;
-	padding: 12px 16px;
-	margin-bottom: 20px;
+	padding: 10px 14px;
+	margin-bottom: 12px;
 	transition: all 0.3s ease;
+	flex-shrink: 0;
 }
 
 .mc-counter-header {
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	margin-bottom: 10px;
+	gap: 10px;
+	margin-bottom: 8px;
 }
 
 .mc-counter-icon {
-	width: 36px;
-	height: 36px;
+	width: 28px;
+	height: 28px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	background: rgba(255, 255, 255, 0.05);
-	border-radius: 6px;
+	border-radius: 5px;
+	flex-shrink: 0;
 }
 
 .mc-counter-icon svg {
-	width: 20px;
-	height: 20px;
+	width: 16px;
+	height: 16px;
 	stroke: var(--mc-accent-cyan);
 }
 
@@ -918,19 +920,19 @@
 	flex: 1;
 	display: flex;
 	flex-direction: column;
-	gap: 4px;
+	gap: 2px;
 }
 
 .mc-counter-label {
-	font-size: 11px;
+	font-size: 9px;
 	font-weight: 600;
-	letter-spacing: 1.5px;
+	letter-spacing: 1.2px;
 	color: var(--mc-text-secondary);
 	text-transform: uppercase;
 }
 
 .mc-counter-status {
-	font-size: 14px;
+	font-size: 11px;
 	font-weight: 700;
 	letter-spacing: 0.5px;
 	text-transform: uppercase;
@@ -938,11 +940,11 @@
 
 .mc-counter-display {
 	text-align: center;
-	padding: 16px;
+	padding: 12px;
 	background: rgba(255, 255, 255, 0.02);
 	border-radius: 6px;
-	margin-bottom: 8px;
-	min-height: 80px;
+	margin-bottom: 6px;
+	min-height: 60px;
 	display: flex;
 	flex-direction: column;
 	align-items: center;
@@ -950,40 +952,40 @@
 }
 
 .mc-counter-value {
-	font-size: 42px;
+	font-size: 32px;
 	font-weight: 700;
 	line-height: 1;
-	margin-bottom: 6px;
+	margin-bottom: 4px;
 	font-family: 'Courier New', monospace;
-	text-shadow: 0 0 20px currentColor;
+	text-shadow: 0 0 15px currentColor;
 }
 
 .mc-counter-unit {
-	font-size: 12px;
+	font-size: 10px;
 	font-weight: 600;
-	letter-spacing: 2px;
+	letter-spacing: 1.5px;
 	color: var(--mc-text-secondary);
 	text-transform: uppercase;
 }
 
 .mc-counter-help {
-	font-size: 10px;
+	font-size: 9px;
 	color: var(--mc-text-secondary);
 	text-align: center;
 	line-height: 1.3;
-	margin-bottom: 8px;
+	margin-bottom: 6px;
 }
 
 .mc-counter-save-btn {
 	width: 100%;
-	padding: 8px 16px;
+	padding: 6px 12px;
 	background: linear-gradient(135deg, var(--mc-accent-blue), var(--mc-accent-cyan));
 	border: none;
-	border-radius: 6px;
+	border-radius: 5px;
 	color: var(--mc-text-primary);
-	font-size: 12px;
+	font-size: 10px;
 	font-weight: 700;
-	letter-spacing: 1px;
+	letter-spacing: 0.8px;
 	text-transform: uppercase;
 	cursor: pointer;
 	transition: all 0.3s ease;
