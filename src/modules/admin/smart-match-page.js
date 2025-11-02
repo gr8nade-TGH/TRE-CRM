@@ -7,7 +7,7 @@
 
 import { getActiveConfig, updateActiveConfig, resetToDefaults } from '../../api/smart-match-config-api.js';
 import { DEFAULT_SMART_MATCH_CONFIG } from '../../utils/smart-match-config-defaults.js';
-import { initializeMissionControlUI, createMatchCounter, initializeMatchCounter } from './mission-control-ui.js';
+import { initializeMissionControlUI, initializeMatchCounter } from './mission-control-ui.js';
 
 /**
  * Initialize the Smart Match configuration page
@@ -30,14 +30,10 @@ export async function initializeConfigPage() {
 		// Initialize mission control UI components (sliders, toggles)
 		initializeMissionControlUI();
 
-		// Render and initialize match counter
-		const counterContainer = document.getElementById('matchCounterContainer');
-		if (counterContainer) {
-			counterContainer.innerHTML = createMatchCounter({ loading: true });
-			initializeMatchCounter();
-		}
+		// Initialize inline match counter in summary panel
+		initializeMatchCounter();
 
-		// Set up event listeners (AFTER match counter is created)
+		// Set up event listeners
 		setupEventListeners();
 
 		console.log('✅ Smart Match Configuration Page initialized');
@@ -146,7 +142,6 @@ function setupEventListeners() {
 	const form = document.getElementById('smartMatchConfigForm');
 	const resetBtn = document.getElementById('resetConfigBtn');
 	const testBtn = document.getElementById('testSmartMatchBtn');
-	const topSaveBtn = document.getElementById('topSaveConfigBtn');
 
 	// Form submit handler
 	if (form) {
@@ -154,17 +149,6 @@ function setupEventListeners() {
 			e.preventDefault();
 			await handleSave();
 		});
-	}
-
-	// Top save button handler (in match counter)
-	if (topSaveBtn) {
-		console.log('✅ Attaching click listener to topSaveConfigBtn');
-		topSaveBtn.addEventListener('click', async () => {
-			console.log('🔘 Top save button clicked');
-			await handleSave();
-		});
-	} else {
-		console.warn('⚠️ topSaveConfigBtn not found - button may not exist yet');
 	}
 
 	// Reset button handler

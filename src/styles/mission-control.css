@@ -248,6 +248,44 @@
 	font-family: 'Courier New', monospace;
 }
 
+/* Inline Match Counter Styles */
+.mc-counter-loading-inline {
+	color: var(--mc-text-secondary);
+	animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+
+	50% {
+		opacity: 1;
+	}
+}
+
+#matchCounterValue .mc-counter-good {
+	color: var(--mc-accent-green);
+	text-shadow: 0 0 10px var(--mc-glow-green);
+}
+
+#matchCounterValue .mc-counter-warning {
+	color: var(--mc-accent-orange);
+	text-shadow: 0 0 10px var(--mc-glow-orange);
+}
+
+#matchCounterValue .mc-counter-none {
+	color: #ef4444;
+	text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+#matchCounterValue .mc-counter-error {
+	color: #ef4444;
+	font-size: 12px;
+}
+
 /* Algorithm Flow Diagram */
 .mc-flow-diagram {
 	display: flex;

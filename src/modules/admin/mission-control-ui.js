@@ -371,14 +371,14 @@ export function initializeMatchCounter() {
 
 	// Function to update counter
 	async function updateCounter() {
-		const counterEl = document.getElementById('matchCounter');
+		const counterEl = document.getElementById('matchCounterValue');
 		if (!counterEl) {
 			console.warn('Match counter element not found');
 			return;
 		}
 
 		// Show loading state
-		setCounterLoading(true);
+		counterEl.innerHTML = '<span class="mc-counter-loading-inline">...</span>';
 
 		try {
 			// Extract current config from form
@@ -388,12 +388,21 @@ export function initializeMatchCounter() {
 			const { countMatchingProperties } = await import('../../api/smart-match-config-api.js');
 			const count = await countMatchingProperties(config);
 
-			// Update display
-			setCounterValue(count);
+			// Update display with color coding
+			let colorClass = '';
+			if (count >= 10) {
+				colorClass = 'mc-counter-good';
+			} else if (count >= 1) {
+				colorClass = 'mc-counter-warning';
+			} else {
+				colorClass = 'mc-counter-none';
+			}
+
+			counterEl.innerHTML = `<span class="${colorClass}">${count}</span>`;
 
 		} catch (error) {
 			console.error('❌ Error updating match counter:', error);
-			setCounterError(true);
+			counterEl.innerHTML = '<span class="mc-counter-error">ERR</span>';
 		}
 	}
 
@@ -459,40 +468,5 @@ function extractFormData() {
 	};
 }
 
-/**
- * Set counter to loading state
- * @param {boolean} loading - Loading state
- */
-function setCounterLoading(loading) {
-	const counterEl = document.getElementById('matchCounter');
-	if (!counterEl) return;
 
-	if (loading) {
-		counterEl.innerHTML = createMatchCounter({ loading: true });
-	}
-}
-
-/**
- * Set counter value
- * @param {number} count - Property count
- */
-function setCounterValue(count) {
-	const counterEl = document.getElementById('matchCounter');
-	if (!counterEl) return;
-
-	counterEl.innerHTML = createMatchCounter({ count });
-}
-
-/**
- * Set counter to error state
- * @param {boolean} error - Error state
- */
-function setCounterError(error) {
-	const counterEl = document.getElementById('matchCounter');
-	if (!counterEl) return;
-
-	if (error) {
-		counterEl.innerHTML = createMatchCounter({ error: true });
-	}
-}
 
