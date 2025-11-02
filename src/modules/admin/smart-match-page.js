@@ -27,9 +27,6 @@ export async function initializeConfigPage() {
 		// Populate form fields
 		populateForm(config);
 
-		// Set up event listeners
-		setupEventListeners();
-
 		// Initialize mission control UI components (sliders, toggles)
 		initializeMissionControlUI();
 
@@ -39,6 +36,9 @@ export async function initializeConfigPage() {
 			counterContainer.innerHTML = createMatchCounter({ loading: true });
 			initializeMatchCounter();
 		}
+
+		// Set up event listeners (AFTER match counter is created)
+		setupEventListeners();
 
 		console.log('✅ Smart Match Configuration Page initialized');
 	} catch (error) {
@@ -158,9 +158,13 @@ function setupEventListeners() {
 
 	// Top save button handler (in match counter)
 	if (topSaveBtn) {
+		console.log('✅ Attaching click listener to topSaveConfigBtn');
 		topSaveBtn.addEventListener('click', async () => {
+			console.log('🔘 Top save button clicked');
 			await handleSave();
 		});
+	} else {
+		console.warn('⚠️ topSaveConfigBtn not found - button may not exist yet');
 	}
 
 	// Reset button handler
