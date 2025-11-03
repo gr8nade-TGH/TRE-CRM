@@ -40,6 +40,17 @@
 /* ============================================
    MISSION CONTROL PAGE LAYOUT
    ============================================ */
+
+/* Override body background when mission control page is active */
+body:has(.mission-control-theme:not(.hidden)) {
+	background: var(--mc-bg-primary) !important;
+}
+
+/* Override main background when mission control page is active */
+main:has(.mission-control-theme:not(.hidden)) {
+	background: var(--mc-bg-primary) !important;
+}
+
 .mission-control-theme {
 	background: linear-gradient(135deg, var(--mc-bg-primary) 0%, var(--mc-bg-secondary) 100%);
 	min-height: 100vh;
