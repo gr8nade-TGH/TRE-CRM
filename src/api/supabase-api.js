@@ -2471,9 +2471,28 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             throw new Error(`Email data validation failed: ${validation.errors.join(', ')}`);
         }
 
-        const emailContent = generateSmartMatchEmail(lead, matches, agent);
+        // Step 5: Create Property Matcher session FIRST (so we can include URL in email)
+        let propertyMatcherToken = null;
+        try {
+            const propertyIds = matches.map(m => m.property.id);
+            const tempSession = await createPropertyMatcherSession({
+                leadId: leadId,
+                leadName: lead.name,
+                propertyIds: propertyIds,
+                emailLogId: null, // Will update after email is sent
+                sentBy: sentBy || null
+            });
+            propertyMatcherToken = tempSession.token;
+            console.log('✅ Property Matcher session created:', propertyMatcherToken);
+        } catch (sessionError) {
+            console.error('⚠️ Error creating Property Matcher session:', sessionError);
+            // Continue without Property Matcher URL if session creation fails
+        }
 
-        // Step 5: Send email via sendEmail function
+        // Step 6: Generate email content with Property Matcher URL
+        const emailContent = generateSmartMatchEmail(lead, matches, agent, propertyMatcherToken);
+
+        // Step 7: Send email via sendEmail function
         const emailData = {
             templateId: emailContent.templateId,
             recipientEmail: lead.email,
@@ -2484,7 +2503,8 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
                 agent_id: agent?.id || null,
                 email_type: 'smart_match',
                 property_count: matches.length,
-                property_ids: matches.map(m => m.property.id)
+                property_ids: matches.map(m => m.property.id),
+                property_matcher_token: propertyMatcherToken
             },
             sentBy: sentBy || null
         };
@@ -2493,7 +2513,22 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
 
         console.log('✅ Smart Match email sent successfully:', result);
 
-        // Step 6: Log activity to lead_activities
+        // Step 8: Update Property Matcher session with email_log_id
+        if (result.success && propertyMatcherToken) {
+            try {
+                const { data: sessionData } = await supabase
+                    .from('smart_match_sessions')
+                    .update({ email_log_id: result.emailLogId })
+                    .eq('token', propertyMatcherToken)
+                    .select()
+                    .single();
+                console.log('✅ Property Matcher session updated with email_log_id');
+            } catch (updateError) {
+                console.warn('⚠️ Error updating session with email_log_id:', updateError);
+            }
+        }
+
+        // Step 9: Log activity to lead_activities
         if (result.success) {
             await createLeadActivity({
                 lead_id: leadId,
@@ -2502,12 +2537,17 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
                 performed_by: sentBy || null,
                 metadata: {
                     email_log_id: result.emailLogId,
-                    property_count: matches.length
+                    property_count: matches.length,
+                    property_matcher_token: propertyMatcherToken
                 }
             });
         }
 
-        return result;
+        return {
+            ...result,
+            propertyMatcherToken: propertyMatcherToken,
+            propertyMatcherUrl: propertyMatcherToken ? `/matches/${propertyMatcherToken}` : null
+        };
 
     } catch (error) {
         console.error('❌ Error sending Smart Match email:', error);

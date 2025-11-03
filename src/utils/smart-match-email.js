@@ -157,9 +157,10 @@ ${index + 1}. ${propertyData.name || propertyData.community_name}
  * @param {Object} lead - Lead object with name, email, preferences
  * @param {Array} properties - Array of matched property objects (4-6 properties)
  * @param {Object} agent - Agent object with name, email, phone
+ * @param {string} propertyMatcherToken - Optional Property Matcher token for "My Matches" page
  * @returns {Object} Object with { htmlContent, textContent, subject }
  */
-export function generateSmartMatchEmail(lead, properties, agent) {
+export function generateSmartMatchEmail(lead, properties, agent, propertyMatcherToken = null) {
     // Generate property cards HTML
     const propertyCardsHTML = properties
         .map((property, index) => generatePropertyCardHTML(property, index))
@@ -170,6 +171,11 @@ export function generateSmartMatchEmail(lead, properties, agent) {
         .map((property, index) => generatePropertyCardText(property, index))
         .join('\n');
 
+    // Generate Property Matcher URL if token provided
+    const propertyMatcherUrl = propertyMatcherToken
+        ? `${window.location.origin}/matches/${propertyMatcherToken}`
+        : null;
+
     // Template variables
     const variables = {
         leadName: lead.name || 'there',
@@ -178,7 +184,8 @@ export function generateSmartMatchEmail(lead, properties, agent) {
         agentEmail: agent.email || 'agent@texasrelocationexperts.com',
         agentPhone: agent.phone || '(555) 123-4567',
         propertyCards: propertyCardsHTML,
-        propertyCardsText: propertyCardsText
+        propertyCardsText: propertyCardsText,
+        propertyMatcherUrl: propertyMatcherUrl || ''
     };
 
     return {
