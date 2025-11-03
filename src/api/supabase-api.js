@@ -2515,3 +2515,329 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
     }
 }
 
+// ============================================
+// PROPERTY MATCHER (SMART MATCH SESSIONS) API
+// ============================================
+
+/**
+ * Create a new Property Matcher session when sending Smart Match email
+ * Generates unique token and tracks properties sent
+ * @param {Object} params - Session parameters
+ * @param {string} params.leadId - Lead ID
+ * @param {string} params.leadName - Lead name (for token generation)
+ * @param {Array<string>} params.propertyIds - Array of property IDs sent in email
+ * @param {string} params.emailLogId - Email log ID (from email_logs table)
+ * @param {string} params.sentBy - User ID who sent the email
+ * @returns {Promise<Object>} Created session with token
+ */
+export async function createPropertyMatcherSession({ leadId, leadName, propertyIds, emailLogId, sentBy }) {
+    const supabase = getSupabase();
+
+    console.log('🎯 createPropertyMatcherSession called:', { leadId, leadName, propertyIds, emailLogId, sentBy });
+
+    try {
+        // Step 1: Generate unique token using database function
+        const { data: tokenData, error: tokenError } = await supabase
+            .rpc('generate_property_matcher_token', {
+                p_lead_id: leadId,
+                p_lead_name: leadName
+            });
+
+        if (tokenError) {
+            console.error('❌ Error generating token:', tokenError);
+            throw tokenError;
+        }
+
+        const token = tokenData;
+        console.log('✅ Generated token:', token);
+
+        // Step 2: Create session record
+        const { data: session, error: sessionError } = await supabase
+            .from('smart_match_sessions')
+            .insert([{
+                lead_id: leadId,
+                token: token,
+                properties_sent: propertyIds,
+                email_log_id: emailLogId,
+                sent_by: sentBy
+            }])
+            .select()
+            .single();
+
+        if (sessionError) {
+            console.error('❌ Error creating session:', sessionError);
+            throw sessionError;
+        }
+
+        console.log('✅ Property Matcher session created:', session);
+
+        // Step 3: Update leads table with last_smart_match_sent_at and add to properties_already_sent
+        const { error: updateError } = await supabase
+            .from('leads')
+            .update({
+                last_smart_match_sent_at: new Date().toISOString(),
+                properties_already_sent: supabase.raw(`
+                    COALESCE(properties_already_sent, '[]'::jsonb) || '${JSON.stringify(propertyIds)}'::jsonb
+                `)
+            })
+            .eq('id', leadId);
+
+        if (updateError) {
+            console.warn('⚠️ Error updating lead tracking fields:', updateError);
+            // Don't throw - session was created successfully
+        }
+
+        return {
+            success: true,
+            session,
+            token,
+            url: `/matches/${token}`
+        };
+
+    } catch (error) {
+        console.error('❌ Error in createPropertyMatcherSession:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get Property Matcher session by token
+ * Validates token and checks expiration
+ * @param {string} token - Session token (e.g., "PM-JD123")
+ * @returns {Promise<Object|null>} Session data or null if not found/expired
+ */
+export async function getPropertyMatcherSession(token) {
+    const supabase = getSupabase();
+
+    console.log('🎯 getPropertyMatcherSession called:', token);
+
+    try {
+        const { data: session, error } = await supabase
+            .from('smart_match_sessions')
+            .select(`
+                *,
+                lead:leads!smart_match_sessions_lead_id_fkey (
+                    id,
+                    name,
+                    email,
+                    phone,
+                    preferences
+                )
+            `)
+            .eq('token', token)
+            .gt('expires_at', new Date().toISOString()) // Only get non-expired sessions
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                // No rows returned - token not found or expired
+                console.log('⚠️ Session not found or expired:', token);
+                return null;
+            }
+            console.error('❌ Error fetching session:', error);
+            throw error;
+        }
+
+        console.log('✅ Session found:', session);
+        return session;
+
+    } catch (error) {
+        console.error('❌ Error in getPropertyMatcherSession:', error);
+        throw error;
+    }
+}
+
+/**
+ * Mark Property Matcher session as viewed
+ * Records when lead first opened the "My Matches" link
+ * @param {string} sessionId - Session ID
+ * @returns {Promise<Object>} Updated session
+ */
+export async function markSessionViewed(sessionId) {
+    const supabase = getSupabase();
+
+    console.log('👁️ markSessionViewed called:', sessionId);
+
+    try {
+        const { data, error } = await supabase
+            .from('smart_match_sessions')
+            .update({
+                viewed_at: new Date().toISOString()
+            })
+            .eq('id', sessionId)
+            .is('viewed_at', null) // Only update if not already viewed
+            .select()
+            .single();
+
+        if (error) {
+            console.error('❌ Error marking session as viewed:', error);
+            throw error;
+        }
+
+        console.log('✅ Session marked as viewed:', data);
+        return data;
+
+    } catch (error) {
+        console.error('❌ Error in markSessionViewed:', error);
+        throw error;
+    }
+}
+
+/**
+ * Save Property Matcher responses (property selections and tour requests)
+ * @param {Object} params - Response parameters
+ * @param {string} params.sessionId - Session ID
+ * @param {string} params.leadId - Lead ID
+ * @param {Array<Object>} params.selections - Array of property selections
+ * @param {string} params.responseType - 'tour_request' or 'more_options'
+ * @returns {Promise<Object>} Result with created responses
+ */
+export async function savePropertyMatcherResponses({ sessionId, leadId, selections, responseType }) {
+    const supabase = getSupabase();
+
+    console.log('💾 savePropertyMatcherResponses called:', { sessionId, leadId, selections, responseType });
+
+    try {
+        // Step 1: Insert responses for each selected property
+        const responses = selections.map(selection => ({
+            session_id: sessionId,
+            lead_id: leadId,
+            property_id: selection.propertyId,
+            unit_id: selection.unitId || null,
+            is_interested: true,
+            preferred_tour_date: selection.tourDate || null,
+            tour_notes: selection.notes || null,
+            metadata: selection.metadata || {}
+        }));
+
+        const { data: createdResponses, error: responsesError } = await supabase
+            .from('smart_match_responses')
+            .insert(responses)
+            .select();
+
+        if (responsesError) {
+            console.error('❌ Error saving responses:', responsesError);
+            throw responsesError;
+        }
+
+        console.log('✅ Responses saved:', createdResponses);
+
+        // Step 2: Update session with submission info
+        const { error: sessionError } = await supabase
+            .from('smart_match_sessions')
+            .update({
+                submitted_at: new Date().toISOString(),
+                response_type: responseType
+            })
+            .eq('id', sessionId);
+
+        if (sessionError) {
+            console.warn('⚠️ Error updating session:', sessionError);
+            // Don't throw - responses were saved successfully
+        }
+
+        // Step 3: Update lead based on response type
+        if (responseType === 'more_options') {
+            // Reset cooldown and set wants_more_options flag
+            const { error: leadError } = await supabase
+                .from('leads')
+                .update({
+                    wants_more_options: true,
+                    last_smart_match_sent_at: null // Reset cooldown
+                })
+                .eq('id', leadId);
+
+            if (leadError) {
+                console.warn('⚠️ Error updating lead for more options:', leadError);
+            }
+        }
+
+        // Step 4: Create activity log entries
+        for (const response of createdResponses) {
+            await createLeadActivity({
+                lead_id: leadId,
+                activity_type: 'property_matcher_response',
+                activity_description: `Interested in property via Property Matcher${response.preferred_tour_date ? ' - Tour requested' : ''}`,
+                metadata: {
+                    session_id: sessionId,
+                    property_id: response.property_id,
+                    unit_id: response.unit_id,
+                    tour_date: response.preferred_tour_date,
+                    response_type: responseType
+                }
+            });
+        }
+
+        // Create summary activity
+        await createLeadActivity({
+            lead_id: leadId,
+            activity_type: responseType === 'more_options' ? 'requested_more_options' : 'tour_request',
+            activity_description: responseType === 'more_options'
+                ? `Requested more property options (${selections.length} properties viewed)`
+                : `Submitted Property Matcher selections (${selections.length} properties selected)`,
+            metadata: {
+                session_id: sessionId,
+                property_count: selections.length,
+                response_type: responseType
+            }
+        });
+
+        return {
+            success: true,
+            responses: createdResponses,
+            responseType
+        };
+
+    } catch (error) {
+        console.error('❌ Error in savePropertyMatcherResponses:', error);
+        throw error;
+    }
+}
+
+/**
+ * Get Property Matcher responses for a lead
+ * @param {string} leadId - Lead ID
+ * @returns {Promise<Array>} Array of responses with property details
+ */
+export async function getPropertyMatcherResponses(leadId) {
+    const supabase = getSupabase();
+
+    console.log('📊 getPropertyMatcherResponses called:', leadId);
+
+    try {
+        const { data, error } = await supabase
+            .from('smart_match_responses')
+            .select(`
+                *,
+                session:smart_match_sessions!smart_match_responses_session_id_fkey (
+                    id,
+                    token,
+                    created_at,
+                    viewed_at,
+                    submitted_at
+                ),
+                property:properties!smart_match_responses_property_id_fkey (
+                    id,
+                    community_name,
+                    street_address,
+                    city,
+                    state
+                )
+            `)
+            .eq('lead_id', leadId)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('❌ Error fetching responses:', error);
+            throw error;
+        }
+
+        console.log('✅ Responses fetched:', data);
+        return data;
+
+    } catch (error) {
+        console.error('❌ Error in getPropertyMatcherResponses:', error);
+        throw error;
+    }
+}
+
