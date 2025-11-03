@@ -172,8 +172,13 @@ export function generateSmartMatchEmail(lead, properties, agent, propertyMatcher
         .join('\n');
 
     // Generate Property Matcher URL if token provided
+    // Use production URL for emails (not localhost)
+    const baseUrl = window.location.hostname === 'localhost'
+        ? 'https://tre-crm.vercel.app'  // Production URL
+        : window.location.origin;
+
     const propertyMatcherUrl = propertyMatcherToken
-        ? `${window.location.origin}/matches/${propertyMatcherToken}`
+        ? `${baseUrl}/matches/${propertyMatcherToken}`
         : null;
 
     // Template variables

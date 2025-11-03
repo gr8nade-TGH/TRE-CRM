@@ -7,6 +7,10 @@
     {
       "source": "/landing/:agent",
       "destination": "/landing.html"
+    },
+    {
+      "source": "/matches/:token",
+      "destination": "/matches.html?token=:token"
     }
   ]
 }
