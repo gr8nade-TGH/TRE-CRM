@@ -502,6 +502,9 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	// Expose to window for Customer View "Edit Lead" button
+	window.openLeadDetailsModal = openLeadDetailsModal;
+
 	function closeLeadDetailsModal() {
 		Modals.closeLeadDetailsModal({
 			hideModal
