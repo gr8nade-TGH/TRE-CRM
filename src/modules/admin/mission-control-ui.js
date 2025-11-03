@@ -51,6 +51,9 @@ function initializeSliders() {
 
 			// Update thumb position
 			thumb.style.left = `${percentage}%`;
+
+			// Trigger change event for counter update
+			slider.dispatchEvent(new Event('change', { bubbles: true }));
 		};
 
 		// Initialize
@@ -92,6 +95,9 @@ function initializeToggles() {
 			} else {
 				toggle.classList.remove('active');
 			}
+
+			// Trigger change event for counter update
+			inputElement.dispatchEvent(new Event('change', { bubbles: true }));
 		});
 	});
 }
@@ -368,26 +374,38 @@ export function initializeMatchCounter() {
 
 	let debounceTimer = null;
 	const DEBOUNCE_DELAY = 500; // 500ms
+	let updateCount = 0; // Track number of updates for debugging
 
 	// Function to update counter
 	async function updateCounter() {
+		updateCount++;
+		const currentUpdate = updateCount;
+
 		const counterEl = document.getElementById('matchCounterValue');
 		if (!counterEl) {
-			console.warn('Match counter element not found');
+			console.warn('❌ Match counter element not found');
 			return;
 		}
 
 		// Show loading state
 		counterEl.innerHTML = '<span class="mc-counter-loading-inline">...</span>';
-		console.log('🔄 Counter: Loading...');
+		console.log(`🔄 Counter Update #${currentUpdate}: Loading...`);
 
 		try {
 			// Extract current config from form
 			const config = extractFormData();
+			console.log(`📊 Counter Update #${currentUpdate} - Config:`, {
+				bedroomMode: config.bedroom_match_mode,
+				bathroomMode: config.bathroom_match_mode,
+				rentTolerance: config.rent_tolerance_percent,
+				petPolicyMode: config.pet_policy_mode,
+				moveInFlexibility: config.move_in_flexibility_days
+			});
 
 			// Count matching properties and units
 			const { countMatchingProperties } = await import('../../api/smart-match-config-api.js');
 			const { propertyCount, unitCount } = await countMatchingProperties(config);
+			console.log(`📊 Counter Update #${currentUpdate} - Result:`, { propertyCount, unitCount });
 
 			// Update display with color coding based on unit count
 			let colorClass = '';
@@ -405,7 +423,7 @@ export function initializeMatchCounter() {
 
 			// Display both property and unit counts
 			counterEl.innerHTML = `<span class="${colorClass}">${propertyCount} PROPERTIES, ${unitCount} UNITS</span>`;
-			console.log(`✅ Counter updated: ${propertyCount} properties, ${unitCount} units (${statusText})`);
+			console.log(`✅ Counter Update #${currentUpdate} COMPLETE: ${propertyCount} properties, ${unitCount} units (${statusText})`);
 
 		} catch (error) {
 			console.error('❌ Error updating match counter:', error);
@@ -414,7 +432,10 @@ export function initializeMatchCounter() {
 	}
 
 	// Debounced update function
-	function debouncedUpdate() {
+	function debouncedUpdate(event) {
+		if (event) {
+			console.log(`🎯 Filter changed: ${event.target.id || event.target.className} = ${event.target.value}`);
+		}
 		clearTimeout(debounceTimer);
 		debounceTimer = setTimeout(updateCounter, DEBOUNCE_DELAY);
 	}
@@ -428,21 +449,26 @@ export function initializeMatchCounter() {
 		'moveInFlexibilityDays'
 	];
 
+	console.log('🔗 Attaching event listeners to filter controls...');
 	filterControls.forEach(controlId => {
 		const element = document.getElementById(controlId);
 		if (element) {
 			element.addEventListener('input', debouncedUpdate);
 			element.addEventListener('change', debouncedUpdate);
+			console.log(`  ✓ Attached listeners to #${controlId}`);
+		} else {
+			console.warn(`  ⚠️ Element #${controlId} not found`);
 		}
 	});
 
 	// Also listen to toggle clicks
 	const toggles = document.querySelectorAll('.mc-toggle');
+	console.log(`🔗 Attaching event listeners to ${toggles.length} toggles...`);
 	toggles.forEach(toggle => {
 		toggle.addEventListener('click', debouncedUpdate);
 	});
 
-	console.log('✅ Match counter initialized');
+	console.log('✅ Match counter initialized with event listeners');
 
 	// Initial update
 	updateCounter();
