@@ -479,10 +479,15 @@ export function initializeMatchCounter() {
  * @returns {Object} Configuration object
  */
 function extractFormData() {
+	const bedroomMode = document.getElementById('bedroomMatchMode')?.value || 'exact';
+	const bathroomMode = document.getElementById('bathroomMatchMode')?.value || 'exact';
+
 	return {
 		// Filtering Settings
-		bedroom_match_mode: document.getElementById('bedroomMatchMode')?.value || 'exact',
-		bathroom_match_mode: document.getElementById('bathroomMatchMode')?.value || 'exact',
+		bedroom_match_mode: bedroomMode,
+		bedroom_tolerance: bedroomMode === 'flexible' ? 1 : 0, // ±1 bedroom when flexible
+		bathroom_match_mode: bathroomMode,
+		bathroom_tolerance: bathroomMode === 'flexible' ? 0.5 : 0, // ±0.5 bathroom when flexible
 		rent_tolerance_percent: parseInt(document.getElementById('rentTolerancePercent')?.value || 20),
 		pet_policy_mode: document.getElementById('petPolicyMode')?.value || 'ignore',
 		move_in_flexibility_days: parseInt(document.getElementById('moveInFlexibilityDays')?.value || 30),
