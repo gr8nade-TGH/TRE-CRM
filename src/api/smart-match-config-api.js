@@ -522,18 +522,19 @@ export async function countMatchingProperties(config, testLead = null) {
         const { applyConfigurableFilters } = await import('../utils/smart-match-v2.js');
         const filteredUnits = applyConfigurableFilters(unitsWithDetails, lead, config);
 
-        // Count unique properties for logging
+        // Count unique properties and units
         const propertyIds = new Set(filteredUnits.map(item => item.property.id));
         const propertyCount = propertyIds.size;
         const unitCount = filteredUnits.length;
 
         console.log(`✅ Found ${unitCount} matching units across ${propertyCount} properties`);
 
-        return unitCount; // Return unit count, not property count
+        // Return both counts as an object
+        return { propertyCount, unitCount };
 
     } catch (error) {
         console.error('❌ Error counting matching units:', error);
-        return 0; // Return 0 on error to avoid breaking UI
+        return { propertyCount: 0, unitCount: 0 }; // Return 0s on error to avoid breaking UI
     }
 }
 

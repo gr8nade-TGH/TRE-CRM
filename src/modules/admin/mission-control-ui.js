@@ -385,17 +385,17 @@ export function initializeMatchCounter() {
 			// Extract current config from form
 			const config = extractFormData();
 
-			// Count matching units (function name is legacy, but now returns unit count)
+			// Count matching properties and units
 			const { countMatchingProperties } = await import('../../api/smart-match-config-api.js');
-			const count = await countMatchingProperties(config);
+			const { propertyCount, unitCount } = await countMatchingProperties(config);
 
-			// Update display with color coding
+			// Update display with color coding based on unit count
 			let colorClass = '';
 			let statusText = '';
-			if (count >= 10) {
+			if (unitCount >= 10) {
 				colorClass = 'mc-counter-good';
 				statusText = 'OPTIMAL';
-			} else if (count >= 1) {
+			} else if (unitCount >= 1) {
 				colorClass = 'mc-counter-warning';
 				statusText = 'LIMITED';
 			} else {
@@ -403,9 +403,9 @@ export function initializeMatchCounter() {
 				statusText = 'NO MATCHES';
 			}
 
-			// Force DOM update with new content
-			counterEl.innerHTML = `<span class="${colorClass}">${count}</span>`;
-			console.log(`✅ Counter updated: ${count} units (${statusText})`);
+			// Display both property and unit counts
+			counterEl.innerHTML = `<span class="${colorClass}">${propertyCount} PROPERTIES, ${unitCount} UNITS</span>`;
+			console.log(`✅ Counter updated: ${propertyCount} properties, ${unitCount} units (${statusText})`);
 
 		} catch (error) {
 			console.error('❌ Error updating match counter:', error);

@@ -66,6 +66,27 @@
 	color: var(--mc-text-primary) !important;
 }
 
+/* Override white backgrounds from global form styles */
+.mission-control-theme select,
+.mission-control-theme input[type="text"],
+.mission-control-theme input[type="email"],
+.mission-control-theme input[type="tel"],
+.mission-control-theme input[type="date"],
+.mission-control-theme input[type="number"],
+.mission-control-theme textarea {
+	background: var(--mc-bg-tertiary) !important;
+	color: var(--mc-text-primary) !important;
+	border-color: var(--mc-border-primary) !important;
+}
+
+.mission-control-theme select:focus,
+.mission-control-theme input:focus,
+.mission-control-theme textarea:focus {
+	background: var(--mc-bg-panel) !important;
+	border-color: var(--mc-accent-cyan) !important;
+	outline: none !important;
+}
+
 .mission-control-theme .smart-match-config-page {
 	max-width: 1600px;
 	margin: 0 auto;
@@ -639,7 +660,7 @@
 
 .mc-toggle.active::before {
 	left: 30px;
-	background: white;
+	background: #e5e7eb;
 	box-shadow: 0 0 8px var(--mc-glow-green);
 }
 
@@ -724,7 +745,7 @@
 	left: 0;
 	width: 14px;
 	height: 14px;
-	background: white;
+	background: #e5e7eb;
 	border: 2px solid var(--mc-accent-cyan);
 	border-radius: 50%;
 	transform: translate(-50%, -50%);
