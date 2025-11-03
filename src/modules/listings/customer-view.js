@@ -170,22 +170,24 @@ export async function handleCustomerSelection(customerId, renderListings) {
 	if (missingFields.length > 0) {
 		if (missingDataWarning && missingDataText) {
 			missingDataWarning.style.display = 'flex';
-			missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <a href="#" class="edit-lead-link" data-lead-id="${customerId}" style="color: white; text-decoration: underline; font-weight: 600; cursor: pointer;">Edit Lead</a>`;
+			missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <button class="edit-lead-btn" data-lead-id="${customerId}" style="background: none; border: none; color: #fbbf24; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; font-family: inherit;">Edit Lead</button>`;
 
 			// Add click handler to open modal directly (stay on Listings page)
-			setTimeout(() => {
-				const editLink = document.querySelector('.edit-lead-link');
-				if (editLink) {
-					editLink.addEventListener('click', (e) => {
-						e.preventDefault();
-						const leadId = e.target.dataset.leadId;
-						// Open the lead details modal directly
-						if (window.openLeadDetailsModal) {
-							window.openLeadDetailsModal(leadId);
-						}
-					});
-				}
-			}, 100);
+			const editBtn = missingDataText.querySelector('.edit-lead-btn');
+			if (editBtn) {
+				editBtn.addEventListener('click', (e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					const leadId = e.currentTarget.dataset.leadId;
+					console.log('🔧 Opening lead details modal for:', leadId);
+					// Open the lead details modal directly
+					if (window.openLeadDetailsModal) {
+						window.openLeadDetailsModal(leadId);
+					} else {
+						console.error('❌ window.openLeadDetailsModal not found');
+					}
+				});
+			}
 		}
 		console.warn('⚠️ Customer has missing preferences:', missingFields);
 	} else {
