@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Property Matcher API Test Page</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #1a202c;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            color: #718096;
+        }
+
+        .test-section {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+        }
+
+        .test-section h2 {
+            color: #2d3748;
+            margin-bottom: 15px;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .test-section h2::before {
+            content: '🧪';
+            font-size: 24px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            color: #4a5568;
+            font-weight: 500;
+            margin-bottom: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            font-size: 14px;
+            transition: border-color 0.2s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .result-box {
+            background: #f7fafc;
+            border: 2px solid #e2e8f0;
+            border-radius: 6px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .result-box.success {
+            background: #f0fdf4;
+            border-color: #86efac;
+        }
+
+        .result-box.error {
+            background: #fef2f2;
+            border-color: #fca5a5;
+        }
+
+        .result-box pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            color: #1a202c;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 10px;
+        }
+
+        .status-badge.success {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-badge.error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .status-badge.pending {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+        }
+
+        .info-box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+
+        .info-box p {
+            color: #1e40af;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 0.6s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 Property Matcher API Test Page</h1>
+            <p>Test all Property Matcher API functions without using browser console</p>
+        </div>
+
+        <!-- Test 1: Create Session -->
+        <div class="test-section">
+            <h2>Test 1: Create Property Matcher Session</h2>
+            <div class="info-box">
+                <p><strong>What it does:</strong> Creates a new session with unique token when sending Smart Match email</p>
+            </div>
+            
+            <div class="grid">
+                <div class="form-group">
+                    <label>Lead ID</label>
+                    <input type="text" id="create-lead-id" placeholder="e.g., lead_1730674416000">
+                </div>
+                <div class="form-group">
+                    <label>Lead Name</label>
+                    <input type="text" id="create-lead-name" placeholder="e.g., John Doe">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Property IDs (comma-separated)</label>
+                <input type="text" id="create-property-ids" placeholder="e.g., prop_1, prop_2, prop_3">
+            </div>
+            
+            <button class="btn" onclick="testCreateSession()">
+                <span>▶️</span> Run Test
+            </button>
+            
+            <div id="create-result"></div>
+        </div>
+
+        <!-- Test 2: Get Session -->
+        <div class="test-section">
+            <h2>Test 2: Get Session by Token</h2>
+            <div class="info-box">
+                <p><strong>What it does:</strong> Retrieves session data using the token (simulates lead opening "My Matches" page)</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Token</label>
+                <input type="text" id="get-token" placeholder="e.g., PM-JD1730674416000">
+            </div>
+            
+            <button class="btn" onclick="testGetSession()">
+                <span>▶️</span> Run Test
+            </button>
+            
+            <div id="get-result"></div>
+        </div>
+
+        <!-- Test 3: Mark Viewed -->
+        <div class="test-section">
+            <h2>Test 3: Mark Session as Viewed</h2>
+            <div class="info-box">
+                <p><strong>What it does:</strong> Records when lead first opens the "My Matches" link</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Session ID (UUID)</label>
+                <input type="text" id="viewed-session-id" placeholder="e.g., 123e4567-e89b-12d3-a456-426614174000">
+            </div>
+            
+            <button class="btn" onclick="testMarkViewed()">
+                <span>▶️</span> Run Test
+            </button>
+            
+            <div id="viewed-result"></div>
+        </div>
+
+        <!-- Test 4: Save Responses -->
+        <div class="test-section">
+            <h2>Test 4: Save Property Matcher Responses</h2>
+            <div class="info-box">
+                <p><strong>What it does:</strong> Saves lead's property selections and tour requests</p>
+            </div>
+            
+            <div class="grid">
+                <div class="form-group">
+                    <label>Session ID (UUID)</label>
+                    <input type="text" id="response-session-id" placeholder="From Test 1 result">
+                </div>
+                <div class="form-group">
+                    <label>Lead ID</label>
+                    <input type="text" id="response-lead-id" placeholder="Same as Test 1">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Property ID</label>
+                <input type="text" id="response-property-id" placeholder="e.g., prop_1">
+            </div>
+            
+            <div class="grid">
+                <div class="form-group">
+                    <label>Unit ID (optional)</label>
+                    <input type="text" id="response-unit-id" placeholder="e.g., A101">
+                </div>
+                <div class="form-group">
+                    <label>Tour Date (optional)</label>
+                    <input type="datetime-local" id="response-tour-date">
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label>Response Type</label>
+                <select id="response-type">
+                    <option value="tour_request">Tour Request</option>
+                    <option value="more_options">Send More Options</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label>Notes (optional)</label>
+                <textarea id="response-notes" rows="3" placeholder="Any additional notes..."></textarea>
+            </div>
+            
+            <button class="btn" onclick="testSaveResponses()">
+                <span>▶️</span> Run Test
+            </button>
+            
+            <div id="response-result"></div>
+        </div>
+
+        <!-- Test 5: Get Responses -->
+        <div class="test-section">
+            <h2>Test 5: Get All Responses for Lead</h2>
+            <div class="info-box">
+                <p><strong>What it does:</strong> Retrieves all Property Matcher responses for a lead (for CRM display)</p>
+            </div>
+            
+            <div class="form-group">
+                <label>Lead ID</label>
+                <input type="text" id="get-responses-lead-id" placeholder="e.g., lead_1730674416000">
+            </div>
+            
+            <button class="btn" onclick="testGetResponses()">
+                <span>▶️</span> Run Test
+            </button>
+            
+            <div id="get-responses-result"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import * as SupabaseAPI from './src/api/supabase-api.js';
+        
+        // Make API available globally for onclick handlers
+        window.SupabaseAPI = SupabaseAPI;
+        
+        // Helper functions
+        window.showResult = function(elementId, data, isError = false) {
+            const element = document.getElementById(elementId);
+            const resultClass = isError ? 'error' : 'success';
+            const statusBadge = isError 
+                ? '<span class="status-badge error">❌ Error</span>'
+                : '<span class="status-badge success">✅ Success</span>';
+            
+            element.innerHTML = `
+                <div class="result-box ${resultClass}">
+                    ${statusBadge}
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                </div>
+            `;
+        };
+        
+        window.showLoading = function(elementId) {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `
+                <div class="result-box">
+                    <span class="status-badge pending">
+                        <span class="spinner"></span> Running...
+                    </span>
+                </div>
+            `;
+        };
+        
+        // Test 1: Create Session
+        window.testCreateSession = async function() {
+            const leadId = document.getElementById('create-lead-id').value;
+            const leadName = document.getElementById('create-lead-name').value;
+            const propertyIdsStr = document.getElementById('create-property-ids').value;
+            
+            if (!leadId || !leadName || !propertyIdsStr) {
+                alert('Please fill in all fields');
+                return;
+            }
+            
+            const propertyIds = propertyIdsStr.split(',').map(id => id.trim());
+            
+            showLoading('create-result');
+            
+            try {
+                const result = await SupabaseAPI.createPropertyMatcherSession({
+                    leadId,
+                    leadName,
+                    propertyIds,
+                    emailLogId: null,
+                    sentBy: window.state?.user?.id || null
+                });
+                
+                showResult('create-result', result);
+                
+                // Auto-fill token in Test 2
+                document.getElementById('get-token').value = result.token;
+                // Auto-fill session ID in Test 3
+                document.getElementById('viewed-session-id').value = result.session.id;
+                // Auto-fill session ID and lead ID in Test 4
+                document.getElementById('response-session-id').value = result.session.id;
+                document.getElementById('response-lead-id').value = leadId;
+                
+            } catch (error) {
+                showResult('create-result', { error: error.message }, true);
+            }
+        };
+        
+        // Test 2: Get Session
+        window.testGetSession = async function() {
+            const token = document.getElementById('get-token').value;
+            
+            if (!token) {
+                alert('Please enter a token');
+                return;
+            }
+            
+            showLoading('get-result');
+            
+            try {
+                const result = await SupabaseAPI.getPropertyMatcherSession(token);
+                showResult('get-result', result);
+            } catch (error) {
+                showResult('get-result', { error: error.message }, true);
+            }
+        };
+        
+        // Test 3: Mark Viewed
+        window.testMarkViewed = async function() {
+            const sessionId = document.getElementById('viewed-session-id').value;
+            
+            if (!sessionId) {
+                alert('Please enter a session ID');
+                return;
+            }
+            
+            showLoading('viewed-result');
+            
+            try {
+                const result = await SupabaseAPI.markSessionViewed(sessionId);
+                showResult('viewed-result', result);
+            } catch (error) {
+                showResult('viewed-result', { error: error.message }, true);
+            }
+        };
+        
+        // Test 4: Save Responses
+        window.testSaveResponses = async function() {
+            const sessionId = document.getElementById('response-session-id').value;
+            const leadId = document.getElementById('response-lead-id').value;
+            const propertyId = document.getElementById('response-property-id').value;
+            const unitId = document.getElementById('response-unit-id').value;
+            const tourDate = document.getElementById('response-tour-date').value;
+            const responseType = document.getElementById('response-type').value;
+            const notes = document.getElementById('response-notes').value;
+            
+            if (!sessionId || !leadId || !propertyId) {
+                alert('Please fill in Session ID, Lead ID, and Property ID');
+                return;
+            }
+            
+            showLoading('response-result');
+            
+            try {
+                const selections = [{
+                    propertyId,
+                    unitId: unitId || null,
+                    tourDate: tourDate ? new Date(tourDate).toISOString() : null,
+                    notes: notes || null
+                }];
+                
+                const result = await SupabaseAPI.savePropertyMatcherResponses({
+                    sessionId,
+                    leadId,
+                    selections,
+                    responseType
+                });
+                
+                showResult('response-result', result);
+                
+                // Auto-fill lead ID in Test 5
+                document.getElementById('get-responses-lead-id').value = leadId;
+                
+            } catch (error) {
+                showResult('response-result', { error: error.message }, true);
+            }
+        };
+        
+        // Test 5: Get Responses
+        window.testGetResponses = async function() {
+            const leadId = document.getElementById('get-responses-lead-id').value;
+            
+            if (!leadId) {
+                alert('Please enter a lead ID');
+                return;
+            }
+            
+            showLoading('get-responses-result');
+            
+            try {
+                const result = await SupabaseAPI.getPropertyMatcherResponses(leadId);
+                showResult('get-responses-result', result);
+            } catch (error) {
+                showResult('get-responses-result', { error: error.message }, true);
+            }
+        };
+    </script>
+</body>
+</html>
+
