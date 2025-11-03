@@ -66,69 +66,71 @@ export const DEFAULT_SMART_MATCH_CONFIG = {
     // Metadata
     name: 'Default Configuration',
     is_active: true,
-    
+
     // ============================================
     // FILTERING CRITERIA
     // ============================================
-    
+
     // Bedroom Matching
     bedroom_match_mode: MATCH_MODE.EXACT,
     bedroom_tolerance: 0,
-    
+
     // Bathroom Matching
     bathroom_match_mode: MATCH_MODE.EXACT,
     bathroom_tolerance: 0,
-    
+
     // Rent Range Tolerance
     rent_tolerance_percent: 20,
     rent_tolerance_mode: RENT_TOLERANCE_MODE.PERCENTAGE,
     rent_tolerance_fixed: 0,
-    
+
     // Move-in Date Flexibility
     move_in_flexibility_days: 30,
-    
+
     // Pet Policy Filtering
     pet_policy_mode: POLICY_MODE.IGNORE,
-    
+
     // Income Requirements
     income_requirement_mode: POLICY_MODE.IGNORE,
     income_multiplier: 3.0,
-    
+
     // Credit Score Requirements
     credit_score_mode: POLICY_MODE.IGNORE,
     min_credit_score: 600,
-    
+
     // Background Check Requirements
     background_check_mode: POLICY_MODE.IGNORE,
-    
+
     // Leniency Factor
     use_leniency_factor: true,
-    
+
     // ============================================
     // SCORING WEIGHTS
     // ============================================
-    
+
     // Base Scoring (Lead Preference Matching)
-    price_match_perfect_score: 25,
-    price_match_close_score: 10,
-    move_in_date_bonus: 10,
-    
+    // Rebalanced to prioritize lead preferences and create better score differentiation
+    price_match_perfect_score: 40,  // Increased from 25 - most important to lead
+    price_match_close_score: 15,    // Increased from 10 - still reward close matches
+    move_in_date_bonus: 15,          // Increased from 10 - important timing factor
+
     // Business Priority Bonuses
+    // Reduced to prevent too many perfect scores
     commission_threshold_pct: 4.0,
-    commission_base_bonus: 80,
-    commission_scale_bonus: 1,
-    
-    pumi_bonus: 20,
-    
+    commission_base_bonus: 30,       // Reduced from 80 - still rewards high commission
+    commission_scale_bonus: 2,       // Increased from 1 - rewards higher % more gradually
+
+    pumi_bonus: 10,                  // Reduced from 20 - still valuable but not excessive
+
     // Leniency Bonuses
     leniency_bonus_low: 0,
-    leniency_bonus_medium: 5,
-    leniency_bonus_high: 10,
-    
+    leniency_bonus_medium: 3,        // Reduced from 5
+    leniency_bonus_high: 5,          // Reduced from 10
+
     // ============================================
     // DISPLAY SETTINGS
     // ============================================
-    
+
     max_properties_to_show: 10,
     min_score_threshold: 0,
     sort_by: SORT_BY.SCORE
@@ -270,25 +272,25 @@ export const VALIDATION_RULES = {
  */
 export function validateConfigValue(field, value) {
     const rules = VALIDATION_RULES[field];
-    
+
     if (!rules) {
         return { valid: true, error: null };
     }
-    
+
     // Check type
     if (rules.type === 'integer' && !Number.isInteger(value)) {
         return { valid: false, error: `${field} must be an integer` };
     }
-    
+
     if (rules.type === 'decimal' && typeof value !== 'number') {
         return { valid: false, error: `${field} must be a number` };
     }
-    
+
     // Check range
     if (value < rules.min || value > rules.max) {
         return { valid: false, error: `${field} ${rules.description}` };
     }
-    
+
     return { valid: true, error: null };
 }
 
@@ -299,7 +301,7 @@ export function validateConfigValue(field, value) {
  */
 export function validateConfig(config) {
     const errors = [];
-    
+
     // Validate all numeric fields
     for (const [field, rules] of Object.entries(VALIDATION_RULES)) {
         if (config[field] !== undefined) {
@@ -309,40 +311,40 @@ export function validateConfig(config) {
             }
         }
     }
-    
+
     // Validate enum fields
     if (config.bedroom_match_mode && !Object.values(MATCH_MODE).includes(config.bedroom_match_mode)) {
         errors.push('Invalid bedroom_match_mode');
     }
-    
+
     if (config.bathroom_match_mode && !Object.values(MATCH_MODE).includes(config.bathroom_match_mode)) {
         errors.push('Invalid bathroom_match_mode');
     }
-    
+
     if (config.rent_tolerance_mode && !Object.values(RENT_TOLERANCE_MODE).includes(config.rent_tolerance_mode)) {
         errors.push('Invalid rent_tolerance_mode');
     }
-    
+
     if (config.pet_policy_mode && !Object.values(POLICY_MODE).includes(config.pet_policy_mode)) {
         errors.push('Invalid pet_policy_mode');
     }
-    
+
     if (config.income_requirement_mode && !Object.values(POLICY_MODE).includes(config.income_requirement_mode)) {
         errors.push('Invalid income_requirement_mode');
     }
-    
+
     if (config.credit_score_mode && !Object.values(POLICY_MODE).includes(config.credit_score_mode)) {
         errors.push('Invalid credit_score_mode');
     }
-    
+
     if (config.background_check_mode && !Object.values(POLICY_MODE).includes(config.background_check_mode)) {
         errors.push('Invalid background_check_mode');
     }
-    
+
     if (config.sort_by && !Object.values(SORT_BY).includes(config.sort_by)) {
         errors.push('Invalid sort_by');
     }
-    
+
     return {
         valid: errors.length === 0,
         errors
