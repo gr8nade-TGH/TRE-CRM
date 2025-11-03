@@ -722,7 +722,7 @@ async function showTestResults(testLead, matches, config) {
 					</div>
 				</div>
 				<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
-					<a href="#/listings" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: #2563eb; text-decoration: none; font-weight: 500; font-size: 14px;">
+					<a href="#/listings?property=${encodeURIComponent(prop.name)}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: #2563eb; text-decoration: none; font-weight: 500; font-size: 14px;">
 						View on Listings Page
 						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
 							<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>

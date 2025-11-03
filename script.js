@@ -472,7 +472,7 @@ let api, renderLeads, renderSpecials;
 		await Modals.addPropertyNote({ state, SupabaseAPI, loadPropertyNotes, renderListings, toast });
 	}
 
-	async function renderListings() {
+	async function renderListings(autoSelectProperty = null) {
 		await Listings.renderListings({
 			SupabaseAPI,
 			state,
@@ -487,7 +487,7 @@ let api, renderLeads, renderSpecials;
 			clearMarkers,
 			addMarker,
 			toast
-		});
+		}, autoSelectProperty);
 	}
 
 	async function openLeadDetailsModal(leadId) {

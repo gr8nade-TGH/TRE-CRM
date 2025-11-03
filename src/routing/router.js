@@ -88,14 +88,27 @@ export function route(deps) {
 		show(document.getElementById('agentsView'));
 		setRoleLabel('agents');
 		renderAgents();
-	} else if (hash === '/listings') {
+	} else if (hash === '/listings' || hash.startsWith('/listings?')) {
 		state.currentPage = 'listings';
 		show(document.getElementById('listingsView'));
 		setRoleLabel('listings');
+
+		// Parse query parameters for deep linking
+		let autoSelectProperty = null;
+		if (hash.includes('?')) {
+			const queryString = hash.split('?')[1];
+			const params = new URLSearchParams(queryString);
+			autoSelectProperty = params.get('property');
+			if (autoSelectProperty) {
+				// Decode URL-encoded property name
+				autoSelectProperty = decodeURIComponent(autoSelectProperty);
+			}
+		}
+
 		// Initialize map if not already done
 		setTimeout(() => {
 			initMap();
-			renderListings();
+			renderListings(autoSelectProperty);
 		}, 100);
 	} else if (hash === '/documents') {
 		state.currentPage = 'documents';
