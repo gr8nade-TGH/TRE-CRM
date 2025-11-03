@@ -15,10 +15,42 @@ async function generateCriteriaBanner(lead) {
 		config = DEFAULT_SMART_MATCH_CONFIG;
 	}
 
+	// Extract preferences from lead object (preferences are stored in JSONB field)
+	const prefs = lead.preferences || {};
+
+	// Parse bedrooms and bathrooms
+	const bedrooms = prefs.bedrooms || lead.bedrooms;
+	const bathrooms = prefs.bathrooms || lead.bathrooms;
+
+	// Parse price range
+	let priceRangeText = 'Any budget';
+	const priceRange = prefs.priceRange || prefs.price_range || lead.price_range;
+	if (priceRange) {
+		if (typeof priceRange === 'string' && priceRange.includes('-')) {
+			const [min, max] = priceRange.split('-').map(p => parseInt(p.trim()));
+			priceRangeText = `$${min.toLocaleString()} - $${max.toLocaleString()}/mo`;
+		} else if (typeof priceRange === 'object' && priceRange.min && priceRange.max) {
+			priceRangeText = `$${priceRange.min.toLocaleString()} - $${priceRange.max.toLocaleString()}/mo`;
+		}
+	}
+
+	// Parse move-in date
+	let moveInText = 'Flexible';
+	const moveInDate = prefs.moveInDate || prefs.move_in_date || lead.move_in_date;
+	if (moveInDate) {
+		const date = new Date(moveInDate);
+		if (!isNaN(date.getTime())) {
+			moveInText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+		}
+	}
+
+	// Parse location
+	const locationText = prefs.areaOfTown || prefs.area_of_town || prefs.location_preference ||
+		lead.area_of_town || lead.desired_neighborhoods || 'Any location';
+
 	// Build filter descriptions
-	const bedroomText = lead.bedrooms ? `${lead.bedrooms} bedroom${lead.bedrooms !== '1' ? 's' : ''}` : 'any bedrooms';
-	const bathroomText = lead.bathrooms ? `${lead.bathrooms} bathroom${lead.bathrooms !== '1' ? 's' : ''}` : 'any bathrooms';
-	const locationText = lead.area_of_town || lead.desired_neighborhoods || 'any location';
+	const bedroomText = bedrooms ? `${bedrooms} bedroom${bedrooms !== '1' ? 's' : ''}` : 'any bedrooms';
+	const bathroomText = bathrooms ? `${bathrooms} bathroom${bathrooms !== '1' ? 's' : ''}` : 'any bathrooms';
 
 	// Build bedroom match description
 	let bedroomMatchDesc = bedroomText;
@@ -37,24 +69,40 @@ async function generateCriteriaBanner(lead) {
 	}
 
 	return `
-		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px; display: flex; gap: 12px; align-items: start;">
-			<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
-				<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
-			</svg>
-			<div style="flex: 1;">
-				<div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 15px;">🎯 How These Matches Were Selected</div>
-				<div style="font-size: 13px; color: #1e3a8a; line-height: 1.6;">
-					<div style="margin-bottom: 6px;"><strong>Step 1 - Hard Filters:</strong> Only units matching <strong>${bedroomMatchDesc}</strong>, <strong>${bathroomMatchDesc}</strong>, and <strong>${locationText}</strong></div>
-					<div style="margin-bottom: 6px;"><strong>Step 2 - Scoring:</strong></div>
-					<ul style="margin: 4px 0 0 20px; padding: 0;">
-						<li><strong>Price Match:</strong> Up to ${config.price_match_perfect_score} pts (within budget gets full points)</li>
-						<li><strong>Move-in Date:</strong> Up to ${config.move_in_date_bonus} pts (available by desired date)</li>
-						<li><strong>Commission:</strong> Up to ${config.commission_base_bonus}+ pts (${config.commission_threshold_pct}%+ commission gets ${config.commission_base_bonus} pts base, +${config.commission_scale_bonus} pt per % above)</li>
-						<li><strong>PUMI Property:</strong> +${config.pumi_bonus} pts bonus (preferred partner properties)</li>
-						${config.use_leniency_factor ? `<li><strong>Leniency Bonus:</strong> Up to ${config.leniency_bonus_high} pts (flexible properties get bonus points)</li>` : ''}
-					</ul>
-					<div style="margin-top: 6px; font-size: 12px; color: #475569;">💡 Results sorted by ${config.sort_by === 'score' ? 'total score (highest first)' : config.sort_by === 'rent_low' ? 'rent (lowest first)' : config.sort_by === 'rent_high' ? 'rent (highest first)' : 'availability date'}. ${config.min_score_threshold > 0 ? `Minimum score: ${config.min_score_threshold} pts.` : ''}</div>
+		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+			<div style="display: flex; gap: 12px; align-items: start; margin-bottom: 12px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
+					<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+				</svg>
+				<div style="flex: 1;">
+					<div style="font-weight: 600; color: #1e40af; margin-bottom: 0; font-size: 15px;">🎯 How These Matches Were Selected</div>
 				</div>
+			</div>
+
+			<!-- Lead Preferences Summary -->
+			<div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 12px; border: 1px solid #dbeafe;">
+				<div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 13px;">📋 Lead's Preferences:</div>
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px; color: #1e3a8a;">
+					<div><strong>Bedrooms:</strong> ${bedroomText}</div>
+					<div><strong>Bathrooms:</strong> ${bathroomText}</div>
+					<div><strong>Budget:</strong> ${priceRangeText}</div>
+					<div><strong>Move-in:</strong> ${moveInText}</div>
+					<div style="grid-column: 1 / -1;"><strong>Location:</strong> ${locationText}</div>
+				</div>
+			</div>
+
+			<!-- Matching Criteria -->
+			<div style="font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+				<div style="margin-bottom: 6px;"><strong>Step 1 - Hard Filters:</strong> Only units matching <strong>${bedroomMatchDesc}</strong>, <strong>${bathroomMatchDesc}</strong>, and <strong>${locationText}</strong></div>
+				<div style="margin-bottom: 6px;"><strong>Step 2 - Scoring:</strong></div>
+				<ul style="margin: 4px 0 0 20px; padding: 0;">
+					<li><strong>Price Match:</strong> Up to ${config.price_match_perfect_score} pts (within budget gets full points)</li>
+					<li><strong>Move-in Date:</strong> Up to ${config.move_in_date_bonus} pts (available by desired date)</li>
+					<li><strong>Commission:</strong> Up to ${config.commission_base_bonus}+ pts (${config.commission_threshold_pct}%+ commission gets ${config.commission_base_bonus} pts base, +${config.commission_scale_bonus} pt per % above)</li>
+					<li><strong>PUMI Property:</strong> +${config.pumi_bonus} pts bonus (preferred partner properties)</li>
+					${config.use_leniency_factor ? `<li><strong>Leniency Bonus:</strong> Up to ${config.leniency_bonus_high} pts (flexible properties get bonus points)</li>` : ''}
+				</ul>
+				<div style="margin-top: 6px; font-size: 12px; color: #475569;">💡 Results sorted by ${config.sort_by === 'score' ? 'total score (highest first)' : config.sort_by === 'rent_low' ? 'rent (lowest first)' : config.sort_by === 'rent_high' ? 'rent (highest first)' : 'availability date'}. ${config.min_score_threshold > 0 ? `Minimum score: ${config.min_score_threshold} pts.` : ''}</div>
 			</div>
 		</div>
 	`;
