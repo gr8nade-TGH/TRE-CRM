@@ -61,40 +61,40 @@ export async function openLeadDetailsModal(leadId, options) {
 		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 			<div>
 				<div class="field">
-					<label>Bedrooms</label>
-					<input type="number" id="editBedrooms" class="input" value="${prefs.bedrooms || prefs.beds || ''}" placeholder="e.g., 2" min="0" max="10" style="width: 100%;">
+					<label>Bedrooms <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(0-10)</span></label>
+					<input type="number" id="editBedrooms" class="input" value="${prefs.bedrooms || prefs.beds || ''}" placeholder="e.g., 2" min="0" max="10" style="width: 100%;" title="Number of bedrooms (0-10)">
 				</div>
 				<div class="field">
-					<label>Bathrooms</label>
-					<input type="number" id="editBathrooms" class="input" value="${prefs.bathrooms || prefs.baths || ''}" placeholder="e.g., 2" min="0" max="10" step="0.5" style="width: 100%;">
+					<label>Bathrooms <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(0-10)</span></label>
+					<input type="number" id="editBathrooms" class="input" value="${prefs.bathrooms || prefs.baths || ''}" placeholder="e.g., 2 or 1.5" min="0" max="10" step="0.5" style="width: 100%;" title="Number of bathrooms (0-10, can use 0.5 increments)">
 				</div>
 				<div class="field">
-					<label>Budget (Monthly Rent)</label>
-					<input type="text" id="editBudget" class="input" value="${prefs.priceRange || prefs.price_range || (prefs.budget_min && prefs.budget_max ? `$${prefs.budget_min} - $${prefs.budget_max}` : '')}" placeholder="e.g., $1500 or $1200-$1800" style="width: 100%;">
+					<label>Budget (Monthly Rent) <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(optional)</span></label>
+					<input type="text" id="editBudget" class="input" value="${prefs.priceRange || prefs.price_range || (prefs.budget_min && prefs.budget_max ? `$${prefs.budget_min} - $${prefs.budget_max}` : '')}" placeholder="e.g., $1500 or $1200-$1800" style="width: 100%;" title="Enter a single amount or a range">
 				</div>
 				<div class="field">
-					<label>Move-in Date</label>
-					<input type="date" id="editMoveInDate" class="input" value="${prefs.moveInDate || prefs.move_in_date || prefs.move_in || ''}" style="width: 100%;">
+					<label>Move-in Date <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(optional)</span></label>
+					<input type="date" id="editMoveInDate" class="input" value="${prefs.moveInDate || prefs.move_in_date || prefs.move_in || ''}" style="width: 100%;" title="Desired move-in date">
 				</div>
 			</div>
 			<div>
 				<div class="field">
-					<label>Area of Town</label>
-					<input type="text" id="editAreaOfTown" class="input" value="${prefs.areaOfTown || prefs.area_of_town || (prefs.neighborhoods ? prefs.neighborhoods.join(', ') : '')}" placeholder="e.g., Downtown, Midtown" style="width: 100%;">
+					<label>Area of Town <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(optional)</span></label>
+					<input type="text" id="editAreaOfTown" class="input" value="${prefs.areaOfTown || prefs.area_of_town || (prefs.neighborhoods ? prefs.neighborhoods.join(', ') : '')}" placeholder="e.g., Downtown, Midtown, Stone Oak" style="width: 100%;" title="Preferred neighborhoods or areas (comma-separated)">
 				</div>
 				<div class="field">
-					<label>Credit History</label>
-					<select id="editCreditHistory" class="select" style="width: 100%;">
+					<label>Credit History <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(optional)</span></label>
+					<select id="editCreditHistory" class="select" style="width: 100%;" title="Customer's credit tier">
 						<option value="">Select...</option>
-						<option value="Excellent" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Excellent' ? 'selected' : ''}>Excellent</option>
-						<option value="Good" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Good' ? 'selected' : ''}>Good</option>
-						<option value="Fair" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Fair' ? 'selected' : ''}>Fair</option>
-						<option value="Poor" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Poor' ? 'selected' : ''}>Poor</option>
+						<option value="Excellent" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Excellent' ? 'selected' : ''}>Excellent (720+)</option>
+						<option value="Good" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Good' ? 'selected' : ''}>Good (650-719)</option>
+						<option value="Fair" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Fair' ? 'selected' : ''}>Fair (580-649)</option>
+						<option value="Poor" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Poor' ? 'selected' : ''}>Poor (&lt;580)</option>
 					</select>
 				</div>
 				<div class="field">
-					<label>Comments</label>
-					<textarea id="editComments" class="input" rows="3" placeholder="Additional preferences or notes..." style="width: 100%; resize: vertical;">${prefs.comments || prefs.notes || ''}</textarea>
+					<label>Comments <span style="color: #9ca3af; font-weight: 400; font-size: 12px;">(optional)</span></label>
+					<textarea id="editComments" class="input" rows="3" placeholder="Additional preferences, special requests, or notes..." style="width: 100%; resize: vertical;" title="Any additional information about customer preferences">${prefs.comments || prefs.notes || ''}</textarea>
 				</div>
 			</div>
 		</div>
@@ -121,53 +121,169 @@ export async function openLeadDetailsModal(leadId, options) {
 	showModal('leadDetailsModal');
 }
 
-async function saveLeadPreferences(leadId, lead, options) {
-	const { api, state } = options;
+/**
+ * Validates input values for lead preferences
+ * @param {Object} values - Object containing all input values
+ * @returns {Object} - { isValid: boolean, errors: string[] }
+ */
+function validatePreferences(values) {
+	const errors = [];
 
-	// Get values from inputs
-	const bedrooms = document.getElementById('editBedrooms')?.value || '';
-	const bathrooms = document.getElementById('editBathrooms')?.value || '';
-	const budget = document.getElementById('editBudget')?.value || '';
-	const moveInDate = document.getElementById('editMoveInDate')?.value || '';
-	const areaOfTown = document.getElementById('editAreaOfTown')?.value || '';
-	const creditHistory = document.getElementById('editCreditHistory')?.value || '';
-	const comments = document.getElementById('editComments')?.value || '';
+	// Validate bedrooms (must be a positive number if provided)
+	if (values.bedrooms && (isNaN(values.bedrooms) || parseFloat(values.bedrooms) < 0 || parseFloat(values.bedrooms) > 10)) {
+		errors.push('Bedrooms must be a number between 0 and 10');
+	}
 
-	// Parse existing preferences
-	let existingPrefs = lead.preferences || lead.prefs || {};
-	if (typeof existingPrefs === 'string') {
-		try {
-			existingPrefs = JSON.parse(existingPrefs);
-		} catch (e) {
-			existingPrefs = {};
+	// Validate bathrooms (must be a positive number if provided)
+	if (values.bathrooms && (isNaN(values.bathrooms) || parseFloat(values.bathrooms) < 0 || parseFloat(values.bathrooms) > 10)) {
+		errors.push('Bathrooms must be a number between 0 and 10');
+	}
+
+	// Validate move-in date (must be a valid date if provided)
+	if (values.moveInDate) {
+		const date = new Date(values.moveInDate);
+		if (isNaN(date.getTime())) {
+			errors.push('Move-in date must be a valid date');
 		}
 	}
 
-	// Update preferences object (store in multiple formats for compatibility)
-	const updatedPreferences = {
-		...existingPrefs,
-		bedrooms: bedrooms,
-		beds: bedrooms,
-		bathrooms: bathrooms,
-		baths: bathrooms,
-		priceRange: budget,
-		price_range: budget,
-		budget_min: budget ? budget.replace(/\$/g, '').split('-')[0]?.trim() : '',
-		budget_max: budget ? budget.replace(/\$/g, '').split('-')[1]?.trim() || budget.replace(/\$/g, '').trim() : '',
-		moveInDate: moveInDate,
-		move_in_date: moveInDate,
-		move_in: moveInDate,
-		areaOfTown: areaOfTown,
-		area_of_town: areaOfTown,
-		neighborhoods: areaOfTown ? areaOfTown.split(',').map(n => n.trim()) : [],
-		creditHistory: creditHistory,
-		credit_history: creditHistory,
-		credit_tier: creditHistory,
-		comments: comments,
-		notes: comments
+	return {
+		isValid: errors.length === 0,
+		errors: errors
 	};
+}
+
+/**
+ * Shows validation errors on input fields
+ * @param {string[]} errors - Array of error messages
+ */
+function showValidationErrors(errors) {
+	// Create or update error message container
+	let errorContainer = document.getElementById('preferencesErrorContainer');
+	if (!errorContainer) {
+		errorContainer = document.createElement('div');
+		errorContainer.id = 'preferencesErrorContainer';
+		errorContainer.style.cssText = 'background: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;';
+
+		const content = document.getElementById('leadDetailsContent');
+		if (content) {
+			content.insertBefore(errorContainer, content.firstChild);
+		}
+	}
+
+	errorContainer.innerHTML = `
+		<strong>⚠️ Please fix the following errors:</strong>
+		<ul style="margin: 8px 0 0 20px; padding: 0;">
+			${errors.map(err => `<li>${err}</li>`).join('')}
+		</ul>
+	`;
+	errorContainer.style.display = 'block';
+
+	// Scroll to top to show errors
+	const modal = document.querySelector('#leadDetailsModal .modal-body');
+	if (modal) {
+		modal.scrollTop = 0;
+	}
+}
+
+/**
+ * Hides validation error container
+ */
+function hideValidationErrors() {
+	const errorContainer = document.getElementById('preferencesErrorContainer');
+	if (errorContainer) {
+		errorContainer.style.display = 'none';
+	}
+}
+
+/**
+ * Saves lead preferences to the database with validation and error handling
+ * @param {string} leadId - The lead's UUID
+ * @param {Object} lead - The full lead object
+ * @param {Object} options - Options object containing api, state, etc.
+ */
+async function saveLeadPreferences(leadId, lead, options) {
+	const { api, state } = options;
+
+	// Get save button and disable it to prevent double-clicks
+	const saveBtn = document.getElementById('saveLeadPreferences');
+	if (!saveBtn) {
+		console.error('❌ Save button not found');
+		return;
+	}
+
+	// Disable button and show loading state
+	const originalText = saveBtn.textContent;
+	saveBtn.disabled = true;
+	saveBtn.textContent = '💾 Saving...';
+	saveBtn.style.opacity = '0.6';
+	saveBtn.style.cursor = 'not-allowed';
 
 	try {
+		// Get values from inputs
+		const bedrooms = document.getElementById('editBedrooms')?.value || '';
+		const bathrooms = document.getElementById('editBathrooms')?.value || '';
+		const budget = document.getElementById('editBudget')?.value || '';
+		const moveInDate = document.getElementById('editMoveInDate')?.value || '';
+		const areaOfTown = document.getElementById('editAreaOfTown')?.value || '';
+		const creditHistory = document.getElementById('editCreditHistory')?.value || '';
+		const comments = document.getElementById('editComments')?.value || '';
+
+		// Validate inputs
+		const validation = validatePreferences({
+			bedrooms,
+			bathrooms,
+			moveInDate
+		});
+
+		if (!validation.isValid) {
+			showValidationErrors(validation.errors);
+			// Re-enable button
+			saveBtn.disabled = false;
+			saveBtn.textContent = originalText;
+			saveBtn.style.opacity = '1';
+			saveBtn.style.cursor = 'pointer';
+			return;
+		}
+
+		// Hide any previous errors
+		hideValidationErrors();
+
+		// Parse existing preferences
+		let existingPrefs = lead.preferences || lead.prefs || {};
+		if (typeof existingPrefs === 'string') {
+			try {
+				existingPrefs = JSON.parse(existingPrefs);
+			} catch (e) {
+				console.warn('⚠️ Could not parse existing preferences, starting fresh');
+				existingPrefs = {};
+			}
+		}
+
+		// Update preferences object (store in multiple formats for compatibility)
+		const updatedPreferences = {
+			...existingPrefs,
+			bedrooms: bedrooms,
+			beds: bedrooms,
+			bathrooms: bathrooms,
+			baths: bathrooms,
+			priceRange: budget,
+			price_range: budget,
+			budget_min: budget ? budget.replace(/\$/g, '').split('-')[0]?.trim() : '',
+			budget_max: budget ? budget.replace(/\$/g, '').split('-')[1]?.trim() || budget.replace(/\$/g, '').trim() : '',
+			moveInDate: moveInDate,
+			move_in_date: moveInDate,
+			move_in: moveInDate,
+			areaOfTown: areaOfTown,
+			area_of_town: areaOfTown,
+			neighborhoods: areaOfTown ? areaOfTown.split(',').map(n => n.trim()) : [],
+			creditHistory: creditHistory,
+			credit_history: creditHistory,
+			credit_tier: creditHistory,
+			comments: comments,
+			notes: comments
+		};
+
 		// Get current user info for activity logging
 		const userEmail = window.currentUser?.email || 'unknown';
 		const userName = window.currentUser?.user_metadata?.name || window.currentUser?.email || 'Unknown User';
@@ -181,17 +297,21 @@ async function saveLeadPreferences(leadId, lead, options) {
 
 		console.log('✅ Lead preferences saved successfully');
 
-		// Show success message
-		const saveBtn = document.getElementById('saveLeadPreferences');
-		if (saveBtn) {
-			const originalText = saveBtn.textContent;
-			saveBtn.textContent = '✓ Saved!';
-			saveBtn.style.background = '#10b981';
-			setTimeout(() => {
-				saveBtn.textContent = originalText;
-				saveBtn.style.background = '';
-			}, 2000);
-		}
+		// Show success message with animation
+		saveBtn.textContent = '✓ Saved!';
+		saveBtn.style.background = '#10b981';
+		saveBtn.style.opacity = '1';
+		saveBtn.style.transform = 'scale(1.05)';
+		saveBtn.style.transition = 'all 0.2s ease';
+
+		// Reset button after delay
+		setTimeout(() => {
+			saveBtn.textContent = originalText;
+			saveBtn.style.background = '';
+			saveBtn.style.transform = 'scale(1)';
+			saveBtn.disabled = false;
+			saveBtn.style.cursor = 'pointer';
+		}, 2000);
 
 		// If in Customer View, recalculate match scores and update the display
 		if (state.customerView?.isActive && state.customerView?.selectedCustomerId === leadId) {
@@ -206,7 +326,24 @@ async function saveLeadPreferences(leadId, lead, options) {
 		}
 	} catch (error) {
 		console.error('❌ Error saving lead preferences:', error);
-		alert('Failed to save preferences. Please try again.');
+
+		// Show user-friendly error message
+		showValidationErrors([
+			'Failed to save preferences. Please check your connection and try again.',
+			`Error details: ${error.message || 'Unknown error'}`
+		]);
+
+		// Re-enable button
+		saveBtn.disabled = false;
+		saveBtn.textContent = originalText;
+		saveBtn.style.opacity = '1';
+		saveBtn.style.cursor = 'pointer';
+		saveBtn.style.background = '#ef4444'; // Red background for error
+
+		// Reset error styling after delay
+		setTimeout(() => {
+			saveBtn.style.background = '';
+		}, 3000);
 	}
 }
 

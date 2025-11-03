@@ -7309,6 +7309,41 @@ input[type="radio"] {
 	display: none !important;
 }
 
+/* Lead Details Modal - Input Styling */
+#leadDetailsContent .input:focus,
+#leadDetailsContent .select:focus {
+	outline: none;
+	border-color: #3b82f6;
+	box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+#leadDetailsContent .input:invalid {
+	border-color: #ef4444;
+}
+
+#leadDetailsContent .input:invalid:focus {
+	box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
+}
+
+/* Save button animations */
+#saveLeadPreferences {
+	transition: all 0.2s ease;
+}
+
+#saveLeadPreferences:hover:not(:disabled) {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#saveLeadPreferences:active:not(:disabled) {
+	transform: translateY(0);
+}
+
+#saveLeadPreferences:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
 /* Map Marker Match Score (low-profile) */
 .marker-match-score {
 	position: absolute;
