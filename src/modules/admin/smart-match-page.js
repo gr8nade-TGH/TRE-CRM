@@ -276,9 +276,10 @@ async function loadLeadsForSelector() {
 		const supabase = getSupabase();
 
 		// Fetch active leads (not closed or lost) with basic info
+		// Note: bedrooms, bathrooms, etc. are in the preferences JSONB field
 		const { data: leads, error } = await supabase
 			.from('leads')
-			.select('id, name, email, bedrooms, bathrooms, price_range, move_in_date, has_pets, location_preference')
+			.select('id, name, email, preferences')
 			.not('health_status', 'in', '("closed","lost")')
 			.order('name');
 
@@ -300,7 +301,21 @@ async function loadLeadsForSelector() {
 				const option = document.createElement('option');
 				option.value = lead.id;
 				option.textContent = `${lead.name}${lead.email ? ` (${lead.email})` : ''}`;
-				option.dataset.leadData = JSON.stringify(lead);
+
+				// Flatten preferences into lead object for easier access
+				const leadWithPrefs = {
+					id: lead.id,
+					name: lead.name,
+					email: lead.email,
+					bedrooms: lead.preferences?.bedrooms || lead.preferences?.beds,
+					bathrooms: lead.preferences?.bathrooms || lead.preferences?.baths,
+					price_range: lead.preferences?.priceRange || lead.preferences?.price_range,
+					move_in_date: lead.preferences?.moveInDate || lead.preferences?.move_in_date,
+					has_pets: lead.preferences?.hasPets || lead.preferences?.has_pets || false,
+					location_preference: lead.preferences?.areaOfTown || lead.preferences?.area_of_town || lead.preferences?.location_preference
+				};
+
+				option.dataset.leadData = JSON.stringify(leadWithPrefs);
 				selector.appendChild(option);
 			});
 

@@ -71,11 +71,23 @@ body.mission-control-active #manageView {
 
 /* Override white background from global .page-container */
 .mission-control-theme .page-container {
-	background: transparent !important;
+	background: var(--mc-bg-primary) !important;
 	padding: 0 !important;
 	margin: 0 !important;
 	box-shadow: none !important;
 	border: none !important;
+	min-height: 100vh !important;
+}
+
+/* Additional override for nested containers */
+body.mission-control-active .page-container {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active .smart-match-config-page {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
 }
 
 /* Override white background from global .view-bar on mobile */
