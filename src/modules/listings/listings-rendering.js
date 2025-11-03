@@ -58,6 +58,27 @@ export async function renderListings(options, autoSelectProperty = null) {
 		return;
 	}
 
+	// Customer View: Show prompt if no customer selected
+	if (state.customerView.isActive && !state.customerView.selectedCustomer) {
+		tbody.innerHTML = `
+			<tr>
+				<td colspan="3" style="padding: 60px 20px; text-align: center;">
+					<div class="customer-view-prompt">
+						<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+							<circle cx="9" cy="7" r="4"></circle>
+							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+						</svg>
+						<h3>Select a Customer</h3>
+						<p>Choose a customer from the dropdown above to view listings with match scores</p>
+					</div>
+				</td>
+			</tr>
+		`;
+		return;
+	}
+
 	try {
 		// Fetch properties and specials in parallel
 		const [properties, specialsData] = await Promise.all([
@@ -153,8 +174,37 @@ export async function renderListings(options, autoSelectProperty = null) {
 		// Apply additional filters
 		filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
 
-		// Apply sorting if active
-		if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
+		// Customer View: Calculate match scores if customer is selected
+		if (state.customerView.isActive && state.customerView.selectedCustomer) {
+			console.log('🎯 Customer View active - calculating match scores...');
+
+			const { calculateMatchScores } = await import('./customer-view.js');
+			const { getActiveConfig } = await import('../../api/smart-match-config-api.js');
+
+			// Fetch active Smart Match configuration
+			let config;
+			try {
+				config = await getActiveConfig();
+			} catch (error) {
+				console.warn('⚠️ Failed to load Smart Match config, using defaults:', error);
+				const { DEFAULT_SMART_MATCH_CONFIG } = await import('../../utils/smart-match-config-defaults.js');
+				config = DEFAULT_SMART_MATCH_CONFIG;
+			}
+
+			// Calculate match scores for all properties
+			await calculateMatchScores(filtered, state.customerView.selectedCustomer, config);
+
+			// Sort by match score (highest first) in Customer View
+			filtered.sort((a, b) => {
+				const scoreA = state.customerView.matchScores.get(a.id) || 0;
+				const scoreB = state.customerView.matchScores.get(b.id) || 0;
+				return scoreB - scoreA;
+			});
+
+			console.log('✅ Properties sorted by match score');
+		}
+		// Agent View: Apply normal sorting
+		else if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
 			filtered.sort((a, b) => {
 				let aVal, bVal;
 
@@ -187,6 +237,13 @@ export async function renderListings(options, autoSelectProperty = null) {
 			});
 		}
 
+		// Import star rating generator if in Customer View
+		let generateStarRating = null;
+		if (state.customerView.isActive) {
+			const customerViewModule = await import('./customer-view.js');
+			generateStarRating = customerViewModule.generateStarRating;
+		}
+
 		tbody.innerHTML = '';
 		console.log('Rendering', filtered.length, 'filtered properties');
 		filtered.forEach((prop, index) => {
@@ -213,6 +270,13 @@ export async function renderListings(options, autoSelectProperty = null) {
 			const hasUnits = prop.units && prop.units.length > 0;
 			const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
 
+			// Get match score if in Customer View
+			const matchScore = state.customerView.isActive ? state.customerView.matchScores.get(prop.id) : null;
+			let matchScoreBadge = '';
+			if (matchScore !== null && matchScore !== undefined && generateStarRating) {
+				matchScoreBadge = generateStarRating(matchScore);
+			}
+
 			tr.innerHTML = `
 			<td>
 				${hasUnits ? `<span class="expand-arrow" data-property-id="${prop.id}" style="cursor: pointer; user-select: none;">▶</span>` : ''}
@@ -220,9 +284,10 @@ export async function renderListings(options, autoSelectProperty = null) {
 			<td data-sort="name">
 				<div class="lead-name">
 					<strong>${communityName}</strong>
+					${matchScoreBadge}
 					${hasActiveSpecials ? `<span class="special-icon" onclick="window.viewPropertySpecialsFromListing('${prop.id}', '${communityName.replace(/'/g, "\\'")}', ${JSON.stringify(prop.activeSpecials).replace(/"/g, '&quot;')})" title="${prop.activeSpecials.length} active special(s)" style="cursor: pointer; margin-left: 6px; font-size: 1em;">🔥</span>` : ''}
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
-					${commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
+					${!state.customerView.isActive && commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
@@ -473,7 +538,9 @@ export async function renderListings(options, autoSelectProperty = null) {
 				validProps.forEach(prop => {
 					console.log('Adding marker for:', prop.name, 'at', prop.lng, prop.lat);
 					try {
-						addMarker(prop);
+						// Pass match score if in Customer View
+						const matchScore = state.customerView.isActive ? state.customerView.matchScores.get(prop.id) : null;
+						addMarker(prop, matchScore);
 					} catch (error) {
 						console.error('Error adding marker for', prop.name, ':', error);
 					}

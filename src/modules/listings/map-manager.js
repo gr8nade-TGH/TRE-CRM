@@ -100,8 +100,9 @@ export function clearMarkers() {
 /**
  * Add a marker to the map for a property
  * @param {Object} prop - The property object
+ * @param {number|null} matchScore - Optional match score for Customer View
  */
-export function addMarker(prop) {
+export function addMarker(prop, matchScore = null) {
 	// Skip if no valid coordinates
 	if (!prop.lat || !prop.lng) {
 		console.warn('Skipping marker for', prop.name, '- no coordinates');
@@ -148,16 +149,39 @@ export function addMarker(prop) {
 		cursor: pointer;
 		transition: all 0.2s ease;
 		animation: ${isPUMI ? 'pumi-pulse 2s infinite' : 'none'};
+		position: relative;
 	`;
+
+	// Add match score indicator if provided (Customer View)
+	if (matchScore !== null && matchScore !== undefined) {
+		const scoreElement = document.createElement('div');
+		scoreElement.className = 'marker-match-score';
+		scoreElement.textContent = Math.round(matchScore);
+		scoreElement.style.cssText = `
+			position: absolute;
+			top: -8px;
+			right: -8px;
+			background: #fbbf24;
+			color: white;
+			font-size: 10px;
+			font-weight: 700;
+			padding: 2px 5px;
+			border-radius: 10px;
+			box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+			pointer-events: none;
+			line-height: 1;
+		`;
+		dotElement.appendChild(scoreElement);
+	}
 
 	// Create dot marker using custom element
 	const dotMarker = new mapboxgl.Marker({
 		element: dotElement,
 		anchor: 'center'
 	})
-	.setLngLat([prop.lng, prop.lat])
-	.setPopup(popup)
-	.addTo(map);
+		.setLngLat([prop.lng, prop.lat])
+		.setPopup(popup)
+		.addTo(map);
 
 	// Store marker
 	const markerGroup = {
