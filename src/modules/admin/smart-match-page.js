@@ -275,13 +275,11 @@ async function loadLeadsForSelector() {
 		const { getSupabase } = await import('../../api/supabase-api.js');
 		const supabase = getSupabase();
 
-		// Fetch active leads (not closed or lost) with basic info
+		// Fetch all leads with basic info
 		// Note: bedrooms, bathrooms, etc. are in the preferences JSONB field
-		const { data: leads, error } = await supabase
+		const { data: allLeads, error } = await supabase
 			.from('leads')
-			.select('id, name, email, preferences')
-			.neq('health_status', 'closed')
-			.neq('health_status', 'lost')
+			.select('id, name, email, preferences, health_status')
 			.order('name');
 
 		if (error) {
@@ -289,7 +287,12 @@ async function loadLeadsForSelector() {
 			throw error;
 		}
 
-		console.log(`✅ Loaded ${leads.length} active leads`);
+		// Filter out closed and lost leads in JavaScript
+		const leads = allLeads.filter(lead =>
+			lead.health_status !== 'closed' && lead.health_status !== 'lost'
+		);
+
+		console.log(`✅ Loaded ${leads.length} active leads (filtered from ${allLeads.length} total)`);
 
 		// Populate the selector
 		const selector = document.getElementById('testLeadSelector');
