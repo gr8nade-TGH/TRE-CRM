@@ -58,6 +58,7 @@ export function clearCustomerSelection() {
 	state.customerView.selectedCustomerId = null;
 	state.customerView.selectedCustomer = null;
 	state.customerView.matchScores.clear();
+	state.customerView.unitScores.clear();
 
 	const customerSelector = document.getElementById('customerSelector');
 	if (customerSelector) {
@@ -169,7 +170,7 @@ export async function handleCustomerSelection(customerId, renderListings) {
 	if (missingFields.length > 0) {
 		if (missingDataWarning && missingDataText) {
 			missingDataWarning.style.display = 'flex';
-			missingDataText.textContent = `Missing: ${missingFields.join(', ')}`;
+			missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <a href="#/leads?select=${customerId}" class="edit-lead-link" style="color: white; text-decoration: underline; font-weight: 600; cursor: pointer;">Edit Lead</a>`;
 		}
 		console.warn('⚠️ Customer has missing preferences:', missingFields);
 	} else {
@@ -266,21 +267,43 @@ export async function calculateMatchScores(properties, customer, config) {
 		// Run Smart Match algorithm
 		const matches = getSmartMatchesWithConfig(customer, unitsWithDetails, config);
 
-		// Create map of property ID -> highest match score
-		const scoreMap = new Map();
+		// Create maps for property-level and unit-level scores
+		const propertyScoreMap = new Map(); // propertyId -> highest score
+		const unitScoreMap = new Map(); // unitId -> { score, propertyId, isRecommended }
+		const propertyBestUnitMap = new Map(); // propertyId -> unitId with highest score
+
+		// First pass: find highest score per property
 		matches.forEach(match => {
 			const propertyId = match.property.id;
+			const unitId = match.unit.id;
 			const score = match.matchScore.totalScore;
 
-			if (!scoreMap.has(propertyId) || scoreMap.get(propertyId) < score) {
-				scoreMap.set(propertyId, score);
+			// Track highest score per property
+			if (!propertyScoreMap.has(propertyId) || propertyScoreMap.get(propertyId) < score) {
+				propertyScoreMap.set(propertyId, score);
+				propertyBestUnitMap.set(propertyId, unitId);
 			}
 		});
 
-		console.log(`✅ Calculated scores for ${scoreMap.size} properties`);
-		state.customerView.matchScores = scoreMap;
+		// Second pass: store unit scores with recommendation flag
+		matches.forEach(match => {
+			const propertyId = match.property.id;
+			const unitId = match.unit.id;
+			const score = match.matchScore.totalScore;
+			const isRecommended = propertyBestUnitMap.get(propertyId) === unitId;
 
-		return scoreMap;
+			unitScoreMap.set(unitId, {
+				score,
+				propertyId,
+				isRecommended
+			});
+		});
+
+		console.log(`✅ Calculated scores for ${propertyScoreMap.size} properties and ${unitScoreMap.size} units`);
+		state.customerView.matchScores = propertyScoreMap;
+		state.customerView.unitScores = unitScoreMap;
+
+		return propertyScoreMap;
 	} catch (error) {
 		console.error('❌ Error calculating match scores:', error);
 		return new Map();

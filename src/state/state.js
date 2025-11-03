@@ -65,7 +65,8 @@ export const state = {
 		isActive: false,
 		selectedCustomerId: null,
 		selectedCustomer: null,
-		matchScores: new Map() // propertyId -> matchScore
+		matchScores: new Map(), // propertyId -> highest matchScore
+		unitScores: new Map() // unitId -> { score, propertyId, isRecommended }
 	}
 };
 
@@ -121,7 +122,8 @@ export function resetState() {
 		isActive: false,
 		selectedCustomerId: null,
 		selectedCustomer: null,
-		matchScores: new Map()
+		matchScores: new Map(),
+		unitScores: new Map()
 	};
 }
 

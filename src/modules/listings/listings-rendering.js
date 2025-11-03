@@ -426,6 +426,14 @@ export async function renderListings(options, autoSelectProperty = null) {
 					const sqft = floorPlan.sqft || '?';
 					const availableDate = unit.available_from ? new Date(unit.available_from).toLocaleDateString() : 'TBD';
 
+					// Get unit match score if in Customer View
+					const unitScoreData = state.customerView.isActive ? state.customerView.unitScores.get(unit.id) : null;
+					let unitMatchScoreBadge = '';
+					if (unitScoreData && generateStarRating) {
+						const recommendedBadge = unitScoreData.isRecommended ? '<span class="recommended-badge" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px;">BEST MATCH</span>' : '';
+						unitMatchScoreBadge = generateStarRating(unitScoreData.score) + recommendedBadge;
+					}
+
 					unitTr.innerHTML = `
 					<td style="padding-left: 40px;">
 						<input type="checkbox" class="unit-checkbox" data-unit-id="${unit.id}" ${isInactive ? 'disabled' : ''}>
@@ -433,6 +441,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					<td>
 						<div class="lead-name" style="font-size: 0.9em;">
 							<span style="color: #6b7280;">Unit ${unit.unit_number}</span>
+							${unitMatchScoreBadge}
 							${isInactive ? '<span class="badge" style="background: #9ca3af; color: #fff;">Off Market</span>' : ''}
 							${unit.status === 'pending' ? '<span class="badge" style="background: #fbbf24; color: #000;">Pending</span>' : ''}
 							${unit.status === 'leased' ? '<span class="badge" style="background: #ef4444; color: #fff;">Leased</span>' : ''}

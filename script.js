@@ -109,7 +109,7 @@ let api, renderLeads, renderSpecials;
 		mockInterestedLeads
 	});
 
-	renderLeads = async function () {
+	renderLeads = async function (autoSelectLeadId = null) {
 		// Call module render function with realAgents (global variable)
 		await Leads.renderLeads({
 			api,
@@ -119,7 +119,7 @@ let api, renderLeads, renderSpecials;
 			openLeadNotesModal,
 			openActivityLogModal,
 			agents: realAgents
-		});
+		}, autoSelectLeadId);
 	}
 
 	window.saveNewLead = async function () {

@@ -152,6 +152,21 @@ export function route(deps) {
 		show(document.getElementById('emailsView'));
 		setRoleLabel('emails');
 		renderEmails();
+	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
+		// Leads page with optional query parameters
+		state.currentPage = 'leads';
+		show(document.getElementById('leadsView'));
+		setRoleLabel('leads');
+
+		// Parse query parameters for deep linking
+		let autoSelectLeadId = null;
+		if (hash.includes('?')) {
+			const queryString = hash.split('?')[1];
+			const params = new URLSearchParams(queryString);
+			autoSelectLeadId = params.get('select');
+		}
+
+		renderLeads(autoSelectLeadId);
 	} else {
 		// default: leads
 		state.currentPage = 'leads';

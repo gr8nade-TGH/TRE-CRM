@@ -46,9 +46,10 @@ function renderAgentReadOnly(lead, agents) {
  * @param {Function} options.openLeadNotesModal - Callback to open notes modal
  * @param {Function} options.openActivityLogModal - Callback to open activity log modal
  * @param {Array} options.agents - Array of agents for dropdown
+ * @param {string|null} autoSelectLeadId - Optional lead ID to auto-select after rendering
  * @returns {Promise<void>}
  */
-export async function renderLeads(options) {
+export async function renderLeads(options, autoSelectLeadId = null) {
 	const {
 		api,
 		SupabaseAPI,
@@ -224,6 +225,21 @@ export async function renderLeads(options) {
 			console.error('❌ Error fetching lead statistics:', statsError);
 			// Don't break the page, just log the error and show zeros
 			updateLeadStatistics([], state);
+		}
+
+		// Auto-select lead if specified (deep linking from Customer View)
+		if (autoSelectLeadId) {
+			console.log('🔗 Deep linking: Auto-selecting lead:', autoSelectLeadId);
+			setTimeout(() => {
+				// Find the "View/Edit" button for this lead
+				const viewButton = document.querySelector(`button[data-view="${autoSelectLeadId}"]`);
+				if (viewButton) {
+					viewButton.click();
+					console.log('✅ Auto-selected lead:', autoSelectLeadId);
+				} else {
+					console.warn('⚠️ Could not find lead to auto-select:', autoSelectLeadId);
+				}
+			}, 300);
 		}
 
 	} catch (error) {
