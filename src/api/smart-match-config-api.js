@@ -508,7 +508,7 @@ export async function countMatchingProperties(config, testLead = null) {
         // Use default test lead if none provided
         const lead = testLead || getDefaultTestLead();
 
-        console.log('🔢 Counting matching properties with config:', {
+        console.log('🔢 Counting matching units with config:', {
             bedroomMode: config.bedroom_match_mode,
             bathroomMode: config.bathroom_match_mode,
             rentTolerance: config.rent_tolerance_percent,
@@ -522,16 +522,17 @@ export async function countMatchingProperties(config, testLead = null) {
         const { applyConfigurableFilters } = await import('../utils/smart-match-v2.js');
         const filteredUnits = applyConfigurableFilters(unitsWithDetails, lead, config);
 
-        // Count unique properties
+        // Count unique properties for logging
         const propertyIds = new Set(filteredUnits.map(item => item.property.id));
-        const count = propertyIds.size;
+        const propertyCount = propertyIds.size;
+        const unitCount = filteredUnits.length;
 
-        console.log(`✅ Found ${count} matching properties (${filteredUnits.length} total units)`);
+        console.log(`✅ Found ${unitCount} matching units across ${propertyCount} properties`);
 
-        return count;
+        return unitCount; // Return unit count, not property count
 
     } catch (error) {
-        console.error('❌ Error counting matching properties:', error);
+        console.error('❌ Error counting matching units:', error);
         return 0; // Return 0 on error to avoid breaking UI
     }
 }

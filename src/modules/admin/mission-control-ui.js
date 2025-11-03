@@ -385,7 +385,7 @@ export function initializeMatchCounter() {
 			// Extract current config from form
 			const config = extractFormData();
 
-			// Count matching properties
+			// Count matching units (function name is legacy, but now returns unit count)
 			const { countMatchingProperties } = await import('../../api/smart-match-config-api.js');
 			const count = await countMatchingProperties(config);
 
@@ -405,7 +405,7 @@ export function initializeMatchCounter() {
 
 			// Force DOM update with new content
 			counterEl.innerHTML = `<span class="${colorClass}">${count}</span>`;
-			console.log(`✅ Counter updated: ${count} properties (${statusText})`);
+			console.log(`✅ Counter updated: ${count} units (${statusText})`);
 
 		} catch (error) {
 			console.error('❌ Error updating match counter:', error);
