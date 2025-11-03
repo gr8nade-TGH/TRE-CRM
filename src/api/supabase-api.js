@@ -2154,12 +2154,31 @@ export async function getSmartMatches(leadId, limit = 10) {
         property: unit.property
     }));
 
-    // Step 4: Calculate smart matches using configurable scoring algorithm
-    const matches = getSmartMatchesWithConfig(lead, unitsWithDetails, config);
+    // Step 4: Normalize lead preferences (flatten from preferences JSONB field)
+    const normalizedLead = {
+        ...lead,
+        bedrooms: lead.preferences?.bedrooms || lead.preferences?.beds || lead.bedrooms,
+        bathrooms: lead.preferences?.bathrooms || lead.preferences?.baths || lead.bathrooms,
+        price_range: lead.preferences?.priceRange || lead.preferences?.price_range || lead.price_range,
+        move_in_date: lead.preferences?.moveInDate || lead.preferences?.move_in_date || lead.move_in_date,
+        has_pets: lead.preferences?.petFriendly || lead.preferences?.hasPets || lead.preferences?.has_pets || lead.has_pets || false,
+        location_preference: lead.preferences?.areaOfTown || lead.preferences?.area_of_town || lead.preferences?.location_preference || lead.location_preference,
+        credit_tier: lead.preferences?.creditHistory || lead.preferences?.credit_history || lead.preferences?.credit_tier || lead.credit_tier
+    };
+
+    console.log('🔄 Normalized lead preferences:', {
+        bedrooms: normalizedLead.bedrooms,
+        bathrooms: normalizedLead.bathrooms,
+        price_range: normalizedLead.price_range,
+        move_in_date: normalizedLead.move_in_date
+    });
+
+    // Step 5: Calculate smart matches using configurable scoring algorithm
+    const matches = getSmartMatchesWithConfig(normalizedLead, unitsWithDetails, config);
 
     console.log('✅ getSmartMatches returning', matches.length, 'properties');
 
-    // Step 5: Return matches with full data for internal agent use
+    // Step 6: Return matches with full data for internal agent use
     // Note: Commission and PUMI data are kept for agent display, but should NOT be exposed to leads
     return matches.map(match => {
         return {
@@ -2413,9 +2432,28 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             property: unit.property
         }));
 
+        // Normalize lead preferences (flatten from preferences JSONB field)
+        const normalizedLead = {
+            ...lead,
+            bedrooms: lead.preferences?.bedrooms || lead.preferences?.beds || lead.bedrooms,
+            bathrooms: lead.preferences?.bathrooms || lead.preferences?.baths || lead.bathrooms,
+            price_range: lead.preferences?.priceRange || lead.preferences?.price_range || lead.price_range,
+            move_in_date: lead.preferences?.moveInDate || lead.preferences?.move_in_date || lead.move_in_date,
+            has_pets: lead.preferences?.petFriendly || lead.preferences?.hasPets || lead.preferences?.has_pets || lead.has_pets || false,
+            location_preference: lead.preferences?.areaOfTown || lead.preferences?.area_of_town || lead.preferences?.location_preference || lead.location_preference,
+            credit_tier: lead.preferences?.creditHistory || lead.preferences?.credit_history || lead.preferences?.credit_tier || lead.credit_tier
+        };
+
+        console.log('🔄 Normalized lead preferences:', {
+            bedrooms: normalizedLead.bedrooms,
+            bathrooms: normalizedLead.bathrooms,
+            price_range: normalizedLead.price_range,
+            move_in_date: normalizedLead.move_in_date
+        });
+
         // Override max_properties_to_show with validPropertyCount for email
         const emailConfig = { ...config, max_properties_to_show: validPropertyCount };
-        const matches = getSmartMatchesWithConfig(lead, unitsWithDetails, emailConfig);
+        const matches = getSmartMatchesWithConfig(normalizedLead, unitsWithDetails, emailConfig);
 
         if (matches.length === 0) {
             throw new Error('No matching properties found for this lead');
