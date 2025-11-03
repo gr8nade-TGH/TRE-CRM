@@ -266,9 +266,151 @@ async function handleReset() {
 }
 
 /**
+ * Load active leads for the test modal selector
+ */
+async function loadLeadsForSelector() {
+	console.log('📋 Loading leads for selector...');
+
+	try {
+		const { getSupabase } = await import('../../api/supabase-api.js');
+		const supabase = getSupabase();
+
+		// Fetch active leads (not closed or lost) with basic info
+		const { data: leads, error } = await supabase
+			.from('leads')
+			.select('id, name, email, bedrooms, bathrooms, price_range, move_in_date, has_pets, location_preference')
+			.not('health_status', 'in', '("closed","lost")')
+			.order('name');
+
+		if (error) {
+			console.error('❌ Error fetching leads:', error);
+			throw error;
+		}
+
+		console.log(`✅ Loaded ${leads.length} active leads`);
+
+		// Populate the selector
+		const selector = document.getElementById('testLeadSelector');
+		if (selector) {
+			// Clear existing options except the first one
+			selector.innerHTML = '<option value="">-- Enter Custom Criteria --</option>';
+
+			// Add lead options
+			leads.forEach(lead => {
+				const option = document.createElement('option');
+				option.value = lead.id;
+				option.textContent = `${lead.name}${lead.email ? ` (${lead.email})` : ''}`;
+				option.dataset.leadData = JSON.stringify(lead);
+				selector.appendChild(option);
+			});
+
+			console.log(`✅ Populated selector with ${leads.length} leads`);
+		}
+
+	} catch (error) {
+		console.error('❌ Error loading leads for selector:', error);
+		if (window.toast) {
+			window.toast('Failed to load leads', 'error');
+		}
+	}
+}
+
+/**
+ * Handle lead selection - auto-populate test criteria fields
+ */
+function handleLeadSelection() {
+	const selector = document.getElementById('testLeadSelector');
+	if (!selector || !selector.value) {
+		// Reset to default values if no lead selected
+		return;
+	}
+
+	const selectedOption = selector.options[selector.selectedIndex];
+	const leadData = JSON.parse(selectedOption.dataset.leadData || '{}');
+
+	console.log('👤 Lead selected:', leadData);
+
+	// Auto-populate bedrooms
+	if (leadData.bedrooms) {
+		const bedroomsSelect = document.getElementById('testBedrooms');
+		if (bedroomsSelect) {
+			// Handle different bedroom formats (e.g., "2", "studio", "2-3")
+			const bedroomValue = String(leadData.bedrooms).toLowerCase();
+			if (bedroomValue === 'studio' || bedroomValue === '0') {
+				bedroomsSelect.value = '0';
+			} else if (bedroomValue.includes('-')) {
+				// If range like "2-3", use the minimum
+				bedroomsSelect.value = bedroomValue.split('-')[0];
+			} else {
+				bedroomsSelect.value = bedroomValue;
+			}
+		}
+	}
+
+	// Auto-populate bathrooms
+	if (leadData.bathrooms) {
+		const bathroomsSelect = document.getElementById('testBathrooms');
+		if (bathroomsSelect) {
+			const bathroomValue = String(leadData.bathrooms);
+			if (bathroomValue.includes('-')) {
+				// If range like "1-2", use the minimum
+				bathroomsSelect.value = bathroomValue.split('-')[0];
+			} else {
+				bathroomsSelect.value = bathroomValue;
+			}
+		}
+	}
+
+	// Auto-populate budget (extract max from price_range)
+	if (leadData.price_range) {
+		const budgetInput = document.getElementById('testBudget');
+		if (budgetInput) {
+			// Parse price_range format: "$1500-$2000" or "1500-2000"
+			const priceRange = String(leadData.price_range).replace(/[$,]/g, '');
+			if (priceRange.includes('-')) {
+				const [min, max] = priceRange.split('-').map(p => parseInt(p.trim()));
+				budgetInput.value = max || min || 2000;
+			} else {
+				budgetInput.value = parseInt(priceRange) || 2000;
+			}
+		}
+	}
+
+	// Auto-populate move-in date
+	if (leadData.move_in_date) {
+		const dateInput = document.getElementById('testMoveInDate');
+		if (dateInput) {
+			// Format date to YYYY-MM-DD
+			const date = new Date(leadData.move_in_date);
+			if (!isNaN(date.getTime())) {
+				dateInput.value = date.toISOString().split('T')[0];
+			}
+		}
+	}
+
+	// Auto-populate pets
+	if (leadData.has_pets !== undefined && leadData.has_pets !== null) {
+		const petsSelect = document.getElementById('testPets');
+		if (petsSelect) {
+			petsSelect.value = leadData.has_pets ? 'yes' : 'no';
+		}
+	}
+
+	// Auto-populate city/location
+	if (leadData.location_preference) {
+		const cityInput = document.getElementById('testCity');
+		if (cityInput) {
+			cityInput.value = leadData.location_preference;
+		}
+	}
+
+	console.log('✅ Test criteria auto-populated from lead');
+}
+
+/**
  * Open the test Smart Match modal
  */
-function openTestModal() {
+async function openTestModal() {
 	console.log('🧪 Opening Test Smart Match modal...');
 
 	// Set default move-in date to 30 days from now
@@ -279,15 +421,18 @@ function openTestModal() {
 		dateInput.value = defaultDate.toISOString().split('T')[0];
 	}
 
+	// Load active leads for the selector
+	await loadLeadsForSelector();
+
 	// Show modal
 	const modal = document.getElementById('testSmartMatchModal');
 	if (modal) {
 		modal.classList.remove('hidden');
 
-		// Focus first input for accessibility
-		const firstInput = document.getElementById('testBedrooms');
-		if (firstInput) {
-			setTimeout(() => firstInput.focus(), 100);
+		// Focus lead selector for accessibility
+		const leadSelector = document.getElementById('testLeadSelector');
+		if (leadSelector) {
+			setTimeout(() => leadSelector.focus(), 100);
 		}
 	}
 }
@@ -310,6 +455,7 @@ function setupTestModalListeners() {
 	const cancelBtn = document.getElementById('cancelTestSmartMatch');
 	const runBtn = document.getElementById('runTestSmartMatch');
 	const modal = document.getElementById('testSmartMatchModal');
+	const leadSelector = document.getElementById('testLeadSelector');
 
 	if (closeBtn) {
 		closeBtn.addEventListener('click', closeTestModal);
@@ -323,6 +469,11 @@ function setupTestModalListeners() {
 		runBtn.addEventListener('click', async () => {
 			await runSmartMatchTest();
 		});
+	}
+
+	// Lead selector change handler
+	if (leadSelector) {
+		leadSelector.addEventListener('change', handleLeadSelection);
 	}
 
 	// ESC key to close modal
@@ -349,10 +500,21 @@ async function runSmartMatchTest() {
 			return;
 		}
 
+		// Check if a real lead was selected
+		const leadSelector = document.getElementById('testLeadSelector');
+		const selectedLeadId = leadSelector?.value;
+		let leadName = 'Test Lead';
+
+		if (selectedLeadId) {
+			const selectedOption = leadSelector.options[leadSelector.selectedIndex];
+			const leadData = JSON.parse(selectedOption.dataset.leadData || '{}');
+			leadName = leadData.name || 'Test Lead';
+		}
+
 		// Extract test criteria
 		const testLead = {
-			id: 'test-lead',
-			name: 'Test Lead',
+			id: selectedLeadId || 'test-lead',
+			name: leadName,
 			bedrooms: document.getElementById('testBedrooms').value,
 			bathrooms: document.getElementById('testBathrooms').value,
 			price_range: `0-${document.getElementById('testBudget').value}`,

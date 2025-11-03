@@ -2897,10 +2897,30 @@
 				</div>
 				<div class="modal-body">
 					<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
-						Enter test criteria to preview how your current configuration settings will match properties.
+						Select an existing lead or enter custom test criteria to preview how your current configuration
+						settings will match properties.
 						This uses your <strong>current form values</strong> (including unsaved changes).
 					</p>
 					<form id="testSmartMatchForm">
+						<!-- Lead Selector -->
+						<div class="form-group"
+							style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 16px;">
+							<label for="testLeadSelector">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+									<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+									<circle cx="12" cy="7" r="4"></circle>
+								</svg>
+								Select Existing Lead (Optional)
+							</label>
+							<select id="testLeadSelector" class="form-select">
+								<option value="">-- Enter Custom Criteria --</option>
+							</select>
+							<small style="color: #6b7280; font-size: 12px;">Choose a lead to auto-populate their
+								preferences, or enter custom criteria below</small>
+						</div>
+
+						<!-- Test Criteria Fields -->
 						<div class="form-group">
 							<label for="testBedrooms">Bedrooms</label>
 							<select id="testBedrooms" class="form-select" required>
