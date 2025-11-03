@@ -117,6 +117,17 @@ if (!document.getElementById('toastAnimations')) {
  * @param {Function} renderListings - Callback to re-render listings
  */
 export function toggleViewMode(viewMode, renderListings) {
+	// Validate inputs
+	if (!viewMode || (viewMode !== 'agent' && viewMode !== 'customer')) {
+		console.error('❌ toggleViewMode: viewMode must be "agent" or "customer"');
+		return;
+	}
+
+	if (!renderListings || typeof renderListings !== 'function') {
+		console.error('❌ toggleViewMode: renderListings must be a function');
+		return;
+	}
+
 	console.log(`🔄 Switching to ${viewMode} view`);
 
 	const isCustomerView = viewMode === 'customer';
@@ -244,6 +255,12 @@ export async function loadCustomersForSelector(SupabaseAPI, currentState) {
  * @param {Function} renderListings - Callback to re-render listings
  */
 export async function handleCustomerSelection(customerId, renderListings) {
+	// Validate renderListings callback
+	if (!renderListings || typeof renderListings !== 'function') {
+		console.error('❌ handleCustomerSelection: renderListings must be a function');
+		return;
+	}
+
 	console.log('👤 Customer selected:', customerId);
 
 	if (!customerId) {
@@ -252,56 +269,76 @@ export async function handleCustomerSelection(customerId, renderListings) {
 		return;
 	}
 
-	// Get customer data from dropdown option
-	const customerSelector = document.getElementById('customerSelector');
-	const selectedOption = customerSelector?.options[customerSelector.selectedIndex];
+	try {
+		// Get customer data from dropdown option
+		const customerSelector = document.getElementById('customerSelector');
+		if (!customerSelector) {
+			console.error('❌ Customer selector element not found');
+			if (window.showToast) {
+				window.showToast('Error: Customer selector not found', 'error');
+			}
+			return;
+		}
 
-	if (!selectedOption || !selectedOption.dataset.leadData) {
-		console.error('❌ No customer data found');
-		return;
-	}
+		const selectedOption = customerSelector.options[customerSelector.selectedIndex];
 
-	const customerData = JSON.parse(selectedOption.dataset.leadData);
-	state.customerView.selectedCustomerId = customerId;
-	state.customerView.selectedCustomer = customerData;
+		if (!selectedOption || !selectedOption.dataset.leadData) {
+			console.error('❌ No customer data found for selected option');
+			if (window.showToast) {
+				window.showToast('Error: Customer data not found', 'error');
+			}
+			return;
+		}
 
-	// Check for missing preferences
-	const missingFields = checkMissingPreferences(customerData.preferences);
+		const customerData = JSON.parse(selectedOption.dataset.leadData);
+		state.customerView.selectedCustomerId = customerId;
+		state.customerView.selectedCustomer = customerData;
 
-	const missingDataWarning = document.getElementById('missingDataWarning');
-	const missingDataText = document.getElementById('missingDataText');
+		// Check for missing preferences
+		const missingFields = checkMissingPreferences(customerData.preferences);
 
-	if (missingFields.length > 0) {
-		if (missingDataWarning && missingDataText) {
-			missingDataWarning.style.display = 'flex';
-			missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <button class="edit-lead-btn" data-lead-id="${customerId}" style="background: none; border: none; color: #fbbf24; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; font-family: inherit;">Edit Lead</button>`;
+		const missingDataWarning = document.getElementById('missingDataWarning');
+		const missingDataText = document.getElementById('missingDataText');
 
-			// Add click handler to open modal directly (stay on Listings page)
-			const editBtn = missingDataText.querySelector('.edit-lead-btn');
-			if (editBtn) {
-				editBtn.addEventListener('click', (e) => {
-					e.preventDefault();
-					e.stopPropagation();
-					const leadId = e.currentTarget.dataset.leadId;
-					console.log('🔧 Opening lead details modal for:', leadId);
-					// Open the lead details modal directly
-					if (window.openLeadDetailsModal) {
-						window.openLeadDetailsModal(leadId);
-					} else {
-						console.error('❌ window.openLeadDetailsModal not found');
-					}
-				});
+		if (missingFields.length > 0) {
+			if (missingDataWarning && missingDataText) {
+				missingDataWarning.style.display = 'flex';
+				missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <button class="edit-lead-btn" data-lead-id="${customerId}" style="background: none; border: none; color: #fbbf24; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; font-family: inherit;">Edit Lead</button>`;
+
+				// Add click handler to open modal directly (stay on Listings page)
+				const editBtn = missingDataText.querySelector('.edit-lead-btn');
+				if (editBtn) {
+					editBtn.addEventListener('click', (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						const leadId = e.currentTarget.dataset.leadId;
+						console.log('🔧 Opening lead details modal for:', leadId);
+						// Open the lead details modal directly
+						if (window.openLeadDetailsModal) {
+							window.openLeadDetailsModal(leadId);
+						} else {
+							console.error('❌ window.openLeadDetailsModal not found');
+						}
+					});
+				}
+			}
+			console.warn('⚠️ Customer has missing preferences:', missingFields);
+		} else {
+			if (missingDataWarning) {
+				missingDataWarning.style.display = 'none';
 			}
 		}
-		console.warn('⚠️ Customer has missing preferences:', missingFields);
-	} else {
-		if (missingDataWarning) {
-			missingDataWarning.style.display = 'none';
-		}
-	}
 
-	// Re-render listings with match scores
-	renderListings();
+		// Re-render listings with match scores
+		renderListings();
+	} catch (error) {
+		console.error('❌ Error in handleCustomerSelection:', error);
+		if (window.showToast) {
+			window.showToast('Error selecting customer', 'error');
+		}
+		// Clear selection on error
+		clearCustomerSelection();
+	}
 }
 
 /**

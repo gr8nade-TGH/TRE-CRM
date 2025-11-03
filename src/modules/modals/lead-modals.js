@@ -1,45 +1,79 @@
 // Lead Modals Functions - EXACT COPY from script.js
 
+/**
+ * Opens the lead details modal with editable preferences
+ * @param {string} leadId - The lead's UUID
+ * @param {Object} options - Options object containing state, api, mockAgents, etc.
+ * @returns {Promise<void>}
+ */
 export async function openLeadDetailsModal(leadId, options) {
+	// Validate inputs
+	if (!leadId) {
+		console.error('❌ openLeadDetailsModal: leadId is required');
+		if (window.showToast) {
+			window.showToast('Error: No lead ID provided', 'error');
+		}
+		return;
+	}
+
+	if (!options || !options.api) {
+		console.error('❌ openLeadDetailsModal: options.api is required');
+		return;
+	}
+
 	const { state, api, mockAgents, formatDate, renderAgentSelect, loadLeadNotes, showModal } = options;
 
-	state.selectedLeadId = leadId;
-	window.currentLeadForNotes = leadId;
+	try {
+		state.selectedLeadId = leadId;
+		window.currentLeadForNotes = leadId;
 
-	const lead = await api.getLead(leadId);
-	const c = document.getElementById('leadDetailsContent');
+		const lead = await api.getLead(leadId);
 
-	// Get agent names
-	const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || 'Unknown';
-	const assignedTo = mockAgents.find(a => a.id === lead.assigned_agent_id)?.name || 'Unassigned';
-
-	// Parse preferences (handle both JSON string and object)
-	let prefs = lead.preferences || lead.prefs || {};
-	if (typeof prefs === 'string') {
-		try {
-			prefs = JSON.parse(prefs);
-		} catch (e) {
-			console.error('Error parsing preferences:', e);
-			prefs = {};
+		if (!lead) {
+			console.error('❌ Lead not found:', leadId);
+			if (window.showToast) {
+				window.showToast('Lead not found', 'error');
+			}
+			return;
 		}
-	}
 
-	// Determine if opened from Customer View
-	const isCustomerView = state.customerView?.isActive || false;
+		const c = document.getElementById('leadDetailsContent');
+		if (!c) {
+			console.error('❌ leadDetailsContent element not found');
+			return;
+		}
 
-	// Update modal title based on context
-	const modalTitle = document.querySelector('#leadDetailsModal .modal-header h3');
-	if (modalTitle) {
-		modalTitle.textContent = isCustomerView ? '👤 Customer Details' : '👤 Lead Details';
-	}
+		// Get agent names
+		const foundBy = mockAgents.find(a => a.id === lead.found_by_agent_id)?.name || 'Unknown';
+		const assignedTo = mockAgents.find(a => a.id === lead.assigned_agent_id)?.name || 'Unassigned';
 
-	// Hide notes section in Customer View
-	const notesSection = document.getElementById('leadNotesSection');
-	if (notesSection) {
-		notesSection.style.display = isCustomerView ? 'none' : 'block';
-	}
+		// Parse preferences (handle both JSON string and object)
+		let prefs = lead.preferences || lead.prefs || {};
+		if (typeof prefs === 'string') {
+			try {
+				prefs = JSON.parse(prefs);
+			} catch (e) {
+				console.error('Error parsing preferences:', e);
+				prefs = {};
+			}
+		}
 
-	c.innerHTML = `
+		// Determine if opened from Customer View
+		const isCustomerView = state.customerView?.isActive || false;
+
+		// Update modal title based on context
+		const modalTitle = document.querySelector('#leadDetailsModal .modal-header h3');
+		if (modalTitle) {
+			modalTitle.textContent = isCustomerView ? '👤 Customer Details' : '👤 Lead Details';
+		}
+
+		// Hide notes section in Customer View
+		const notesSection = document.getElementById('leadNotesSection');
+		if (notesSection) {
+			notesSection.style.display = isCustomerView ? 'none' : 'block';
+		}
+
+		c.innerHTML = `
 		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 			<div>
 				<h4 style="margin-top: 0; color: #3b82f6;">📋 Contact Information</h4>
@@ -103,22 +137,37 @@ export async function openLeadDetailsModal(leadId, options) {
 		</div>
 	`;
 
-	// Add save button event listener
-	setTimeout(() => {
-		const saveBtn = document.getElementById('saveLeadPreferences');
-		if (saveBtn) {
-			saveBtn.addEventListener('click', async () => {
-				await saveLeadPreferences(leadId, lead, options);
-			});
+		// Add save button event listener
+		setTimeout(() => {
+			const saveBtn = document.getElementById('saveLeadPreferences');
+			if (saveBtn) {
+				saveBtn.addEventListener('click', async () => {
+					await saveLeadPreferences(leadId, lead, options);
+				});
+			}
+		}, 100);
+
+		// Load notes (only if not in Customer View)
+		if (!isCustomerView && loadLeadNotes) {
+			try {
+				await loadLeadNotes(leadId);
+			} catch (error) {
+				console.error('❌ Error loading lead notes:', error);
+				// Don't block modal from opening if notes fail to load
+			}
 		}
-	}, 100);
 
-	// Load notes (only if not in Customer View)
-	if (!isCustomerView) {
-		await loadLeadNotes(leadId);
+		if (showModal) {
+			showModal('leadDetailsModal');
+		} else {
+			console.error('❌ showModal function not provided');
+		}
+	} catch (error) {
+		console.error('❌ Error in openLeadDetailsModal:', error);
+		if (window.showToast) {
+			window.showToast('Failed to open lead details', 'error');
+		}
 	}
-
-	showModal('leadDetailsModal');
 }
 
 /**
@@ -130,13 +179,41 @@ function validatePreferences(values) {
 	const errors = [];
 
 	// Validate bedrooms (must be a positive number if provided)
-	if (values.bedrooms && (isNaN(values.bedrooms) || parseFloat(values.bedrooms) < 0 || parseFloat(values.bedrooms) > 10)) {
-		errors.push('Bedrooms must be a number between 0 and 10');
+	if (values.bedrooms) {
+		const bedroomsNum = parseFloat(values.bedrooms);
+		if (isNaN(bedroomsNum)) {
+			errors.push('Bedrooms must be a valid number');
+		} else if (bedroomsNum < 0) {
+			errors.push('Bedrooms cannot be negative');
+		} else if (bedroomsNum > 10) {
+			errors.push('Bedrooms cannot exceed 10');
+		} else if (!Number.isInteger(bedroomsNum)) {
+			errors.push('Bedrooms must be a whole number');
+		}
 	}
 
 	// Validate bathrooms (must be a positive number if provided)
-	if (values.bathrooms && (isNaN(values.bathrooms) || parseFloat(values.bathrooms) < 0 || parseFloat(values.bathrooms) > 10)) {
-		errors.push('Bathrooms must be a number between 0 and 10');
+	if (values.bathrooms) {
+		const bathroomsNum = parseFloat(values.bathrooms);
+		if (isNaN(bathroomsNum)) {
+			errors.push('Bathrooms must be a valid number');
+		} else if (bathroomsNum < 0) {
+			errors.push('Bathrooms cannot be negative');
+		} else if (bathroomsNum > 10) {
+			errors.push('Bathrooms cannot exceed 10');
+		} else if (bathroomsNum % 0.5 !== 0) {
+			errors.push('Bathrooms must be in 0.5 increments (e.g., 1, 1.5, 2)');
+		}
+	}
+
+	// Validate budget format (if provided)
+	if (values.budget) {
+		const budgetStr = values.budget.trim();
+		// Allow formats: $1500, 1500, $1200-$1800, 1200-1800
+		const budgetPattern = /^\$?\d+(\s*-\s*\$?\d+)?$/;
+		if (!budgetPattern.test(budgetStr)) {
+			errors.push('Budget must be a number or range (e.g., $1500 or $1200-$1800)');
+		}
 	}
 
 	// Validate move-in date (must be a valid date if provided)
@@ -144,6 +221,13 @@ function validatePreferences(values) {
 		const date = new Date(values.moveInDate);
 		if (isNaN(date.getTime())) {
 			errors.push('Move-in date must be a valid date');
+		}
+		// Optional: warn if date is in the past (but don't block it)
+		const today = new Date();
+		today.setHours(0, 0, 0, 0);
+		if (date < today) {
+			// Just a warning, not an error
+			console.warn('⚠️ Move-in date is in the past');
 		}
 	}
 
