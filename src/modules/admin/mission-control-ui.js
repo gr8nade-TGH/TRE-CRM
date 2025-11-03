@@ -379,6 +379,7 @@ export function initializeMatchCounter() {
 
 		// Show loading state
 		counterEl.innerHTML = '<span class="mc-counter-loading-inline">...</span>';
+		console.log('🔄 Counter: Loading...');
 
 		try {
 			// Extract current config from form
@@ -390,15 +391,21 @@ export function initializeMatchCounter() {
 
 			// Update display with color coding
 			let colorClass = '';
+			let statusText = '';
 			if (count >= 10) {
 				colorClass = 'mc-counter-good';
+				statusText = 'OPTIMAL';
 			} else if (count >= 1) {
 				colorClass = 'mc-counter-warning';
+				statusText = 'LIMITED';
 			} else {
 				colorClass = 'mc-counter-none';
+				statusText = 'NO MATCHES';
 			}
 
+			// Force DOM update with new content
 			counterEl.innerHTML = `<span class="${colorClass}">${count}</span>`;
+			console.log(`✅ Counter updated: ${count} properties (${statusText})`);
 
 		} catch (error) {
 			console.error('❌ Error updating match counter:', error);

@@ -47,6 +47,25 @@
 	overflow-x: hidden;
 }
 
+/* Override white background from global .page-container */
+.mission-control-theme .page-container {
+	background: transparent !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	box-shadow: none !important;
+	border: none !important;
+}
+
+/* Override white background from global .view-bar on mobile */
+.mission-control-theme .view-bar {
+	background: var(--mc-bg-panel) !important;
+	border-bottom: 1px solid var(--mc-border-primary) !important;
+}
+
+.mission-control-theme .view-bar h1 {
+	color: var(--mc-text-primary) !important;
+}
+
 .mission-control-theme .smart-match-config-page {
 	max-width: 1600px;
 	margin: 0 auto;
