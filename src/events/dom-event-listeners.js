@@ -1627,6 +1627,34 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	// Customer View Mode Toggle
+	const agentViewBtn = document.getElementById('agentViewBtn');
+	const customerViewBtn = document.getElementById('customerViewBtn');
+
+	if (agentViewBtn && customerViewBtn) {
+		agentViewBtn.addEventListener('click', async () => {
+			const { toggleViewMode } = await import('../modules/listings/customer-view.js');
+			toggleViewMode('agent', renderListings);
+		});
+
+		customerViewBtn.addEventListener('click', async () => {
+			const { toggleViewMode, loadCustomersForSelector } = await import('../modules/listings/customer-view.js');
+			toggleViewMode('customer', renderListings);
+
+			// Load customers for the selector
+			await loadCustomersForSelector(SupabaseAPI, state);
+		});
+	}
+
+	// Customer Selector
+	const customerSelector = document.getElementById('customerSelector');
+	if (customerSelector) {
+		customerSelector.addEventListener('change', async (e) => {
+			const { handleCustomerSelection } = await import('../modules/listings/customer-view.js');
+			await handleCustomerSelection(e.target.value, renderListings);
+		});
+	}
+
 	// Add Listing button and modal
 	const addListingBtn = document.getElementById('addListingBtn');
 	if (addListingBtn) {

@@ -15,32 +15,32 @@ export const state = {
 
 	// Navigation state
 	currentPage: 'leads',
-	
+
 	// Pagination state
 	page: 1,
 	pageSize: 50, // Increased from 10 for better performance
-	
+
 	// Sorting state
-	sort: { 
-		key: 'submitted_at', 
-		dir: 'desc' 
+	sort: {
+		key: 'submitted_at',
+		dir: 'desc'
 	},
-	
+
 	// Search state
 	search: '',
-	
+
 	// Selection state
 	selectedLeadId: null,
 	selectedAgentId: null,
 	selectedMatches: new Set(),
 	currentMatches: [],
-	
+
 	// Showcases state
 	showcases: {}, // id -> showcase
-	
+
 	// Public banner
 	publicBanner: 'Earn a $200 gift card when you lease through us.',
-	
+
 	// Filters state
 	filters: {
 		search: '',
@@ -48,7 +48,7 @@ export const state = {
 		fromDate: '',
 		toDate: ''
 	},
-	
+
 	// Listings filters state
 	listingsFilters: {
 		search: '',
@@ -58,6 +58,14 @@ export const state = {
 		beds: 'any',
 		commission: '0',
 		amenities: 'any'
+	},
+
+	// Customer View state
+	customerView: {
+		isActive: false,
+		selectedCustomerId: null,
+		selectedCustomer: null,
+		matchScores: new Map() // propertyId -> matchScore
 	}
 };
 
@@ -108,6 +116,12 @@ export function resetState() {
 		beds: 'any',
 		commission: '0',
 		amenities: 'any'
+	};
+	state.customerView = {
+		isActive: false,
+		selectedCustomerId: null,
+		selectedCustomer: null,
+		matchScores: new Map()
 	};
 }
 

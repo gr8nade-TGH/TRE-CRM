@@ -363,6 +363,56 @@
 				<div class="listings-filter-bar" id="listingsFilters">
 					<!-- Row 1: Filter Controls -->
 					<div class="filter-controls-row">
+						<!-- View Mode Toggle -->
+						<div class="filter-group view-mode-toggle-group">
+							<label>View Mode</label>
+							<div class="view-mode-toggle">
+								<button id="agentViewBtn" class="view-mode-btn active" data-view="agent">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+										<circle cx="12" cy="7" r="4"></circle>
+									</svg>
+									Agent View
+								</button>
+								<button id="customerViewBtn" class="view-mode-btn" data-view="customer">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+										<circle cx="9" cy="7" r="4"></circle>
+										<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+										<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+									</svg>
+									Customer View
+								</button>
+							</div>
+						</div>
+
+						<!-- Customer Selector (shown only in Customer View) -->
+						<div class="filter-group customer-selector-group" id="customerSelectorGroup"
+							style="display: none;">
+							<label for="customerSelector">Select Customer</label>
+							<select id="customerSelector" class="filter-select">
+								<option value="">-- Choose a customer --</option>
+								<!-- Options populated dynamically -->
+							</select>
+						</div>
+
+						<!-- Missing Data Warning (shown when customer selected with incomplete preferences) -->
+						<div class="filter-group missing-data-warning" id="missingDataWarning" style="display: none;">
+							<div class="warning-badge">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2">
+									<path
+										d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+									</path>
+									<line x1="12" y1="9" x2="12" y2="13"></line>
+									<line x1="12" y1="17" x2="12.01" y2="17"></line>
+								</svg>
+								<span id="missingDataText">Missing preferences data</span>
+							</div>
+						</div>
+
 						<div class="filter-group">
 							<label for="listingsSearchInput">Search</label>
 							<input type="text" id="listingsSearchInput" placeholder="Community, neighborhood, amenities"

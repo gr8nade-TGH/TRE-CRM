@@ -7173,3 +7173,176 @@ input[type="radio"] {
 		justify-content: center;
 	}
 }
+
+/* ========================================
+   CUSTOMER VIEW MODE STYLES
+   ======================================== */
+
+/* View Mode Toggle */
+.view-mode-toggle-group {
+	min-width: auto !important;
+}
+
+.view-mode-toggle {
+	display: flex;
+	background: #e5e7eb;
+	border-radius: 8px;
+	padding: 3px;
+	gap: 2px;
+}
+
+.view-mode-btn {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 14px;
+	border: none;
+	background: transparent;
+	color: #6b7280;
+	font-size: 13px;
+	font-weight: 500;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	white-space: nowrap;
+}
+
+.view-mode-btn svg {
+	flex-shrink: 0;
+}
+
+.view-mode-btn:hover {
+	background: #d1d5db;
+	color: #374151;
+}
+
+.view-mode-btn.active {
+	background: white;
+	color: #153e7a;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.view-mode-btn.active svg {
+	stroke: #153e7a;
+}
+
+/* Customer Selector */
+.customer-selector-group {
+	min-width: 220px !important;
+}
+
+.customer-selector-group .filter-select {
+	font-weight: 500;
+}
+
+/* Missing Data Warning */
+.missing-data-warning {
+	min-width: auto !important;
+}
+
+.warning-badge {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 8px 12px;
+	background: #fef3c7;
+	border: 1px solid #fbbf24;
+	border-radius: 6px;
+	color: #92400e;
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.warning-badge svg {
+	flex-shrink: 0;
+	stroke: #f59e0b;
+}
+
+/* Star Rating Display */
+.match-score-stars {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	margin-left: 8px;
+}
+
+.star {
+	color: #fbbf24;
+	font-size: 14px;
+}
+
+.star.empty {
+	color: #d1d5db;
+}
+
+.match-score-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+	border-radius: 6px;
+	color: white;
+	font-size: 12px;
+	font-weight: 600;
+	margin-left: 8px;
+	box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
+}
+
+.match-score-badge .stars {
+	display: flex;
+	gap: 2px;
+}
+
+.match-score-badge .star {
+	font-size: 12px;
+}
+
+/* Hide commission in Customer View */
+.customer-view .commission-badge,
+.customer-view #commissionFilter,
+.customer-view .filter-group:has(#commissionFilter) {
+	display: none !important;
+}
+
+/* Map Marker Match Score (low-profile) */
+.marker-match-score {
+	position: absolute;
+	top: -8px;
+	right: -8px;
+	background: #fbbf24;
+	color: white;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 5px;
+	border-radius: 10px;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+	pointer-events: none;
+}
+
+/* Customer View Prompt (when no customer selected) */
+.customer-view-prompt {
+	text-align: center;
+	padding: 60px 20px;
+	color: #6b7280;
+}
+
+.customer-view-prompt svg {
+	width: 64px;
+	height: 64px;
+	margin: 0 auto 20px;
+	stroke: #d1d5db;
+}
+
+.customer-view-prompt h3 {
+	font-size: 20px;
+	font-weight: 600;
+	color: #374151;
+	margin-bottom: 8px;
+}
+
+.customer-view-prompt p {
+	font-size: 14px;
+	color: #6b7280;
+	margin-bottom: 0;
+}
