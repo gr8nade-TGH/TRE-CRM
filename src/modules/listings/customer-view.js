@@ -1,11 +1,115 @@
 /**
  * Customer View Module
  * Handles Customer View mode for showing listings to customers without commission info
- * 
+ *
  * @module listings/customer-view
  */
 
 import { state } from '../../state/state.js';
+
+/**
+ * Shows a toast notification message
+ * @param {string} message - The message to display
+ * @param {string} type - Type of toast: 'success', 'error', 'info', 'warning'
+ * @param {number} duration - Duration in milliseconds (default: 3000)
+ */
+export function showToast(message, type = 'info', duration = 3000) {
+	// Create toast container if it doesn't exist
+	let toastContainer = document.getElementById('toastContainer');
+	if (!toastContainer) {
+		toastContainer = document.createElement('div');
+		toastContainer.id = 'toastContainer';
+		toastContainer.style.cssText = `
+			position: fixed;
+			top: 20px;
+			right: 20px;
+			z-index: 10000;
+			display: flex;
+			flex-direction: column;
+			gap: 10px;
+			pointer-events: none;
+		`;
+		document.body.appendChild(toastContainer);
+	}
+
+	// Create toast element
+	const toast = document.createElement('div');
+	toast.className = `toast toast-${type}`;
+
+	const colors = {
+		success: { bg: '#10b981', icon: '✓' },
+		error: { bg: '#ef4444', icon: '✗' },
+		info: { bg: '#3b82f6', icon: 'ℹ' },
+		warning: { bg: '#f59e0b', icon: '⚠' }
+	};
+
+	const color = colors[type] || colors.info;
+
+	toast.style.cssText = `
+		background: ${color.bg};
+		color: white;
+		padding: 12px 20px;
+		border-radius: 8px;
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+		font-size: 14px;
+		font-weight: 500;
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		pointer-events: auto;
+		animation: slideInRight 0.3s ease;
+		max-width: 400px;
+	`;
+
+	toast.innerHTML = `
+		<span style="font-size: 18px;">${color.icon}</span>
+		<span>${message}</span>
+	`;
+
+	toastContainer.appendChild(toast);
+
+	// Auto-remove after duration
+	setTimeout(() => {
+		toast.style.animation = 'slideOutRight 0.3s ease';
+		setTimeout(() => {
+			toast.remove();
+			// Remove container if empty
+			if (toastContainer.children.length === 0) {
+				toastContainer.remove();
+			}
+		}, 300);
+	}, duration);
+}
+
+// Add CSS animations for toast
+if (!document.getElementById('toastAnimations')) {
+	const style = document.createElement('style');
+	style.id = 'toastAnimations';
+	style.textContent = `
+		@keyframes slideInRight {
+			from {
+				transform: translateX(400px);
+				opacity: 0;
+			}
+			to {
+				transform: translateX(0);
+				opacity: 1;
+			}
+		}
+
+		@keyframes slideOutRight {
+			from {
+				transform: translateX(0);
+				opacity: 1;
+			}
+			to {
+				transform: translateX(400px);
+				opacity: 0;
+			}
+		}
+	`;
+	document.head.appendChild(style);
+}
 
 /**
  * Toggle between Agent View and Customer View
@@ -225,6 +329,80 @@ function checkMissingPreferences(preferences) {
 	}
 
 	return missingFields;
+}
+
+/**
+ * Refresh the missing data warning for the currently selected customer
+ * Called after preferences are updated to check if warning should be hidden
+ * @returns {Promise<void>}
+ */
+export async function refreshMissingDataWarning() {
+	if (!state.customerView?.isActive || !state.customerView?.selectedCustomerId) {
+		return;
+	}
+
+	const customerId = state.customerView.selectedCustomerId;
+
+	// Re-fetch customer data to get updated preferences
+	try {
+		const SupabaseAPI = await import('../api/supabase-api.js');
+		const lead = await SupabaseAPI.getLead(customerId);
+
+		if (!lead) {
+			console.warn('⚠️ Could not fetch updated lead data');
+			return;
+		}
+
+		// Update state with fresh data
+		state.customerView.selectedCustomer = lead;
+
+		// Check for missing preferences
+		const missingFields = checkMissingPreferences(lead.preferences);
+
+		const missingDataWarning = document.getElementById('missingDataWarning');
+		const missingDataText = document.getElementById('missingDataText');
+
+		if (missingFields.length > 0) {
+			// Still have missing fields - update the warning
+			if (missingDataWarning && missingDataText) {
+				missingDataWarning.style.display = 'flex';
+				missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <button class="edit-lead-btn" data-lead-id="${customerId}" style="background: none; border: none; color: #fbbf24; text-decoration: underline; font-weight: 700; cursor: pointer; padding: 0; font-size: inherit; font-family: inherit;">Edit Lead</button>`;
+
+				// Re-attach click handler
+				const editBtn = missingDataText.querySelector('.edit-lead-btn');
+				if (editBtn) {
+					editBtn.addEventListener('click', (e) => {
+						e.preventDefault();
+						e.stopPropagation();
+						const leadId = e.currentTarget.dataset.leadId;
+						if (window.openLeadDetailsModal) {
+							window.openLeadDetailsModal(leadId);
+						}
+					});
+				}
+			}
+		} else {
+			// All fields filled - hide the warning with animation
+			if (missingDataWarning) {
+				missingDataWarning.style.transition = 'opacity 0.3s ease, transform 0.3s ease';
+				missingDataWarning.style.opacity = '0';
+				missingDataWarning.style.transform = 'translateY(-10px)';
+
+				setTimeout(() => {
+					missingDataWarning.style.display = 'none';
+					missingDataWarning.style.opacity = '1';
+					missingDataWarning.style.transform = 'translateY(0)';
+				}, 300);
+
+				// Show success toast
+				if (window.showToast) {
+					window.showToast('All required preferences are now complete!', 'success');
+				}
+			}
+		}
+	} catch (error) {
+		console.error('❌ Error refreshing missing data warning:', error);
+	}
 }
 
 /**

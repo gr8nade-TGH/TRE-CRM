@@ -505,6 +505,9 @@ let api, renderLeads, renderSpecials;
 	// Expose to window for Customer View "Edit Lead" button
 	window.openLeadDetailsModal = openLeadDetailsModal;
 
+	// Expose showToast for notifications
+	window.showToast = Listings.showToast;
+
 	function closeLeadDetailsModal() {
 		Modals.closeLeadDetailsModal({
 			hideModal

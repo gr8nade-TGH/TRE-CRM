@@ -304,6 +304,11 @@ async function saveLeadPreferences(leadId, lead, options) {
 		saveBtn.style.transform = 'scale(1.05)';
 		saveBtn.style.transition = 'all 0.2s ease';
 
+		// Show toast notification
+		if (window.showToast) {
+			window.showToast('Preferences saved successfully!', 'success');
+		}
+
 		// Reset button after delay
 		setTimeout(() => {
 			saveBtn.textContent = originalText;
@@ -317,10 +322,27 @@ async function saveLeadPreferences(leadId, lead, options) {
 		if (state.customerView?.isActive && state.customerView?.selectedCustomerId === leadId) {
 			console.log('🔄 Customer preferences updated, recalculating match scores...');
 
+			// Show toast about recalculation
+			if (window.showToast) {
+				window.showToast('Recalculating match scores...', 'info', 2000);
+			}
+
+			// Refresh missing data warning
+			const CustomerView = await import('../listings/customer-view.js');
+			if (CustomerView.refreshMissingDataWarning) {
+				await CustomerView.refreshMissingDataWarning();
+			}
+
 			// Trigger re-render which will recalculate scores
 			if (window.renderListings) {
 				setTimeout(() => {
 					window.renderListings();
+					// Show completion toast
+					if (window.showToast) {
+						setTimeout(() => {
+							window.showToast('Match scores updated!', 'success', 2000);
+						}, 600);
+					}
 				}, 500);
 			}
 		}
