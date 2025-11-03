@@ -127,7 +127,27 @@ export async function renderLeads(options, autoSelectLeadId = null) {
 			});
 		}
 
-		items.forEach(lead => {
+		// Fetch cooldown status for all leads in parallel
+		const cooldownPromises = items.map(lead =>
+			SupabaseAPI.checkSmartMatchCooldown(lead.id, 12).catch(err => {
+				console.error(`Error checking cooldown for lead ${lead.id}:`, err);
+				return { canSend: true, hoursRemaining: 0 };
+			})
+		);
+		const cooldownStatuses = await Promise.all(cooldownPromises);
+
+		// Helper function to format cooldown time
+		const formatCooldownTime = (hours) => {
+			if (hours < 1) {
+				const minutes = Math.ceil(hours * 60);
+				return `${minutes}m`;
+			}
+			const h = Math.floor(hours);
+			const m = Math.ceil((hours - h) * 60);
+			return m > 0 ? `${h}h ${m}m` : `${h}h`;
+		};
+
+		items.forEach((lead, index) => {
 			const notesCount = lead._notesCount || 0;
 			// Always show note icon: gray if no notes, yellow with pulse if notes exist
 			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
@@ -147,6 +167,18 @@ export async function renderLeads(options, autoSelectLeadId = null) {
 			</svg>
 		</span>`;
 
+			// Cooldown timer display
+			const cooldown = cooldownStatuses[index];
+			const cooldownDisplay = !cooldown.canSend ? `
+				<div style="font-size: 11px; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<circle cx="12" cy="12" r="10"/>
+						<polyline points="12 6 12 12 16 14"/>
+					</svg>
+					<span>Cooldown: ${formatCooldownTime(cooldown.hoursRemaining)}</span>
+				</div>
+			` : '';
+
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 			<td style="text-align: center;">
@@ -165,12 +197,15 @@ export async function renderLeads(options, autoSelectLeadId = null) {
 			<td class="mono">
 				${prefsSummary(lead.preferences || lead.prefs)}
 			</td>
-			<td><button class="action-btn showcase-btn" data-matches="${lead.id}" title="View Top Listing Matches">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
-					<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-				</svg>
-				Matches
-			</button></td>
+			<td>
+				<button class="action-btn showcase-btn" data-matches="${lead.id}" title="View Top Listing Matches">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" style="margin-right: 6px;">
+						<path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+					</svg>
+					Matches
+				</button>
+				${cooldownDisplay}
+			</td>
 			<td data-sort="assigned_agent_id">
 				${state.role === 'manager' ? renderAgentSelect(lead, agents) : renderAgentReadOnly(lead, agents)}
 			</td>
