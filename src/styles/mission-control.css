@@ -44,10 +44,22 @@
 /* Override body and main backgrounds when mission control page is active */
 body.mission-control-active {
 	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
 }
 
 body.mission-control-active main {
 	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active #appRoot {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active #manageView {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
 }
 
 .mission-control-theme {

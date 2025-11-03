@@ -519,9 +519,9 @@ async function runSmartMatchTest() {
 			bathrooms: document.getElementById('testBathrooms').value,
 			price_range: `0-${document.getElementById('testBudget').value}`,
 			move_in_date: document.getElementById('testMoveInDate').value,
-			pets: document.getElementById('testPets').value === 'yes',
-			parking_needed: document.getElementById('testParking').value === 'yes',
-			area_of_town: document.getElementById('testCity').value
+			has_pets: document.getElementById('testPets').value === 'yes',
+			needs_parking: document.getElementById('testParking').value === 'yes',
+			location_preference: document.getElementById('testCity').value
 		};
 
 		console.log('📝 Test lead criteria:', testLead);
