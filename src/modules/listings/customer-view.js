@@ -6,6 +6,7 @@
  */
 
 import { state } from '../../state/state.js';
+import { renderEmptyState, renderLoadingSkeleton, handleMissingPreferences, handleSmartMatchError } from '../../utils/edge-case-handlers.js';
 
 /**
  * Shows a toast notification message
@@ -231,15 +232,27 @@ export async function loadCustomersForSelector(SupabaseAPI, currentState) {
 		// Populate dropdown
 		const customerSelector = document.getElementById('customerSelector');
 		if (customerSelector) {
-			customerSelector.innerHTML = '<option value="">-- Choose a customer --</option>';
+			if (leads.length === 0) {
+				// No customers found - show empty state
+				customerSelector.innerHTML = '<option value="">No active customers found</option>';
+				customerSelector.disabled = true;
 
-			leads.forEach(lead => {
-				const option = document.createElement('option');
-				option.value = lead.id;
-				option.textContent = `${lead.name}${lead.email ? ` (${lead.email})` : ''}`;
-				option.dataset.leadData = JSON.stringify(lead);
-				customerSelector.appendChild(option);
-			});
+				// Show toast notification
+				if (window.showToast) {
+					window.showToast('No active customers found. Create a new lead to get started.', 'info', 5000);
+				}
+			} else {
+				customerSelector.disabled = false;
+				customerSelector.innerHTML = '<option value="">-- Choose a customer --</option>';
+
+				leads.forEach(lead => {
+					const option = document.createElement('option');
+					option.value = lead.id;
+					option.textContent = `${lead.name}${lead.email ? ` (${lead.email})` : ''}`;
+					option.dataset.leadData = JSON.stringify(lead);
+					customerSelector.appendChild(option);
+				});
+			}
 		}
 
 		return leads;
@@ -452,10 +465,26 @@ export async function refreshMissingDataWarning() {
 export async function calculateMatchScores(properties, customer, config) {
 	console.log(`🎯 Calculating match scores for ${properties.length} properties...`);
 
-	if (!customer || !customer.preferences) {
-		console.warn('⚠️ No customer or preferences provided');
+	// Validate inputs
+	if (!customer) {
+		console.warn('⚠️ No customer provided');
+		if (window.showToast) {
+			window.showToast('No customer selected', 'warning');
+		}
 		return new Map();
 	}
+
+	if (!customer.preferences) {
+		console.warn('⚠️ Customer has no preferences');
+		if (window.showToast) {
+			window.showToast('Customer has no preferences set. Please add preferences to see match scores.', 'info', 5000);
+		}
+		return new Map();
+	}
+
+	// Normalize preferences using edge case handler
+	const normalizedPrefs = handleMissingPreferences(customer.preferences);
+	const customerWithNormalizedPrefs = { ...customer, preferences: normalizedPrefs };
 
 	try {
 		// Import Smart Match utilities
@@ -496,8 +525,8 @@ export async function calculateMatchScores(properties, customer, config) {
 			property: unit.property
 		}));
 
-		// Run Smart Match algorithm
-		const matches = getSmartMatchesWithConfig(customer, unitsWithDetails, config);
+		// Run Smart Match algorithm with normalized preferences
+		const matches = getSmartMatchesWithConfig(customerWithNormalizedPrefs, unitsWithDetails, config);
 
 		// Create maps for property-level and unit-level scores
 		const propertyScoreMap = new Map(); // propertyId -> highest score
@@ -538,6 +567,18 @@ export async function calculateMatchScores(properties, customer, config) {
 		return propertyScoreMap;
 	} catch (error) {
 		console.error('❌ Error calculating match scores:', error);
+
+		// Use edge case handler for better error messaging
+		const errorDetails = handleSmartMatchError(error, customer.id);
+
+		if (window.showToast) {
+			window.showToast(errorDetails.errorMessage, 'error', 5000);
+		}
+
+		// Return empty maps to prevent crashes
+		state.customerView.matchScores = new Map();
+		state.customerView.unitScores = new Map();
+
 		return new Map();
 	}
 }

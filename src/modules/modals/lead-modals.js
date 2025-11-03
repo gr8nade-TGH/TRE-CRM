@@ -1,5 +1,8 @@
 // Lead Modals Functions - EXACT COPY from script.js
 
+import { trapFocus, announceToScreenReader, setLoadingState } from '../../utils/accessibility.js';
+import { handleMissingPreferences, getSafeValue } from '../../utils/edge-case-handlers.js';
+
 /**
  * Opens the lead details modal with editable preferences
  * @param {string} leadId - The lead's UUID
@@ -141,9 +144,47 @@ export async function openLeadDetailsModal(leadId, options) {
 		setTimeout(() => {
 			const saveBtn = document.getElementById('saveLeadPreferences');
 			if (saveBtn) {
-				saveBtn.addEventListener('click', async () => {
+				const saveFn = async () => {
 					await saveLeadPreferences(leadId, lead, options);
-				});
+				};
+
+				saveBtn.addEventListener('click', saveFn);
+
+				// Add keyboard shortcut (Ctrl+S or Cmd+S)
+				const keyboardHandler = (e) => {
+					if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+						e.preventDefault();
+						saveFn();
+					}
+				};
+
+				// Add to modal content area
+				const modalContent = document.getElementById('leadDetailsContent');
+				if (modalContent) {
+					modalContent.addEventListener('keydown', keyboardHandler);
+				}
+
+				// Also add to document for global shortcut when modal is open
+				document.addEventListener('keydown', keyboardHandler);
+
+				// Clean up on modal close
+				const modal = document.getElementById('leadDetailsModal');
+				if (modal) {
+					const observer = new MutationObserver((mutations) => {
+						mutations.forEach((mutation) => {
+							if (mutation.attributeName === 'style') {
+								const isHidden = modal.style.display === 'none';
+								if (isHidden) {
+									document.removeEventListener('keydown', keyboardHandler);
+									if (modalContent) {
+										modalContent.removeEventListener('keydown', keyboardHandler);
+									}
+								}
+							}
+						});
+					});
+					observer.observe(modal, { attributes: true });
+				}
 			}
 		}, 100);
 
@@ -159,6 +200,24 @@ export async function openLeadDetailsModal(leadId, options) {
 
 		if (showModal) {
 			showModal('leadDetailsModal');
+
+			// Add accessibility features
+			const modal = document.getElementById('leadDetailsModal');
+			if (modal) {
+				// Add ARIA attributes
+				modal.setAttribute('role', 'dialog');
+				modal.setAttribute('aria-modal', 'true');
+				modal.setAttribute('aria-label', isCustomerView ? 'Customer Details' : 'Lead Details');
+
+				// Trap focus within modal
+				trapFocus(modal);
+
+				// Announce to screen readers
+				announceToScreenReader(
+					isCustomerView ? 'Customer details dialog opened' : 'Lead details dialog opened',
+					'polite'
+				);
+			}
 		} else {
 			console.error('❌ showModal function not provided');
 		}
@@ -249,6 +308,10 @@ function showValidationErrors(errors) {
 		errorContainer.id = 'preferencesErrorContainer';
 		errorContainer.style.cssText = 'background: #fee; border: 1px solid #fcc; color: #c33; padding: 12px; border-radius: 6px; margin-bottom: 16px; font-size: 14px;';
 
+		// Add ARIA attributes for accessibility
+		errorContainer.setAttribute('role', 'alert');
+		errorContainer.setAttribute('aria-live', 'assertive');
+
 		const content = document.getElementById('leadDetailsContent');
 		if (content) {
 			content.insertBefore(errorContainer, content.firstChild);
@@ -268,6 +331,11 @@ function showValidationErrors(errors) {
 	if (modal) {
 		modal.scrollTop = 0;
 	}
+
+	// Announce errors to screen readers
+	const errorCount = errors.length;
+	const errorMessage = `${errorCount} validation ${errorCount === 1 ? 'error' : 'errors'} found. ${errors.join('. ')}`;
+	announceToScreenReader(errorMessage, 'assertive');
 }
 
 /**
