@@ -24,6 +24,21 @@ export async function openLeadDetailsModal(leadId, options) {
 		}
 	}
 
+	// Determine if opened from Customer View
+	const isCustomerView = state.customerView?.isActive || false;
+
+	// Update modal title based on context
+	const modalTitle = document.querySelector('#leadDetailsModal .modal-header h3');
+	if (modalTitle) {
+		modalTitle.textContent = isCustomerView ? '👤 Customer Details' : '👤 Lead Details';
+	}
+
+	// Hide notes section in Customer View
+	const notesSection = document.getElementById('leadNotesSection');
+	if (notesSection) {
+		notesSection.style.display = isCustomerView ? 'none' : 'block';
+	}
+
 	c.innerHTML = `
 		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 			<div>
@@ -37,7 +52,7 @@ export async function openLeadDetailsModal(leadId, options) {
 			<div>
 				<h4 style="margin-top: 0; color: #3b82f6;">👥 Agent Information</h4>
 				<div class="field"><label>Found By Agent</label><div class="value" style="font-weight: 600; color: #10b981;">${foundBy}</div></div>
-				<div class="field"><label>Currently Assigned To</label><div class="value">${state.role==='manager' ? renderAgentSelect(lead) : assignedTo}</div></div>
+				<div class="field"><label>Currently Assigned To</label><div class="value">${state.role === 'manager' ? renderAgentSelect(lead) : assignedTo}</div></div>
 				<div class="field"><label>Source</label><div class="value">${lead.source || '—'}</div></div>
 			</div>
 		</div>
@@ -45,23 +60,154 @@ export async function openLeadDetailsModal(leadId, options) {
 		<h4 style="margin-top: 0; color: #3b82f6;">🏠 Preferences</h4>
 		<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
 			<div>
-				<div class="field"><label>Bedrooms</label><div class="value">${prefs.bedrooms || prefs.beds || '—'}</div></div>
-				<div class="field"><label>Bathrooms</label><div class="value">${prefs.bathrooms || prefs.baths || '—'}</div></div>
-				<div class="field"><label>Budget</label><div class="value">${prefs.priceRange || prefs.price_range || (prefs.budget_min && prefs.budget_max ? `$${prefs.budget_min} - $${prefs.budget_max}` : '—')}</div></div>
-				<div class="field"><label>Area of Town</label><div class="value">${prefs.areaOfTown || prefs.area_of_town || (prefs.neighborhoods ? prefs.neighborhoods.join(', ') : '—')}</div></div>
+				<div class="field">
+					<label>Bedrooms</label>
+					<input type="number" id="editBedrooms" class="input" value="${prefs.bedrooms || prefs.beds || ''}" placeholder="e.g., 2" min="0" max="10" style="width: 100%;">
+				</div>
+				<div class="field">
+					<label>Bathrooms</label>
+					<input type="number" id="editBathrooms" class="input" value="${prefs.bathrooms || prefs.baths || ''}" placeholder="e.g., 2" min="0" max="10" step="0.5" style="width: 100%;">
+				</div>
+				<div class="field">
+					<label>Budget (Monthly Rent)</label>
+					<input type="text" id="editBudget" class="input" value="${prefs.priceRange || prefs.price_range || (prefs.budget_min && prefs.budget_max ? `$${prefs.budget_min} - $${prefs.budget_max}` : '')}" placeholder="e.g., $1500 or $1200-$1800" style="width: 100%;">
+				</div>
+				<div class="field">
+					<label>Move-in Date</label>
+					<input type="date" id="editMoveInDate" class="input" value="${prefs.moveInDate || prefs.move_in_date || prefs.move_in || ''}" style="width: 100%;">
+				</div>
 			</div>
 			<div>
-				<div class="field"><label>Move-in Date</label><div class="value">${prefs.moveInDate || prefs.move_in_date || prefs.move_in || '—'}</div></div>
-				<div class="field"><label>Credit History</label><div class="value">${prefs.creditHistory || prefs.credit_history || prefs.credit_tier || '—'}</div></div>
-				<div class="field"><label>Comments</label><div class="value">${prefs.comments || prefs.notes || '—'}</div></div>
+				<div class="field">
+					<label>Area of Town</label>
+					<input type="text" id="editAreaOfTown" class="input" value="${prefs.areaOfTown || prefs.area_of_town || (prefs.neighborhoods ? prefs.neighborhoods.join(', ') : '')}" placeholder="e.g., Downtown, Midtown" style="width: 100%;">
+				</div>
+				<div class="field">
+					<label>Credit History</label>
+					<select id="editCreditHistory" class="select" style="width: 100%;">
+						<option value="">Select...</option>
+						<option value="Excellent" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Excellent' ? 'selected' : ''}>Excellent</option>
+						<option value="Good" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Good' ? 'selected' : ''}>Good</option>
+						<option value="Fair" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Fair' ? 'selected' : ''}>Fair</option>
+						<option value="Poor" ${(prefs.creditHistory || prefs.credit_history || prefs.credit_tier) === 'Poor' ? 'selected' : ''}>Poor</option>
+					</select>
+				</div>
+				<div class="field">
+					<label>Comments</label>
+					<textarea id="editComments" class="input" rows="3" placeholder="Additional preferences or notes..." style="width: 100%; resize: vertical;">${prefs.comments || prefs.notes || ''}</textarea>
+				</div>
 			</div>
+		</div>
+		<div style="margin-top: 20px; text-align: right;">
+			<button id="saveLeadPreferences" class="btn btn-primary">💾 Save Preferences</button>
 		</div>
 	`;
 
-	// Load notes
-	await loadLeadNotes(leadId);
+	// Add save button event listener
+	setTimeout(() => {
+		const saveBtn = document.getElementById('saveLeadPreferences');
+		if (saveBtn) {
+			saveBtn.addEventListener('click', async () => {
+				await saveLeadPreferences(leadId, lead, options);
+			});
+		}
+	}, 100);
+
+	// Load notes (only if not in Customer View)
+	if (!isCustomerView) {
+		await loadLeadNotes(leadId);
+	}
 
 	showModal('leadDetailsModal');
+}
+
+async function saveLeadPreferences(leadId, lead, options) {
+	const { api, state } = options;
+
+	// Get values from inputs
+	const bedrooms = document.getElementById('editBedrooms')?.value || '';
+	const bathrooms = document.getElementById('editBathrooms')?.value || '';
+	const budget = document.getElementById('editBudget')?.value || '';
+	const moveInDate = document.getElementById('editMoveInDate')?.value || '';
+	const areaOfTown = document.getElementById('editAreaOfTown')?.value || '';
+	const creditHistory = document.getElementById('editCreditHistory')?.value || '';
+	const comments = document.getElementById('editComments')?.value || '';
+
+	// Parse existing preferences
+	let existingPrefs = lead.preferences || lead.prefs || {};
+	if (typeof existingPrefs === 'string') {
+		try {
+			existingPrefs = JSON.parse(existingPrefs);
+		} catch (e) {
+			existingPrefs = {};
+		}
+	}
+
+	// Update preferences object (store in multiple formats for compatibility)
+	const updatedPreferences = {
+		...existingPrefs,
+		bedrooms: bedrooms,
+		beds: bedrooms,
+		bathrooms: bathrooms,
+		baths: bathrooms,
+		priceRange: budget,
+		price_range: budget,
+		budget_min: budget ? budget.replace(/\$/g, '').split('-')[0]?.trim() : '',
+		budget_max: budget ? budget.replace(/\$/g, '').split('-')[1]?.trim() || budget.replace(/\$/g, '').trim() : '',
+		moveInDate: moveInDate,
+		move_in_date: moveInDate,
+		move_in: moveInDate,
+		areaOfTown: areaOfTown,
+		area_of_town: areaOfTown,
+		neighborhoods: areaOfTown ? areaOfTown.split(',').map(n => n.trim()) : [],
+		creditHistory: creditHistory,
+		credit_history: creditHistory,
+		credit_tier: creditHistory,
+		comments: comments,
+		notes: comments
+	};
+
+	try {
+		// Get current user info for activity logging
+		const userEmail = window.currentUser?.email || 'unknown';
+		const userName = window.currentUser?.user_metadata?.name || window.currentUser?.email || 'Unknown User';
+
+		// Save to database using SupabaseAPI.updateLead
+		const SupabaseAPI = await import('../api/supabase-api.js');
+		await SupabaseAPI.updateLead(leadId, {
+			preferences: updatedPreferences,
+			updated_at: new Date().toISOString()
+		}, userEmail, userName);
+
+		console.log('✅ Lead preferences saved successfully');
+
+		// Show success message
+		const saveBtn = document.getElementById('saveLeadPreferences');
+		if (saveBtn) {
+			const originalText = saveBtn.textContent;
+			saveBtn.textContent = '✓ Saved!';
+			saveBtn.style.background = '#10b981';
+			setTimeout(() => {
+				saveBtn.textContent = originalText;
+				saveBtn.style.background = '';
+			}, 2000);
+		}
+
+		// If in Customer View, recalculate match scores and update the display
+		if (state.customerView?.isActive && state.customerView?.selectedCustomerId === leadId) {
+			console.log('🔄 Customer preferences updated, recalculating match scores...');
+
+			// Trigger re-render which will recalculate scores
+			if (window.renderListings) {
+				setTimeout(() => {
+					window.renderListings();
+				}, 500);
+			}
+		}
+	} catch (error) {
+		console.error('❌ Error saving lead preferences:', error);
+		alert('Failed to save preferences. Please try again.');
+	}
 }
 
 export function closeLeadDetailsModal(options) {
@@ -140,13 +286,13 @@ export async function openActivityLogModal(entityId, entityType, entityName, opt
 
 export function closeActivityLogModal(options) {
 	const { hideModal } = options;
-	
+
 	hideModal('activityLogModal');
 }
 
 export function renderActivityLog(activities, options) {
 	const { getActivityIcon, formatTimeAgo, renderActivityMetadata } = options;
-	
+
 	if (!activities || activities.length === 0) {
 		return '<p class="subtle" style="text-align: center; padding: 40px;">No activities recorded yet</p>';
 	}

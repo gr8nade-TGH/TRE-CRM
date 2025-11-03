@@ -170,7 +170,22 @@ export async function handleCustomerSelection(customerId, renderListings) {
 	if (missingFields.length > 0) {
 		if (missingDataWarning && missingDataText) {
 			missingDataWarning.style.display = 'flex';
-			missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <a href="#/leads?select=${customerId}" class="edit-lead-link" style="color: white; text-decoration: underline; font-weight: 600; cursor: pointer;">Edit Lead</a>`;
+			missingDataText.innerHTML = `Missing: ${missingFields.join(', ')} - <a href="#" class="edit-lead-link" data-lead-id="${customerId}" style="color: white; text-decoration: underline; font-weight: 600; cursor: pointer;">Edit Lead</a>`;
+
+			// Add click handler to open modal directly (stay on Listings page)
+			setTimeout(() => {
+				const editLink = document.querySelector('.edit-lead-link');
+				if (editLink) {
+					editLink.addEventListener('click', (e) => {
+						e.preventDefault();
+						const leadId = e.target.dataset.leadId;
+						// Open the lead details modal directly
+						if (window.openLeadDetailsModal) {
+							window.openLeadDetailsModal(leadId);
+						}
+					});
+				}
+			}, 100);
 		}
 		console.warn('⚠️ Customer has missing preferences:', missingFields);
 	} else {
