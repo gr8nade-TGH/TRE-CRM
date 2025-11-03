@@ -462,8 +462,11 @@ export function calculateMatchScoreWithConfig(lead, unit, floorPlan, property, c
 
     const totalScore = priceScore + moveInScore + commissionScore + pumiScore + leniencyScore;
 
+    // Cap the total score at 100 to prevent scores exceeding maximum
+    const cappedScore = Math.min(totalScore, 100);
+
     return {
-        totalScore,
+        totalScore: cappedScore,
         breakdown: {
             priceMatch: priceScore,
             moveInDate: moveInScore,

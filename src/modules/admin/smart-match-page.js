@@ -652,18 +652,21 @@ async function showTestResults(testLead, matches, config) {
 	// Transform matches to expected format for grid
 	const transformedMatches = matches.map(match => ({
 		id: match.unit.id,
-		name: match.property.name,
-		neighborhoods: [match.property.neighborhood || ''],
-		rent_min: match.unit.rent || match.floorPlan.rent_min,
-		rent_max: match.unit.rent || match.floorPlan.rent_max,
-		beds_min: match.floorPlan.bedrooms,
-		beds_max: match.floorPlan.bedrooms,
-		baths_min: match.floorPlan.bathrooms,
-		baths_max: match.floorPlan.bathrooms,
-		sqft_min: match.floorPlan.sqft_min,
-		sqft_max: match.floorPlan.sqft_max,
+		unit_number: match.unit.unit_number,
+		property_id: match.property.id,
+		name: match.property.community_name || match.property.name,
+		neighborhoods: [match.property.neighborhood || match.property.city || ''],
+		rent_min: match.unit.rent || match.floorPlan.starting_at,
+		rent_max: match.unit.rent || match.floorPlan.starting_at,
+		beds_min: match.floorPlan.beds,
+		beds_max: match.floorPlan.beds,
+		baths_min: match.floorPlan.baths,
+		baths_max: match.floorPlan.baths,
+		sqft_min: match.floorPlan.sqft,
+		sqft_max: match.floorPlan.sqft,
+		available_from: match.unit.available_from,
 		specials_text: match.property.specials_text || '',
-		commission: match.property.commission_percentage || 0,
+		commission: match.property.commission_pct || 0,
 		is_pumi: match.property.is_pumi || false,
 		matchScore: match.matchScore
 	}));
@@ -698,7 +701,7 @@ async function showTestResults(testLead, matches, config) {
 			grid.innerHTML = transformedMatches.map(prop => `
 				<div class="listing-card">
 				<div class="listing-header">
-					<h4>${prop.name}</h4>
+					<h4>${prop.name}${prop.unit_number ? ` - Unit ${prop.unit_number}` : ''}</h4>
 					<div class="listing-badges">
 						${prop.is_pumi ? '<span class="badge badge-pumi">PUMI</span>' : ''}
 						${prop.commission >= 4 ? `<span class="badge badge-commission">${prop.commission}% Commission</span>` : ''}
@@ -706,16 +709,27 @@ async function showTestResults(testLead, matches, config) {
 				</div>
 				<div class="listing-details">
 					<p><strong>Location:</strong> ${prop.neighborhoods[0] || 'N/A'}</p>
-					<p><strong>Rent:</strong> $${prop.rent_min}${prop.rent_max !== prop.rent_min ? ' - $' + prop.rent_max : ''}</p>
-					<p><strong>Beds/Baths:</strong> ${prop.beds_min}${prop.beds_max !== prop.beds_min ? '-' + prop.beds_max : ''} bd / ${prop.baths_min}${prop.baths_max !== prop.baths_min ? '-' + prop.baths_max : ''} ba</p>
-					<p><strong>Size:</strong> ${prop.sqft_min}${prop.sqft_max !== prop.sqft_min ? '-' + prop.sqft_max : ''} sqft</p>
+					<p><strong>Rent:</strong> $${prop.rent_min || 'N/A'}${prop.rent_max && prop.rent_max !== prop.rent_min ? ' - $' + prop.rent_max : ''}</p>
+					<p><strong>Beds/Baths:</strong> ${prop.beds_min !== undefined ? prop.beds_min : 'N/A'}${prop.beds_max !== undefined && prop.beds_max !== prop.beds_min ? '-' + prop.beds_max : ''} bd / ${prop.baths_min !== undefined ? prop.baths_min : 'N/A'}${prop.baths_max !== undefined && prop.baths_max !== prop.baths_min ? '-' + prop.baths_max : ''} ba</p>
+					<p><strong>Size:</strong> ${prop.sqft_min || 'N/A'}${prop.sqft_max && prop.sqft_max !== prop.sqft_min ? '-' + prop.sqft_max : ''} sqft</p>
+					${prop.available_from ? `<p><strong>Available:</strong> ${new Date(prop.available_from).toLocaleDateString()}</p>` : ''}
 					${prop.specials_text ? `<p class="specials"><strong>Specials:</strong> ${prop.specials_text}</p>` : ''}
 				</div>
 				<div class="listing-score">
 					<strong>Match Score:</strong> ${Math.round(prop.matchScore.totalScore)} / 100
 					<div class="score-breakdown">
-						<small>Price: ${Math.round(prop.matchScore.priceScore)} | Move-in: ${Math.round(prop.matchScore.moveInScore)} | Commission: ${Math.round(prop.matchScore.commissionScore)} | PUMI: ${Math.round(prop.matchScore.pumiScore)}</small>
+						<small>Price: ${Math.round(prop.matchScore.breakdown.priceMatch || 0)} | Move-in: ${Math.round(prop.matchScore.breakdown.moveInDate || 0)} | Commission: ${Math.round(prop.matchScore.breakdown.commission || 0)} | PUMI: ${Math.round(prop.matchScore.breakdown.pumi || 0)}</small>
 					</div>
+				</div>
+				<div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid #e5e7eb;">
+					<a href="#/listings?property=${prop.property_id}&unit=${prop.id}" target="_blank" style="display: inline-flex; align-items: center; gap: 6px; color: #2563eb; text-decoration: none; font-weight: 500; font-size: 14px;">
+						View Listing
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+							<polyline points="15 3 21 3 21 9"></polyline>
+							<line x1="10" y1="14" x2="21" y2="3"></line>
+						</svg>
+					</a>
 				</div>
 			</div>
 		`).join('');
