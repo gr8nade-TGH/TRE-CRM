@@ -280,7 +280,8 @@ async function loadLeadsForSelector() {
 		const { data: leads, error } = await supabase
 			.from('leads')
 			.select('id, name, email, preferences')
-			.not('health_status', 'in', '("closed","lost")')
+			.neq('health_status', 'closed')
+			.neq('health_status', 'lost')
 			.order('name');
 
 		if (error) {

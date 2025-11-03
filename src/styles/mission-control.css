@@ -90,6 +90,21 @@ body.mission-control-active .smart-match-config-page {
 	min-height: 100vh !important;
 }
 
+/* Target ALL possible white background elements */
+body.mission-control-active section,
+body.mission-control-active form,
+body.mission-control-active .mc-dashboard-grid,
+body.mission-control-active .mc-control-panel,
+body.mission-control-active .mc-reset-section,
+body.mission-control-active .mc-save-section {
+	background: transparent !important;
+}
+
+/* Ensure form container has dark background */
+body.mission-control-active #smartMatchConfigForm {
+	background: var(--mc-bg-primary) !important;
+}
+
 /* Override white background from global .view-bar on mobile */
 .mission-control-theme .view-bar {
 	background: var(--mc-bg-panel) !important;
