@@ -41,13 +41,12 @@
    MISSION CONTROL PAGE LAYOUT
    ============================================ */
 
-/* Override body background when mission control page is active */
-body:has(.mission-control-theme:not(.hidden)) {
+/* Override body and main backgrounds when mission control page is active */
+body.mission-control-active {
 	background: var(--mc-bg-primary) !important;
 }
 
-/* Override main background when mission control page is active */
-main:has(.mission-control-theme:not(.hidden)) {
+body.mission-control-active main {
 	background: var(--mc-bg-primary) !important;
 }
 

@@ -77,6 +77,11 @@ export function route(deps) {
 	// Hide all views
 	document.querySelectorAll('.route-view').forEach(view => hide(view));
 
+	// Cleanup mission control theme when leaving manage page
+	if (hash !== '/manage') {
+		document.body.classList.remove('mission-control-active');
+	}
+
 	// Show appropriate view based on route
 	if (hash === '/agents') {
 		state.currentPage = 'agents';

@@ -16,6 +16,9 @@ import { initializeMissionControlUI, initializeMatchCounter } from './mission-co
 export async function initializeConfigPage() {
 	console.log('🎯 Initializing Smart Match Configuration Page...');
 
+	// Add mission-control-active class to body for dark theme
+	document.body.classList.add('mission-control-active');
+
 	try {
 		// Load current configuration
 		const config = await getActiveConfig();
@@ -43,6 +46,14 @@ export async function initializeConfigPage() {
 			window.toast('Failed to load configuration', 'error');
 		}
 	}
+}
+
+/**
+ * Cleanup function to remove mission control theme when leaving page
+ */
+export function cleanupConfigPage() {
+	console.log('🧹 Cleaning up Smart Match Configuration Page...');
+	document.body.classList.remove('mission-control-active');
 }
 
 /**
