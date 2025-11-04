@@ -167,17 +167,33 @@ export async function renderLeads(options, autoSelectLeadId = null) {
 			</svg>
 		</span>`;
 
-			// Cooldown timer display
+			// Cooldown timer display with "wants more options" status
 			const cooldown = cooldownStatuses[index];
-			const cooldownDisplay = !cooldown.canSend ? `
-				<div style="font-size: 11px; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
-					<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<circle cx="12" cy="12" r="10"/>
-						<polyline points="12 6 12 12 16 14"/>
-					</svg>
-					<span>Cooldown: ${formatCooldownTime(cooldown.hoursRemaining)}</span>
-				</div>
-			` : '';
+			const wantsMoreOptions = lead.wants_more_options === true;
+
+			let cooldownDisplay = '';
+			if (wantsMoreOptions) {
+				// Show "wants more options" status (green, ready to send)
+				cooldownDisplay = `
+					<div style="font-size: 11px; color: #10b981; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M12 2v4m0 12v4M4.93 4.93l2.83 2.83m8.48 8.48l2.83 2.83M2 12h4m12 0h4M4.93 19.07l2.83-2.83m8.48-8.48l2.83-2.83"/>
+						</svg>
+						<span style="font-weight: 600;">Wants More Options</span>
+					</div>
+				`;
+			} else if (!cooldown.canSend) {
+				// Show cooldown timer (orange)
+				cooldownDisplay = `
+					<div style="font-size: 11px; color: #f59e0b; margin-top: 4px; display: flex; align-items: center; gap: 4px;">
+						<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<circle cx="12" cy="12" r="10"/>
+							<polyline points="12 6 12 12 16 14"/>
+						</svg>
+						<span>Cooldown: ${formatCooldownTime(cooldown.hoursRemaining)}</span>
+					</div>
+				`;
+			}
 
 			const tr = document.createElement('tr');
 			tr.innerHTML = `

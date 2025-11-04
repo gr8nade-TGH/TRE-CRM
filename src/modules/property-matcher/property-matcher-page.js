@@ -15,7 +15,7 @@ async function init() {
 
     // Get token from URL
     const token = getTokenFromURL();
-    
+
     if (!token) {
         showError('Invalid Link', 'This link appears to be invalid. Please check the URL and try again.');
         return;
@@ -40,7 +40,7 @@ async function init() {
 function getTokenFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     const tokenParam = urlParams.get('token');
-    
+
     if (tokenParam) {
         return tokenParam;
     }
@@ -97,7 +97,7 @@ async function loadSession(token) {
 }
 
 /**
- * Mark session as viewed
+ * Mark session as viewed and create activity log
  */
 async function markViewed(sessionId) {
     const { error } = await window.supabase
@@ -110,6 +110,27 @@ async function markViewed(sessionId) {
     } else {
         console.log('✅ Session marked as viewed');
     }
+
+    // Create activity log entry
+    try {
+        await window.supabase
+            .from('lead_activities')
+            .insert({
+                lead_id: sessionData.lead_id,
+                activity_type: 'property_matcher_viewed',
+                description: `${sessionData.lead?.name || 'Lead'} opened their "My Matches" page`,
+                metadata: {
+                    session_id: sessionId,
+                    token: sessionData.token,
+                    property_count: sessionData.property_ids?.length || 0
+                },
+                performed_by: null,
+                performed_by_name: sessionData.lead?.name || 'Lead'
+            });
+        console.log('✅ Activity log created for session view');
+    } catch (activityError) {
+        console.warn('⚠️ Error creating activity log:', activityError);
+    }
 }
 
 /**
@@ -117,7 +138,7 @@ async function markViewed(sessionId) {
  */
 async function loadProperties() {
     const propertyIds = sessionData.property_ids || [];
-    
+
     if (propertyIds.length === 0) {
         throw new Error('No properties found in this match.');
     }
@@ -162,7 +183,7 @@ async function loadProperties() {
  */
 async function renderPage() {
     const content = document.getElementById('content');
-    
+
     const leadName = sessionData.lead?.name || 'there';
     const propertyCount = sessionData.properties?.length || 0;
 
@@ -198,7 +219,7 @@ async function renderPage() {
  */
 function renderProperties() {
     const propertiesList = document.getElementById('propertiesList');
-    
+
     if (!sessionData.properties || sessionData.properties.length === 0) {
         propertiesList.innerHTML = '<p>No properties available.</p>';
         return;
@@ -283,7 +304,7 @@ function handlePropertySelection(event) {
     // Show/hide tour section
     const tourSection = document.querySelector(`.tour-section[data-property-id="${propertyId}"]`);
     const propertyCard = document.querySelector(`.property-card[data-property-id="${propertyId}"]`);
-    
+
     if (isChecked) {
         tourSection?.classList.add('visible');
         propertyCard?.classList.add('selected');
@@ -315,7 +336,7 @@ function handleTourDateChange(event) {
 function updateSubmitButton() {
     const submitBtn = document.getElementById('submitBtn');
     const hasSelections = selectedProperties.size > 0;
-    
+
     if (submitBtn) {
         submitBtn.disabled = !hasSelections;
     }
@@ -358,6 +379,41 @@ async function handleSubmit() {
             .update({ submitted_at: new Date().toISOString() })
             .eq('id', sessionData.id);
 
+        // Create activity log entry
+        try {
+            // Get property names for metadata
+            const selectedPropertiesData = Array.from(selectedProperties.entries()).map(([propertyId, data]) => {
+                const property = sessionData.properties.find(p => p.id === propertyId);
+                return {
+                    property_id: propertyId,
+                    property_name: property?.name || 'Unknown Property',
+                    tour_date: data.tourDate
+                };
+            });
+
+            const tourRequestsCount = selectedPropertiesData.filter(p => p.tour_date).length;
+
+            await window.supabase
+                .from('lead_activities')
+                .insert({
+                    lead_id: sessionData.lead_id,
+                    activity_type: 'property_matcher_submitted',
+                    description: `${sessionData.lead?.name || 'Lead'} selected ${selectedProperties.size} properties and requested ${tourRequestsCount} tours`,
+                    metadata: {
+                        session_id: sessionData.id,
+                        token: sessionData.token,
+                        properties_selected: selectedProperties.size,
+                        tour_requests: tourRequestsCount,
+                        selected_properties: selectedPropertiesData
+                    },
+                    performed_by: null,
+                    performed_by_name: sessionData.lead?.name || 'Lead'
+                });
+            console.log('✅ Activity log created for submission');
+        } catch (activityError) {
+            console.warn('⚠️ Error creating activity log:', activityError);
+        }
+
         // Show success message
         showSuccess();
 
@@ -380,14 +436,38 @@ async function handleMoreOptions() {
     btn.textContent = 'Sending request...';
 
     try {
-        // Update lead record to indicate they want more options
+        // Update lead record to indicate they want more options (also resets cooldown)
         const { error } = await window.supabase
             .from('leads')
-            .update({ wants_more_options: true })
+            .update({
+                wants_more_options: true,
+                last_smart_match_sent_at: null // Reset cooldown
+            })
             .eq('id', sessionData.lead_id);
 
         if (error) {
             throw error;
+        }
+
+        // Create activity log entry
+        try {
+            await window.supabase
+                .from('lead_activities')
+                .insert({
+                    lead_id: sessionData.lead_id,
+                    activity_type: 'wants_more_options',
+                    description: `${sessionData.lead?.name || 'Lead'} requested more property options`,
+                    metadata: {
+                        session_id: sessionData.id,
+                        token: sessionData.token,
+                        cooldown_reset: true
+                    },
+                    performed_by: null,
+                    performed_by_name: sessionData.lead?.name || 'Lead'
+                });
+            console.log('✅ Activity log created for "wants more options"');
+        } catch (activityError) {
+            console.warn('⚠️ Error creating activity log:', activityError);
         }
 
         // Show success message

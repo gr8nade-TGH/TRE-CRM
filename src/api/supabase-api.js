@@ -2396,6 +2396,10 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             config = DEFAULT_SMART_MATCH_CONFIG;
         }
 
+        // Get list of properties already sent to this lead (to exclude)
+        const propertiesAlreadySent = lead.properties_already_sent || [];
+        console.log('📋 Properties already sent to lead:', propertiesAlreadySent);
+
         const { data: units, error: unitsError } = await supabase
             .from('units')
             .select(`
@@ -2416,7 +2420,19 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             throw new Error('No available properties found');
         }
 
-        const unitsWithDetails = units.map(unit => ({
+        // Filter out properties already sent to this lead
+        const filteredUnits = units.filter(unit => {
+            const propertyId = unit.property?.id;
+            return !propertiesAlreadySent.includes(propertyId);
+        });
+
+        console.log(`✅ Filtered units: ${units.length} total → ${filteredUnits.length} after excluding already sent`);
+
+        if (filteredUnits.length === 0) {
+            throw new Error('No new properties available (all have been sent previously). Lead may need to request "more options" to reset.');
+        }
+
+        const unitsWithDetails = filteredUnits.map(unit => ({
             unit: {
                 id: unit.id,
                 unit_number: unit.unit_number,
@@ -2528,7 +2544,28 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             }
         }
 
-        // Step 9: Log activity to lead_activities
+        // Step 9: Update lead record with sent properties and reset "wants more options"
+        if (result.success) {
+            try {
+                const sentPropertyIds = matches.map(m => m.property.id);
+                const updatedPropertiesAlreadySent = [...new Set([...propertiesAlreadySent, ...sentPropertyIds])];
+
+                await supabase
+                    .from('leads')
+                    .update({
+                        properties_already_sent: updatedPropertiesAlreadySent,
+                        wants_more_options: false, // Reset flag after sending
+                        last_smart_match_sent_at: new Date().toISOString()
+                    })
+                    .eq('id', leadId);
+
+                console.log('✅ Lead record updated with sent properties:', updatedPropertiesAlreadySent);
+            } catch (updateError) {
+                console.warn('⚠️ Error updating lead record:', updateError);
+            }
+        }
+
+        // Step 10: Log activity to lead_activities
         if (result.success) {
             await createLeadActivity({
                 lead_id: leadId,

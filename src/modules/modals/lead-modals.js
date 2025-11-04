@@ -639,7 +639,11 @@ export function getActivityIcon(activityType) {
 		'showcase_sent': '📧',
 		'showcase_responded': '💬',
 		'pumi_changed': '⭐',
-		'pricing_updated': '💰'
+		'pricing_updated': '💰',
+		'email_sent': '📧',
+		'property_matcher_viewed': '👀',
+		'property_matcher_submitted': '✅',
+		'wants_more_options': '🔄'
 	};
 	return icons[activityType] || '📋';
 }
@@ -656,6 +660,45 @@ export function renderActivityMetadata(activity) {
 		if (metadata.previous_agent_name) {
 			html += `<div>Previously: ${metadata.previous_agent_name}</div>`;
 		}
+	}
+
+	// Property Matcher: Email sent
+	if (activity.activity_type === 'email_sent' && metadata.property_count) {
+		html += `<div>📧 Smart Match email sent with <strong>${metadata.property_count} properties</strong></div>`;
+		if (metadata.property_matcher_token) {
+			html += `<div style="font-family: monospace; font-size: 0.75rem; color: #6b7280; margin-top: 4px;">Token: ${metadata.property_matcher_token}</div>`;
+		}
+	}
+
+	// Property Matcher: Session viewed
+	if (activity.activity_type === 'property_matcher_viewed') {
+		html += `<div>👀 Lead opened their personalized "My Matches" page</div>`;
+		if (metadata.property_count) {
+			html += `<div>Properties shown: <strong>${metadata.property_count}</strong></div>`;
+		}
+	}
+
+	// Property Matcher: Responses submitted
+	if (activity.activity_type === 'property_matcher_submitted') {
+		html += `<div>✅ Lead selected <strong>${metadata.properties_selected || 0} properties</strong></div>`;
+		if (metadata.tour_requests) {
+			html += `<div>📅 Tour requests: <strong>${metadata.tour_requests}</strong></div>`;
+		}
+		if (metadata.selected_properties && metadata.selected_properties.length > 0) {
+			html += `<div style="margin-top: 8px;"><strong>Selected Properties:</strong></div>`;
+			html += `<ul style="margin: 4px 0; padding-left: 20px;">`;
+			metadata.selected_properties.forEach(prop => {
+				const tourDate = prop.tour_date ? ` (Tour: ${new Date(prop.tour_date).toLocaleDateString()})` : '';
+				html += `<li>${prop.property_name || prop.property_id}${tourDate}</li>`;
+			});
+			html += `</ul>`;
+		}
+	}
+
+	// Property Matcher: Wants more options
+	if (activity.activity_type === 'wants_more_options') {
+		html += `<div>🔄 Lead requested more property options</div>`;
+		html += `<div style="color: #f59e0b; margin-top: 4px;">⚡ Cooldown reset - ready to send new matches</div>`;
 	}
 
 	if (activity.activity_type === 'health_changed') {
