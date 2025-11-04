@@ -5,6 +5,7 @@
 
 // Constants
 const SMART_MATCH_COOLDOWN_HOURS = 12;
+const MAX_BULK_SEND_COUNT = 30; // Maximum number of emails that can be sent in one bulk operation
 
 /**
  * Check rate limiting for multiple leads
@@ -91,6 +92,81 @@ async function getLeadNames(leadIds) {
 }
 
 /**
+ * Get match preview data for leads (property count and score range)
+ * @param {string[]} leadIds - Array of lead IDs
+ * @returns {Promise<Map>} Map of leadId -> { name, email, propertyCount, avgScore, topScore }
+ */
+async function getMatchPreviewData(leadIds) {
+    const { SupabaseAPI } = window;
+    const matchData = new Map();
+
+    console.log('📊 Fetching match preview data for', leadIds.length, 'leads');
+
+    try {
+        // Fetch all leads with their data
+        const { data: leads, error } = await window.supabase
+            .from('leads')
+            .select('id, name, email, preferences')
+            .in('id', leadIds);
+
+        if (error) {
+            console.error('❌ Error fetching leads for preview:', error);
+            return matchData;
+        }
+
+        // For each lead, calculate their matches
+        for (const lead of leads) {
+            try {
+                // Get smart matches for this lead (limit to 6 to match email behavior)
+                const matches = await SupabaseAPI.getSmartMatches(lead.id, { limit: 6 });
+
+                if (matches && matches.length > 0) {
+                    // Calculate average and top score
+                    const scores = matches.map(m => m.matchScore?.totalScore || 0);
+                    const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+                    const topScore = Math.max(...scores);
+
+                    matchData.set(lead.id, {
+                        name: lead.name || lead.email,
+                        email: lead.email,
+                        propertyCount: matches.length,
+                        avgScore: avgScore,
+                        topScore: topScore
+                    });
+                } else {
+                    // No matches found
+                    matchData.set(lead.id, {
+                        name: lead.name || lead.email,
+                        email: lead.email,
+                        propertyCount: 0,
+                        avgScore: 0,
+                        topScore: 0
+                    });
+                }
+            } catch (error) {
+                console.error(`❌ Error getting matches for lead ${lead.id}:`, error);
+                // Set default data on error
+                matchData.set(lead.id, {
+                    name: lead.name || lead.email,
+                    email: lead.email,
+                    propertyCount: 0,
+                    avgScore: 0,
+                    topScore: 0,
+                    error: true
+                });
+            }
+        }
+
+        console.log('✅ Match preview data fetched for', matchData.size, 'leads');
+
+    } catch (error) {
+        console.error('❌ Error in getMatchPreviewData:', error);
+    }
+
+    return matchData;
+}
+
+/**
  * Format hours remaining into human-readable string
  * @param {number} hours - Hours remaining
  * @returns {string} Formatted string (e.g., "3.5 hours", "30 minutes")
@@ -104,7 +180,388 @@ function formatTimeRemaining(hours) {
 }
 
 /**
- * Create confirmation dialog content with rate limiting info
+ * Get score badge HTML based on score value
+ * @param {number} score - Match score (0-100)
+ * @returns {string} HTML for score badge
+ */
+function getScoreBadge(score) {
+    if (score >= 80) {
+        return `<span class="score-badge score-excellent">⭐ ${score}</span>`;
+    } else if (score >= 60) {
+        return `<span class="score-badge score-good">★ ${score}</span>`;
+    } else if (score >= 40) {
+        return `<span class="score-badge score-fair">☆ ${score}</span>`;
+    } else {
+        return `<span class="score-badge score-low">${score}</span>`;
+    }
+}
+
+/**
+ * Create enhanced confirmation modal with match preview data
+ * @param {Object} rateLimitingResult - Result from checkBulkRateLimiting
+ * @param {Map} matchData - Map of leadId -> match preview data
+ * @returns {Promise<boolean>} Promise that resolves to true if confirmed, false if cancelled
+ */
+function createEnhancedConfirmationModal(rateLimitingResult, matchData) {
+    const { canSend, inCooldown } = rateLimitingResult;
+
+    return new Promise((resolve) => {
+        // Create modal overlay
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'bulk-send-confirmation-overlay';
+        modalOverlay.style.cssText = `
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 10000;
+            animation: fadeIn 0.2s ease-out;
+        `;
+
+        // Create modal content
+        const modal = document.createElement('div');
+        modal.className = 'bulk-send-confirmation-modal';
+        modal.style.cssText = `
+            background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+            border-radius: 16px;
+            padding: 0;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            animation: slideUp 0.3s ease-out;
+        `;
+
+        // Header
+        const header = document.createElement('div');
+        header.style.cssText = `
+            padding: 24px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+        `;
+
+        let headerHTML = '';
+        if (canSend.length > 0 && inCooldown.length === 0) {
+            headerHTML = `
+                <h3 style="margin: 0 0 8px 0; color: #10b981; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">✅</span> Ready to Send Smart Match Emails
+                </h3>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+                    ${canSend.length} lead${canSend.length !== 1 ? 's' : ''} will receive personalized property matches
+                </p>
+            `;
+        } else if (canSend.length > 0 && inCooldown.length > 0) {
+            headerHTML = `
+                <h3 style="margin: 0 0 8px 0; color: #f59e0b; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">⚠️</span> Partial Send Available
+                </h3>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+                    ${canSend.length} lead${canSend.length !== 1 ? 's' : ''} ready • ${inCooldown.length} in cooldown
+                </p>
+            `;
+        } else {
+            headerHTML = `
+                <h3 style="margin: 0 0 8px 0; color: #ef4444; font-size: 20px; display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 24px;">❌</span> All Leads in Cooldown
+                </h3>
+                <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
+                    All ${inCooldown.length} selected lead${inCooldown.length !== 1 ? 's are' : ' is'} in the 12-hour cooldown period
+                </p>
+            `;
+        }
+        header.innerHTML = headerHTML;
+
+        // Body (scrollable list)
+        const body = document.createElement('div');
+        body.style.cssText = `
+            padding: 16px 24px;
+            overflow-y: auto;
+            max-height: 50vh;
+        `;
+
+        let bodyHTML = '';
+
+        // Leads that can receive emails
+        if (canSend.length > 0) {
+            bodyHTML += `
+                <div style="margin-bottom: 16px;">
+                    <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        📧 Emails to Send (${canSend.length})
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+            `;
+
+            canSend.forEach(({ leadId }) => {
+                const data = matchData.get(leadId);
+                if (data) {
+                    const propertyText = data.propertyCount === 1 ? 'property' : 'properties';
+                    const scoreBadge = data.propertyCount > 0 ? getScoreBadge(data.avgScore) : '<span class="score-badge score-none">No matches</span>';
+
+                    bodyHTML += `
+                        <div style="
+                            background: rgba(255, 255, 255, 0.05);
+                            border: 1px solid rgba(255, 255, 255, 0.1);
+                            border-radius: 8px;
+                            padding: 12px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 12px;
+                        ">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="color: #fff; font-weight: 500; font-size: 14px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${data.name}
+                                </div>
+                                <div style="color: rgba(255, 255, 255, 0.5); font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${data.email}
+                                </div>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 12px; flex-shrink: 0;">
+                                <div style="text-align: right;">
+                                    <div style="color: #10b981; font-weight: 600; font-size: 16px;">
+                                        ${data.propertyCount}
+                                    </div>
+                                    <div style="color: rgba(255, 255, 255, 0.5); font-size: 11px;">
+                                        ${propertyText}
+                                    </div>
+                                </div>
+                                ${scoreBadge}
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            bodyHTML += `
+                    </div>
+                </div>
+            `;
+        }
+
+        // Leads in cooldown
+        if (inCooldown.length > 0) {
+            bodyHTML += `
+                <div>
+                    <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        ⏳ In Cooldown (${inCooldown.length})
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+            `;
+
+            inCooldown.forEach(({ leadId, hoursRemaining }) => {
+                const data = matchData.get(leadId);
+                const timeRemaining = formatTimeRemaining(hoursRemaining);
+
+                if (data) {
+                    bodyHTML += `
+                        <div style="
+                            background: rgba(239, 68, 68, 0.1);
+                            border: 1px solid rgba(239, 68, 68, 0.3);
+                            border-radius: 8px;
+                            padding: 12px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 12px;
+                            opacity: 0.7;
+                        ">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="color: #fff; font-weight: 500; font-size: 14px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${data.name}
+                                </div>
+                                <div style="color: rgba(255, 255, 255, 0.5); font-size: 12px;">
+                                    Available in ${timeRemaining}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            bodyHTML += `
+                    </div>
+                </div>
+            `;
+        }
+
+        body.innerHTML = bodyHTML;
+
+        // Footer with buttons
+        const footer = document.createElement('div');
+        footer.style.cssText = `
+            padding: 20px 24px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+            background: rgba(255, 255, 255, 0.05);
+        `;
+
+        const cancelBtn = document.createElement('button');
+        cancelBtn.textContent = 'Cancel';
+        cancelBtn.style.cssText = `
+            padding: 10px 24px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: transparent;
+            color: #fff;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        `;
+        cancelBtn.onmouseover = () => {
+            cancelBtn.style.background = 'rgba(255, 255, 255, 0.1)';
+        };
+        cancelBtn.onmouseout = () => {
+            cancelBtn.style.background = 'transparent';
+        };
+        cancelBtn.onclick = () => {
+            document.body.removeChild(modalOverlay);
+            resolve(false);
+        };
+
+        const confirmBtn = document.createElement('button');
+        if (canSend.length > 0) {
+            confirmBtn.textContent = `Send ${canSend.length} Email${canSend.length !== 1 ? 's' : ''}`;
+            confirmBtn.style.cssText = `
+                padding: 10px 24px;
+                border-radius: 8px;
+                border: none;
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: #fff;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+                box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+            `;
+            confirmBtn.onmouseover = () => {
+                confirmBtn.style.transform = 'translateY(-1px)';
+                confirmBtn.style.boxShadow = '0 6px 16px rgba(16, 185, 129, 0.4)';
+            };
+            confirmBtn.onmouseout = () => {
+                confirmBtn.style.transform = 'translateY(0)';
+                confirmBtn.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+            };
+            confirmBtn.onclick = () => {
+                document.body.removeChild(modalOverlay);
+                resolve(true);
+            };
+        } else {
+            confirmBtn.textContent = 'OK';
+            confirmBtn.style.cssText = `
+                padding: 10px 24px;
+                border-radius: 8px;
+                border: none;
+                background: rgba(255, 255, 255, 0.2);
+                color: #fff;
+                font-size: 14px;
+                font-weight: 600;
+                cursor: pointer;
+                transition: all 0.2s;
+            `;
+            confirmBtn.onclick = () => {
+                document.body.removeChild(modalOverlay);
+                resolve(false);
+            };
+        }
+
+        footer.appendChild(cancelBtn);
+        footer.appendChild(confirmBtn);
+
+        // Assemble modal
+        modal.appendChild(header);
+        modal.appendChild(body);
+        modal.appendChild(footer);
+        modalOverlay.appendChild(modal);
+
+        // Add CSS for score badges
+        const style = document.createElement('style');
+        style.textContent = `
+            .score-badge {
+                display: inline-block;
+                padding: 4px 10px;
+                border-radius: 12px;
+                font-size: 12px;
+                font-weight: 600;
+                white-space: nowrap;
+            }
+            .score-excellent {
+                background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+            }
+            .score-good {
+                background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+            }
+            .score-fair {
+                background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+                color: #fff;
+                box-shadow: 0 2px 8px rgba(245, 158, 11, 0.3);
+            }
+            .score-low {
+                background: rgba(255, 255, 255, 0.1);
+                color: rgba(255, 255, 255, 0.7);
+                border: 1px solid rgba(255, 255, 255, 0.2);
+            }
+            .score-none {
+                background: rgba(239, 68, 68, 0.2);
+                color: #ef4444;
+                border: 1px solid rgba(239, 68, 68, 0.3);
+            }
+            @keyframes fadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            @keyframes slideUp {
+                from {
+                    opacity: 0;
+                    transform: translateY(20px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // Add to DOM
+        document.body.appendChild(modalOverlay);
+
+        // Close on overlay click
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                document.body.removeChild(modalOverlay);
+                resolve(false);
+            }
+        });
+
+        // Close on Escape key
+        const escapeHandler = (e) => {
+            if (e.key === 'Escape') {
+                document.body.removeChild(modalOverlay);
+                document.removeEventListener('keydown', escapeHandler);
+                resolve(false);
+            }
+        };
+        document.addEventListener('keydown', escapeHandler);
+    });
+}
+
+/**
+ * Create confirmation dialog content with rate limiting info (DEPRECATED - kept for backwards compatibility)
  * @param {Object} rateLimitingResult - Result from checkBulkRateLimiting
  * @param {Map} leadNames - Map of leadId -> leadName
  * @returns {string} HTML content for confirmation dialog
@@ -154,7 +611,7 @@ export function updateLeadBulkActionsBar() {
     const count = checkboxes.length;
     const bulkActionsGroup = document.querySelector('.bulk-actions-group');
     const bulkLeadsCount = document.getElementById('bulkLeadsCount');
-    
+
     if (bulkActionsGroup) {
         if (count > 0) {
             bulkActionsGroup.style.display = 'flex';
@@ -165,7 +622,7 @@ export function updateLeadBulkActionsBar() {
             bulkActionsGroup.style.display = 'none';
         }
     }
-    
+
     // Update select all checkbox state
     const selectAllCheckbox = document.getElementById('selectAllLeads');
     const allCheckboxes = document.querySelectorAll('.lead-checkbox');
@@ -190,6 +647,12 @@ export async function bulkSendSmartMatch() {
         return;
     }
 
+    // Check if selection exceeds maximum bulk send count
+    if (selectedLeadIds.length > MAX_BULK_SEND_COUNT) {
+        toast(`⚠️ Maximum bulk send limit is ${MAX_BULK_SEND_COUNT} leads. Please select fewer leads.`, 'warning');
+        return;
+    }
+
     console.log('📧 Bulk Send Smart Match - Selected leads:', selectedLeadIds);
 
     // Show loading state on button while checking rate limits
@@ -208,11 +671,8 @@ export async function bulkSendSmartMatch() {
         const rateLimitingResult = await checkBulkRateLimiting(selectedLeadIds);
         const { canSend, inCooldown } = rateLimitingResult;
 
-        // Step 2: Get lead names for display
-        const leadNames = await getLeadNames(selectedLeadIds);
-
-        // Step 3: Show confirmation dialog with rate limiting info
-        const confirmationMessage = createConfirmationDialogContent(rateLimitingResult, leadNames);
+        // Step 2: Get match preview data for all selected leads (property counts and scores)
+        const matchData = await getMatchPreviewData(selectedLeadIds);
 
         // Restore button state before showing confirmation
         bulkSendBtn.disabled = false;
@@ -225,8 +685,8 @@ export async function bulkSendSmartMatch() {
             return;
         }
 
-        // Show confirmation dialog
-        const confirmed = confirm(confirmationMessage);
+        // Step 3: Show enhanced confirmation modal with match preview
+        const confirmed = await createEnhancedConfirmationModal(rateLimitingResult, matchData);
 
         if (!confirmed) {
             console.log('User cancelled bulk send');
