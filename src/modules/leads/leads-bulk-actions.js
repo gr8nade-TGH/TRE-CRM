@@ -203,7 +203,7 @@ function getScoreBadge(score) {
  * @returns {Promise<boolean>} Promise that resolves to true if confirmed, false if cancelled
  */
 function createEnhancedConfirmationModal(rateLimitingResult, matchData) {
-    const { canSend, inCooldown } = rateLimitingResult;
+    const { canSend, inCooldown, noMatches } = rateLimitingResult;
 
     return new Promise((resolve) => {
         // Create modal overlay
@@ -249,7 +249,9 @@ function createEnhancedConfirmationModal(rateLimitingResult, matchData) {
         `;
 
         let headerHTML = '';
-        if (canSend.length > 0 && inCooldown.length === 0) {
+        const totalIssues = (inCooldown?.length || 0) + (noMatches?.length || 0);
+
+        if (canSend.length > 0 && totalIssues === 0) {
             headerHTML = `
                 <h3 style="margin: 0 0 8px 0; color: #10b981; font-size: 20px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 24px;">✅</span> Ready to Send Smart Match Emails
@@ -258,22 +260,26 @@ function createEnhancedConfirmationModal(rateLimitingResult, matchData) {
                     ${canSend.length} lead${canSend.length !== 1 ? 's' : ''} will receive personalized property matches
                 </p>
             `;
-        } else if (canSend.length > 0 && inCooldown.length > 0) {
+        } else if (canSend.length > 0 && totalIssues > 0) {
+            const issues = [];
+            if (inCooldown?.length > 0) issues.push(`${inCooldown.length} in cooldown`);
+            if (noMatches?.length > 0) issues.push(`${noMatches.length} no matches`);
+
             headerHTML = `
                 <h3 style="margin: 0 0 8px 0; color: #f59e0b; font-size: 20px; display: flex; align-items: center; gap: 8px;">
                     <span style="font-size: 24px;">⚠️</span> Partial Send Available
                 </h3>
                 <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
-                    ${canSend.length} lead${canSend.length !== 1 ? 's' : ''} ready • ${inCooldown.length} in cooldown
+                    ${canSend.length} lead${canSend.length !== 1 ? 's' : ''} ready • ${issues.join(' • ')}
                 </p>
             `;
         } else {
             headerHTML = `
                 <h3 style="margin: 0 0 8px 0; color: #ef4444; font-size: 20px; display: flex; align-items: center; gap: 8px;">
-                    <span style="font-size: 24px;">❌</span> All Leads in Cooldown
+                    <span style="font-size: 24px;">❌</span> Cannot Send Emails
                 </h3>
                 <p style="margin: 0; color: rgba(255, 255, 255, 0.7); font-size: 14px;">
-                    All ${inCooldown.length} selected lead${inCooldown.length !== 1 ? 's are' : ' is'} in the 12-hour cooldown period
+                    No leads are ready to receive emails
                 </p>
             `;
         }
@@ -380,6 +386,63 @@ function createEnhancedConfirmationModal(rateLimitingResult, matchData) {
                                 <div style="color: rgba(255, 255, 255, 0.5); font-size: 12px;">
                                     Available in ${timeRemaining}
                                 </div>
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            bodyHTML += `
+                    </div>
+                </div>
+            `;
+        }
+
+        // Leads with no matches
+        if (noMatches && noMatches.length > 0) {
+            bodyHTML += `
+                <div style="margin-top: ${(canSend.length > 0 || inCooldown.length > 0) ? '16px' : '0'};">
+                    <h4 style="margin: 0 0 12px 0; color: rgba(255, 255, 255, 0.9); font-size: 14px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px;">
+                        🔍 No Matches Found (${noMatches.length})
+                    </h4>
+                    <div style="display: flex; flex-direction: column; gap: 8px;">
+            `;
+
+            noMatches.forEach(({ leadId }) => {
+                const data = matchData.get(leadId);
+
+                if (data) {
+                    bodyHTML += `
+                        <div style="
+                            background: rgba(245, 158, 11, 0.1);
+                            border: 1px solid rgba(245, 158, 11, 0.3);
+                            border-radius: 8px;
+                            padding: 12px;
+                            display: flex;
+                            justify-content: space-between;
+                            align-items: center;
+                            gap: 12px;
+                        ">
+                            <div style="flex: 1; min-width: 0;">
+                                <div style="color: #fff; font-weight: 500; font-size: 14px; margin-bottom: 4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                    ${data.name}
+                                </div>
+                                <div style="color: rgba(245, 158, 11, 0.9); font-size: 12px; display: flex; align-items: center; gap: 4px;">
+                                    <span>💡</span>
+                                    <span>Add lead criteria (budget, move-in date, preferences)</span>
+                                </div>
+                            </div>
+                            <div style="
+                                background: rgba(245, 158, 11, 0.2);
+                                border: 1px solid rgba(245, 158, 11, 0.4);
+                                border-radius: 12px;
+                                padding: 4px 10px;
+                                font-size: 12px;
+                                font-weight: 600;
+                                color: #f59e0b;
+                                white-space: nowrap;
+                            ">
+                                No matches
                             </div>
                         </div>
                     `;
@@ -674,41 +737,65 @@ export async function bulkSendSmartMatch() {
         // Step 2: Get match preview data for all selected leads (property counts and scores)
         const matchData = await getMatchPreviewData(selectedLeadIds);
 
+        // Step 3: Filter out leads with 0 matches from canSend
+        const canSendWithMatches = canSend.filter(({ leadId }) => {
+            const data = matchData.get(leadId);
+            return data && data.propertyCount > 0;
+        });
+
+        const noMatches = canSend.filter(({ leadId }) => {
+            const data = matchData.get(leadId);
+            return data && data.propertyCount === 0;
+        });
+
+        // Update rateLimitingResult with filtered data
+        const filteredRateLimitingResult = {
+            canSend: canSendWithMatches,
+            inCooldown: inCooldown,
+            noMatches: noMatches
+        };
+
         // Restore button state before showing confirmation
         bulkSendBtn.disabled = false;
         bulkSendBtn.innerHTML = originalText;
 
-        // If no leads can be sent, show warning and exit
-        if (canSend.length === 0) {
-            toast('⏳ All selected leads are in cooldown period. Please try again later.', 'warning');
-            console.warn('All leads in cooldown:', inCooldown);
+        // If no leads can be sent (all in cooldown or no matches), show warning and exit
+        if (canSendWithMatches.length === 0) {
+            if (inCooldown.length > 0 && noMatches.length === 0) {
+                toast('⏳ All selected leads are in cooldown period. Please try again later.', 'warning');
+            } else if (noMatches.length > 0 && inCooldown.length === 0) {
+                toast('❌ No matches found for selected leads. Please add more lead criteria (budget, move-in date, preferences).', 'warning');
+            } else {
+                toast('⚠️ No emails can be sent. Some leads are in cooldown, others have no matches.', 'warning');
+            }
+            console.warn('Cannot send emails - Cooldown:', inCooldown.length, 'No matches:', noMatches.length);
             return;
         }
 
-        // Step 3: Show enhanced confirmation modal with match preview
-        const confirmed = await createEnhancedConfirmationModal(rateLimitingResult, matchData);
+        // Step 4: Show enhanced confirmation modal with match preview
+        const confirmed = await createEnhancedConfirmationModal(filteredRateLimitingResult, matchData);
 
         if (!confirmed) {
             console.log('User cancelled bulk send');
             return;
         }
 
-        // Step 4: Send emails to leads that passed rate limiting
+        // Step 5: Send emails to leads that have matches
         bulkSendBtn.disabled = true;
         bulkSendBtn.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; animation: spin 1s linear infinite;">
                 <circle cx="12" cy="12" r="10"/>
             </svg>
-            Sending ${canSend.length}/${selectedLeadIds.length}...
+            Sending ${canSendWithMatches.length}/${selectedLeadIds.length}...
         `;
 
         let successCount = 0;
         let failCount = 0;
-        let skippedCount = inCooldown.length;
+        let skippedCount = inCooldown.length + noMatches.length;
         const errors = [];
 
-        // Send emails sequentially to leads that can receive them
-        for (const { leadId } of canSend) {
+        // Send emails sequentially to leads that have matches
+        for (const { leadId } of canSendWithMatches) {
             try {
                 console.log(`📧 Sending Smart Match email to lead: ${leadId}`);
 
@@ -739,7 +826,7 @@ export async function bulkSendSmartMatch() {
             }
         }
 
-        // Step 5: Show results
+        // Step 6: Show results
         let resultMessage = '';
         let resultType = 'success';
 
@@ -748,19 +835,28 @@ export async function bulkSendSmartMatch() {
             resultType = 'success';
         } else if (successCount > 0 && (failCount > 0 || skippedCount > 0)) {
             resultMessage = `⚠️ Sent ${successCount} email${successCount !== 1 ? 's' : ''}`;
-            if (skippedCount > 0) {
-                resultMessage += `, ${skippedCount} skipped (cooldown)`;
+
+            const skipReasons = [];
+            if (inCooldown.length > 0) skipReasons.push(`${inCooldown.length} cooldown`);
+            if (noMatches.length > 0) skipReasons.push(`${noMatches.length} no matches`);
+
+            if (skipReasons.length > 0) {
+                resultMessage += `, ${skipReasons.join(', ')} skipped`;
             }
             if (failCount > 0) {
                 resultMessage += `, ${failCount} failed`;
             }
-            resultMessage += '. Check console for details.';
+            resultMessage += '.';
             resultType = 'warning';
             if (errors.length > 0) {
                 console.error('Failed emails:', errors);
             }
         } else if (successCount === 0 && skippedCount > 0 && failCount === 0) {
-            resultMessage = `⏳ All ${skippedCount} lead${skippedCount !== 1 ? 's were' : ' was'} skipped due to cooldown period.`;
+            const skipReasons = [];
+            if (inCooldown.length > 0) skipReasons.push(`${inCooldown.length} in cooldown`);
+            if (noMatches.length > 0) skipReasons.push(`${noMatches.length} no matches`);
+
+            resultMessage = `⏳ All leads skipped: ${skipReasons.join(', ')}.`;
             resultType = 'warning';
         } else {
             resultMessage = `❌ Failed to send emails. Check console for details.`;
