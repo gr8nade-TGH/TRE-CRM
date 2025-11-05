@@ -1736,12 +1736,9 @@ export function setupAllEventListeners(deps) {
 
 	// Health status hover events - using event delegation on the table
 	const leadsTable = document.getElementById('leadsTable');
-	console.log('Leads table found:', !!leadsTable); // Debug
 
 	leadsTable.addEventListener('mouseenter', (e) => {
-		console.log('Mouse enter event:', e.target); // Debug
 		const btn = e.target.closest('.health-btn');
-		console.log('Health button found:', !!btn, btn?.dataset.status); // Debug
 		if (!btn) return;
 		showPopover(btn, btn.dataset.status);
 	}, true);
@@ -1756,8 +1753,6 @@ export function setupAllEventListeners(deps) {
 	}, true);
 
 	leadsTable.addEventListener('click', (e) => {
-		console.log('Click event:', e.target); // Debug
-
 		// Handle sorting
 		const sortableHeader = e.target.closest('th[data-sort]');
 		if (sortableHeader) {
@@ -1768,7 +1763,6 @@ export function setupAllEventListeners(deps) {
 		}
 
 		const btn = e.target.closest('.health-btn');
-		console.log('Health button clicked:', !!btn, btn?.dataset.status); // Debug
 		if (btn) {
 			// Toggle popover - hidePopover is safe to call even if not visible
 			const popElement = document.getElementById('healthPopover');
