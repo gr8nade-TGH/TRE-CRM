@@ -441,7 +441,7 @@ async function saveLeadPreferences(leadId, lead, options) {
 		const userName = window.currentUser?.user_metadata?.name || window.currentUser?.email || 'Unknown User';
 
 		// Save to database using SupabaseAPI.updateLead
-		const SupabaseAPI = await import('../api/supabase-api.js');
+		const SupabaseAPI = await import('../../api/supabase-api.js');
 		await SupabaseAPI.updateLead(leadId, {
 			preferences: updatedPreferences,
 			updated_at: new Date().toISOString()
