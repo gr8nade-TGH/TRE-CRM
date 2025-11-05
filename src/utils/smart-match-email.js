@@ -7,9 +7,10 @@
  * Generate HTML for a single property card in Smart Match email
  * @param {Object} property - Property object with unit, floorPlan, property data
  * @param {number} index - Property index (for numbering)
+ * @param {string} propertyMatcherUrl - URL to Property Matcher page
  * @returns {string} HTML string for property card
  */
-export function generatePropertyCardHTML(property, index) {
+export function generatePropertyCardHTML(property, index, propertyMatcherUrl = null) {
     const { unit, floorPlan, property: propertyData } = property;
 
     // Calculate rent (use unit.rent if available, otherwise floor_plan.starting_at)
@@ -120,6 +121,14 @@ export function generatePropertyCardHTML(property, index) {
                 ${specialHTML}
                 ${savingsHTML}
                 ${amenitiesHTML}
+
+                ${propertyMatcherUrl ? `
+                <div style="margin-top: 16px;">
+                    <a href="${propertyMatcherUrl}" style="display: block; width: 100%; padding: 12px 20px; background: #6366f1; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: background 0.2s ease;">
+                        🏡 View Details & Schedule Tour
+                    </a>
+                </div>
+                ` : ''}
             </div>
         </div>
     `;
@@ -161,16 +170,6 @@ ${index + 1}. ${propertyData.name || propertyData.community_name}
  * @returns {Object} Object with { htmlContent, textContent, subject }
  */
 export function generateSmartMatchEmail(lead, properties, agent, propertyMatcherToken = null) {
-    // Generate property cards HTML
-    const propertyCardsHTML = properties
-        .map((property, index) => generatePropertyCardHTML(property, index))
-        .join('\n');
-
-    // Generate property cards text
-    const propertyCardsText = properties
-        .map((property, index) => generatePropertyCardText(property, index))
-        .join('\n');
-
     // Generate Property Matcher URL if token provided
     // Use production URL for emails (not localhost)
     const baseUrl = window.location.hostname === 'localhost'
@@ -180,6 +179,16 @@ export function generateSmartMatchEmail(lead, properties, agent, propertyMatcher
     const propertyMatcherUrl = propertyMatcherToken
         ? `${baseUrl}/matches/${propertyMatcherToken}`
         : null;
+
+    // Generate property cards HTML (pass URL to each card)
+    const propertyCardsHTML = properties
+        .map((property, index) => generatePropertyCardHTML(property, index, propertyMatcherUrl))
+        .join('\n');
+
+    // Generate property cards text
+    const propertyCardsText = properties
+        .map((property, index) => generatePropertyCardText(property, index))
+        .join('\n');
 
     // Template variables
     const variables = {

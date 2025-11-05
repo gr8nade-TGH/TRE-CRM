@@ -137,7 +137,8 @@ async function markViewed(sessionId) {
  * Load property details for all properties in session
  */
 async function loadProperties() {
-    const propertyIds = sessionData.property_ids || [];
+    // The column is 'properties_sent' (JSONB array), not 'property_ids'
+    const propertyIds = sessionData.properties_sent || [];
 
     if (propertyIds.length === 0) {
         throw new Error('No properties found in this match.');
