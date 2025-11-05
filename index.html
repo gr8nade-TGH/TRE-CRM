@@ -9,6 +9,7 @@
 	<link rel="stylesheet" href="styles.css" />
 	<link rel="stylesheet" href="auth-styles.css" />
 	<link rel="stylesheet" href="src/styles/mission-control.css" />
+	<link rel="stylesheet" href="src/styles/emails-mission-control.css" />
 
 	<!-- Vercel Speed Insights (CDN) -->
 	<script>
@@ -761,76 +762,88 @@
 			<!-- Route: #/emails -->
 			<section id="emailsView" class="route-view hidden">
 				<div class="view-bar mobile-only">
-					<h2>📧 Email Dashboard</h2>
+					<h2>📧 Email Command Center</h2>
 					<div id="emailsRoleLabel" class="role-label"></div>
 				</div>
 
-				<div class="admin-content">
-					<!-- Email Statistics -->
-					<div class="admin-section">
-						<div class="section-header">
-							<h2>Email Statistics</h2>
-						</div>
+				<div class="admin-content email-dashboard-mc">
+					<!-- Tab Navigation -->
+					<div class="email-tabs">
+						<button class="email-tab active" data-tab="overview">📊 Overview</button>
+						<button class="email-tab" data-tab="logs">📋 Email Logs</button>
+						<button class="email-tab" data-tab="templates">📝 Templates</button>
+					</div>
+
+					<!-- Overview Tab -->
+					<div class="email-tab-content active" data-tab-content="overview">
+						<!-- Email Statistics -->
 						<div id="emailStatsContainer">
-							<!-- Statistics cards will be rendered here -->
+							<!-- Mission control statistics will be rendered here -->
 						</div>
 					</div>
 
-					<!-- Email Logs -->
-					<div class="admin-section">
-						<div class="section-header">
-							<h2>Email Logs</h2>
-							<div class="email-filters">
-								<input id="emailSearch" type="search" placeholder="Search recipient or subject..."
-									style="width: 250px;" />
-								<select id="emailStatusFilter">
-									<option value="">All Status</option>
-									<option value="pending">Pending</option>
-									<option value="sent">Sent</option>
-									<option value="delivered">Delivered</option>
-									<option value="failed">Failed</option>
-									<option value="bounced">Bounced</option>
-								</select>
-								<select id="emailAgentFilter">
-									<option value="">All Agents</option>
-									<!-- Options will be populated dynamically -->
-								</select>
+					<!-- Email Logs Tab -->
+					<div class="email-tab-content" data-tab-content="logs">
+						<div class="email-logs-section">
+							<div class="email-logs-header">
+								<h3 class="email-logs-title">📧 Email Transmission Log</h3>
+								<div class="email-logs-controls">
+									<input id="emailSearch" type="search" placeholder="Search..."
+										style="padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px;" />
+									<select id="emailStatusFilter"
+										style="padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px;">
+										<option value="">All Status</option>
+										<option value="pending">Pending</option>
+										<option value="sent">Sent</option>
+										<option value="delivered">Delivered</option>
+										<option value="failed">Failed</option>
+										<option value="bounced">Bounced</option>
+									</select>
+									<select id="emailAgentFilter"
+										style="padding: 8px 12px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.2); background: rgba(255,255,255,0.05); color: white; font-size: 12px;">
+										<option value="">All Agents</option>
+										<!-- Options will be populated dynamically -->
+									</select>
+									<button class="email-logs-toggle"
+										onclick="document.querySelector('.email-logs-body').classList.toggle('expanded')">
+										▼ Expand
+									</button>
+								</div>
+							</div>
+
+							<div class="email-logs-body">
+								<table class="email-logs-table" id="emailLogsTable">
+									<thead>
+										<tr>
+											<th>Recipient</th>
+											<th>Subject</th>
+											<th>Template</th>
+											<th>Status</th>
+											<th>Sent Date</th>
+											<th>Sent By</th>
+											<th>Actions</th>
+										</tr>
+									</thead>
+									<tbody id="emailLogsTbody">
+										<!-- Email logs will be populated here -->
+									</tbody>
+								</table>
+							</div>
+
+							<!-- Pagination -->
+							<div class="pagination-controls"
+								style="padding: 16px 24px; background: rgba(0,0,0,0.2); border-top: 1px solid rgba(255,255,255,0.1);">
+								<button id="emailsPrevPage" class="btn btn-secondary btn-sm">← Previous</button>
+								<span id="emailsPageInfo" style="color: rgba(255,255,255,0.7); font-size: 13px;">Page
+									1</span>
+								<button id="emailsNextPage" class="btn btn-secondary btn-sm">Next →</button>
 							</div>
 						</div>
-
-						<div class="table-wrapper">
-							<table id="emailLogsTable" class="data-table">
-								<thead>
-									<tr>
-										<th>Recipient</th>
-										<th>Subject</th>
-										<th>Template</th>
-										<th>Status</th>
-										<th>Sent Date</th>
-										<th>Sent By</th>
-										<th>Actions</th>
-									</tr>
-								</thead>
-								<tbody id="emailLogsTbody">
-									<!-- Email logs will be populated here -->
-								</tbody>
-							</table>
-						</div>
-
-						<!-- Pagination -->
-						<div class="pagination-controls">
-							<button id="emailsPrevPage" class="btn btn-secondary btn-sm">← Previous</button>
-							<span id="emailsPageInfo">Page 1</span>
-							<button id="emailsNextPage" class="btn btn-secondary btn-sm">Next →</button>
-						</div>
 					</div>
 
-					<!-- Email Templates -->
-					<div class="admin-section">
-						<div class="section-header">
-							<h2>Email Templates</h2>
-						</div>
-						<div id="emailTemplatesContainer" class="email-templates-grid">
+					<!-- Templates Tab -->
+					<div class="email-tab-content" data-tab-content="templates">
+						<div id="emailTemplatesContainer" class="email-templates-mc">
 							<!-- Email templates will be rendered here -->
 						</div>
 					</div>

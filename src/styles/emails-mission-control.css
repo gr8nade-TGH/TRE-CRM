@@ -1,0 +1,443 @@
+/**
+ * Mission Control Email Dashboard Styles
+ * Professional cockpit aesthetic for email management
+ */
+
+/* ============================================
+   EMAIL DASHBOARD LAYOUT
+   ============================================ */
+
+.email-dashboard-mc {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 0;
+}
+
+/* Tab Navigation */
+.email-tabs {
+    display: flex;
+    gap: 8px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 16px 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.email-tab {
+    flex: 1;
+    padding: 12px 20px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 600;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: center;
+}
+
+.email-tab:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: rgba(255, 255, 255, 0.9);
+    border-color: rgba(99, 102, 241, 0.5);
+}
+
+.email-tab.active {
+    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    border-color: #6366f1;
+    color: white;
+    box-shadow: 0 0 20px rgba(99, 102, 241, 0.4);
+}
+
+.email-tab-content {
+    display: none;
+}
+
+.email-tab-content.active {
+    display: block;
+}
+
+/* ============================================
+   STATISTICS - MISSION CONTROL STYLE
+   ============================================ */
+
+.email-stats-mc {
+    display: grid;
+    grid-template-columns: 300px 1fr;
+    gap: 20px;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    padding: 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Primary Gauge */
+.email-metric-primary {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.metric-gauge {
+    position: relative;
+    width: 200px;
+    height: 140px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.gauge-svg {
+    width: 100%;
+    height: auto;
+    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.3));
+}
+
+.gauge-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -20%);
+    font-size: 48px;
+    font-weight: 700;
+    color: #10b981;
+    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
+}
+
+.gauge-label {
+    position: absolute;
+    bottom: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* Metrics Grid */
+.email-metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+}
+
+.email-metric-card {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    transition: all 0.3s ease;
+}
+
+.email-metric-card:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(99, 102, 241, 0.3);
+    transform: translateY(-2px);
+}
+
+.email-metric-card.wide {
+    grid-column: span 2;
+}
+
+.email-metric-card.alert {
+    border-color: rgba(239, 68, 68, 0.5);
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.metric-icon {
+    font-size: 28px;
+    line-height: 1;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.metric-data {
+    flex: 1;
+}
+
+.metric-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: white;
+    line-height: 1;
+    margin-bottom: 4px;
+}
+
+.metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.6);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.metric-trend {
+    font-size: 20px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.3);
+}
+
+.metric-trend.positive {
+    color: #10b981;
+}
+
+.metric-trend.negative {
+    color: #ef4444;
+}
+
+/* ============================================
+   EMAIL LOGS - COMPACT TABLE
+   ============================================ */
+
+.email-logs-section {
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.email-logs-header {
+    padding: 20px 24px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.email-logs-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0;
+}
+
+.email-logs-controls {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+.email-logs-toggle {
+    background: rgba(99, 102, 241, 0.2);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.email-logs-toggle:hover {
+    background: rgba(99, 102, 241, 0.3);
+    border-color: rgba(99, 102, 241, 0.6);
+    color: white;
+}
+
+.email-logs-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+}
+
+.email-logs-body.expanded {
+    max-height: 600px;
+    overflow-y: auto;
+}
+
+.email-logs-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.email-logs-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.email-logs-body::-webkit-scrollbar-thumb {
+    background: rgba(99, 102, 241, 0.5);
+    border-radius: 4px;
+}
+
+.email-logs-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(99, 102, 241, 0.7);
+}
+
+/* Compact Table Styling */
+.email-logs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.email-logs-table thead {
+    background: rgba(255, 255, 255, 0.05);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.email-logs-table th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.email-logs-table td {
+    padding: 12px 16px;
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.email-logs-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+.email-logs-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* ============================================
+   EMAIL TEMPLATES - GRID LAYOUT
+   ============================================ */
+
+.email-templates-mc {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 16px;
+}
+
+.email-template-mc-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.02) 100%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.email-template-mc-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(99, 102, 241, 0.5);
+    box-shadow: 0 8px 24px rgba(99, 102, 241, 0.2);
+}
+
+.template-mc-header {
+    padding: 16px;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.template-mc-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: white;
+    margin: 0 0 8px 0;
+}
+
+.template-mc-badges {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+.template-mc-body {
+    padding: 16px;
+}
+
+.template-mc-description {
+    font-size: 13px;
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 12px;
+    line-height: 1.5;
+}
+
+.template-mc-meta {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.5);
+    margin-bottom: 4px;
+}
+
+.template-mc-actions {
+    padding: 12px 16px;
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    gap: 8px;
+}
+
+.template-mc-btn {
+    flex: 1;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.template-mc-btn-preview {
+    background: rgba(99, 102, 241, 0.2);
+    border-color: rgba(99, 102, 241, 0.4);
+    color: #a5b4fc;
+}
+
+.template-mc-btn-preview:hover {
+    background: rgba(99, 102, 241, 0.3);
+    color: white;
+}
+
+.template-mc-btn-send {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: rgba(16, 185, 129, 0.4);
+    color: #6ee7b7;
+}
+
+.template-mc-btn-send:hover {
+    background: rgba(16, 185, 129, 0.3);
+    color: white;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+    .email-stats-mc {
+        grid-template-columns: 1fr;
+    }
+    
+    .email-metrics-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 768px) {
+    .email-tabs {
+        flex-direction: column;
+    }
+    
+    .email-metrics-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .email-templates-mc {
+        grid-template-columns: 1fr;
+    }
+}
+

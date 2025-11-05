@@ -1,11 +1,12 @@
 /**
  * Emails Rendering Module
  * Renders email dashboard with logs, templates, and statistics
- * 
+ *
  * @module emails/rendering
  */
 
 import { formatDate } from '../../utils/helpers.js';
+import { initializeEmailTabs } from './emails-tabs.js';
 
 // Pagination state
 let currentEmailsPage = 1;
@@ -23,6 +24,9 @@ export async function renderEmails(options) {
     const { api, state, showEmailPreview } = options;
 
     console.log('📧 renderEmails called');
+
+    // Initialize tab switching
+    initializeEmailTabs();
 
     // Populate agent filter dropdown first
     await populateAgentFilter({ api, state });
@@ -100,27 +104,27 @@ export async function renderEmailStatistics(options) {
     try {
         // Fetch all email logs (we'll filter client-side for stats)
         const { items: allEmails } = await api.getEmailLogs({ pageSize: 1000 });
-        
+
         // Calculate date ranges
         const now = new Date();
         const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
         const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-        
+
         // Filter emails by role
         const filteredEmails = filterEmailsByRole(allEmails, state);
-        
+
         // Calculate statistics
         const todayEmails = filteredEmails.filter(e => new Date(e.created_at) >= todayStart);
         const weekEmails = filteredEmails.filter(e => new Date(e.created_at) >= weekStart);
         const monthEmails = filteredEmails.filter(e => new Date(e.created_at) >= monthStart);
-        
+
         const successfulEmails = filteredEmails.filter(e => e.status === 'sent' || e.status === 'delivered');
         const failedEmails = filteredEmails.filter(e => e.status === 'failed' || e.status === 'bounced');
-        const successRate = filteredEmails.length > 0 
-            ? Math.round((successfulEmails.length / filteredEmails.length) * 100) 
+        const successRate = filteredEmails.length > 0
+            ? Math.round((successfulEmails.length / filteredEmails.length) * 100)
             : 0;
-        
+
         // Count template usage
         const templateCounts = {};
         filteredEmails.forEach(email => {
@@ -128,7 +132,7 @@ export async function renderEmailStatistics(options) {
                 templateCounts[email.template_id] = (templateCounts[email.template_id] || 0) + 1;
             }
         });
-        
+
         const mostUsedTemplate = Object.entries(templateCounts)
             .sort((a, b) => b[1] - a[1])[0];
 
@@ -169,8 +173,8 @@ export async function renderEmailStatistics(options) {
                             <div class="agent-stats-list">
                                 ${systemCount > 0 ? `<div class="agent-stat-item"><span>System</span><span class="agent-count">${systemCount}</span></div>` : ''}
                                 ${sortedAgents.map(([name, count]) =>
-                                    `<div class="agent-stat-item"><span>${name}</span><span class="agent-count">${count}</span></div>`
-                                ).join('')}
+                    `<div class="agent-stat-item"><span>${name}</span><span class="agent-count">${count}</span></div>`
+                ).join('')}
                             </div>
                         </div>
                     </div>
@@ -178,63 +182,83 @@ export async function renderEmailStatistics(options) {
             }
         }
 
-        // Render statistics cards
+        // Render mission control style statistics
+        const mostUsedTemplateName = mostUsedTemplate ? mostUsedTemplate[0].replace('_', ' ') : 'N/A';
+
         statsContainer.innerHTML = `
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <div class="stat-icon">📧</div>
-                    <div class="stat-content">
-                        <div class="stat-label">Today</div>
-                        <div class="stat-value">${todayEmails.length}</div>
+            <div class="email-stats-mc">
+                <!-- Primary Metrics -->
+                <div class="email-metric-primary">
+                    <div class="metric-gauge">
+                        <svg viewBox="0 0 200 120" class="gauge-svg">
+                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12" stroke-linecap="round"/>
+                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#successGradient)" stroke-width="12" stroke-linecap="round"
+                                  stroke-dasharray="${successRate * 2.51} 251" class="gauge-fill"/>
+                            <defs>
+                                <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                                    <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
+                                    <stop offset="100%" style="stop-color:#34d399;stop-opacity:1" />
+                                </linearGradient>
+                            </defs>
+                        </svg>
+                        <div class="gauge-value">${successRate}%</div>
+                        <div class="gauge-label">SUCCESS RATE</div>
                     </div>
                 </div>
 
-                <div class="stat-card">
-                    <div class="stat-icon">📅</div>
-                    <div class="stat-content">
-                        <div class="stat-label">This Week</div>
-                        <div class="stat-value">${weekEmails.length}</div>
+                <!-- Secondary Metrics Grid -->
+                <div class="email-metrics-grid">
+                    <div class="email-metric-card">
+                        <div class="metric-icon">📧</div>
+                        <div class="metric-data">
+                            <div class="metric-value">${todayEmails.length}</div>
+                            <div class="metric-label">Today</div>
+                        </div>
+                        <div class="metric-trend ${todayEmails.length > 0 ? 'positive' : ''}">
+                            ${todayEmails.length > 0 ? '↑' : '—'}
+                        </div>
+                    </div>
+
+                    <div class="email-metric-card">
+                        <div class="metric-icon">📅</div>
+                        <div class="metric-data">
+                            <div class="metric-value">${weekEmails.length}</div>
+                            <div class="metric-label">This Week</div>
+                        </div>
+                        <div class="metric-trend positive">↑</div>
+                    </div>
+
+                    <div class="email-metric-card">
+                        <div class="metric-icon">📊</div>
+                        <div class="metric-data">
+                            <div class="metric-value">${monthEmails.length}</div>
+                            <div class="metric-label">This Month</div>
+                        </div>
+                        <div class="metric-trend positive">↑</div>
+                    </div>
+
+                    <div class="email-metric-card ${failedEmails.length > 0 ? 'alert' : ''}">
+                        <div class="metric-icon">⚠️</div>
+                        <div class="metric-data">
+                            <div class="metric-value">${failedEmails.length}</div>
+                            <div class="metric-label">Failed</div>
+                        </div>
+                        <div class="metric-trend ${failedEmails.length > 0 ? 'negative' : ''}">
+                            ${failedEmails.length > 0 ? '!' : '—'}
+                        </div>
+                    </div>
+
+                    <div class="email-metric-card wide">
+                        <div class="metric-icon">🏆</div>
+                        <div class="metric-data">
+                            <div class="metric-value" style="font-size: 14px; font-weight: 600;">${mostUsedTemplateName}</div>
+                            <div class="metric-label">Top Template</div>
+                        </div>
                     </div>
                 </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-content">
-                        <div class="stat-label">This Month</div>
-                        <div class="stat-value">${monthEmails.length}</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-content">
-                        <div class="stat-label">Success Rate</div>
-                        <div class="stat-value">${successRate}%</div>
-                        <div class="stat-detail">${successfulEmails.length} / ${filteredEmails.length}</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">❌</div>
-                    <div class="stat-content">
-                        <div class="stat-label">Failed</div>
-                        <div class="stat-value">${failedEmails.length}</div>
-                    </div>
-                </div>
-
-                <div class="stat-card">
-                    <div class="stat-icon">🏆</div>
-                    <div class="stat-content">
-                        <div class="stat-label">Most Used</div>
-                        <div class="stat-value">${mostUsedTemplate ? mostUsedTemplate[0].replace('_', ' ') : 'N/A'}</div>
-                        <div class="stat-detail">${mostUsedTemplate ? mostUsedTemplate[1] + ' sent' : ''}</div>
-                    </div>
-                </div>
-
-                ${agentBreakdownHTML}
             </div>
         `;
-        
+
     } catch (error) {
         console.error('❌ Error rendering email statistics:', error);
         statsContainer.innerHTML = '<p class="error-message">Error loading statistics</p>';
@@ -248,12 +272,12 @@ export async function renderEmailStatistics(options) {
  */
 export async function renderEmailLogs(options) {
     const { api, state, showEmailPreview } = options;
-    
+
     console.log('📋 Rendering email logs');
-    
+
     const tbody = document.getElementById('emailLogsTbody');
     if (!tbody) return;
-    
+
     try {
         // Get filter values
         const statusFilter = document.getElementById('emailStatusFilter')?.value || '';
@@ -290,29 +314,29 @@ export async function renderEmailLogs(options) {
                 email.subject?.toLowerCase().includes(search)
             );
         }
-        
+
         tbody.innerHTML = '';
-        
+
         if (filteredEmails.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No emails found</td></tr>';
             updateEmailsPagination(1, 1, 0);
             return;
         }
-        
+
         filteredEmails.forEach(email => {
             const tr = document.createElement('tr');
-            
+
             // Status badge
             const statusBadge = getStatusBadge(email.status);
-            
+
             // Template name (clean up ID)
-            const templateName = email.template_id 
+            const templateName = email.template_id
                 ? email.template_id.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
                 : 'N/A';
-            
+
             // Sent by user name
             const sentByName = email.sent_by_name || 'System';
-            
+
             tr.innerHTML = `
                 <td>
                     <div class="email-recipient">
@@ -333,14 +357,14 @@ export async function renderEmailLogs(options) {
                     </button>
                 </td>
             `;
-            
+
             tbody.appendChild(tr);
         });
-        
+
         // Update pagination
         const totalPages = Math.ceil(total / EMAILS_PER_PAGE);
         updateEmailsPagination(currentEmailsPage, totalPages, total);
-        
+
     } catch (error) {
         console.error('❌ Error rendering email logs:', error);
         tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #dc2626;">Error loading emails</td></tr>';
@@ -354,65 +378,63 @@ export async function renderEmailLogs(options) {
  */
 export async function renderEmailTemplates(options) {
     const { api, showEmailPreview } = options;
-    
+
     console.log('📝 Rendering email templates');
-    
+
     const container = document.getElementById('emailTemplatesContainer');
     if (!container) return;
-    
+
     try {
         const templates = await api.getEmailTemplates({ activeOnly: false });
-        
+
         container.innerHTML = '';
-        
+
         if (templates.length === 0) {
             container.innerHTML = '<p style="text-align: center; padding: 40px;">No email templates found</p>';
             return;
         }
-        
+
         templates.forEach(template => {
             const card = document.createElement('div');
-            card.className = 'email-template-card';
-            
+            card.className = 'email-template-mc-card';
+
             const categoryBadge = getCategoryBadge(template.category);
-            const statusBadge = template.active 
+            const statusBadge = template.active
                 ? '<span class="badge badge-success">Active</span>'
                 : '<span class="badge badge-inactive">Inactive</span>';
-            
+
             // Parse variables
             const variables = template.variables || [];
             const variablesList = variables.length > 0
                 ? variables.map(v => `<code>{{${v}}}</code>`).join(', ')
                 : 'None';
-            
+
             card.innerHTML = `
-                <div class="template-header">
-                    <h3>${template.name}</h3>
-                    <div class="template-badges">
+                <div class="template-mc-header">
+                    <h3 class="template-mc-name">${template.name}</h3>
+                    <div class="template-mc-badges">
                         ${categoryBadge}
                         ${statusBadge}
                     </div>
                 </div>
-                <div class="template-body">
-                    <p class="template-description">${template.description || 'No description'}</p>
-                    <div class="template-meta">
-                        <div><strong>Subject:</strong> ${template.subject}</div>
-                        <div><strong>Variables:</strong> ${variablesList}</div>
-                    </div>
+                <div class="template-mc-body">
+                    <p class="template-mc-description">${template.description || 'No description'}</p>
+                    <div class="template-mc-meta"><strong>Subject:</strong> ${template.subject}</div>
+                    <div class="template-mc-meta"><strong>Variables:</strong> ${variablesList}</div>
                 </div>
-                <div class="template-actions">
-                    <button class="btn btn-secondary btn-sm preview-template" data-template-id="${template.id}">
+                <div class="template-mc-actions">
+                    <button class="template-mc-btn template-mc-btn-preview preview-template" data-template-id="${template.id}">
                         👁️ Preview
                     </button>
-                    <button class="btn btn-primary btn-sm test-send-template" data-template-id="${template.id}">
-                        📤 Test Send
+                    <button class="template-mc-btn template-mc-btn-send test-send-template" data-template-id="${template.id}">
+                        📤 Send
                     </button>
                 </div>
             `;
-            
+
             container.appendChild(card);
         });
-        
+
     } catch (error) {
         console.error('❌ Error rendering email templates:', error);
         container.innerHTML = '<p style="text-align: center; padding: 40px; color: #dc2626;">Error loading templates</p>';
@@ -430,24 +452,24 @@ function filterEmailsByRole(emails, state) {
     if (state.role === 'MANAGER' || state.role === 'SUPER_USER' || state.role === 'manager' || state.role === 'super_user') {
         return emails;
     }
-    
+
     // Agents only see:
     // 1. Emails sent to their assigned leads
     // 2. Emails sent by them
     // 3. Agent assignment emails sent to them
     const currentUserId = window.currentUser?.id;
     const currentUserEmail = window.currentUser?.email;
-    
+
     return emails.filter(email => {
         // Emails sent by this agent
         if (email.sent_by === currentUserId) return true;
-        
+
         // Agent assignment emails sent to this agent
         if (email.template_id === 'agent_assignment' && email.recipient_email === currentUserEmail) return true;
-        
+
         // Emails sent to leads assigned to this agent (check metadata)
         if (email.metadata?.agent_id === currentUserId) return true;
-        
+
         return false;
     });
 }
@@ -490,15 +512,15 @@ function updateEmailsPagination(currentPage, totalPages, totalEmails) {
     const pageInfo = document.getElementById('emailsPageInfo');
     const prevBtn = document.getElementById('emailsPrevPage');
     const nextBtn = document.getElementById('emailsNextPage');
-    
+
     if (pageInfo) {
         pageInfo.textContent = `Page ${currentPage} of ${totalPages} · ${totalEmails} total`;
     }
-    
+
     if (prevBtn) {
         prevBtn.disabled = currentPage <= 1;
     }
-    
+
     if (nextBtn) {
         nextBtn.disabled = currentPage >= totalPages;
     }
