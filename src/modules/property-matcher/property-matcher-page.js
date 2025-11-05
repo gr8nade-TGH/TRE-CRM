@@ -177,6 +177,31 @@ async function loadProperties() {
 
     sessionData.properties = properties || [];
     console.log('✅ Loaded properties:', sessionData.properties);
+
+    // Log activity for each property being viewed (only once per session)
+    try {
+        for (const property of properties) {
+            await window.supabase
+                .from('property_activities')
+                .insert({
+                    property_id: property.id,
+                    activity_type: 'viewed_by_lead',
+                    description: `${sessionData.lead?.name || 'Lead'} viewed property on Property Matcher page`,
+                    metadata: {
+                        lead_id: sessionData.lead_id,
+                        lead_name: sessionData.lead?.name,
+                        session_id: sessionData.id,
+                        token: sessionData.token,
+                        view_type: 'property_matcher'
+                    },
+                    performed_by: null,
+                    performed_by_name: sessionData.lead?.name || 'Lead'
+                });
+        }
+        console.log('✅ Activity logged for property views');
+    } catch (activityError) {
+        console.warn('⚠️ Error logging property view activity:', activityError);
+    }
 }
 
 /**
@@ -233,34 +258,98 @@ function renderProperties() {
         const floorPlan = unit?.floor_plans;
 
         const rent = unit?.rent || floorPlan?.starting_at || 0;
+        const marketRent = unit?.market_rent || floorPlan?.market_rent || rent;
         const bedrooms = floorPlan?.bedrooms || 0;
         const bathrooms = floorPlan?.bathrooms || 0;
         const sqft = floorPlan?.square_feet || 0;
 
+        // Calculate savings
+        const savings = marketRent > rent ? marketRent - rent : 0;
+
+        // Format location
+        const location = `${property.city || 'San Antonio'}, ${property.state || 'TX'}`;
+
+        // Format available date
+        const availableDate = unit?.available_date ? new Date(unit.available_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : 'Now';
+
+        // Get property image
+        const imageUrl = property.image_url || property.primary_image_url || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop';
+
+        // Check for special features
+        const isPUMI = property.is_pumi || false;
+        const hasConcession = property.has_concession || false;
+        const concessionDesc = property.concession_description || '';
+
         return `
             <div class="property-card" data-property-id="${property.id}">
-                <div class="property-header">
-                    <input type="checkbox" class="property-checkbox" data-property-id="${property.id}">
-                    <div class="property-info">
-                        <div class="property-name">${property.name}</div>
-                        <div class="property-rent">$${rent.toLocaleString()}/mo</div>
-                        <div class="property-specs">
-                            <div class="spec-item">🛏️ ${bedrooms} bed</div>
-                            <div class="spec-item">🛁 ${bathrooms} bath</div>
-                            <div class="spec-item">📐 ${sqft.toLocaleString()} sqft</div>
+                <img src="${imageUrl}" alt="${property.name}" class="property-image" onerror="this.src='https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop'">
+
+                <div class="property-body">
+                    <div class="property-header">
+                        <input type="checkbox" class="property-checkbox" data-property-id="${property.id}">
+                        <div class="property-info">
+                            <div class="property-name">${property.name}</div>
+                            <div class="property-location">📍 ${location}</div>
+                            <div class="property-rent">
+                                $${rent.toLocaleString()}
+                                <span class="property-rent-label">/month</span>
+                            </div>
+                            <div class="property-specs">
+                                <div class="spec-item">
+                                    <span>🛏️</span>
+                                    <span>${bedrooms}</span>
+                                    <span class="spec-label">bed</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span>🛁</span>
+                                    <span>${bathrooms}</span>
+                                    <span class="spec-label">bath</span>
+                                </div>
+                                <div class="spec-item">
+                                    <span>📐</span>
+                                    <span>${sqft.toLocaleString()}</span>
+                                    <span class="spec-label">sqft</span>
+                                </div>
+                            </div>
+
+                            <div class="property-details">
+                                <div><strong>Unit:</strong> ${unit?.unit_number || 'TBD'}</div>
+                                <div class="divider-dot"></div>
+                                <div><strong>Available:</strong> ${availableDate}</div>
+                            </div>
+
+                            ${savings > 0 ? `
+                                <div class="special-badge">
+                                    <strong>💰 Save $${savings.toLocaleString()}/mo vs. market rate</strong>
+                                    <p>Market rent: $${marketRent.toLocaleString()}/mo</p>
+                                </div>
+                            ` : ''}
+
+                            ${hasConcession && concessionDesc ? `
+                                <div class="special-badge">
+                                    <strong>🎁 Special Offer</strong>
+                                    <p>${concessionDesc}</p>
+                                </div>
+                            ` : ''}
+
+                            ${isPUMI ? `
+                                <div class="special-badge">
+                                    <strong>⭐ PUMI Property</strong>
+                                    <p>Priority Unit - Move In Ready!</p>
+                                </div>
+                            ` : ''}
                         </div>
-                        ${property.address ? `<div class="spec-item">📍 ${property.address}</div>` : ''}
                     </div>
-                </div>
-                
-                <div class="tour-section" data-property-id="${property.id}">
-                    <label for="tour-date-${property.id}">Preferred Tour Date & Time:</label>
-                    <input 
-                        type="datetime-local" 
-                        id="tour-date-${property.id}" 
-                        data-property-id="${property.id}"
-                        min="${new Date().toISOString().slice(0, 16)}"
-                    >
+
+                    <div class="tour-section" data-property-id="${property.id}">
+                        <label for="tour-date-${property.id}">Preferred Tour Date & Time:</label>
+                        <input
+                            type="datetime-local"
+                            id="tour-date-${property.id}"
+                            data-property-id="${property.id}"
+                            min="${new Date().toISOString().slice(0, 16)}"
+                        >
+                    </div>
                 </div>
             </div>
         `;
@@ -291,7 +380,7 @@ function setupEventListeners() {
 /**
  * Handle property selection
  */
-function handlePropertySelection(event) {
+async function handlePropertySelection(event) {
     const propertyId = event.target.dataset.propertyId;
     const isChecked = event.target.checked;
 
@@ -309,6 +398,49 @@ function handlePropertySelection(event) {
     if (isChecked) {
         tourSection?.classList.add('visible');
         propertyCard?.classList.add('selected');
+
+        // Log activity for property selection
+        try {
+            const property = sessionData.properties.find(p => p.id === propertyId);
+
+            // Log for lead
+            await window.supabase
+                .from('lead_activities')
+                .insert({
+                    lead_id: sessionData.lead_id,
+                    activity_type: 'property_selected',
+                    description: `${sessionData.lead?.name || 'Lead'} selected ${property?.name || 'property'} as interested`,
+                    metadata: {
+                        session_id: sessionData.id,
+                        token: sessionData.token,
+                        property_id: propertyId,
+                        property_name: property?.name
+                    },
+                    performed_by: null,
+                    performed_by_name: sessionData.lead?.name || 'Lead'
+                });
+
+            // Log for property
+            await window.supabase
+                .from('property_activities')
+                .insert({
+                    property_id: propertyId,
+                    activity_type: 'selected_by_lead',
+                    description: `${sessionData.lead?.name || 'Lead'} marked as interested`,
+                    metadata: {
+                        lead_id: sessionData.lead_id,
+                        lead_name: sessionData.lead?.name,
+                        session_id: sessionData.id,
+                        token: sessionData.token
+                    },
+                    performed_by: null,
+                    performed_by_name: sessionData.lead?.name || 'Lead'
+                });
+
+            console.log('✅ Activity logged for property selection');
+        } catch (activityError) {
+            console.warn('⚠️ Error logging property selection activity:', activityError);
+        }
     } else {
         tourSection?.classList.remove('visible');
         propertyCard?.classList.remove('selected');
@@ -321,13 +453,51 @@ function handlePropertySelection(event) {
 /**
  * Handle tour date change
  */
-function handleTourDateChange(event) {
+async function handleTourDateChange(event) {
     const propertyId = event.target.dataset.propertyId;
     const tourDate = event.target.value;
 
     const selection = selectedProperties.get(propertyId);
     if (selection) {
         selection.tourDate = tourDate;
+
+        // Log activity for tour request
+        if (tourDate) {
+            try {
+                const property = sessionData.properties.find(p => p.id === propertyId);
+                const formattedDate = new Date(tourDate).toLocaleString('en-US', {
+                    month: 'short',
+                    day: 'numeric',
+                    year: 'numeric',
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true
+                });
+
+                // Log for lead
+                await window.supabase
+                    .from('lead_activities')
+                    .insert({
+                        lead_id: sessionData.lead_id,
+                        activity_type: 'tour_requested',
+                        description: `${sessionData.lead?.name || 'Lead'} requested tour at ${property?.name || 'property'} on ${formattedDate}`,
+                        metadata: {
+                            session_id: sessionData.id,
+                            token: sessionData.token,
+                            property_id: propertyId,
+                            property_name: property?.name,
+                            tour_date: tourDate,
+                            tour_date_formatted: formattedDate
+                        },
+                        performed_by: null,
+                        performed_by_name: sessionData.lead?.name || 'Lead'
+                    });
+
+                console.log('✅ Activity logged for tour request');
+            } catch (activityError) {
+                console.warn('⚠️ Error logging tour request activity:', activityError);
+            }
+        }
     }
 }
 
@@ -350,8 +520,9 @@ async function handleSubmit() {
     console.log('📤 Submitting selections:', selectedProperties);
 
     const submitBtn = document.getElementById('submitBtn');
+    const originalText = submitBtn.innerHTML;
     submitBtn.disabled = true;
-    submitBtn.textContent = 'Submitting...';
+    submitBtn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto;"></div>';
 
     try {
         // Prepare responses
@@ -380,7 +551,7 @@ async function handleSubmit() {
             .update({ submitted_at: new Date().toISOString() })
             .eq('id', sessionData.id);
 
-        // Create activity log entry
+        // Create activity log entries
         try {
             // Get property names for metadata
             const selectedPropertiesData = Array.from(selectedProperties.entries()).map(([propertyId, data]) => {
@@ -394,6 +565,7 @@ async function handleSubmit() {
 
             const tourRequestsCount = selectedPropertiesData.filter(p => p.tour_date).length;
 
+            // Log for lead
             await window.supabase
                 .from('lead_activities')
                 .insert({
@@ -410,7 +582,41 @@ async function handleSubmit() {
                     performed_by: null,
                     performed_by_name: sessionData.lead?.name || 'Lead'
                 });
-            console.log('✅ Activity log created for submission');
+
+            // Log for each property with tour request
+            for (const [propertyId, data] of selectedProperties.entries()) {
+                if (data.tourDate) {
+                    const property = sessionData.properties.find(p => p.id === propertyId);
+                    const formattedDate = new Date(data.tourDate).toLocaleString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true
+                    });
+
+                    await window.supabase
+                        .from('property_activities')
+                        .insert({
+                            property_id: propertyId,
+                            activity_type: 'tour_requested',
+                            description: `${sessionData.lead?.name || 'Lead'} requested tour on ${formattedDate}`,
+                            metadata: {
+                                lead_id: sessionData.lead_id,
+                                lead_name: sessionData.lead?.name,
+                                session_id: sessionData.id,
+                                token: sessionData.token,
+                                tour_date: data.tourDate,
+                                tour_date_formatted: formattedDate
+                            },
+                            performed_by: null,
+                            performed_by_name: sessionData.lead?.name || 'Lead'
+                        });
+                }
+            }
+
+            console.log('✅ Activity logs created for submission');
         } catch (activityError) {
             console.warn('⚠️ Error creating activity log:', activityError);
         }
@@ -420,9 +626,9 @@ async function handleSubmit() {
 
     } catch (error) {
         console.error('Error submitting:', error);
-        alert('There was an error submitting your selections. Please try again or contact your agent.');
+        showError('Submission Failed', 'There was an error submitting your selections. Please try again or contact your agent directly.');
         submitBtn.disabled = false;
-        submitBtn.textContent = '📅 Schedule My Tours';
+        submitBtn.innerHTML = originalText;
     }
 }
 
@@ -433,8 +639,9 @@ async function handleMoreOptions() {
     console.log('🔄 Requesting more options');
 
     const btn = document.getElementById('moreOptionsBtn');
+    const originalText = btn.innerHTML;
     btn.disabled = true;
-    btn.textContent = 'Sending request...';
+    btn.innerHTML = '<div class="spinner" style="width: 20px; height: 20px; border-width: 2px; margin: 0 auto;"></div>';
 
     try {
         // Update lead record to indicate they want more options (also resets cooldown)
@@ -471,15 +678,21 @@ async function handleMoreOptions() {
             console.warn('⚠️ Error creating activity log:', activityError);
         }
 
-        // Show success message
-        alert('✅ Request sent! Your agent will send you more property options soon.');
-        btn.textContent = '✅ Request Sent';
+        // Show success message in content area
+        const content = document.getElementById('content');
+        content.innerHTML = `
+            <div class="success-message">
+                <h2>✅ Request Sent!</h2>
+                <p>Your agent will send you more property options soon.</p>
+                <p style="margin-top: 20px;">You can close this page now.</p>
+            </div>
+        `;
 
     } catch (error) {
         console.error('Error requesting more options:', error);
-        alert('There was an error sending your request. Please contact your agent directly.');
+        showError('Request Failed', 'There was an error sending your request. Please contact your agent directly.');
         btn.disabled = false;
-        btn.textContent = '🔄 Send Me More Options';
+        btn.innerHTML = originalText;
     }
 }
 

@@ -2565,19 +2565,57 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             }
         }
 
-        // Step 10: Log activity to lead_activities
+        // Step 10: Log activity to lead_activities with detailed match information
         if (result.success) {
+            const matchDetails = matches.map(m => ({
+                property_id: m.property.id,
+                property_name: m.property.name,
+                match_score: m.matchScore,
+                rent: m.unit.rent,
+                bedrooms: m.floorPlan.beds,
+                bathrooms: m.floorPlan.baths
+            }));
+
             await createLeadActivity({
                 lead_id: leadId,
-                activity_type: 'email_sent',
-                description: `Smart Match email sent with ${matches.length} properties`,
+                activity_type: 'smart_match_sent',
+                description: `Smart Match email sent with ${matches.length} properties (avg score: ${Math.round(matches.reduce((sum, m) => sum + m.matchScore, 0) / matches.length)}%)`,
                 performed_by: sentBy || null,
+                performed_by_name: agent?.name || null,
                 metadata: {
                     email_log_id: result.emailLogId,
                     property_count: matches.length,
-                    property_matcher_token: propertyMatcherToken
+                    property_matcher_token: propertyMatcherToken,
+                    property_matcher_url: propertyMatcherToken ? `/matches/${propertyMatcherToken}` : null,
+                    matches: matchDetails,
+                    average_match_score: Math.round(matches.reduce((sum, m) => sum + m.matchScore, 0) / matches.length)
                 }
             });
+
+            // Also log activity for each property
+            for (const match of matches) {
+                try {
+                    await createPropertyActivity({
+                        property_id: match.property.id,
+                        activity_type: 'sent_to_lead',
+                        description: `Sent to ${lead.name} via Smart Match (${match.matchScore}% match)`,
+                        performed_by: sentBy || null,
+                        performed_by_name: agent?.name || null,
+                        metadata: {
+                            lead_id: leadId,
+                            lead_name: lead.name,
+                            match_score: match.matchScore,
+                            email_log_id: result.emailLogId,
+                            property_matcher_token: propertyMatcherToken,
+                            unit_id: match.unit.id,
+                            unit_number: match.unit.unit_number,
+                            rent: match.unit.rent
+                        }
+                    });
+                } catch (propActivityError) {
+                    console.warn('⚠️ Error logging property activity:', propActivityError);
+                }
+            }
         }
 
         return {
