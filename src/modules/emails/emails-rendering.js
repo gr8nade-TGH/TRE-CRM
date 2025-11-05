@@ -202,58 +202,38 @@ export async function renderEmailStatistics(options) {
             <div class="email-stats-mc">
                 <!-- Success Rate Card -->
                 <div class="email-metric-card success-rate">
-                    <div class="metric-header">
-                        <div class="metric-icon">✅</div>
-                        <div class="metric-label">Success Rate</div>
-                    </div>
+                    <div class="metric-label">Success Rate</div>
                     <div class="metric-value">${successRate}%</div>
+                </div>
+
+                <!-- Total Sent Card -->
+                <div class="email-metric-card">
+                    <div class="metric-label">Total Sent</div>
+                    <div class="metric-value">${filteredEmails.length}</div>
+                </div>
+
+                <!-- Failed Card -->
+                <div class="email-metric-card ${failedEmails.length > 0 ? 'alert' : ''}">
+                    <div class="metric-label">Failed</div>
+                    <div class="metric-value">${failedEmails.length}</div>
                 </div>
 
                 <!-- Today Card -->
                 <div class="email-metric-card">
-                    <div class="metric-header">
-                        <div class="metric-icon">📧</div>
-                        <div class="metric-label">Today</div>
-                    </div>
+                    <div class="metric-label">Today</div>
                     <div class="metric-value">${todayEmails.length}</div>
-                    ${todayEmails.length > 0 ? '<div class="metric-trend positive">↑ Active</div>' : ''}
                 </div>
 
                 <!-- This Week Card -->
                 <div class="email-metric-card">
-                    <div class="metric-header">
-                        <div class="metric-icon">📅</div>
-                        <div class="metric-label">This Week</div>
-                    </div>
+                    <div class="metric-label">This Week</div>
                     <div class="metric-value">${weekEmails.length}</div>
                 </div>
 
                 <!-- This Month Card -->
                 <div class="email-metric-card">
-                    <div class="metric-header">
-                        <div class="metric-icon">📊</div>
-                        <div class="metric-label">This Month</div>
-                    </div>
+                    <div class="metric-label">This Month</div>
                     <div class="metric-value">${monthEmails.length}</div>
-                </div>
-
-                <!-- Failed Card -->
-                <div class="email-metric-card ${failedEmails.length > 0 ? 'alert' : ''}">
-                    <div class="metric-header">
-                        <div class="metric-icon">⚠️</div>
-                        <div class="metric-label">Failed</div>
-                    </div>
-                    <div class="metric-value">${failedEmails.length}</div>
-                    ${failedEmails.length > 0 ? '<div class="metric-trend negative">Needs attention</div>' : ''}
-                </div>
-
-                <!-- Top Template Card -->
-                <div class="email-metric-card">
-                    <div class="metric-header">
-                        <div class="metric-icon">🏆</div>
-                        <div class="metric-label">Top Template</div>
-                    </div>
-                    <div class="metric-value" style="font-size: 16px; font-weight: 600;">${mostUsedTemplateName}</div>
                 </div>
             </div>
         `;

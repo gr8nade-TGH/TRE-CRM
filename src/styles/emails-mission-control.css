@@ -102,36 +102,26 @@
     }
 }
 
-/* Email Metric Cards - White Card Style */
+/* Email Metric Cards - Clean Minimal Style */
 .email-metric-card {
     background: white;
     border: 1px solid #e5e7eb;
     border-radius: 8px;
-    padding: 16px;
+    padding: 20px;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
     transition: all 0.2s ease;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .email-metric-card:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    transform: translateY(-2px);
-}
-
-.metric-header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.metric-icon {
-    font-size: 20px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-1px);
 }
 
 .metric-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     color: #6b7280;
     text-transform: uppercase;
@@ -139,53 +129,50 @@
 }
 
 .metric-value {
-    font-size: 36px;
+    font-size: 32px;
     font-weight: 700;
     color: #111827;
     line-height: 1;
 }
 
-.metric-trend {
-    font-size: 14px;
-    font-weight: 600;
-}
-
-.metric-trend.positive {
-    color: #10b981;
-}
-
-.metric-trend.negative {
-    color: #ef4444;
-}
-
-/* Success Rate Card - Special Styling */
+/* Success Rate Card - Green Highlight */
 .email-metric-card.success-rate {
-    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    background: #10b981;
     border: none;
     color: white;
-    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.25);
+    box-shadow: 0 1px 3px rgba(16, 185, 129, 0.3);
 }
 
 .email-metric-card.success-rate:hover {
-    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.35);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
 .email-metric-card.success-rate .metric-label {
-    color: rgba(255, 255, 255, 0.95);
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .email-metric-card.success-rate .metric-value {
     color: white;
 }
 
-/* Alert Card */
+/* Alert Card - Red Highlight */
 .email-metric-card.alert {
-    border-color: #fca5a5;
-    background: #fef2f2;
+    background: #ef4444;
+    border: none;
+    color: white;
+    box-shadow: 0 1px 3px rgba(239, 68, 68, 0.3);
+}
+
+.email-metric-card.alert:hover {
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+.email-metric-card.alert .metric-label {
+    color: rgba(255, 255, 255, 0.9);
 }
 
 .email-metric-card.alert .metric-value {
-    color: #dc2626;
+    color: white;
 }
 
 
