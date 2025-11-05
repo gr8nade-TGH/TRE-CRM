@@ -740,12 +740,32 @@ export async function bulkSendSmartMatch() {
         // Step 3: Filter out leads with 0 matches from canSend
         const canSendWithMatches = canSend.filter(({ leadId }) => {
             const data = matchData.get(leadId);
-            return data && data.propertyCount > 0;
+            const hasMatches = data && data.propertyCount > 0;
+            console.log(`🔍 Filter check for ${leadId}:`, {
+                hasData: !!data,
+                propertyCount: data?.propertyCount,
+                hasMatches,
+                leadName: data?.name
+            });
+            return hasMatches;
         });
 
         const noMatches = canSend.filter(({ leadId }) => {
             const data = matchData.get(leadId);
             return data && data.propertyCount === 0;
+        });
+
+        console.log('📊 Filtered results:', {
+            canSendWithMatches: canSendWithMatches.map(({ leadId }) => ({
+                leadId,
+                name: matchData.get(leadId)?.name,
+                propertyCount: matchData.get(leadId)?.propertyCount
+            })),
+            noMatches: noMatches.map(({ leadId }) => ({
+                leadId,
+                name: matchData.get(leadId)?.name,
+                propertyCount: matchData.get(leadId)?.propertyCount
+            }))
         });
 
         // Update rateLimitingResult with filtered data
