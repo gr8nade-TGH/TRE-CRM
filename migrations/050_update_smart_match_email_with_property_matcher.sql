@@ -68,6 +68,11 @@ SET
             <h2>Hi {{leadName}}! 👋</h2>
             <p>Great news! Our Smart Match system analyzed your preferences and found <strong>{{propertyCount}} properties</strong> that are perfect for you.</p>
             <p>These aren''t just random listings – they''re intelligently matched based on your budget, location preferences, and move-in timeline.</p>
+            <div style="text-align: center; margin: 25px 0 10px 0;">
+                <a href="{{propertyMatcherUrl}}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff !important; text-decoration: none; padding: 18px 40px; border-radius: 10px; font-weight: 700; font-size: 18px; box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4); transition: all 0.3s ease;">
+                    🏡 View My Matches & Schedule Tours →
+                </a>
+            </div>
         </div>
         
         <div class="content">
@@ -79,9 +84,8 @@ SET
             
             <div class="cta-section">
                 <h3 style="margin-top: 0; color: #111827;">Ready to Find Your New Home?</h3>
-                <p style="color: #6b7280; margin-bottom: 20px;">View all your matches, select your favorites, and schedule tours!</p>
-                <a href="{{propertyMatcherUrl}}" style="display: inline-block; background: #10b981; color: #ffffff !important; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 10px;">🏡 View My Matches & Schedule Tours</a>
-                <a href="mailto:{{agentEmail}}?subject=Tour Request - Smart Match Properties" style="display: inline-block; background: #6366f1; color: #ffffff !important; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 10px;">📧 Email My Agent</a>
+                <p style="color: #6b7280; margin-bottom: 20px;">Click below to view your matches, select favorites, and schedule tours!</p>
+                <a href="{{propertyMatcherUrl}}" style="display: inline-block; background: #10b981; color: #ffffff !important; text-decoration: none; padding: 18px 36px; border-radius: 10px; font-weight: 700; font-size: 17px; margin: 10px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);">🏡 View My Matches & Schedule Tours</a>
             </div>
             
             <div class="agent-card">
@@ -97,10 +101,15 @@ SET
                         <strong>Phone:</strong> <a href="tel:{{agentPhone}}" style="color: #3b82f6; text-decoration: none;">{{agentPhone}}</a>
                     </div>
                 </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <a href="{{propertyMatcherUrl}}" style="display: inline-block; background: #6366f1; color: #ffffff !important; text-decoration: none; padding: 12px 28px; border-radius: 8px; font-weight: 600; font-size: 15px;">
+                        📅 Schedule Tours Now
+                    </a>
+                </div>
             </div>
-            
-            <p style="color: #6b7280; font-size: 14px; margin-top: 30px;">
-                <strong>Questions?</strong> Reply to this email or give me a call anytime. I''m here to help you find the perfect place to call home!
+
+            <p style="color: #6b7280; font-size: 14px; margin-top: 30px; text-align: center;">
+                <strong>Questions?</strong> Reply to this email or call {{agentPhone}}. I''m here to help you find the perfect place to call home!
             </p>
         </div>
         
