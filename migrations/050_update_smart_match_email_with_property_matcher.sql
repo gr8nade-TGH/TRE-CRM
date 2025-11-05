@@ -80,8 +80,8 @@ SET
             <div class="cta-section">
                 <h3 style="margin-top: 0; color: #111827;">Ready to Find Your New Home?</h3>
                 <p style="color: #6b7280; margin-bottom: 20px;">View all your matches, select your favorites, and schedule tours!</p>
-                <a href="{{propertyMatcherUrl}}" class="cta-button cta-button-secondary">🏡 View My Matches & Schedule Tours</a>
-                <a href="mailto:{{agentEmail}}?subject=Tour Request - Smart Match Properties" class="cta-button">📧 Email My Agent</a>
+                <a href="{{propertyMatcherUrl}}" style="display: inline-block; background: #10b981; color: #ffffff !important; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 10px;">🏡 View My Matches & Schedule Tours</a>
+                <a href="mailto:{{agentEmail}}?subject=Tour Request - Smart Match Properties" style="display: inline-block; background: #6366f1; color: #ffffff !important; text-decoration: none; padding: 16px 32px; border-radius: 8px; font-weight: 600; font-size: 16px; margin: 10px;">📧 Email My Agent</a>
             </div>
             
             <div class="agent-card">
