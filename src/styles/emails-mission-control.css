@@ -76,201 +76,60 @@
 }
 
 /* ============================================
-   STATISTICS - MISSION CONTROL STYLE
+   STATISTICS - CLEAN WHITE CARD STYLE
    ============================================ */
 
 .email-stats-mc {
     display: grid;
-    grid-template-columns: 280px 1fr;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
     gap: 16px;
-    background: rgba(15, 23, 42, 0.4);
+}
+
+/* Email Metric Cards - White Card Style */
+.email-metric-card {
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
     padding: 20px;
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
-}
-
-/* Primary Gauge */
-.email-metric-primary {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.02);
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.metric-gauge {
-    position: relative;
-    width: 200px;
-    height: 140px;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.gauge-svg {
-    width: 100%;
-    height: auto;
-    filter: drop-shadow(0 0 10px rgba(16, 185, 129, 0.3));
-}
-
-.gauge-fill {
-    animation: gaugeLoad 1.5s ease-out forwards;
-    transform-origin: center;
-}
-
-@keyframes gaugeLoad {
-    from {
-        stroke-dasharray: 0 251;
-    }
-}
-
-.gauge-value {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -20%);
-    font-size: 48px;
-    font-weight: 700;
-    color: #10b981;
-    text-shadow: 0 0 20px rgba(16, 185, 129, 0.5);
-    animation: fadeIn 0.5s ease-out 0.5s both;
-}
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-        transform: translate(-50%, -20%) scale(0.8);
-    }
-
-    to {
-        opacity: 1;
-        transform: translate(-50%, -20%) scale(1);
-    }
-}
-
-.gauge-label {
-    position: absolute;
-    bottom: 20px;
-    font-size: 11px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.6);
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}
-
-/* Metrics Grid */
-.email-metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-}
-
-.email-metric-card {
-    background: rgba(255, 255, 255, 0.02);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 8px;
-    padding: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
+    gap: 8px;
     transition: all 0.2s ease;
-    opacity: 0;
-    animation: slideInUp 0.4s ease-out forwards;
-}
-
-.email-metric-card:nth-child(1) {
-    animation-delay: 0.05s;
-}
-
-.email-metric-card:nth-child(2) {
-    animation-delay: 0.1s;
-}
-
-.email-metric-card:nth-child(3) {
-    animation-delay: 0.15s;
-}
-
-.email-metric-card:nth-child(4) {
-    animation-delay: 0.2s;
-}
-
-.email-metric-card:nth-child(5) {
-    animation-delay: 0.25s;
-}
-
-@keyframes slideInUp {
-    from {
-        opacity: 0;
-        transform: translateY(15px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .email-metric-card:hover {
-    background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(99, 102, 241, 0.2);
-    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    transform: translateY(-2px);
 }
 
-.email-metric-card.wide {
-    grid-column: span 2;
-}
-
-.email-metric-card.alert {
-    border-color: rgba(239, 68, 68, 0.3);
-    background: rgba(239, 68, 68, 0.05);
-    animation: slideInUp 0.4s ease-out forwards, alertPulse 2s ease-in-out infinite;
-}
-
-@keyframes alertPulse {
-
-    0%,
-    100% {
-        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.3);
-    }
-
-    50% {
-        box-shadow: 0 0 15px 0 rgba(239, 68, 68, 0.15);
-    }
+.metric-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .metric-icon {
-    font-size: 28px;
-    line-height: 1;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
-}
-
-.metric-data {
-    flex: 1;
-}
-
-.metric-value {
-    font-size: 28px;
-    font-weight: 700;
-    color: white;
-    line-height: 1;
-    margin-bottom: 4px;
+    font-size: 24px;
 }
 
 .metric-label {
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
-    color: rgba(255, 255, 255, 0.6);
+    color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.5px;
 }
 
-.metric-trend {
-    font-size: 20px;
+.metric-value {
+    font-size: 32px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.3);
+    color: #111827;
+}
+
+.metric-trend {
+    font-size: 14px;
+    font-weight: 600;
 }
 
 .metric-trend.positive {
@@ -281,31 +140,60 @@
     color: #ef4444;
 }
 
+/* Success Rate Card - Special Styling */
+.email-metric-card.success-rate {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    color: white;
+}
+
+.email-metric-card.success-rate .metric-label {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.email-metric-card.success-rate .metric-value {
+    color: white;
+    font-size: 48px;
+}
+
+/* Alert Card */
+.email-metric-card.alert {
+    border-color: #fca5a5;
+    background: #fef2f2;
+}
+
+.email-metric-card.alert .metric-value {
+    color: #dc2626;
+}
+
+
+
 /* ============================================
    EMAIL LOGS - COMPACT TABLE
    ============================================ */
 
 .email-logs-section {
-    background: rgba(15, 23, 42, 0.4);
-    border-radius: 12px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: white;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
     overflow: hidden;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .email-logs-header {
     padding: 16px 20px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid #e5e7eb;
     display: flex;
     justify-content: space-between;
     align-items: center;
     gap: 16px;
+    background: #f9fafb;
 }
 
 .email-logs-title {
     font-size: 14px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.9);
+    color: #111827;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin: 0;
@@ -322,9 +210,9 @@
 .email-logs-controls select {
     padding: 6px 10px;
     border-radius: 6px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    background: rgba(255, 255, 255, 0.03);
-    color: rgba(255, 255, 255, 0.9);
+    border: 1px solid #d1d5db;
+    background: white;
+    color: #111827;
     font-size: 12px;
     transition: all 0.2s ease;
 }
@@ -332,14 +220,14 @@
 .email-logs-controls input:focus,
 .email-logs-controls select:focus {
     outline: none;
-    border-color: rgba(99, 102, 241, 0.4);
-    background: rgba(255, 255, 255, 0.05);
+    border-color: #6366f1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
 }
 
 .email-logs-toggle {
-    background: rgba(99, 102, 241, 0.15);
-    border: 1px solid rgba(99, 102, 241, 0.3);
-    color: #a5b4fc;
+    background: #6366f1;
+    border: 1px solid #6366f1;
+    color: white;
     padding: 6px 12px;
     border-radius: 6px;
     font-size: 11px;
@@ -350,9 +238,8 @@
 }
 
 .email-logs-toggle:hover {
-    background: rgba(99, 102, 241, 0.25);
-    border-color: rgba(99, 102, 241, 0.5);
-    color: white;
+    background: #4f46e5;
+    border-color: #4f46e5;
 }
 
 .email-logs-body {
@@ -390,7 +277,7 @@
 }
 
 .email-logs-table thead {
-    background: rgba(255, 255, 255, 0.03);
+    background: #f9fafb;
     position: sticky;
     top: 0;
     z-index: 10;
@@ -399,23 +286,23 @@
 .email-logs-table th {
     padding: 10px 14px;
     text-align: left;
-    font-size: 10px;
-    font-weight: 700;
-    color: rgba(255, 255, 255, 0.5);
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .email-logs-table td {
     padding: 10px 14px;
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.8);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    font-size: 13px;
+    color: #111827;
+    border-bottom: 1px solid #f3f4f6;
 }
 
 .email-logs-table tbody tr:hover {
-    background: rgba(255, 255, 255, 0.02);
+    background: #f9fafb;
 }
 
 .email-logs-table tbody tr {
@@ -425,8 +312,8 @@
 /* Pagination */
 .email-logs-pagination {
     padding: 12px 20px;
-    background: rgba(0, 0, 0, 0.15);
-    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    background: #f9fafb;
+    border-top: 1px solid #e5e7eb;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -434,8 +321,8 @@
 }
 
 .email-logs-pagination span {
-    color: rgba(255, 255, 255, 0.6);
-    font-size: 12px;
+    color: #6b7280;
+    font-size: 13px;
     font-weight: 500;
 }
 
@@ -450,30 +337,29 @@
 }
 
 .email-template-mc-card {
-    background: rgba(15, 23, 42, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 10px;
+    background: white;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
     overflow: hidden;
     transition: all 0.2s ease;
-    backdrop-filter: blur(10px);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .email-template-mc-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(99, 102, 241, 0.3);
-    box-shadow: 0 4px 16px rgba(99, 102, 241, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .template-mc-header {
-    padding: 14px 16px;
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    padding: 16px;
+    background: #f9fafb;
+    border-bottom: 1px solid #e5e7eb;
 }
 
 .template-mc-name {
-    font-size: 15px;
+    font-size: 16px;
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.95);
+    color: #111827;
     margin: 0 0 8px 0;
 }
 
@@ -484,39 +370,39 @@
 }
 
 .template-mc-body {
-    padding: 14px 16px;
+    padding: 16px;
 }
 
 .template-mc-description {
-    font-size: 12px;
-    color: rgba(255, 255, 255, 0.6);
-    margin-bottom: 10px;
+    font-size: 13px;
+    color: #6b7280;
+    margin-bottom: 12px;
     line-height: 1.5;
 }
 
 .template-mc-meta {
-    font-size: 11px;
-    color: rgba(255, 255, 255, 0.4);
+    font-size: 12px;
+    color: #9ca3af;
     margin-bottom: 4px;
 }
 
 .template-mc-meta strong {
-    color: rgba(255, 255, 255, 0.6);
+    color: #4b5563;
 }
 
 .template-mc-actions {
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.15);
+    padding: 12px 16px;
+    background: #f9fafb;
     display: flex;
     gap: 8px;
-    border-top: 1px solid rgba(255, 255, 255, 0.04);
+    border-top: 1px solid #e5e7eb;
 }
 
 .template-mc-btn {
     flex: 1;
-    padding: 7px 12px;
+    padding: 8px 12px;
     border-radius: 6px;
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 600;
     text-transform: uppercase;
     cursor: pointer;
@@ -525,27 +411,26 @@
 }
 
 .template-mc-btn-preview {
-    background: rgba(99, 102, 241, 0.15);
-    border-color: rgba(99, 102, 241, 0.3);
-    color: #a5b4fc;
+    background: white;
+    border-color: #d1d5db;
+    color: #6b7280;
 }
 
 .template-mc-btn-preview:hover {
-    background: rgba(99, 102, 241, 0.25);
-    border-color: rgba(99, 102, 241, 0.5);
-    color: white;
+    background: #f9fafb;
+    border-color: #6366f1;
+    color: #6366f1;
 }
 
 .template-mc-btn-send {
-    background: rgba(16, 185, 129, 0.15);
-    border-color: rgba(16, 185, 129, 0.3);
-    color: #6ee7b7;
+    background: #6366f1;
+    border-color: #6366f1;
+    color: white;
 }
 
 .template-mc-btn-send:hover {
-    background: rgba(16, 185, 129, 0.25);
-    border-color: rgba(16, 185, 129, 0.5);
-    color: white;
+    background: #4f46e5;
+    border-color: #4f46e5;
 }
 
 /* Responsive */

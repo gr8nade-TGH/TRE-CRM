@@ -207,74 +207,60 @@ export async function renderEmailStatistics(options) {
 
         statsContainer.innerHTML = `
             <div class="email-stats-mc">
-                <!-- Primary Metrics -->
-                <div class="email-metric-primary">
-                    <div class="metric-gauge">
-                        <svg viewBox="0 0 200 120" class="gauge-svg">
-                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="12" stroke-linecap="round"/>
-                            <path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="url(#successGradient)" stroke-width="12" stroke-linecap="round"
-                                  stroke-dasharray="${successRate * 2.51} 251" class="gauge-fill"/>
-                            <defs>
-                                <linearGradient id="successGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                                    <stop offset="0%" style="stop-color:#10b981;stop-opacity:1" />
-                                    <stop offset="100%" style="stop-color:#34d399;stop-opacity:1" />
-                                </linearGradient>
-                            </defs>
-                        </svg>
-                        <div class="gauge-value">${successRate}%</div>
-                        <div class="gauge-label">SUCCESS RATE</div>
+                <!-- Success Rate Card -->
+                <div class="email-metric-card success-rate">
+                    <div class="metric-header">
+                        <div class="metric-icon">✅</div>
+                        <div class="metric-label">Success Rate</div>
                     </div>
+                    <div class="metric-value">${successRate}%</div>
                 </div>
 
-                <!-- Secondary Metrics Grid -->
-                <div class="email-metrics-grid">
-                    <div class="email-metric-card">
+                <!-- Today Card -->
+                <div class="email-metric-card">
+                    <div class="metric-header">
                         <div class="metric-icon">📧</div>
-                        <div class="metric-data">
-                            <div class="metric-value">${todayEmails.length}</div>
-                            <div class="metric-label">Today</div>
-                        </div>
-                        <div class="metric-trend ${todayEmails.length > 0 ? 'positive' : ''}">
-                            ${todayEmails.length > 0 ? '↑' : '—'}
-                        </div>
+                        <div class="metric-label">Today</div>
                     </div>
+                    <div class="metric-value">${todayEmails.length}</div>
+                    ${todayEmails.length > 0 ? '<div class="metric-trend positive">↑ Active</div>' : ''}
+                </div>
 
-                    <div class="email-metric-card">
+                <!-- This Week Card -->
+                <div class="email-metric-card">
+                    <div class="metric-header">
                         <div class="metric-icon">📅</div>
-                        <div class="metric-data">
-                            <div class="metric-value">${weekEmails.length}</div>
-                            <div class="metric-label">This Week</div>
-                        </div>
-                        <div class="metric-trend positive">↑</div>
+                        <div class="metric-label">This Week</div>
                     </div>
+                    <div class="metric-value">${weekEmails.length}</div>
+                </div>
 
-                    <div class="email-metric-card">
+                <!-- This Month Card -->
+                <div class="email-metric-card">
+                    <div class="metric-header">
                         <div class="metric-icon">📊</div>
-                        <div class="metric-data">
-                            <div class="metric-value">${monthEmails.length}</div>
-                            <div class="metric-label">This Month</div>
-                        </div>
-                        <div class="metric-trend positive">↑</div>
+                        <div class="metric-label">This Month</div>
                     </div>
+                    <div class="metric-value">${monthEmails.length}</div>
+                </div>
 
-                    <div class="email-metric-card ${failedEmails.length > 0 ? 'alert' : ''}">
+                <!-- Failed Card -->
+                <div class="email-metric-card ${failedEmails.length > 0 ? 'alert' : ''}">
+                    <div class="metric-header">
                         <div class="metric-icon">⚠️</div>
-                        <div class="metric-data">
-                            <div class="metric-value">${failedEmails.length}</div>
-                            <div class="metric-label">Failed</div>
-                        </div>
-                        <div class="metric-trend ${failedEmails.length > 0 ? 'negative' : ''}">
-                            ${failedEmails.length > 0 ? '!' : '—'}
-                        </div>
+                        <div class="metric-label">Failed</div>
                     </div>
+                    <div class="metric-value">${failedEmails.length}</div>
+                    ${failedEmails.length > 0 ? '<div class="metric-trend negative">Needs attention</div>' : ''}
+                </div>
 
-                    <div class="email-metric-card wide">
+                <!-- Top Template Card -->
+                <div class="email-metric-card">
+                    <div class="metric-header">
                         <div class="metric-icon">🏆</div>
-                        <div class="metric-data">
-                            <div class="metric-value" style="font-size: 14px; font-weight: 600;">${mostUsedTemplateName}</div>
-                            <div class="metric-label">Top Template</div>
-                        </div>
+                        <div class="metric-label">Top Template</div>
                     </div>
+                    <div class="metric-value" style="font-size: 16px; font-weight: 600;">${mostUsedTemplateName}</div>
                 </div>
             </div>
         `;
