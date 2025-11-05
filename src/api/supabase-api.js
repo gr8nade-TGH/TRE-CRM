@@ -2570,7 +2570,7 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             await createLeadActivity({
                 lead_id: leadId,
                 activity_type: 'email_sent',
-                activity_description: `Smart Match email sent with ${matches.length} properties`,
+                description: `Smart Match email sent with ${matches.length} properties`,
                 performed_by: sentBy || null,
                 metadata: {
                     email_log_id: result.emailLogId,
@@ -2649,13 +2649,21 @@ export async function createPropertyMatcherSession({ leadId, leadName, propertyI
         console.log('✅ Property Matcher session created:', session);
 
         // Step 3: Update leads table with last_smart_match_sent_at and add to properties_already_sent
+        // First, get current properties_already_sent
+        const { data: currentLead } = await supabase
+            .from('leads')
+            .select('properties_already_sent')
+            .eq('id', leadId)
+            .single();
+
+        const currentProperties = currentLead?.properties_already_sent || [];
+        const updatedProperties = [...new Set([...currentProperties, ...propertyIds])]; // Merge and dedupe
+
         const { error: updateError } = await supabase
             .from('leads')
             .update({
                 last_smart_match_sent_at: new Date().toISOString(),
-                properties_already_sent: supabase.raw(`
-                    COALESCE(properties_already_sent, '[]'::jsonb) || '${JSON.stringify(propertyIds)}'::jsonb
-                `)
+                properties_already_sent: updatedProperties
             })
             .eq('id', leadId);
 
@@ -2834,7 +2842,7 @@ export async function savePropertyMatcherResponses({ sessionId, leadId, selectio
             await createLeadActivity({
                 lead_id: leadId,
                 activity_type: 'property_matcher_response',
-                activity_description: `Interested in property via Property Matcher${response.preferred_tour_date ? ' - Tour requested' : ''}`,
+                description: `Interested in property via Property Matcher${response.preferred_tour_date ? ' - Tour requested' : ''}`,
                 metadata: {
                     session_id: sessionId,
                     property_id: response.property_id,
@@ -2849,7 +2857,7 @@ export async function savePropertyMatcherResponses({ sessionId, leadId, selectio
         await createLeadActivity({
             lead_id: leadId,
             activity_type: responseType === 'more_options' ? 'requested_more_options' : 'tour_request',
-            activity_description: responseType === 'more_options'
+            description: responseType === 'more_options'
                 ? `Requested more property options (${selections.length} properties viewed)`
                 : `Submitted Property Matcher selections (${selections.length} properties selected)`,
             metadata: {

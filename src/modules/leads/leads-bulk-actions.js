@@ -814,13 +814,15 @@ export async function bulkSendSmartMatch() {
                     console.warn(`⏳ Lead ${leadId} skipped due to cooldown`);
                 } else {
                     failCount++;
-                    const leadName = leadNames.get(leadId) || leadId.substring(0, 8);
+                    const leadData = matchData.get(leadId);
+                    const leadName = leadData?.name || leadId.substring(0, 8);
                     errors.push(`${leadName}: ${result.message || result.error || 'Unknown error'}`);
                     console.error(`❌ Failed to send email to lead: ${leadId}`, result);
                 }
             } catch (error) {
                 failCount++;
-                const leadName = leadNames.get(leadId) || leadId.substring(0, 8);
+                const leadData = matchData.get(leadId);
+                const leadName = leadData?.name || leadId.substring(0, 8);
                 errors.push(`${leadName}: ${error.message}`);
                 console.error(`❌ Error sending email to lead: ${leadId}`, error);
             }
