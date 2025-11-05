@@ -103,20 +103,13 @@ export async function renderEmailStatistics(options) {
 
     // Show loading state
     statsContainer.innerHTML = `
-        <div class="email-stats-mc" style="opacity: 0.6;">
-            <div class="email-metric-primary">
-                <div class="metric-gauge">
-                    <div style="color: rgba(255,255,255,0.3); font-size: 14px;">Loading...</div>
-                </div>
-            </div>
-            <div class="email-metrics-grid">
-                <div class="email-metric-card" style="opacity: 0.5;">
+        <div class="email-stats-mc">
+            <div class="email-metric-card" style="opacity: 0.5;">
+                <div class="metric-header">
                     <div class="metric-icon">⏳</div>
-                    <div class="metric-data">
-                        <div class="metric-value">--</div>
-                        <div class="metric-label">Loading</div>
-                    </div>
+                    <div class="metric-label">Loading...</div>
                 </div>
+                <div class="metric-value">--</div>
             </div>
         </div>
     `;

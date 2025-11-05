@@ -10,32 +10,38 @@
 .email-dashboard-mc {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 24px;
     padding: 0;
     max-width: 1400px;
     margin: 0 auto;
 }
 
-/* Tab Navigation */
+/* Ensure clean background */
+#emailsContent {
+    background: transparent;
+}
+
+/* Tab Navigation - Clean White Style */
 .email-tabs {
     display: flex;
-    gap: 4px;
-    background: rgba(15, 23, 42, 0.6);
-    padding: 6px;
-    border-radius: 10px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    backdrop-filter: blur(10px);
+    gap: 8px;
+    background: white;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
 .email-tab {
     flex: 1;
-    padding: 10px 16px;
+    padding: 12px 20px;
     background: transparent;
     border: none;
-    border-radius: 7px;
-    color: rgba(255, 255, 255, 0.5);
+    border-radius: 6px;
+    color: #6b7280;
     font-weight: 600;
-    font-size: 13px;
+    font-size: 14px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
     cursor: pointer;
@@ -44,14 +50,14 @@
 }
 
 .email-tab:hover {
-    background: rgba(255, 255, 255, 0.05);
-    color: rgba(255, 255, 255, 0.8);
+    background: #f9fafb;
+    color: #111827;
 }
 
 .email-tab.active {
-    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    background: #6366f1;
     color: white;
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+    box-shadow: 0 2px 4px rgba(99, 102, 241, 0.2);
 }
 
 .email-tab-content {
@@ -81,8 +87,9 @@
 
 .email-stats-mc {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 24px;
 }
 
 /* Email Metric Cards - White Card Style */
@@ -145,15 +152,24 @@
     background: linear-gradient(135deg, #10b981 0%, #059669 100%);
     border: none;
     color: white;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.email-metric-card.success-rate:hover {
+    box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
 }
 
 .email-metric-card.success-rate .metric-label {
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.95);
+    font-size: 11px;
 }
 
 .email-metric-card.success-rate .metric-value {
     color: white;
-    font-size: 48px;
+    font-size: 56px;
+    font-weight: 800;
+    line-height: 1;
+    margin-top: 8px;
 }
 
 /* Alert Card */
@@ -333,7 +349,7 @@
 .email-templates-mc {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: 14px;
+    gap: 20px;
 }
 
 .email-template-mc-card {
