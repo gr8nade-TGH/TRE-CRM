@@ -128,8 +128,9 @@ export async function renderLeads(options, autoSelectLeadId = null) {
 		}
 
 		// Fetch cooldown status for all leads in parallel
+		const COOLDOWN_HOURS = 10 / 60; // 10 minutes for testing (TODO: Change back to 12)
 		const cooldownPromises = items.map(lead =>
-			SupabaseAPI.checkSmartMatchCooldown(lead.id, 12).catch(err => {
+			SupabaseAPI.checkSmartMatchCooldown(lead.id, COOLDOWN_HOURS).catch(err => {
 				console.error(`Error checking cooldown for lead ${lead.id}:`, err);
 				return { canSend: true, hoursRemaining: 0 };
 			})

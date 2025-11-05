@@ -4,7 +4,7 @@
  */
 
 // Constants
-const SMART_MATCH_COOLDOWN_HOURS = 12;
+const SMART_MATCH_COOLDOWN_HOURS = 10 / 60; // 10 minutes for testing (TODO: Change back to 12 hours)
 const MAX_BULK_SEND_COUNT = 30; // Maximum number of emails that can be sent in one bulk operation
 
 /**
