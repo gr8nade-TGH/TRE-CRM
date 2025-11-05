@@ -802,16 +802,17 @@ export async function bulkSendSmartMatch() {
                 const result = await SupabaseAPI.sendSmartMatchEmail(leadId, {
                     propertyCount: 5,
                     sentBy: state.user?.id,
-                    skipCooldownCheck: false // Double-check cooldown
+                    skipCooldownCheck: true // Already checked cooldown in bulk send flow
                 });
 
                 if (result.success) {
                     successCount++;
                     console.log(`✅ Email sent successfully to lead: ${leadId}`);
-                } else if (result.skipped && result.reason === 'cooldown') {
-                    // Lead entered cooldown between check and send
+                } else if (result.skipped && (result.reason === 'cooldown' || result.reason === 'no_matches')) {
+                    // Lead entered cooldown or lost matches between check and send
                     skippedCount++;
-                    console.warn(`⏳ Lead ${leadId} skipped due to cooldown`);
+                    const reason = result.reason === 'cooldown' ? 'cooldown' : 'no matches found';
+                    console.warn(`⏳ Lead ${leadId} skipped due to ${reason}`);
                 } else {
                     failCount++;
                     const leadData = matchData.get(leadId);

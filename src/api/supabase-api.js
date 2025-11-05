@@ -2472,7 +2472,13 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
         const matches = getSmartMatchesWithConfig(normalizedLead, unitsWithDetails, emailConfig);
 
         if (matches.length === 0) {
-            throw new Error('No matching properties found for this lead');
+            console.warn('⚠️ No matching properties found for lead:', leadId);
+            return {
+                success: false,
+                skipped: true,
+                reason: 'no_matches',
+                message: 'No matching properties found for this lead'
+            };
         }
 
         console.log('✅ Found', matches.length, 'Smart Match properties');
