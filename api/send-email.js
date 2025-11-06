@@ -137,6 +137,12 @@ export default async function handler(req, res) {
 		if (variables?.agentPhone) {
 			allVariables.trackingUrl_agent_phone = createTrackingUrl('agent_phone', `tel:${variables.agentPhone}`);
 		}
+		if (variables?.leadEmail) {
+			allVariables.trackingUrl_lead_email = createTrackingUrl('lead_email', `mailto:${variables.leadEmail}`);
+		}
+		if (variables?.leadPhone) {
+			allVariables.trackingUrl_lead_phone = createTrackingUrl('lead_phone', `tel:${variables.leadPhone}`);
+		}
 		if (variables?.propertyMatcherUrl) {
 			allVariables.trackingUrl_property_matcher = createTrackingUrl('property_matcher', variables.propertyMatcherUrl);
 		}

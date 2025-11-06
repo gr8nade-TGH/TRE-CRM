@@ -2805,7 +2805,7 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
         }
 
         // Step 11: Send guest cards to property owners
-        if (result.success) {
+        if (result.success && agent && agent.id) {
             try {
                 console.log('📧 Sending guest cards to property owners...');
                 const { sendGuestCardsSafe } = await import('../utils/guest-card-email.js');
@@ -2827,6 +2827,8 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
                 console.error('⚠️ Error sending guest cards:', guestCardError);
                 // Don't fail Smart Match if guest cards fail
             }
+        } else if (result.success && !agent) {
+            console.warn('⚠️ Skipping guest cards - no agent assigned to lead');
         }
 
         return {
