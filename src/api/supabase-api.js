@@ -2270,6 +2270,31 @@ export async function getEmailLogs({ status, recipientEmail, page = 1, pageSize 
 }
 
 /**
+ * Get a single email log by ID
+ * @param {string} emailLogId - Email log ID
+ * @returns {Promise<Object|null>} Email log object or null if not found
+ */
+export async function getEmailLog(emailLogId) {
+    const supabase = getSupabase();
+
+    console.log('📧 getEmailLog called with ID:', emailLogId);
+
+    const { data, error } = await supabase
+        .from('email_logs')
+        .select('*')
+        .eq('id', emailLogId)
+        .single();
+
+    if (error) {
+        console.error('❌ Error fetching email log:', error);
+        return null;
+    }
+
+    console.log('✅ getEmailLog returning:', data);
+    return data;
+}
+
+/**
  * Send email via serverless function
  * @param {Object} emailData - Email data
  * @param {string} emailData.templateId - Email template ID

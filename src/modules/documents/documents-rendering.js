@@ -6,7 +6,24 @@
  */
 
 /**
- * Check if a lead has responded to showcase by checking lead_activities
+ * Check if welcome email has been sent by checking lead_activities
+ * @param {string} leadId - The lead ID
+ * @param {Object} SupabaseAPI - Supabase API object
+ * @returns {Promise<boolean>} True if welcome email sent
+ */
+async function hasWelcomeEmailSent(leadId, SupabaseAPI) {
+	try {
+		const activities = await SupabaseAPI.getLeadActivities(leadId);
+		// Check if there's a 'welcome_email_sent' activity
+		return activities.some(activity => activity.activity_type === 'welcome_email_sent');
+	} catch (error) {
+		console.error('Error checking welcome email:', error);
+		return false;
+	}
+}
+
+/**
+ * Check if a lead has responded to Property Matcher by checking lead_activities
  * @param {string} leadId - The lead ID
  * @param {Object} SupabaseAPI - Supabase API object
  * @returns {Promise<boolean>} True if lead has responded
@@ -14,8 +31,8 @@
 async function hasLeadResponded(leadId, SupabaseAPI) {
 	try {
 		const activities = await SupabaseAPI.getLeadActivities(leadId);
-		// Check if there's a 'showcase_response' activity
-		return activities.some(activity => activity.activity_type === 'showcase_response');
+		// Check if there's a 'property_matcher_submitted' activity (UPDATED from 'showcase_response')
+		return activities.some(activity => activity.activity_type === 'property_matcher_submitted');
 	} catch (error) {
 		console.error('Error checking lead response:', error);
 		return false;
@@ -100,7 +117,7 @@ export async function renderManagerDocuments(options) {
 		});
 
 		// Transform leads to match the expected format
-		// Check for lead responses and lease signed status in parallel
+		// Check for optional indicators in parallel
 		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
 			id: lead.id,
 			leadName: lead.name,
@@ -109,8 +126,9 @@ export async function renderManagerDocuments(options) {
 			currentStep: lead.current_step || 1,
 			lastUpdated: lead.updated_at || lead.created_at,
 			status: lead.health_status === 'closed' ? 'completed' : 'current',
-			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI), // Check if lead responded
-			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI), // Check if lease signed
+			welcomeEmailSent: await hasWelcomeEmailSent(lead.id, SupabaseAPI), // Step 1 indicator
+			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI),       // Step 2 indicator
+			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI),           // Step 5 indicator
 			property: {
 				name: lead.property_name || 'Not selected',
 				address: lead.property_address || '',
@@ -189,7 +207,7 @@ export async function renderAgentDocuments(options) {
 		});
 
 		// Transform leads to match the expected format
-		// Check for lead responses and lease signed status in parallel
+		// Check for optional indicators in parallel
 		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
 			id: lead.id,
 			leadName: lead.name,
@@ -198,8 +216,9 @@ export async function renderAgentDocuments(options) {
 			currentStep: lead.current_step || 1,
 			lastUpdated: lead.updated_at || lead.created_at,
 			status: lead.health_status === 'closed' ? 'completed' : 'current',
-			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI), // Check if lead responded
-			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI), // Check if lease signed
+			welcomeEmailSent: await hasWelcomeEmailSent(lead.id, SupabaseAPI), // Step 1 indicator
+			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI),       // Step 2 indicator
+			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI),           // Step 5 indicator
 			property: {
 				name: lead.property_name || 'Not selected',
 				address: lead.property_address || '',

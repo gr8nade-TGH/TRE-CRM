@@ -11,7 +11,7 @@ import * as SupabaseAPI from '../api/supabase-api.js';
  * @returns {Promise<string>} - HTML content for the modal
  */
 export async function getStepModalContent(lead, step, formatDate) {
-	switch(step.id) {
+	switch (step.id) {
 		case 1: // Lead Joined
 			// Fetch the lead_created activity from database
 			try {
@@ -98,158 +98,353 @@ export async function getStepModalContent(lead, step, formatDate) {
 				`;
 			}
 
-		case 2: // Showcase Sent
-			return `
-				<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName}</div>
-				<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
-				<div class="modal-details"><strong>Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-				<a href="${lead.showcase.landingPageUrl}" target="_blank" class="modal-link">View Landing Page →</a>
-			`;
+		case 2: // Smart Match Sent
+			try {
+				const activities = await SupabaseAPI.getLeadActivities(lead.id);
+				const smartMatchActivity = activities.find(a => a.activity_type === 'smart_match_sent');
 
-		case 3: // Lead Responded
-			return `
-				<div class="modal-details"><strong>Lead:</strong> ${lead.leadName}</div>
-				<div class="modal-details"><strong>Agent:</strong> ${lead.agentName}</div>
-				<div class="modal-details"><strong>Properties Selected:</strong> ${lead.showcase.selections.join(', ')}</div>
-				<div class="modal-details"><strong>Preferred Tour Dates:</strong> ${lead.showcase.calendarDates.join(', ')}</div>
-				<div class="modal-details"><strong>Response Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-				<div class="modal-details"><strong>Status:</strong> Lead has shown interest and selected properties</div>
-				<a href="${lead.showcase.landingPageUrl}?filled=true&selections=${encodeURIComponent(lead.showcase.selections.join(','))}&dates=${encodeURIComponent(lead.showcase.calendarDates.join(','))}" target="_blank" class="modal-link">View Filled Landing Page →</a>
-			`;
+				if (!smartMatchActivity) {
+					return `
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-warning">⚠️ No Smart Match sent yet</div>
+						<div class="modal-details"><em>Smart Match email has not been sent to this lead</em></div>
+					`;
+				}
 
-		case 4: { // Guest Card Sent / Send Guest Card
-			// Check if this step is completed or needs action
-			const guestCardActivities = await SupabaseAPI.getLeadActivities(lead.id);
-			const guestCardSent = guestCardActivities.find(a => a.activity_type === 'guest_card_sent');
+				const metadata = smartMatchActivity.metadata || {};
+				const propertyCount = metadata.property_count || 0;
+				const avgScore = metadata.average_match_score || 0;
+				const matches = metadata.matches || [];
+				const emailLogId = metadata.email_log_id;
+				const propertyMatcherUrl = metadata.property_matcher_url;
 
-			if (guestCardSent) {
-				// Step is completed - show sent details
+				// Fetch email tracking data if available
+				let emailTrackingHTML = '';
+				if (emailLogId) {
+					try {
+						const emailLog = await SupabaseAPI.getEmailLog(emailLogId);
+						if (emailLog) {
+							const opens = emailLog.open_count || 0;
+							const clicks = emailLog.click_count || 0;
+							const status = emailLog.status || 'unknown';
+							const statusIcon = status === 'delivered' ? '✓' : status === 'sent' ? '📤' : '⚠️';
+
+							emailTrackingHTML = `
+								<div class="modal-section">
+									<strong>Email Status:</strong> ${statusIcon} ${status.charAt(0).toUpperCase() + status.slice(1)}
+									<div class="email-tracking">
+										<span>Opens: ${opens}</span> | <span>Clicks: ${clicks}</span>
+									</div>
+								</div>
+							`;
+						}
+					} catch (emailError) {
+						console.warn('Could not fetch email tracking:', emailError);
+					}
+				}
+
+				// Build properties list
+				let propertiesHTML = '';
+				if (matches.length > 0) {
+					propertiesHTML = '<div class="modal-section"><strong>Properties Included:</strong><ul class="properties-list">';
+					matches.forEach((match, index) => {
+						const score = match.match_score || match.matchScore || 0;
+						propertiesHTML += `<li>${index + 1}. ${match.property_name || match.name} (${score}% match)</li>`;
+					});
+					propertiesHTML += '</ul></div>';
+				}
+
+				// Check for lead response
+				const responseActivity = activities.find(a => a.activity_type === 'property_matcher_submitted');
+				let responseHTML = '';
+				if (responseActivity) {
+					const responseMetadata = responseActivity.metadata || {};
+					const selectedCount = responseMetadata.properties_selected || 0;
+					const tourRequests = responseMetadata.tour_requests || 0;
+
+					responseHTML = `
+						<div class="modal-section response-section">
+							<strong>✅ Lead Responded</strong>
+							<div class="response-details">
+								<div>Date: ${formatDate(responseActivity.created_at)}</div>
+								<div>Selected: ${selectedCount} properties</div>
+								<div>Tours Requested: ${tourRequests}</div>
+							</div>
+						</div>
+					`;
+				}
+
+				// Check for "wants more options"
+				const wantsMoreActivity = activities.find(a => a.activity_type === 'wants_more_options');
+				let wantsMoreHTML = '';
+				if (wantsMoreActivity) {
+					wantsMoreHTML = `
+						<div class="modal-section wants-more-section">
+							<strong>🔄 Requested More Options</strong>
+							<div>Date: ${formatDate(wantsMoreActivity.created_at)}</div>
+						</div>
+					`;
+				}
+
+				return `
+					<div class="modal-details"><strong>Sent to:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><strong>Agent:</strong> ${smartMatchActivity.performed_by_name || 'Unknown'}</div>
+					<div class="modal-details"><strong>Date:</strong> ${formatDate(smartMatchActivity.created_at)}</div>
+					<div class="modal-details"><strong>Properties Sent:</strong> ${propertyCount}</div>
+					<div class="modal-details"><strong>Avg Match Score:</strong> ${avgScore}%</div>
+					${emailTrackingHTML}
+					${propertiesHTML}
+					${responseHTML}
+					${wantsMoreHTML}
+					${propertyMatcherUrl ? `<a href="/matches${propertyMatcherUrl}" target="_blank" class="modal-link">View Property Matcher →</a>` : ''}
+				`;
+			} catch (error) {
+				console.error('Error fetching Smart Match details:', error);
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><em>Error loading Smart Match details. Please try again.</em></div>
+				`;
+			}
+
+		case 3: // Guest Card Sent
+			try {
+				const activities = await SupabaseAPI.getLeadActivities(lead.id);
+				const guestCardSent = activities.find(a => a.activity_type === 'guest_card_sent');
+
+				if (!guestCardSent) {
+					return `
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-warning">⚠️ Guest cards not sent yet</div>
+						<div class="modal-details"><em>Guest cards will be sent after lead selects properties</em></div>
+					`;
+				}
+
+				// Step is completed - show sent details with email tracking
 				const metadata = guestCardSent.metadata || {};
 				const properties = metadata.properties || [];
-				const guestCardUrl = `https://tre-crm.vercel.app/guest-card.html?lead=${encodeURIComponent(lead.leadName || lead.name)}`;
+				const emailLogIds = metadata.email_log_ids || [];
+
+				// Build detailed properties list with email tracking
+				let propertiesHTML = '';
+				if (properties.length > 0) {
+					propertiesHTML = '<div class="modal-section"><strong>Guest Cards Sent:</strong><ul class="guest-cards-list">';
+
+					for (let i = 0; i < properties.length; i++) {
+						const property = properties[i];
+						const emailLogId = emailLogIds[i];
+
+						let trackingHTML = '';
+						if (emailLogId) {
+							try {
+								const emailLog = await SupabaseAPI.getEmailLog(emailLogId);
+								if (emailLog) {
+									const opens = emailLog.open_count || 0;
+									const clicks = emailLog.click_count || 0;
+									const status = emailLog.status || 'unknown';
+									const statusIcon = status === 'delivered' ? '✅' : status === 'sent' ? '📤' : '⚠️';
+
+									trackingHTML = `
+										<div class="email-tracking-inline">
+											${statusIcon} ${status} | Opens: ${opens} | Clicks: ${clicks}
+										</div>
+									`;
+								}
+							} catch (emailError) {
+								console.warn('Could not fetch email tracking for property:', property.name, emailError);
+							}
+						}
+
+						propertiesHTML += `
+							<li>
+								<strong>${property.name || property.community_name}</strong>
+								<div>Sent to: ${property.contact_email || property.contact_phone || 'Unknown'}</div>
+								${property.tour_date ? `<div>Tour Date: ${property.tour_date}</div>` : ''}
+								${trackingHTML}
+							</li>
+						`;
+					}
+
+					propertiesHTML += '</ul></div>';
+				}
 
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
 					<div class="modal-details"><strong>Agent:</strong> ${guestCardSent.performed_by_name || 'Unknown'}</div>
-					<div class="modal-details"><strong>Properties:</strong> ${properties.map(p => p.name).join(', ')}</div>
 					<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(guestCardSent.created_at)}</div>
-					<div class="modal-details"><strong>Status:</strong> ✅ Guest cards sent to all properties</div>
-					<a href="${guestCardUrl}" target="_blank" class="modal-link">View Guest Card →</a>
+					<div class="modal-details"><strong>Guest Cards Sent:</strong> ${properties.length}</div>
+					${propertiesHTML}
 				`;
-			} else {
-				// Step needs action - show preview/send interface
-				// Get showcase response to know which properties were selected
-				const showcaseResponse = guestCardActivities.find(a => a.activity_type === 'showcase_response');
+			} catch (error) {
+				console.error('Error fetching Guest Card details:', error);
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><em>Error loading guest card details. Please try again.</em></div>
+				`;
+			}
 
-				if (!showcaseResponse) {
+		case 4: { // Property Selected
+			try {
+				const activities = await SupabaseAPI.getLeadActivities(lead.id);
+				const propertySelectedActivity = activities.find(a => a.activity_type === 'property_selected');
+
+				if (!propertySelectedActivity) {
 					return `
-						<div class="modal-warning">⚠️ No showcase response found. Lead must respond to showcase first.</div>
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-warning">⚠️ Property not selected yet</div>
+						<div class="modal-details"><em>This step will be completed when lead selects a property to pursue</em></div>
 					`;
 				}
 
-				const responseMetadata = showcaseResponse.metadata || {};
-				const selectedProperties = responseMetadata.selected_properties || [];
+				const metadata = propertySelectedActivity.metadata || {};
+				const propertyName = metadata.property_name || 'Unknown Property';
+				const unitNumber = metadata.unit_number || 'N/A';
+				const moveInDate = metadata.move_in_date || 'Not specified';
 
-				if (selectedProperties.length === 0) {
-					return `
-						<div class="modal-warning">⚠️ No properties selected by lead.</div>
+				// Check for tour scheduled activity
+				const tourActivity = activities.find(a => a.activity_type === 'tour_scheduled');
+				let tourHTML = '';
+				if (tourActivity) {
+					const tourMetadata = tourActivity.metadata || {};
+					tourHTML = `
+						<div class="modal-section tour-section">
+							<strong>📅 Tour Scheduled</strong>
+							<div>Date: ${formatDate(tourMetadata.tour_date || tourActivity.created_at)}</div>
+							${tourMetadata.tour_time ? `<div>Time: ${tourMetadata.tour_time}</div>` : ''}
+						</div>
 					`;
 				}
 
-				// Fetch property details and check for contact info
-				let propertiesHTML = '';
-				for (const propSelection of selectedProperties) {
-					try {
-						// Get property details
-						const property = await SupabaseAPI.getProperty(propSelection.property_id);
-						const hasContactInfo = property.contact_email || property.contact_phone;
-						const tourDate = propSelection.tour_date || 'Not specified';
-
-						const statusIcon = hasContactInfo ? '✅' : '⚠️';
-						const statusText = hasContactInfo ? 'Ready to send' : 'Missing contact info';
-
-						propertiesHTML += `
-							<div class="guest-card-property">
-								<div class="property-name">${statusIcon} ${property.community_name}</div>
-								<div class="property-details">
-									<div><strong>Tour Date:</strong> ${tourDate}</div>
-									${hasContactInfo ? `
-										<div><strong>Contact:</strong> ${property.contact_email || property.contact_phone}</div>
-									` : `
-										<div class="warning-text">⚠️ No contact information on file</div>
-										<button class="btn-secondary btn-sm" onclick="editPropertyContact('${property.id}', '${property.community_name}')">
-											Add Contact Info
-										</button>
-									`}
-								</div>
-							</div>
-						`;
-					} catch (error) {
-						console.error('Error fetching property:', error);
-						propertiesHTML += `
-							<div class="guest-card-property error">
-								<div class="property-name">⚠️ Property ${propSelection.property_id}</div>
-								<div class="error-text">Error loading property details</div>
-							</div>
-						`;
-					}
+				// Check for application submitted activity
+				const applicationActivity = activities.find(a => a.activity_type === 'application_submitted');
+				let applicationHTML = '';
+				if (applicationActivity) {
+					const appMetadata = applicationActivity.metadata || {};
+					applicationHTML = `
+						<div class="modal-section application-section">
+							<strong>📝 Application Submitted</strong>
+							<div>Date: ${formatDate(applicationActivity.created_at)}</div>
+							${appMetadata.application_status ? `<div>Status: ${appMetadata.application_status}</div>` : ''}
+						</div>
+					`;
 				}
-
-				// Check if all properties have contact info
-				const allPropertiesReady = selectedProperties.every(async (propSelection) => {
-					try {
-						const property = await SupabaseAPI.getProperty(propSelection.property_id);
-						return property.contact_email || property.contact_phone;
-					} catch {
-						return false;
-					}
-				});
 
 				return `
 					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
-					<div class="modal-details"><strong>Selected Properties:</strong> ${selectedProperties.length}</div>
-					<div class="guest-card-preview">
-						<h4>Guest Cards to Send:</h4>
-						${propertiesHTML}
-					</div>
-					<div class="modal-actions">
-						<button class="btn-primary" onclick="sendGuestCards('${lead.id}')" ${!allPropertiesReady ? 'disabled' : ''}>
-							📧 Send Guest Cards
-						</button>
-						${!allPropertiesReady ? '<div class="warning-text">⚠️ Add missing contact info before sending</div>' : ''}
-					</div>
+					<div class="modal-details"><strong>Property:</strong> ${propertyName}</div>
+					<div class="modal-details"><strong>Unit:</strong> ${unitNumber}</div>
+					<div class="modal-details"><strong>Move-in Date:</strong> ${moveInDate}</div>
+					<div class="modal-details"><strong>Selected Date:</strong> ${formatDate(propertySelectedActivity.created_at)}</div>
+					${tourHTML}
+					${applicationHTML}
+				`;
+			} catch (error) {
+				console.error('Error fetching Property Selected details:', error);
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><em>Error loading property selection details. Please try again.</em></div>
 				`;
 			}
 		}
 
-		case 5: // Property Selected
-			return `
-				<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-				<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-				<div class="modal-details"><strong>Move-in Date:</strong> ${formatDate(lead.lease.moveInDate)}</div>
-			`;
+		case 5: // Lease Sent
+			try {
+				const activities = await SupabaseAPI.getLeadActivities(lead.id);
+				const leaseSentActivity = activities.find(a => a.activity_type === 'lease_sent');
 
-		case 6: // Lease Sent
-			return `
-				<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-				<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-				<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-			`;
+				if (!leaseSentActivity) {
+					return `
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-warning">⚠️ Lease not sent yet</div>
+						<div class="modal-details"><em>This step will be completed when lease documents are sent</em></div>
+					`;
+				}
 
-		case 7: // Lease Signed
-			return `
-				<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-				<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-				<div class="modal-details"><strong>Signed Date:</strong> ${formatDate(lead.lastUpdated)}</div>
-			`;
+				const metadata = leaseSentActivity.metadata || {};
+				const propertyName = metadata.property_name || 'Unknown Property';
+				const unitNumber = metadata.unit_number || 'N/A';
+				const moveInDate = metadata.move_in_date || 'Not specified';
 
-		case 8: // Lease Finalized
-			return `
-				<div class="modal-details"><strong>Status:</strong> Complete</div>
-				<div class="modal-details"><strong>Property:</strong> ${lead.lease.property}</div>
-				<div class="modal-details"><strong>Unit:</strong> ${lead.lease.apartment}</div>
-				<div class="modal-details"><strong>Commission:</strong> Ready for processing</div>
-			`;
+				// Check for lease signed activity
+				const leaseSignedActivity = activities.find(a => a.activity_type === 'lease_signed');
+				let leaseSignedHTML = '';
+				if (leaseSignedActivity) {
+					const signedMetadata = leaseSignedActivity.metadata || {};
+					leaseSignedHTML = `
+						<div class="modal-section signed-section">
+							<strong>✅ Lease Signed!</strong>
+							<div>Signed Date: ${formatDate(leaseSignedActivity.created_at)}</div>
+							${signedMetadata.signed_by ? `<div>Signed By: ${signedMetadata.signed_by}</div>` : ''}
+						</div>
+					`;
+				}
+
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><strong>Property:</strong> ${propertyName}</div>
+					<div class="modal-details"><strong>Unit:</strong> ${unitNumber}</div>
+					<div class="modal-details"><strong>Move-in Date:</strong> ${moveInDate}</div>
+					<div class="modal-details"><strong>Sent Date:</strong> ${formatDate(leaseSentActivity.created_at)}</div>
+					<div class="modal-details"><strong>Sent By:</strong> ${leaseSentActivity.performed_by_name || 'Unknown'}</div>
+					${leaseSignedHTML}
+				`;
+			} catch (error) {
+				console.error('Error fetching Lease Sent details:', error);
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><em>Error loading lease details. Please try again.</em></div>
+				`;
+			}
+
+		case 6: // Lease Finalized
+			try {
+				const activities = await SupabaseAPI.getLeadActivities(lead.id);
+				const leaseFinalizedActivity = activities.find(a => a.activity_type === 'lease_finalized');
+
+				if (!leaseFinalizedActivity) {
+					return `
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-warning">⚠️ Lease not finalized yet</div>
+						<div class="modal-details"><em>This step will be completed when lease is fully executed</em></div>
+					`;
+				}
+
+				const metadata = leaseFinalizedActivity.metadata || {};
+				const propertyName = metadata.property_name || 'Unknown Property';
+				const unitNumber = metadata.unit_number || 'N/A';
+				const commissionAmount = metadata.commission_amount || 'TBD';
+				const commissionStatus = metadata.commission_status || 'pending';
+
+				// Check for commission processed activity
+				const commissionActivity = activities.find(a => a.activity_type === 'commission_processed');
+				let commissionHTML = '';
+				if (commissionActivity) {
+					const commissionMetadata = commissionActivity.metadata || {};
+					commissionHTML = `
+						<div class="modal-section commission-section">
+							<strong>💰 Commission Processed</strong>
+							<div>Amount: $${commissionMetadata.amount || commissionAmount}</div>
+							<div>Processed Date: ${formatDate(commissionActivity.created_at)}</div>
+							${commissionMetadata.payment_method ? `<div>Method: ${commissionMetadata.payment_method}</div>` : ''}
+						</div>
+					`;
+				}
+
+				return `
+					<div class="modal-details"><strong>Status:</strong> ✅ Complete</div>
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><strong>Property:</strong> ${propertyName}</div>
+					<div class="modal-details"><strong>Unit:</strong> ${unitNumber}</div>
+					<div class="modal-details"><strong>Finalized Date:</strong> ${formatDate(leaseFinalizedActivity.created_at)}</div>
+					<div class="modal-details"><strong>Commission:</strong> $${commissionAmount} (${commissionStatus})</div>
+					${commissionHTML}
+				`;
+			} catch (error) {
+				console.error('Error fetching Lease Finalized details:', error);
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><em>Error loading finalization details. Please try again.</em></div>
+				`;
+			}
 
 		default:
 			return `<div class="modal-details">No details available</div>`;

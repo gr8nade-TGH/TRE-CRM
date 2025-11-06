@@ -18,11 +18,10 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 
-	// Check if lead has responded to showcase (optional indicator)
-	const hasLeadResponded = lead.leadResponded || false;
-
-	// Check if lease has been signed (optional indicator)
-	const hasLeaseSigned = lead.leaseSigned || false;
+	// Optional indicators (non-blocking achievements)
+	const hasWelcomeEmailSent = lead.welcomeEmailSent || false;  // Step 1 indicator
+	const hasLeadResponded = lead.leadResponded || false;        // Step 2 indicator
+	const hasLeaseSigned = lead.leaseSigned || false;            // Step 5 indicator
 
 	const table = document.createElement('div');
 	table.className = 'lead-table-container';
@@ -63,17 +62,27 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 		const stepClass = step.id < lead.currentStep ? 'completed' :
 			step.id === lead.currentStep ? 'current' : 'pending';
 
-		// For step 2 (Showcase Sent), add optional "Lead Responded" indicator above
+		// Optional indicators (appear above their parent step when achieved)
+
+		// Step 1: Welcome Email Sent indicator
+		const welcomeEmailIndicator = (step.id === 1 && hasWelcomeEmailSent) ? `
+									<div class="optional-indicator welcome-email-indicator" title="Welcome Email Sent">
+										<span class="checkmark">✓</span>
+										<span class="label">Welcome Email Sent</span>
+									</div>
+								` : '';
+
+		// Step 2: Lead Responded indicator (when lead submits Property Matcher)
 		const leadRespondedIndicator = (step.id === 2 && hasLeadResponded) ? `
-									<div class="lead-responded-indicator" title="Lead Responded">
+									<div class="optional-indicator lead-responded-indicator" title="Lead Responded">
 										<span class="checkmark">✓</span>
 										<span class="label">Lead Responded</span>
 									</div>
 								` : '';
 
-		// For step 5 (Lease Sent), add optional "Lease Signed!" indicator above
+		// Step 5: Lease Signed indicator
 		const leaseSignedIndicator = (step.id === 5 && hasLeaseSigned) ? `
-									<div class="lead-responded-indicator" title="Lease Signed!">
+									<div class="optional-indicator lease-signed-indicator" title="Lease Signed!">
 										<span class="checkmark">✓</span>
 										<span class="label">Lease Signed!</span>
 									</div>
@@ -83,6 +92,7 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 									<div class="progress-step ${stepClass}"
 										 data-lead-id="${lead.id}"
 										 data-step="${step.id}">
+										${welcomeEmailIndicator}
 										${leadRespondedIndicator}
 										${leaseSignedIndicator}
 										<div class="progress-step-dot ${stepClass}">${step.id}</div>

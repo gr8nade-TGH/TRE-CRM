@@ -9,19 +9,69 @@
  * Progress steps configuration
  * Defines the 6-step workflow for lead document processing
  *
- * Note: "Lead Responded" is an optional indicator that appears above "Showcase Sent"
- * when a lead responds. It doesn't block progress to the next step.
+ * Each step has:
+ * - id: Step number (1-6)
+ * - label: Display label for the step
+ * - key: Unique key for the step
+ * - requiredActivity: Activity type that marks this step as complete
+ * - optionalActivities: Activities that provide additional context for this step
+ * - description: Human-readable description of what this step represents
+ *
+ * Note: "Lead Responded" is an optional indicator that appears above "Smart Match Sent"
+ * when a lead responds via Property Matcher. It doesn't block progress to the next step.
  *
  * Note: "Lease Signed!" is an optional indicator that appears above "Lease Sent"
  * when a lease is signed. It doesn't block progress to the next step.
  */
 export const progressSteps = [
-	{ id: 1, label: 'Lead Joined', key: 'leadJoined' },
-	{ id: 2, label: 'Showcase Sent', key: 'showcaseSent' },
-	{ id: 3, label: 'Guest Card Sent', key: 'guestCardSent' },
-	{ id: 4, label: 'Property Selected', key: 'propertySelected' },
-	{ id: 5, label: 'Lease Sent', key: 'leaseSent' },
-	{ id: 6, label: 'Lease Finalized', key: 'leaseFinalized' }
+	{
+		id: 1,
+		label: 'Lead Joined',
+		key: 'leadJoined',
+		requiredActivity: 'lead_created',
+		optionalActivities: ['welcome_email_sent'],
+		description: 'Lead submitted form or was manually added to CRM'
+	},
+	{
+		id: 2,
+		label: 'Smart Match Sent',
+		key: 'smartMatchSent',
+		requiredActivity: 'smart_match_sent',
+		optionalActivities: ['property_matcher_viewed', 'property_matcher_submitted', 'wants_more_options'],
+		description: 'Smart Match email sent with curated property recommendations'
+	},
+	{
+		id: 3,
+		label: 'Guest Card Sent',
+		key: 'guestCardSent',
+		requiredActivity: 'guest_card_sent',
+		optionalActivities: [],
+		description: 'Guest cards sent to property owners for selected properties'
+	},
+	{
+		id: 4,
+		label: 'Property Selected',
+		key: 'propertySelected',
+		requiredActivity: 'property_selected',
+		optionalActivities: ['tour_scheduled', 'application_submitted'],
+		description: 'Lead selected a specific property to pursue'
+	},
+	{
+		id: 5,
+		label: 'Lease Sent',
+		key: 'leaseSent',
+		requiredActivity: 'lease_sent',
+		optionalActivities: ['lease_signed'],
+		description: 'Lease documents sent to lead for signature'
+	},
+	{
+		id: 6,
+		label: 'Lease Finalized',
+		key: 'leaseFinalized',
+		requiredActivity: 'lease_finalized',
+		optionalActivities: ['commission_processed'],
+		description: 'Lease fully executed and finalized - commission ready'
+	}
 ];
 
 /**

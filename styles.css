@@ -4301,8 +4301,8 @@ body {
 	font-weight: 600;
 }
 
-/* Lead Responded Indicator */
-.lead-responded-indicator {
+/* Optional Indicators (Welcome Email, Lead Responded, Lease Signed) */
+.optional-indicator {
 	position: absolute;
 	bottom: 100%;
 	left: 50%;
@@ -4315,7 +4315,7 @@ body {
 	z-index: 10;
 }
 
-.lead-responded-indicator .checkmark {
+.optional-indicator .checkmark {
 	width: 20px;
 	height: 20px;
 	border-radius: 50%;
@@ -4330,12 +4330,45 @@ body {
 	animation: fadeInScale 0.3s ease;
 }
 
-.lead-responded-indicator .label {
+.optional-indicator .label {
 	font-size: 9px;
 	font-weight: 600;
 	color: var(--success);
 	white-space: nowrap;
 	text-align: center;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Specific indicator colors */
+.welcome-email-indicator .checkmark {
+	background: #3b82f6;
+	/* Blue */
+	box-shadow: 0 2px 6px rgba(59, 130, 246, 0.4);
+}
+
+.welcome-email-indicator .label {
+	color: #3b82f6;
+}
+
+.lead-responded-indicator .checkmark {
+	background: var(--success);
+	/* Green */
+	box-shadow: 0 2px 6px rgba(34, 197, 94, 0.4);
+}
+
+.lead-responded-indicator .label {
+	color: var(--success);
+}
+
+.lease-signed-indicator .checkmark {
+	background: #8b5cf6;
+	/* Purple */
+	box-shadow: 0 2px 6px rgba(139, 92, 246, 0.4);
+}
+
+.lease-signed-indicator .label {
+	color: #8b5cf6;
 }
 
 @keyframes fadeInScale {

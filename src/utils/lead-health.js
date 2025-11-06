@@ -7,7 +7,7 @@ import { getLeadActivities } from '../api/supabase-api.js';
  * Get current step from lead activities
  * @param {string} leadId - Lead ID
  * @param {Array} activities - Optional pre-fetched activities array (for batch optimization)
- * @returns {Promise<number>} Current step number (1-8)
+ * @returns {Promise<number>} Current step number (1-6)
  */
 export async function getCurrentStepFromActivities(leadId, activities = null) {
 	try {
@@ -17,11 +17,12 @@ export async function getCurrentStepFromActivities(leadId, activities = null) {
 		}
 
 		// Map activity types to step numbers
-		// Note: 'showcase_response' is optional and doesn't advance the step counter
+		// UPDATED: Changed 'showcase_sent' to 'smart_match_sent' to match actual activity logging
+		// Note: 'property_matcher_submitted' is optional and doesn't advance the step counter
 		// Note: 'lease_signed' is optional and doesn't advance the step counter
 		const stepMapping = {
 			'lead_created': 1,
-			'showcase_sent': 2,
+			'smart_match_sent': 2,  // ← CHANGED from 'showcase_sent'
 			'guest_card_sent': 3,
 			'property_selected': 4,
 			'lease_sent': 5,
@@ -52,7 +53,7 @@ export async function getCurrentStepFromActivities(leadId, activities = null) {
 export function getStepLabel(stepNumber) {
 	const stepLabels = {
 		1: 'Lead Joined',
-		2: 'Showcase Sent',
+		2: 'Smart Match Sent',  // ← CHANGED from 'Showcase Sent'
 		3: 'Guest Card Sent',
 		4: 'Property Selected',
 		5: 'Lease Sent',
