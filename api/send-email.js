@@ -146,6 +146,12 @@ export default async function handler(req, res) {
 		if (variables?.propertyMatcherUrl) {
 			allVariables.trackingUrl_property_matcher = createTrackingUrl('property_matcher', variables.propertyMatcherUrl);
 		}
+		if (variables?.leadDetailUrl) {
+			allVariables.trackingUrl_view_lead = createTrackingUrl('view_lead', variables.leadDetailUrl);
+		}
+		if (variables?.sendSmartMatchUrl) {
+			allVariables.trackingUrl_send_smart_match = createTrackingUrl('send_smart_match', variables.sendSmartMatchUrl);
+		}
 		// Default CTA button tracking (mailto to agent)
 		if (variables?.agentEmail) {
 			allVariables.trackingUrl_cta_button = createTrackingUrl('cta_button', `mailto:${variables.agentEmail}`);

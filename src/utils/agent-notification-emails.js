@@ -163,6 +163,14 @@ export async function sendAgentAssignmentEmail({ leadId, agentId, assignedBy = n
         const baseUrl = window.location.origin;
         const leadDetailUrl = `${baseUrl}/?view=leads&leadId=${leadId}`;
 
+        // Generate comments section HTML if comments exist
+        const leadCommentsSection = lead.notes ? `
+            <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
+                <p style="margin: 0 0 8px 0; font-size: 14px; color: #666666; font-weight: 600;">💬 Comments:</p>
+                <p style="margin: 0; font-size: 14px; color: #333333; line-height: 1.6;">${lead.notes}</p>
+            </div>
+        ` : '';
+
         const variables = {
             agentName: agent.name || 'Agent',
             leadName: lead.name || 'New Lead',
@@ -174,7 +182,7 @@ export async function sendAgentAssignmentEmail({ leadId, agentId, assignedBy = n
             leadAreaOfTown: prefs.areaOfTown,
             leadMoveInDate: prefs.moveInDate,
             leadSource: source === 'landing_page' ? 'Landing Page' : source === 'crm' ? 'Manual Entry' : 'Manual Assignment',
-            leadComments: lead.notes || '',
+            leadCommentsSection: leadCommentsSection,
             leadDetailUrl: leadDetailUrl
         };
 

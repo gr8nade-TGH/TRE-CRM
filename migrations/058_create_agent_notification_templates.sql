@@ -81,14 +81,9 @@ VALUES (
                                                 <td style="padding: 8px 0; font-size: 14px; color: #333333;">{{leadSource}}</td>
                                             </tr>
                                         </table>
-                                        
-                                        <!-- Comments if available -->
-                                        {{#if leadComments}}
-                                        <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #e0e0e0;">
-                                            <p style="margin: 0 0 8px 0; font-size: 14px; color: #666666; font-weight: 600;">💬 Comments:</p>
-                                            <p style="margin: 0; font-size: 14px; color: #333333; line-height: 1.6;">{{leadComments}}</p>
-                                        </div>
-                                        {{/if}}
+
+                                        <!-- Comments section (will be empty if no comments) -->
+                                        {{leadCommentsSection}}
                                     </td>
                                 </tr>
                             </table>
@@ -223,13 +218,13 @@ VALUES (
 
                             <!-- Selected Properties -->
                             <h3 style="margin: 0 0 20px 0; font-size: 18px; color: #333333; font-weight: 600;">Selected Properties:</h3>
-                            {{{selectedPropertiesList}}}
+                            {{selectedPropertiesList}}
 
                             <!-- CTA Button -->
                             <table width="100%" cellpadding="0" cellspacing="0" style="margin: 30px 0;">
                                 <tr>
                                     <td align="center">
-                                        <a href="{{trackingUrl_view_response}}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
+                                        <a href="{{trackingUrl_view_lead}}" style="display: inline-block; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);">
                                             View Full Response in CRM →
                                         </a>
                                     </td>
@@ -271,7 +266,7 @@ VALUES (
     <img src="{{trackingPixelUrl}}" width="1" height="1" style="display:none;" />
 </body>
 </html>',
-    ARRAY['agentName', 'leadName', 'leadEmail', 'leadPhone', 'propertiesSelected', 'tourRequestsCount', 'selectedPropertiesList', 'responseDate', 'leadDetailUrl', 'trackingPixelUrl', 'trackingUrl_view_response', 'trackingUrl_lead_email', 'trackingUrl_lead_phone'],
+    ARRAY['agentName', 'leadName', 'leadEmail', 'leadPhone', 'propertiesSelected', 'tourRequestsCount', 'selectedPropertiesList', 'responseDate', 'leadDetailUrl', 'trackingPixelUrl', 'trackingUrl_view_lead', 'trackingUrl_lead_email', 'trackingUrl_lead_phone'],
     NOW(),
     NOW()
 )
@@ -358,7 +353,7 @@ VALUES (
                             <table width="100%" cellpadding="0" cellspacing="0" style="margin-bottom: 30px;">
                                 <tr>
                                     <td align="center">
-                                        <a href="{{trackingUrl_send_match}}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
+                                        <a href="{{trackingUrl_send_smart_match}}" style="display: inline-block; background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); color: #ffffff; text-decoration: none; padding: 16px 40px; border-radius: 8px; font-size: 16px; font-weight: 600; box-shadow: 0 4px 6px rgba(245, 158, 11, 0.3);">
                                             Send New Smart Match →
                                         </a>
                                     </td>
@@ -400,7 +395,7 @@ VALUES (
     <img src="{{trackingPixelUrl}}" width="1" height="1" style="display:none;" />
 </body>
 </html>',
-    ARRAY['agentName', 'leadName', 'leadEmail', 'leadPhone', 'propertiesViewed', 'requestedAt', 'leadDetailUrl', 'sendSmartMatchUrl', 'trackingPixelUrl', 'trackingUrl_send_match', 'trackingUrl_lead_email', 'trackingUrl_lead_phone'],
+    ARRAY['agentName', 'leadName', 'leadEmail', 'leadPhone', 'propertiesViewed', 'requestedAt', 'leadDetailUrl', 'sendSmartMatchUrl', 'trackingPixelUrl', 'trackingUrl_send_smart_match', 'trackingUrl_lead_email', 'trackingUrl_lead_phone'],
     NOW(),
     NOW()
 )
