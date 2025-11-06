@@ -3,9 +3,16 @@
 -- ============================================================================
 -- Purpose: Automatically update lead.current_step when activities are logged
 -- This ensures progress tracking is always accurate and based on real activities
--- 
+--
 -- Created: 2025-11-06
 -- Author: TRE CRM Development Team
+--
+-- EXECUTION STATUS: ✅ EXECUTED ON 2025-01-06
+-- - Added current_step column to leads table
+-- - Created trigger function update_lead_current_step_from_activity()
+-- - Created trigger trigger_update_lead_current_step
+-- - Backfilled 8 existing leads with correct current_step values
+-- - Verified: 5 leads at step 1, 3 leads at step 2
 -- ============================================================================
 
 -- ============================================================================
