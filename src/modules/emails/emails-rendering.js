@@ -5,7 +5,7 @@
  * @module emails/rendering
  */
 
-import { formatDate } from '../../utils/helpers.js';
+import { formatDate, showModal } from '../../utils/helpers.js';
 import { initializeEmailTabs } from './emails-tabs.js';
 
 // Pagination state
@@ -34,6 +34,7 @@ export async function renderEmails(options) {
     // Render all sections
     await Promise.all([
         renderEmailStatistics({ api, state }),
+        renderEmailAlerts({ api, state }),
         renderEmailLogs({ api, state, showEmailPreview }),
         renderEmailTemplates({ api, state, showEmailPreview })
     ]);
@@ -598,5 +599,256 @@ export function nextEmailsPage() {
  */
 export function resetEmailsPagination() {
     currentEmailsPage = 1;
+}
+
+/**
+ * Render email alerts section
+ * @param {Object} options - Rendering options
+ * @returns {Promise<void>}
+ */
+export async function renderEmailAlerts(options) {
+    const { api } = options;
+
+    console.log('🚨 Rendering email alerts');
+
+    const container = document.getElementById('emailAlertsContainer');
+    if (!container) return;
+
+    try {
+        // Get filter values
+        const alertTypeFilter = document.getElementById('alertTypeFilter');
+        const alertSeverityFilter = document.getElementById('alertSeverityFilter');
+
+        const alertType = alertTypeFilter?.value || '';
+        const severity = alertSeverityFilter?.value || '';
+
+        // Fetch unresolved alerts
+        const { data: alerts, error } = await api.supabase
+            .from('email_alerts')
+            .select('*')
+            .eq('resolved', false)
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            throw error;
+        }
+
+        // Apply filters
+        let filteredAlerts = alerts || [];
+        if (alertType) {
+            filteredAlerts = filteredAlerts.filter(a => a.alert_type === alertType);
+        }
+        if (severity) {
+            filteredAlerts = filteredAlerts.filter(a => a.severity === severity);
+        }
+
+        container.innerHTML = '';
+
+        if (filteredAlerts.length === 0) {
+            container.innerHTML = `
+                <div style="text-align: center; padding: 60px 20px; color: #10b981;">
+                    <div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+                    <h3 style="margin: 0 0 8px 0; font-size: 20px; font-weight: 600;">All Clear!</h3>
+                    <p style="margin: 0; font-size: 14px; color: #6b7280;">No unresolved email alerts at this time.</p>
+                </div>
+            `;
+            return;
+        }
+
+        // Render alerts
+        filteredAlerts.forEach(alert => {
+            const alertCard = document.createElement('div');
+            alertCard.className = 'email-alert-card';
+            alertCard.dataset.alertId = alert.id;
+
+            // Severity badge
+            const severityBadge = alert.severity === 'error'
+                ? '<span class="alert-severity-badge alert-severity-error">🚨 ERROR</span>'
+                : '<span class="alert-severity-badge alert-severity-warning">⚠️ WARNING</span>';
+
+            // Alert type label
+            const alertTypeLabels = {
+                'missing_agent_email': '📧 Missing Agent Email',
+                'email_send_failed': '❌ Email Send Failed',
+                'no_assigned_agent': '👤 No Assigned Agent',
+                'api_error': '⚙️ API Error'
+            };
+            const alertTypeLabel = alertTypeLabels[alert.alert_type] || alert.alert_type;
+
+            // Email type label
+            const emailTypeLabels = {
+                'agent_lead_assignment': 'Lead Assignment',
+                'agent_lead_response': 'Lead Response',
+                'agent_more_options_request': 'More Options Request',
+                'agent_health_status_changed': 'Health Status Change',
+                'agent_inactivity_alert': 'Inactivity Alert'
+            };
+            const emailTypeLabel = emailTypeLabels[alert.email_type] || alert.email_type;
+
+            // Format metadata
+            let metadataHTML = '';
+            if (alert.metadata) {
+                const metadata = alert.metadata;
+                metadataHTML = '<div class="alert-metadata">';
+                if (metadata.lead_name) metadataHTML += `<div><strong>Lead:</strong> ${metadata.lead_name}</div>`;
+                if (metadata.agent_name) metadataHTML += `<div><strong>Agent:</strong> ${metadata.agent_name}</div>`;
+                if (metadata.error) metadataHTML += `<div><strong>Error:</strong> ${metadata.error}</div>`;
+                metadataHTML += '</div>';
+            }
+
+            alertCard.innerHTML = `
+                <div class="alert-card-header">
+                    <div class="alert-card-title">
+                        <div class="alert-type-label">${alertTypeLabel}</div>
+                        <div class="alert-email-type">${emailTypeLabel}</div>
+                    </div>
+                    ${severityBadge}
+                </div>
+                <div class="alert-card-body">
+                    <p class="alert-message">${alert.message}</p>
+                    ${metadataHTML}
+                    <div class="alert-timestamp">
+                        <span class="mono">${formatDate(alert.created_at)}</span>
+                    </div>
+                </div>
+                <div class="alert-card-actions">
+                    <button class="btn-secondary view-alert-details" data-alert-id="${alert.id}">
+                        👁️ View Details
+                    </button>
+                    <button class="btn-primary resolve-alert" data-alert-id="${alert.id}">
+                        ✅ Mark Resolved
+                    </button>
+                </div>
+            `;
+
+            container.appendChild(alertCard);
+        });
+
+        // Add event listeners for alert actions
+        container.querySelectorAll('.resolve-alert').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const alertId = e.target.dataset.alertId;
+                await resolveAlert(alertId, { api });
+            });
+        });
+
+        container.querySelectorAll('.view-alert-details').forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                const alertId = e.target.dataset.alertId;
+                await showAlertDetails(alertId, { api });
+            });
+        });
+
+    } catch (error) {
+        console.error('❌ Error rendering email alerts:', error);
+        container.innerHTML = '<div style="text-align: center; padding: 40px; color: #dc2626;">Error loading alerts</div>';
+    }
+}
+
+/**
+ * Resolve an email alert
+ * @param {string} alertId - Alert ID
+ * @param {Object} options - Options
+ * @returns {Promise<void>}
+ */
+async function resolveAlert(alertId, options) {
+    const { api } = options;
+
+    try {
+        const currentUser = api.state?.currentUser;
+        const resolvedBy = currentUser?.id || null;
+
+        const { error } = await api.supabase
+            .from('email_alerts')
+            .update({
+                resolved: true,
+                resolved_at: new Date().toISOString(),
+                resolved_by: resolvedBy
+            })
+            .eq('id', alertId);
+
+        if (error) throw error;
+
+        console.log('✅ Alert resolved:', alertId);
+
+        // Re-render alerts
+        await renderEmailAlerts(options);
+
+    } catch (error) {
+        console.error('❌ Error resolving alert:', error);
+        alert('Failed to resolve alert. Please try again.');
+    }
+}
+
+/**
+ * Show alert details modal
+ * @param {string} alertId - Alert ID
+ * @param {Object} options - Options
+ * @returns {Promise<void>}
+ */
+async function showAlertDetails(alertId, options) {
+    const { api } = options;
+
+    try {
+        const { data: alert, error } = await api.supabase
+            .from('email_alerts')
+            .select('*')
+            .eq('id', alertId)
+            .single();
+
+        if (error) throw error;
+
+        // Format metadata as JSON
+        const metadataJSON = alert.metadata ? JSON.stringify(alert.metadata, null, 2) : 'None';
+
+        const modalHTML = `
+            <div class="modal-header">
+                <h2>🚨 Alert Details</h2>
+                <button class="modal-close" onclick="hideModal()">×</button>
+            </div>
+            <div class="modal-body">
+                <div class="alert-details-grid">
+                    <div class="alert-detail-row">
+                        <strong>Alert Type:</strong>
+                        <span>${alert.alert_type}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Severity:</strong>
+                        <span>${alert.severity}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Email Type:</strong>
+                        <span>${alert.email_type}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Message:</strong>
+                        <span>${alert.message}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Lead ID:</strong>
+                        <span>${alert.lead_id || 'N/A'}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Agent ID:</strong>
+                        <span>${alert.agent_id || 'N/A'}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Created At:</strong>
+                        <span class="mono">${formatDate(alert.created_at)}</span>
+                    </div>
+                    <div class="alert-detail-row">
+                        <strong>Metadata:</strong>
+                        <pre style="margin: 8px 0 0 0; padding: 12px; background: #f3f4f6; border-radius: 4px; font-size: 12px; overflow-x: auto;">${metadataJSON}</pre>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        showModal(modalHTML);
+
+    } catch (error) {
+        console.error('❌ Error showing alert details:', error);
+        alert('Failed to load alert details. Please try again.');
+    }
 }
 

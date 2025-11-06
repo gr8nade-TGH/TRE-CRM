@@ -1236,6 +1236,35 @@
 						// Don't fail the lead creation if email fails
 					}
 
+					// Send agent assignment notification email
+					try {
+						console.log('📧 Attempting to send agent assignment email...');
+
+						// Import the agent notification utility
+						const { sendAgentAssignmentEmailSafe } = await import('/src/utils/agent-notification-emails.js');
+
+						// Send agent assignment email (safe - won't throw)
+						const agentEmailResult = await sendAgentAssignmentEmailSafe({
+							leadId: leadId,
+							agentId: currentAgent.id,
+							assignedBy: null,
+							assignedByName: null,
+							source: 'landing_page',
+							supabase: supabase
+						});
+
+						if (agentEmailResult.success) {
+							console.log('✅ Agent assignment email sent successfully!');
+						} else if (agentEmailResult.skipped) {
+							console.log('⏭️ Agent assignment email skipped:', agentEmailResult.reason);
+						} else {
+							console.warn('⚠️ Agent assignment email failed:', agentEmailResult.error);
+						}
+					} catch (agentEmailError) {
+						console.error('⚠️ Error sending agent assignment email:', agentEmailError);
+						// Don't fail the lead creation if email fails
+					}
+
 					// Success!
 					alert('🎉 Thank you! We\'ll be in touch with you TODAY!');
 					this.reset();

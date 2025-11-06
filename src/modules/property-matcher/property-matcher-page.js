@@ -583,6 +583,22 @@ async function handleSubmit() {
                     performed_by_name: sessionData.lead?.name || 'Lead'
                 });
 
+            // Send agent response notification email
+            try {
+                const { sendAgentResponseEmailSafe } = await import('/src/utils/agent-notification-emails.js');
+                await sendAgentResponseEmailSafe({
+                    leadId: sessionData.lead_id,
+                    sessionId: sessionData.id,
+                    propertiesSelected: selectedProperties.size,
+                    tourRequestsCount: tourRequestsCount,
+                    selectedProperties: selectedPropertiesData,
+                    supabase: window.supabase
+                });
+            } catch (emailError) {
+                console.error('⚠️ Error sending agent response email:', emailError);
+                // Don't fail the submission if email fails
+            }
+
             // Log for each property with tour request
             for (const [propertyId, data] of selectedProperties.entries()) {
                 if (data.tourDate) {
@@ -676,6 +692,19 @@ async function handleMoreOptions() {
             console.log('✅ Activity log created for "wants more options"');
         } catch (activityError) {
             console.warn('⚠️ Error creating activity log:', activityError);
+        }
+
+        // Send more options request notification email
+        try {
+            const { sendMoreOptionsRequestEmailSafe } = await import('/src/utils/agent-notification-emails-part2.js');
+            await sendMoreOptionsRequestEmailSafe({
+                leadId: sessionData.lead_id,
+                propertiesViewed: sessionData.properties?.length || 0,
+                supabase: window.supabase
+            });
+        } catch (emailError) {
+            console.error('⚠️ Error sending more options request email:', emailError);
+            // Don't fail the request if email fails
         }
 
         // Show success message in content area

@@ -402,6 +402,24 @@ export async function updateLead(id, leadData, performedBy = null, performedByNa
                 performed_by: performedBy,
                 performed_by_name: performedByName
             }));
+
+            // Send agent assignment email (only for assignments, not unassignments)
+            if (isAssignment && leadData.assigned_agent_id) {
+                try {
+                    const { sendAgentAssignmentEmailSafe } = await import('../utils/agent-notification-emails.js');
+                    await sendAgentAssignmentEmailSafe({
+                        leadId: id,
+                        agentId: leadData.assigned_agent_id,
+                        assignedBy: performedBy,
+                        assignedByName: performedByName,
+                        source: 'manual_assignment',
+                        supabase: supabase
+                    });
+                } catch (emailError) {
+                    console.error('⚠️ Error sending agent assignment email:', emailError);
+                    // Don't fail the update if email fails
+                }
+            }
         }
 
         // Check for health status change
@@ -422,6 +440,25 @@ export async function updateLead(id, leadData, performedBy = null, performedByNa
                 performed_by: performedBy || 'system',
                 performed_by_name: performedByName || 'Automated System'
             }));
+
+            // Send health status change email (only for yellow/red status)
+            if (leadData.health_status === 'yellow' || leadData.health_status === 'red') {
+                try {
+                    const { sendHealthStatusChangeEmailSafe } = await import('../utils/agent-notification-emails-part2.js');
+                    await sendHealthStatusChangeEmailSafe({
+                        leadId: id,
+                        previousStatus: currentLead.health_status,
+                        newStatus: leadData.health_status,
+                        previousScore: currentLead.health_score,
+                        newScore: leadData.health_score,
+                        reason: leadData.health_change_reason || null,
+                        supabase: supabase
+                    });
+                } catch (emailError) {
+                    console.error('⚠️ Error sending health status change email:', emailError);
+                    // Don't fail the update if email fails
+                }
+            }
         }
 
         // Check for preferences update
@@ -1305,9 +1342,26 @@ export async function detectInactiveLeads() {
                         health_status: 'red',
                         health_score: Math.max(0, (lead.health_score || 100) - 30),
                         health_updated_at: now.toISOString(),
-                        auto_calculated: true
+                        auto_calculated: true,
+                        health_change_reason: 'inactivity'
                     }, 'system', 'Automated System')
                 );
+
+                // Send inactivity alert email
+                try {
+                    const { sendInactivityAlertEmailSafe } = await import('../utils/agent-notification-emails-part2.js');
+                    await sendInactivityAlertEmailSafe({
+                        leadId: lead.id,
+                        hoursSinceActivity: hoursSinceRealActivity,
+                        lastActivityDate: lastRealActivity.toISOString(),
+                        lastActivityType: 'unknown',
+                        newHealthStatus: 'red',
+                        supabase: supabase
+                    });
+                } catch (emailError) {
+                    console.error('⚠️ Error sending inactivity alert email:', emailError);
+                    // Don't fail the detection if email fails
+                }
             }
             // Rule 2: 36+ hours → Yellow (only if currently green)
             else if (hoursSinceRealActivity >= 36 && lead.health_status === 'green') {
@@ -1334,9 +1388,26 @@ export async function detectInactiveLeads() {
                         health_status: 'yellow',
                         health_score: Math.max(0, (lead.health_score || 100) - 15),
                         health_updated_at: now.toISOString(),
-                        auto_calculated: true
+                        auto_calculated: true,
+                        health_change_reason: 'inactivity'
                     }, 'system', 'Automated System')
                 );
+
+                // Send inactivity alert email
+                try {
+                    const { sendInactivityAlertEmailSafe } = await import('../utils/agent-notification-emails-part2.js');
+                    await sendInactivityAlertEmailSafe({
+                        leadId: lead.id,
+                        hoursSinceActivity: hoursSinceRealActivity,
+                        lastActivityDate: lastRealActivity.toISOString(),
+                        lastActivityType: 'unknown',
+                        newHealthStatus: 'yellow',
+                        supabase: supabase
+                    });
+                } catch (emailError) {
+                    console.error('⚠️ Error sending inactivity alert email:', emailError);
+                    // Don't fail the detection if email fails
+                }
             }
         }
 

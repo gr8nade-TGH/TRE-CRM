@@ -770,6 +770,7 @@
 					<!-- Tab Navigation -->
 					<div class="email-tabs">
 						<button class="email-tab active" data-tab="overview">📊 Overview</button>
+						<button class="email-tab" data-tab="alerts">🚨 Alerts</button>
 						<button class="email-tab" data-tab="logs">📋 Email Logs</button>
 						<button class="email-tab" data-tab="templates">📝 Templates</button>
 					</div>
@@ -779,6 +780,38 @@
 						<!-- Email Statistics -->
 						<div id="emailStatsContainer">
 							<!-- Mission control statistics will be rendered here -->
+						</div>
+					</div>
+
+					<!-- Alerts Tab -->
+					<div class="email-tab-content" data-tab-content="alerts">
+						<div class="email-alerts-section">
+							<div class="email-alerts-header">
+								<h3 class="email-alerts-title">🚨 Email Alerts & Flags</h3>
+								<div class="email-alerts-controls">
+									<select id="alertTypeFilter">
+										<option value="">All Alert Types</option>
+										<option value="missing_agent_email">Missing Agent Email</option>
+										<option value="email_send_failed">Email Send Failed</option>
+										<option value="no_assigned_agent">No Assigned Agent</option>
+										<option value="api_error">API Error</option>
+									</select>
+									<select id="alertSeverityFilter">
+										<option value="">All Severities</option>
+										<option value="warning">⚠️ Warning</option>
+										<option value="error">🚨 Error</option>
+									</select>
+									<button id="refreshAlertsBtn" class="btn-secondary" title="Refresh Alerts">
+										🔄 Refresh
+									</button>
+								</div>
+							</div>
+
+							<div class="email-alerts-body">
+								<div id="emailAlertsContainer">
+									<!-- Alerts will be rendered here -->
+								</div>
+							</div>
 						</div>
 					</div>
 

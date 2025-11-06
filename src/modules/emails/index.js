@@ -14,6 +14,7 @@ export {
 export {
     renderEmails,
     renderEmailStatistics,
+    renderEmailAlerts,
     renderEmailLogs,
     renderEmailTemplates,
     previousEmailsPage,

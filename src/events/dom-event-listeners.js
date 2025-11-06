@@ -1937,6 +1937,9 @@ export function setupAllEventListeners(deps) {
 	const emailSearch = document.getElementById('emailSearch');
 	const emailsPrevPage = document.getElementById('emailsPrevPage');
 	const emailsNextPage = document.getElementById('emailsNextPage');
+	const alertTypeFilter = document.getElementById('alertTypeFilter');
+	const alertSeverityFilter = document.getElementById('alertSeverityFilter');
+	const refreshAlertsBtn = document.getElementById('refreshAlertsBtn');
 
 	if (emailStatusFilter) {
 		emailStatusFilter.addEventListener('change', async () => {
@@ -1981,6 +1984,28 @@ export function setupAllEventListeners(deps) {
 			if (Emails.nextEmailsPage()) {
 				await Emails.renderEmailLogs({ api, state, showEmailPreview });
 			}
+		});
+	}
+
+	// Email alerts event listeners
+	if (alertTypeFilter) {
+		alertTypeFilter.addEventListener('change', async () => {
+			const { Emails } = await import('../modules/emails/index.js');
+			await Emails.renderEmailAlerts({ api, state });
+		});
+	}
+
+	if (alertSeverityFilter) {
+		alertSeverityFilter.addEventListener('change', async () => {
+			const { Emails } = await import('../modules/emails/index.js');
+			await Emails.renderEmailAlerts({ api, state });
+		});
+	}
+
+	if (refreshAlertsBtn) {
+		refreshAlertsBtn.addEventListener('click', async () => {
+			const { Emails } = await import('../modules/emails/index.js');
+			await Emails.renderEmailAlerts({ api, state });
 		});
 	}
 
