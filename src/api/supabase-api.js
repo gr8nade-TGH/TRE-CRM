@@ -2804,6 +2804,31 @@ export async function sendSmartMatchEmail(leadId, options = {}) {
             }
         }
 
+        // Step 11: Send guest cards to property owners
+        if (result.success) {
+            try {
+                console.log('📧 Sending guest cards to property owners...');
+                const { sendGuestCardsSafe } = await import('../utils/guest-card-email.js');
+
+                const guestCardResult = await sendGuestCardsSafe({
+                    leadId: leadId,
+                    propertyIds: matches.map(m => m.property.id),
+                    agentId: agent.id,
+                    smartMatchEmailLogId: result.emailLogId,
+                    supabase: supabase
+                });
+
+                console.log('✅ Guest cards sent:', guestCardResult);
+                console.log(`   - Sent: ${guestCardResult.sent}`);
+                console.log(`   - Skipped: ${guestCardResult.skipped}`);
+                console.log(`   - Failed: ${guestCardResult.failed}`);
+
+            } catch (guestCardError) {
+                console.error('⚠️ Error sending guest cards:', guestCardError);
+                // Don't fail Smart Match if guest cards fail
+            }
+        }
+
         return {
             ...result,
             propertyMatcherToken: propertyMatcherToken,
