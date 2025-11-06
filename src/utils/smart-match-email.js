@@ -74,64 +74,119 @@ export function generatePropertyCardHTML(property, index, propertyMatcherUrl = n
         `;
     }
 
-    return `
-        <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.2s ease, box-shadow 0.2s ease;">
-            <div style="position: relative; height: 220px; overflow: hidden; background: #f3f4f6;">
-                ${specialBadge}
-                <img src="${imageUrl}" alt="${propertyData.name || propertyData.community_name}" style="width: 100%; height: 100%; object-fit: cover;">
+    // If propertyMatcherUrl is provided, wrap the entire card in a clickable link
+    if (propertyMatcherUrl) {
+        return `
+            <a href="${propertyMatcherUrl}" style="display: block; text-decoration: none; color: inherit; margin-bottom: 20px;">
+                <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease; cursor: pointer;">
+                    <div style="position: relative; height: 220px; overflow: hidden; background: #f3f4f6;">
+                        ${specialBadge}
+                        <img src="${imageUrl}" alt="${propertyData.name || propertyData.community_name}" style="width: 100%; height: 100%; object-fit: cover;">
+                    </div>
+                    <div style="padding: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827; line-height: 1.3; flex: 1;">${propertyData.name || propertyData.community_name}</h3>
+                            <div style="text-align: right; margin-left: 12px;">
+                                <div style="font-size: 24px; font-weight: 800; color: #059669; line-height: 1;">$${rent.toLocaleString()}</div>
+                                <div style="font-size: 12px; color: #6b7280; font-weight: 500;">/month</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; gap: 16px; margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">🛏️</span>
+                                <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.beds}</span>
+                                <span style="font-size: 13px; color: #6b7280;">bed</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">🚿</span>
+                                <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.baths}</span>
+                                <span style="font-size: 13px; color: #6b7280;">bath</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 6px;">
+                                <span style="font-size: 16px;">📐</span>
+                                <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.sqft ? floorPlan.sqft.toLocaleString() : '—'}</span>
+                                <span style="font-size: 13px; color: #6b7280;">sqft</span>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                            <span style="font-size: 14px;">📍</span>
+                            <span style="font-size: 14px; color: #4b5563; font-weight: 500;">${location}</span>
+                        </div>
+
+                        <div style="display: flex; align-items: center; gap: 12px; font-size: 13px; color: #6b7280; padding: 10px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">
+                            <div><strong style="color: #374151;">Unit:</strong> ${unit.unit_number}</div>
+                            <div style="width: 1px; height: 14px; background: #d1d5db;"></div>
+                            <div><strong style="color: #374151;">Available:</strong> ${formatAvailableDate(unit.available_from)}</div>
+                        </div>
+
+                        ${specialHTML}
+                        ${savingsHTML}
+                        ${amenitiesHTML}
+
+                        <div style="margin-top: 16px;">
+                            <div style="display: block; width: 100%; padding: 12px 20px; background: #6366f1; color: #ffffff !important; text-align: center; border-radius: 8px; font-weight: 600; font-size: 14px;">
+                                🏡 View Details & Schedule Tour →
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </a>
+        `;
+    } else {
+        // Fallback for when no propertyMatcherUrl is provided
+        return `
+            <div style="background: #ffffff; border: 1px solid #e5e7eb; border-radius: 12px; overflow: hidden; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06);">
+                <div style="position: relative; height: 220px; overflow: hidden; background: #f3f4f6;">
+                    ${specialBadge}
+                    <img src="${imageUrl}" alt="${propertyData.name || propertyData.community_name}" style="width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <div style="padding: 20px;">
+                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
+                        <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827; line-height: 1.3; flex: 1;">${propertyData.name || propertyData.community_name}</h3>
+                        <div style="text-align: right; margin-left: 12px;">
+                            <div style="font-size: 24px; font-weight: 800; color: #059669; line-height: 1;">$${rent.toLocaleString()}</div>
+                            <div style="font-size: 12px; color: #6b7280; font-weight: 500;">/month</div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 16px; margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 16px;">🛏️</span>
+                            <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.beds}</span>
+                            <span style="font-size: 13px; color: #6b7280;">bed</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 16px;">🚿</span>
+                            <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.baths}</span>
+                            <span style="font-size: 13px; color: #6b7280;">bath</span>
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 6px;">
+                            <span style="font-size: 16px;">📐</span>
+                            <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.sqft ? floorPlan.sqft.toLocaleString() : '—'}</span>
+                            <span style="font-size: 13px; color: #6b7280;">sqft</span>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
+                        <span style="font-size: 14px;">📍</span>
+                        <span style="font-size: 14px; color: #4b5563; font-weight: 500;">${location}</span>
+                    </div>
+
+                    <div style="display: flex; align-items: center; gap: 12px; font-size: 13px; color: #6b7280; padding: 10px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">
+                        <div><strong style="color: #374151;">Unit:</strong> ${unit.unit_number}</div>
+                        <div style="width: 1px; height: 14px; background: #d1d5db;"></div>
+                        <div><strong style="color: #374151;">Available:</strong> ${formatAvailableDate(unit.available_from)}</div>
+                    </div>
+
+                    ${specialHTML}
+                    ${savingsHTML}
+                    ${amenitiesHTML}
+                </div>
             </div>
-            <div style="padding: 20px;">
-                <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px;">
-                    <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #111827; line-height: 1.3; flex: 1;">${propertyData.name || propertyData.community_name}</h3>
-                    <div style="text-align: right; margin-left: 12px;">
-                        <div style="font-size: 24px; font-weight: 800; color: #059669; line-height: 1;">$${rent.toLocaleString()}</div>
-                        <div style="font-size: 12px; color: #6b7280; font-weight: 500;">/month</div>
-                    </div>
-                </div>
-
-                <div style="display: flex; gap: 16px; margin-bottom: 12px; padding: 12px; background: #f9fafb; border-radius: 8px;">
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 16px;">🛏️</span>
-                        <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.beds}</span>
-                        <span style="font-size: 13px; color: #6b7280;">bed</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 16px;">🚿</span>
-                        <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.baths}</span>
-                        <span style="font-size: 13px; color: #6b7280;">bath</span>
-                    </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                        <span style="font-size: 16px;">📐</span>
-                        <span style="font-size: 14px; font-weight: 600; color: #374151;">${floorPlan.sqft ? floorPlan.sqft.toLocaleString() : '—'}</span>
-                        <span style="font-size: 13px; color: #6b7280;">sqft</span>
-                    </div>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 8px;">
-                    <span style="font-size: 14px;">📍</span>
-                    <span style="font-size: 14px; color: #4b5563; font-weight: 500;">${location}</span>
-                </div>
-
-                <div style="display: flex; align-items: center; gap: 12px; font-size: 13px; color: #6b7280; padding: 10px 0; border-top: 1px solid #e5e7eb; border-bottom: 1px solid #e5e7eb;">
-                    <div><strong style="color: #374151;">Unit:</strong> ${unit.unit_number}</div>
-                    <div style="width: 1px; height: 14px; background: #d1d5db;"></div>
-                    <div><strong style="color: #374151;">Available:</strong> ${formatAvailableDate(unit.available_from)}</div>
-                </div>
-
-                ${specialHTML}
-                ${savingsHTML}
-                ${amenitiesHTML}
-
-                ${propertyMatcherUrl ? `
-                <div style="margin-top: 16px;">
-                    <a href="${propertyMatcherUrl}" style="display: block; width: 100%; padding: 12px 20px; background: #6366f1; color: white; text-align: center; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 14px; transition: background 0.2s ease;">
-                        🏡 View Details & Schedule Tour
-                    </a>
-                </div>
-                ` : ''}
-            </div>
-        </div>
-    `;
+        `;
+    }
 }
 
 /**
