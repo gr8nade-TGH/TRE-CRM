@@ -100,15 +100,36 @@ export async function getInterestedLeads(propertyId) {
         if (leadIds.length > 0) {
             const { data: leads, error: leadsError } = await supabase
                 .from('leads')
-                .select('id, name, assigned_agent_id, agents:assigned_agent_id(name)')
+                .select('id, name, assigned_agent_id')
                 .in('id', leadIds);
 
             if (!leadsError && leads) {
+                // Get unique agent IDs
+                const agentIds = [...new Set(leads.map(l => l.assigned_agent_id).filter(Boolean))];
+
+                // Fetch agent names if there are any
+                let agentsMap = {};
+                if (agentIds.length > 0) {
+                    const { data: agents, error: agentsError } = await supabase
+                        .from('users')
+                        .select('id, name')
+                        .in('id', agentIds);
+
+                    if (!agentsError && agents) {
+                        agents.forEach(agent => {
+                            agentsMap[agent.id] = agent.name;
+                        });
+                    }
+                }
+
+                // Update interest records with lead and agent info
                 leads.forEach(lead => {
                     const interest = leadMap.get(lead.id);
                     if (interest) {
                         interest.leadName = lead.name || interest.leadName;
-                        interest.agentName = lead.agents?.name || 'Unassigned';
+                        interest.agentName = lead.assigned_agent_id
+                            ? (agentsMap[lead.assigned_agent_id] || 'Unassigned')
+                            : 'Unassigned';
                     }
                 });
             }

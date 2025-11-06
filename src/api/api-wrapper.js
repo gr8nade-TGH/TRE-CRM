@@ -226,17 +226,15 @@ export function createAPI({ mockInterestedLeads }) {
 		},
 
 		async getInterestedLeadsCount(propertyId) {
-			// Note: Using mock data for now - will be replaced with Supabase later
-			const interestedLeads = mockInterestedLeads[propertyId] || [];
-			return interestedLeads.length;
+			// Use real Supabase data from property_activities
+			console.log('✅ Using Supabase for interested leads count');
+			return await SupabaseAPI.getInterestedLeadsCount(propertyId);
 		},
 
 		async getInterestedLeads(propertyId) {
-			// Note: Using mock data for now - will be replaced with Supabase later
-			console.log('getInterestedLeads called with propertyId:', propertyId);
-			const data = mockInterestedLeads[propertyId] || [];
-			console.log('Mock data for', propertyId, ':', data);
-			return data;
+			// Use real Supabase data from property_activities
+			console.log('✅ Using Supabase for interested leads');
+			return await SupabaseAPI.getInterestedLeads(propertyId);
 		},
 
 		async createLeadInterest({ lead_id, property_id, agent_id, interest_type, status, notes }) {
