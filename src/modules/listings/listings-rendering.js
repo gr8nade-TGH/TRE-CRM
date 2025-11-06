@@ -101,13 +101,14 @@ export async function renderListings(options, autoSelectProperty = null) {
 			return prop.is_available !== false;
 		});
 
-		// OPTIMIZED: Batch fetch all data for all properties (3 queries instead of N*3 queries)
+		// OPTIMIZED: Batch fetch all data for all properties (4 queries instead of N*4 queries)
 		const propertyIds = availableProperties.map(prop => prop.id);
 
-		const [propertyNotesCountsMap, floorPlansMap, unitsMap] = await Promise.all([
+		const [propertyNotesCountsMap, floorPlansMap, unitsMap, interestedLeadsCountsMap] = await Promise.all([
 			SupabaseAPI.getBatchPropertyNotesCounts(propertyIds),
 			SupabaseAPI.getBatchFloorPlans(propertyIds),
-			SupabaseAPI.getBatchUnits(propertyIds, { isActive: null })
+			SupabaseAPI.getBatchUnits(propertyIds, { isActive: null }),
+			SupabaseAPI.getBatchInterestedLeadsCounts(propertyIds)
 		]);
 
 		// OPTIMIZED: Batch fetch unit notes counts for ALL units across ALL properties (1 query instead of N*M queries)
@@ -122,6 +123,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 				const notesCount = propertyNotesCountsMap[prop.id] || 0;
 				const floorPlans = floorPlansMap[prop.id] || [];
 				const units = unitsMap[prop.id] || [];
+				const interestedLeadsCount = interestedLeadsCountsMap[prop.id] || 0;
 
 				// Add notes count to each unit
 				const unitsWithNotes = units.map(unit => ({
@@ -152,6 +154,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 				return {
 					...prop,
 					notesCount,
+					interestedLeadsCount,
 					floorPlans,
 					activeSpecials,
 					units: unitsWithNotes,
@@ -308,7 +311,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #ef4444;">
 								<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 							</svg>
-							<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
+							<span>${prop.interestedLeadsCount || 0}</span>
 						</div>
 						<div class="notes-count ${prop.notesCount > 0 ? 'has-notes' : ''}" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount > 0 ? prop.notesCount + ' note(s)' : 'Add a note'}" style="cursor: pointer;">
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: ${prop.notesCount > 0 ? '#fbbf24' : '#9ca3af'};">

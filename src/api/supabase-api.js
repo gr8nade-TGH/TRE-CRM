@@ -15,6 +15,165 @@ export function getSupabase() {
 }
 
 /**
+ * Get interested leads count for a property
+ * Counts unique leads who selected this property on Property Matcher page
+ * @param {string} propertyId - Property ID
+ * @returns {Promise<number>} Count of interested leads
+ */
+export async function getInterestedLeadsCount(propertyId) {
+    const supabase = getSupabase();
+
+    try {
+        const { data, error } = await supabase
+            .from('property_activities')
+            .select('metadata', { count: 'exact', head: false })
+            .eq('property_id', propertyId)
+            .eq('activity_type', 'selected_by_lead');
+
+        if (error) {
+            console.error('❌ Error fetching interested leads count:', error);
+            return 0;
+        }
+
+        // Count unique lead IDs from metadata
+        const uniqueLeadIds = new Set();
+        if (data) {
+            data.forEach(activity => {
+                if (activity.metadata?.lead_id) {
+                    uniqueLeadIds.add(activity.metadata.lead_id);
+                }
+            });
+        }
+
+        return uniqueLeadIds.size;
+    } catch (error) {
+        console.error('❌ Error in getInterestedLeadsCount:', error);
+        return 0;
+    }
+}
+
+/**
+ * Get interested leads details for a property
+ * Returns list of leads who selected this property on Property Matcher page
+ * @param {string} propertyId - Property ID
+ * @returns {Promise<Array>} Array of interested lead objects
+ */
+export async function getInterestedLeads(propertyId) {
+    const supabase = getSupabase();
+
+    try {
+        // Get all 'selected_by_lead' activities for this property
+        const { data: activities, error } = await supabase
+            .from('property_activities')
+            .select('*')
+            .eq('property_id', propertyId)
+            .eq('activity_type', 'selected_by_lead')
+            .order('created_at', { ascending: false });
+
+        if (error) {
+            console.error('❌ Error fetching interested leads:', error);
+            return [];
+        }
+
+        if (!activities || activities.length === 0) {
+            return [];
+        }
+
+        // Group by lead_id (keep only most recent activity per lead)
+        const leadMap = new Map();
+        activities.forEach(activity => {
+            const leadId = activity.metadata?.lead_id;
+            if (leadId && !leadMap.has(leadId)) {
+                leadMap.set(leadId, {
+                    leadId: leadId,
+                    leadName: activity.metadata?.lead_name || activity.performed_by_name || 'Unknown Lead',
+                    date: activity.created_at,
+                    status: 'interested', // Default status
+                    sessionId: activity.metadata?.session_id,
+                    token: activity.metadata?.token
+                });
+            }
+        });
+
+        // Fetch lead details to get agent info
+        const leadIds = Array.from(leadMap.keys());
+        if (leadIds.length > 0) {
+            const { data: leads, error: leadsError } = await supabase
+                .from('leads')
+                .select('id, name, assigned_agent_id, agents:assigned_agent_id(name)')
+                .in('id', leadIds);
+
+            if (!leadsError && leads) {
+                leads.forEach(lead => {
+                    const interest = leadMap.get(lead.id);
+                    if (interest) {
+                        interest.leadName = lead.name || interest.leadName;
+                        interest.agentName = lead.agents?.name || 'Unassigned';
+                    }
+                });
+            }
+        }
+
+        return Array.from(leadMap.values());
+    } catch (error) {
+        console.error('❌ Error in getInterestedLeads:', error);
+        return [];
+    }
+}
+
+/**
+ * Batch fetch interested leads counts for multiple properties
+ * OPTIMIZED: Single query instead of N queries
+ * @param {string[]} propertyIds - Array of property IDs
+ * @returns {Promise<Object>} Map of propertyId -> count
+ */
+export async function getBatchInterestedLeadsCounts(propertyIds) {
+    const supabase = getSupabase();
+
+    if (!propertyIds || propertyIds.length === 0) {
+        return {};
+    }
+
+    try {
+        // Fetch all 'selected_by_lead' activities for these properties
+        const { data: activities, error } = await supabase
+            .from('property_activities')
+            .select('property_id, metadata')
+            .in('property_id', propertyIds)
+            .eq('activity_type', 'selected_by_lead');
+
+        if (error) {
+            console.error('❌ Error fetching batch interested leads counts:', error);
+            return {};
+        }
+
+        // Count unique leads per property
+        const countsMap = {};
+        propertyIds.forEach(id => countsMap[id] = new Set());
+
+        if (activities) {
+            activities.forEach(activity => {
+                const leadId = activity.metadata?.lead_id;
+                if (leadId && countsMap[activity.property_id]) {
+                    countsMap[activity.property_id].add(leadId);
+                }
+            });
+        }
+
+        // Convert Sets to counts
+        const result = {};
+        Object.keys(countsMap).forEach(propertyId => {
+            result[propertyId] = countsMap[propertyId].size;
+        });
+
+        return result;
+    } catch (error) {
+        console.error('❌ Error in getBatchInterestedLeadsCounts:', error);
+        return {};
+    }
+}
+
+/**
  * Leads API
  */
 export async function getLeads({ role, agentId, search, sortKey, sortDir, page = 1, pageSize = 10, filters = {} }) {
