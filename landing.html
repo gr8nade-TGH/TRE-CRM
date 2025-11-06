@@ -1196,6 +1196,46 @@
 						console.error('⚠️ Exception stack:', activityError.stack);
 					}
 
+					// Send welcome email to the lead
+					try {
+						console.log('📧 Attempting to send welcome email...');
+
+						// Import the welcome email utility
+						const { sendWelcomeEmailSafe } = await import('/src/utils/welcome-email.js');
+
+						// Prepare lead and agent data
+						const leadForEmail = {
+							id: leadId,
+							email: formData.get('email'),
+							name: formData.get('name')
+						};
+
+						const agentForEmail = {
+							id: currentAgent.id,
+							name: currentAgent.name,
+							email: currentAgent.email,
+							phone: currentAgent.phone || ''
+						};
+
+						// Send welcome email (safe - won't throw)
+						const emailResult = await sendWelcomeEmailSafe({
+							lead: leadForEmail,
+							agent: agentForEmail,
+							supabase: supabase
+						});
+
+						if (emailResult.success) {
+							console.log('✅ Welcome email sent successfully!');
+						} else if (emailResult.skipped) {
+							console.log('⏭️ Welcome email skipped (already sent)');
+						} else {
+							console.warn('⚠️ Welcome email failed:', emailResult.message);
+						}
+					} catch (emailError) {
+						console.error('⚠️ Error sending welcome email:', emailError);
+						// Don't fail the lead creation if email fails
+					}
+
 					// Success!
 					alert('🎉 Thank you! We\'ll be in touch with you TODAY!');
 					this.reset();
