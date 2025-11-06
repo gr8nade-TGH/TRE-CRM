@@ -6,57 +6,6 @@
  */
 
 /**
- * Check if welcome email has been sent by checking lead_activities
- * @param {string} leadId - The lead ID
- * @param {Object} SupabaseAPI - Supabase API object
- * @returns {Promise<boolean>} True if welcome email sent
- */
-async function hasWelcomeEmailSent(leadId, SupabaseAPI) {
-	try {
-		const activities = await SupabaseAPI.getLeadActivities(leadId);
-		// Check if there's a 'welcome_email_sent' activity
-		return activities.some(activity => activity.activity_type === 'welcome_email_sent');
-	} catch (error) {
-		console.error('Error checking welcome email:', error);
-		return false;
-	}
-}
-
-/**
- * Check if a lead has responded to Property Matcher by checking lead_activities
- * @param {string} leadId - The lead ID
- * @param {Object} SupabaseAPI - Supabase API object
- * @returns {Promise<boolean>} True if lead has responded
- */
-async function hasLeadResponded(leadId, SupabaseAPI) {
-	try {
-		const activities = await SupabaseAPI.getLeadActivities(leadId);
-		// Check if there's a 'property_matcher_submitted' activity (UPDATED from 'showcase_response')
-		return activities.some(activity => activity.activity_type === 'property_matcher_submitted');
-	} catch (error) {
-		console.error('Error checking lead response:', error);
-		return false;
-	}
-}
-
-/**
- * Check if a lease has been signed by checking lead_activities
- * @param {string} leadId - The lead ID
- * @param {Object} SupabaseAPI - Supabase API object
- * @returns {Promise<boolean>} True if lease has been signed
- */
-async function hasLeaseSigned(leadId, SupabaseAPI) {
-	try {
-		const activities = await SupabaseAPI.getLeadActivities(leadId);
-		// Check if there's a 'lease_signed' activity
-		return activities.some(activity => activity.activity_type === 'lease_signed');
-	} catch (error) {
-		console.error('Error checking lease signed:', error);
-		return false;
-	}
-}
-
-/**
  * Render documents (delegates to manager or agent view)
  * EXACT COPY from script.js (lines 2362-2368)
  *
@@ -116,44 +65,76 @@ export async function renderManagerDocuments(options) {
 			filters: {}
 		});
 
-		// Transform leads to match the expected format
-		// Check for optional indicators in parallel
-		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
-			id: lead.id,
-			leadName: lead.name,
-			agentName: lead.agent_name || 'Unassigned',
-			agentEmail: lead.agent_email || '',
-			currentStep: lead.current_step || 1,
-			lastUpdated: lead.updated_at || lead.created_at,
-			status: lead.health_status === 'closed' ? 'completed' : 'current',
-			welcomeEmailSent: await hasWelcomeEmailSent(lead.id, SupabaseAPI), // Step 1 indicator
-			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI),       // Step 2 indicator
-			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI),           // Step 5 indicator
-			property: {
-				name: lead.property_name || 'Not selected',
-				address: lead.property_address || '',
-				rent: lead.property_rent || '',
-				bedrooms: lead.property_bedrooms || 0,
-				bathrooms: lead.property_bathrooms || 0
-			},
-			showcase: {
-				sent: lead.showcase_sent || false,
-				landingPageUrl: lead.showcase_url || '',
-				selections: lead.showcase_selections || [],
-				calendarDates: lead.showcase_dates || []
-			},
-			guestCard: {
-				sent: lead.guest_card_sent || false,
-				url: lead.guest_card_url || ''
-			},
-			lease: {
-				sent: lead.lease_sent || false,
-				signed: lead.lease_signed || false,
-				finalized: lead.lease_finalized || false,
-				property: lead.property_name || '',
-				apartment: lead.apartment_unit || ''
+		// OPTIMIZATION: Fetch all activities for all leads in one batch query
+		// This is much faster than fetching activities for each lead individually
+		const leadIds = result.items.map(l => l.id);
+		const allActivitiesMap = new Map();
+
+		if (leadIds.length > 0) {
+			try {
+				// Fetch all activities for all leads in one query
+				const { data: allActivities } = await SupabaseAPI.getSupabase()
+					.from('lead_activities')
+					.select('lead_id, activity_type')
+					.in('lead_id', leadIds)
+					.in('activity_type', ['welcome_email_sent', 'property_matcher_submitted', 'lease_signed']);
+
+				// Group activities by lead_id for fast lookup
+				if (allActivities) {
+					allActivities.forEach(activity => {
+						if (!allActivitiesMap.has(activity.lead_id)) {
+							allActivitiesMap.set(activity.lead_id, new Set());
+						}
+						allActivitiesMap.get(activity.lead_id).add(activity.activity_type);
+					});
+				}
+			} catch (error) {
+				console.error('Error fetching activities for optional indicators:', error);
 			}
-		})));
+		}
+
+		// Transform leads to match the expected format
+		// Use pre-fetched activities for fast indicator checks
+		const transformedLeads = result.items.map((lead) => {
+			const leadActivities = allActivitiesMap.get(lead.id) || new Set();
+
+			return {
+				id: lead.id,
+				leadName: lead.name,
+				agentName: lead.agent_name || 'Unassigned',
+				agentEmail: lead.agent_email || '',
+				currentStep: lead.current_step || 1,
+				lastUpdated: lead.updated_at || lead.created_at,
+				status: lead.health_status === 'closed' ? 'completed' : 'current',
+				welcomeEmailSent: leadActivities.has('welcome_email_sent'),  // Step 1 indicator
+				leadResponded: leadActivities.has('property_matcher_submitted'), // Step 2 indicator
+				leaseSigned: leadActivities.has('lease_signed'),             // Step 5 indicator
+				property: {
+					name: lead.property_name || 'Not selected',
+					address: lead.property_address || '',
+					rent: lead.property_rent || '',
+					bedrooms: lead.property_bedrooms || 0,
+					bathrooms: lead.property_bathrooms || 0
+				},
+				showcase: {
+					sent: lead.showcase_sent || false,
+					landingPageUrl: lead.showcase_url || '',
+					selections: lead.showcase_selections || [],
+					calendarDates: lead.showcase_dates || []
+				},
+				guestCard: {
+					sent: lead.guest_card_sent || false,
+					url: lead.guest_card_url || ''
+				},
+				lease: {
+					sent: lead.lease_sent || false,
+					signed: lead.lease_signed || false,
+					finalized: lead.lease_finalized || false,
+					property: lead.property_name || '',
+					apartment: lead.apartment_unit || ''
+				}
+			};
+		});
 
 		// Render progress table with real data
 		renderProgressTable('documentsTbody', transformedLeads);
@@ -206,44 +187,76 @@ export async function renderAgentDocuments(options) {
 			filters: {}
 		});
 
-		// Transform leads to match the expected format
-		// Check for optional indicators in parallel
-		const transformedLeads = await Promise.all(result.items.map(async (lead) => ({
-			id: lead.id,
-			leadName: lead.name,
-			agentName: lead.agent_name || 'Unassigned',
-			agentEmail: lead.agent_email || '',
-			currentStep: lead.current_step || 1,
-			lastUpdated: lead.updated_at || lead.created_at,
-			status: lead.health_status === 'closed' ? 'completed' : 'current',
-			welcomeEmailSent: await hasWelcomeEmailSent(lead.id, SupabaseAPI), // Step 1 indicator
-			leadResponded: await hasLeadResponded(lead.id, SupabaseAPI),       // Step 2 indicator
-			leaseSigned: await hasLeaseSigned(lead.id, SupabaseAPI),           // Step 5 indicator
-			property: {
-				name: lead.property_name || 'Not selected',
-				address: lead.property_address || '',
-				rent: lead.property_rent || '',
-				bedrooms: lead.property_bedrooms || 0,
-				bathrooms: lead.property_bathrooms || 0
-			},
-			showcase: {
-				sent: lead.showcase_sent || false,
-				landingPageUrl: lead.showcase_url || '',
-				selections: lead.showcase_selections || [],
-				calendarDates: lead.showcase_dates || []
-			},
-			guestCard: {
-				sent: lead.guest_card_sent || false,
-				url: lead.guest_card_url || ''
-			},
-			lease: {
-				sent: lead.lease_sent || false,
-				signed: lead.lease_signed || false,
-				finalized: lead.lease_finalized || false,
-				property: lead.property_name || '',
-				apartment: lead.apartment_unit || ''
+		// OPTIMIZATION: Fetch all activities for all leads in one batch query
+		// This is much faster than fetching activities for each lead individually
+		const leadIds = result.items.map(l => l.id);
+		const allActivitiesMap = new Map();
+
+		if (leadIds.length > 0) {
+			try {
+				// Fetch all activities for all leads in one query
+				const { data: allActivities } = await SupabaseAPI.getSupabase()
+					.from('lead_activities')
+					.select('lead_id, activity_type')
+					.in('lead_id', leadIds)
+					.in('activity_type', ['welcome_email_sent', 'property_matcher_submitted', 'lease_signed']);
+
+				// Group activities by lead_id for fast lookup
+				if (allActivities) {
+					allActivities.forEach(activity => {
+						if (!allActivitiesMap.has(activity.lead_id)) {
+							allActivitiesMap.set(activity.lead_id, new Set());
+						}
+						allActivitiesMap.get(activity.lead_id).add(activity.activity_type);
+					});
+				}
+			} catch (error) {
+				console.error('Error fetching activities for optional indicators:', error);
 			}
-		})));
+		}
+
+		// Transform leads to match the expected format
+		// Use pre-fetched activities for fast indicator checks
+		const transformedLeads = result.items.map((lead) => {
+			const leadActivities = allActivitiesMap.get(lead.id) || new Set();
+
+			return {
+				id: lead.id,
+				leadName: lead.name,
+				agentName: lead.agent_name || 'Unassigned',
+				agentEmail: lead.agent_email || '',
+				currentStep: lead.current_step || 1,
+				lastUpdated: lead.updated_at || lead.created_at,
+				status: lead.health_status === 'closed' ? 'completed' : 'current',
+				welcomeEmailSent: leadActivities.has('welcome_email_sent'),  // Step 1 indicator
+				leadResponded: leadActivities.has('property_matcher_submitted'), // Step 2 indicator
+				leaseSigned: leadActivities.has('lease_signed'),             // Step 5 indicator
+				property: {
+					name: lead.property_name || 'Not selected',
+					address: lead.property_address || '',
+					rent: lead.property_rent || '',
+					bedrooms: lead.property_bedrooms || 0,
+					bathrooms: lead.property_bathrooms || 0
+				},
+				showcase: {
+					sent: lead.showcase_sent || false,
+					landingPageUrl: lead.showcase_url || '',
+					selections: lead.showcase_selections || [],
+					calendarDates: lead.showcase_dates || []
+				},
+				guestCard: {
+					sent: lead.guest_card_sent || false,
+					url: lead.guest_card_url || ''
+				},
+				lease: {
+					sent: lead.lease_sent || false,
+					signed: lead.lease_signed || false,
+					finalized: lead.lease_finalized || false,
+					property: lead.property_name || '',
+					apartment: lead.apartment_unit || ''
+				}
+			};
+		});
 
 		// Render progress table with real data
 		renderProgressTable('agentDocumentsTbody', transformedLeads);
