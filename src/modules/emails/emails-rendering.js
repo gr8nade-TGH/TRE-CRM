@@ -138,6 +138,35 @@ export async function renderEmailStatistics(options) {
             ? Math.round((successfulEmails.length / filteredEmails.length) * 100)
             : 0;
 
+        // Calculate engagement metrics
+        const openedEmails = filteredEmails.filter(e => e.opened_at);
+        const clickedEmails = filteredEmails.filter(e => e.first_clicked_at);
+        const engagedEmails = filteredEmails.filter(e => e.opened_at || e.first_clicked_at);
+
+        const openRate = successfulEmails.length > 0
+            ? Math.round((openedEmails.length / successfulEmails.length) * 100)
+            : 0;
+
+        const clickRate = successfulEmails.length > 0
+            ? Math.round((clickedEmails.length / successfulEmails.length) * 100)
+            : 0;
+
+        const engagementRate = successfulEmails.length > 0
+            ? Math.round((engagedEmails.length / successfulEmails.length) * 100)
+            : 0;
+
+        // Calculate average time to open (in hours)
+        let avgTimeToOpen = 0;
+        if (openedEmails.length > 0) {
+            const totalHours = openedEmails.reduce((sum, email) => {
+                const sentAt = new Date(email.created_at);
+                const openedAt = new Date(email.opened_at);
+                const hours = (openedAt - sentAt) / (1000 * 60 * 60);
+                return sum + hours;
+            }, 0);
+            avgTimeToOpen = Math.round(totalHours / openedEmails.length);
+        }
+
         // Count template usage
         const templateCounts = {};
         filteredEmails.forEach(email => {
@@ -200,16 +229,36 @@ export async function renderEmailStatistics(options) {
 
         statsContainer.innerHTML = `
             <div class="email-stats-mc">
+                <!-- Row 1: Primary Metrics -->
                 <!-- Success Rate Card -->
                 <div class="email-metric-card success-rate">
                     <div class="metric-label">Success Rate</div>
                     <div class="metric-value">${successRate}%</div>
                 </div>
 
+                <!-- Open Rate Card -->
+                <div class="email-metric-card ${openRate > 0 ? 'success-rate' : ''}">
+                    <div class="metric-label">Open Rate</div>
+                    <div class="metric-value">${openRate}%</div>
+                </div>
+
+                <!-- Click Rate Card -->
+                <div class="email-metric-card ${clickRate > 0 ? 'success-rate' : ''}">
+                    <div class="metric-label">Click Rate</div>
+                    <div class="metric-value">${clickRate}%</div>
+                </div>
+
+                <!-- Row 2: Volume Metrics -->
                 <!-- Total Sent Card -->
                 <div class="email-metric-card">
                     <div class="metric-label">Total Sent</div>
                     <div class="metric-value">${filteredEmails.length}</div>
+                </div>
+
+                <!-- Engagement Rate Card -->
+                <div class="email-metric-card ${engagementRate > 0 ? 'success-rate' : ''}">
+                    <div class="metric-label">Engagement Rate</div>
+                    <div class="metric-value">${engagementRate}%</div>
                 </div>
 
                 <!-- Failed Card -->
@@ -218,6 +267,7 @@ export async function renderEmailStatistics(options) {
                     <div class="metric-value">${failedEmails.length}</div>
                 </div>
 
+                <!-- Row 3: Time-based Metrics -->
                 <!-- Today Card -->
                 <div class="email-metric-card">
                     <div class="metric-label">Today</div>
@@ -230,10 +280,10 @@ export async function renderEmailStatistics(options) {
                     <div class="metric-value">${weekEmails.length}</div>
                 </div>
 
-                <!-- This Month Card -->
+                <!-- Avg Time to Open Card -->
                 <div class="email-metric-card">
-                    <div class="metric-label">This Month</div>
-                    <div class="metric-value">${monthEmails.length}</div>
+                    <div class="metric-label">Avg Time to Open</div>
+                    <div class="metric-value">${avgTimeToOpen > 0 ? `${avgTimeToOpen}h` : '--'}</div>
                 </div>
             </div>
         `;
@@ -297,7 +347,7 @@ export async function renderEmailLogs(options) {
         tbody.innerHTML = '';
 
         if (filteredEmails.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px;">No emails found</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px;">No emails found</td></tr>';
             updateEmailsPagination(1, 1, 0);
             return;
         }
@@ -316,6 +366,24 @@ export async function renderEmailLogs(options) {
             // Sent by user name
             const sentByName = email.sent_by_name || 'System';
 
+            // Engagement indicators
+            const hasOpened = email.opened_at ? true : false;
+            const hasClicked = email.first_clicked_at ? true : false;
+            const openCount = email.open_count || 0;
+            const clickCount = email.click_count || 0;
+
+            let engagementHTML = '<span style="color: #9ca3af;">--</span>';
+            if (hasOpened || hasClicked) {
+                const indicators = [];
+                if (hasOpened) {
+                    indicators.push(`<span title="Opened ${openCount} time${openCount !== 1 ? 's' : ''}" style="color: #10b981;">📧 ${openCount}</span>`);
+                }
+                if (hasClicked) {
+                    indicators.push(`<span title="Clicked ${clickCount} time${clickCount !== 1 ? 's' : ''}" style="color: #3b82f6;">🔗 ${clickCount}</span>`);
+                }
+                engagementHTML = indicators.join(' ');
+            }
+
             tr.innerHTML = `
                 <td>
                     <div class="email-recipient">
@@ -328,6 +396,7 @@ export async function renderEmailLogs(options) {
                 </td>
                 <td>${templateName}</td>
                 <td>${statusBadge}</td>
+                <td>${engagementHTML}</td>
                 <td class="mono">${formatDate(email.created_at)}</td>
                 <td>${sentByName}</td>
                 <td>
@@ -346,7 +415,7 @@ export async function renderEmailLogs(options) {
 
     } catch (error) {
         console.error('❌ Error rendering email logs:', error);
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; padding: 40px; color: #dc2626;">Error loading emails</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="8" style="text-align: center; padding: 40px; color: #dc2626;">Error loading emails</td></tr>';
     }
 }
 

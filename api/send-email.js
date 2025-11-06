@@ -85,33 +85,18 @@ export default async function handler(req, res) {
 		const senderEmail = fromEmail || template.default_sender || EMAIL_FROM;
 		console.log('📧 Using sender email:', senderEmail);
 
-		// 2. Replace variables in template
-		let htmlContent = template.html_content;
-		let textContent = template.text_content;
-		let subject = template.subject;
-
-		if (variables) {
-			Object.keys(variables).forEach(key => {
-				const regex = new RegExp(`{{${key}}}`, 'g');
-				const value = variables[key] || '';
-				htmlContent = htmlContent.replace(regex, value);
-				textContent = textContent ? textContent.replace(regex, value) : null;
-				subject = subject.replace(regex, value);
-			});
-		}
-
-		// 3. Create email log entry (pending status)
+		// 2. Create email log entry FIRST (we need the ID for tracking URLs)
 		const { data: emailLog, error: logError } = await supabase
 			.from('email_logs')
 			.insert([{
 				template_id: templateId,
 				recipient_email: recipientEmail,
 				recipient_name: recipientName,
-				subject: subject,
+				subject: template.subject, // Use template subject initially
 				status: 'pending',
 				metadata: metadata || {},
 				sent_by: sentBy || null,
-				sender_email: senderEmail
+				sender_email: fromEmail || template.default_sender || EMAIL_FROM
 			}])
 			.select()
 			.single();
@@ -121,7 +106,57 @@ export default async function handler(req, res) {
 			return res.status(500).json({ error: 'Failed to create email log' });
 		}
 
-		// 4. Send email via Resend API
+		// 3. Generate tracking URLs using the email log ID
+		const baseUrl = process.env.NEXT_PUBLIC_VERCEL_URL
+			? `https://${process.env.NEXT_PUBLIC_VERCEL_URL}`
+			: 'https://tre-crm.vercel.app';
+
+		const trackingPixelUrl = `${baseUrl}/api/track-email-open?id=${emailLog.id}`;
+
+		// Helper function to create tracking URL
+		const createTrackingUrl = (linkName, targetUrl) => {
+			const encodedUrl = encodeURIComponent(targetUrl);
+			return `${baseUrl}/api/track-email-click?id=${emailLog.id}&link=${linkName}&url=${encodedUrl}`;
+		};
+
+		// 4. Replace variables in template (including tracking URLs)
+		let htmlContent = template.html_content;
+		let textContent = template.text_content;
+		let subject = template.subject;
+
+		// Add tracking pixel URL to variables
+		const allVariables = {
+			...variables,
+			trackingPixelUrl: trackingPixelUrl
+		};
+
+		// Generate tracking URLs for common CTAs
+		if (variables?.agentEmail) {
+			allVariables.trackingUrl_agent_email = createTrackingUrl('agent_email', `mailto:${variables.agentEmail}`);
+		}
+		if (variables?.agentPhone) {
+			allVariables.trackingUrl_agent_phone = createTrackingUrl('agent_phone', `tel:${variables.agentPhone}`);
+		}
+		if (variables?.propertyMatcherUrl) {
+			allVariables.trackingUrl_property_matcher = createTrackingUrl('property_matcher', variables.propertyMatcherUrl);
+		}
+		// Default CTA button tracking (mailto to agent)
+		if (variables?.agentEmail) {
+			allVariables.trackingUrl_cta_button = createTrackingUrl('cta_button', `mailto:${variables.agentEmail}`);
+		}
+
+		// Replace all variables in template
+		if (allVariables) {
+			Object.keys(allVariables).forEach(key => {
+				const regex = new RegExp(`{{${key}}}`, 'g');
+				const value = allVariables[key] || '';
+				htmlContent = htmlContent.replace(regex, value);
+				textContent = textContent ? textContent.replace(regex, value) : null;
+				subject = subject.replace(regex, value);
+			});
+		}
+
+		// 5. Send email via Resend API
 		try {
 			const resendResponse = await fetch('https://api.resend.com/emails', {
 				method: 'POST',
@@ -142,7 +177,7 @@ export default async function handler(req, res) {
 
 			if (!resendResponse.ok) {
 				console.error('Resend API error:', resendData);
-				
+
 				// Update email log with error
 				await supabase
 					.from('email_logs')
@@ -153,13 +188,13 @@ export default async function handler(req, res) {
 					})
 					.eq('id', emailLog.id);
 
-				return res.status(500).json({ 
+				return res.status(500).json({
 					error: 'Failed to send email',
-					details: resendData.message 
+					details: resendData.message
 				});
 			}
 
-			// 5. Update email log with success
+			// 6. Update email log with success
 			await supabase
 				.from('email_logs')
 				.update({
@@ -191,17 +226,17 @@ export default async function handler(req, res) {
 				})
 				.eq('id', emailLog.id);
 
-			return res.status(500).json({ 
+			return res.status(500).json({
 				error: 'Failed to send email',
-				details: resendError.message 
+				details: resendError.message
 			});
 		}
 
 	} catch (error) {
 		console.error('❌ Error in send-email function:', error);
-		return res.status(500).json({ 
+		return res.status(500).json({
 			error: 'Internal server error',
-			details: error.message 
+			details: error.message
 		});
 	}
 }
