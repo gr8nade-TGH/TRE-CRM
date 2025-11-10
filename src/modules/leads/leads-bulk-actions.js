@@ -93,6 +93,8 @@ async function getLeadNames(leadIds) {
 
 /**
  * Get match preview data for leads (property count and score range)
+ * IMPORTANT: This function filters out properties that have already been sent to each lead
+ * to match the behavior of sendSmartMatchEmail()
  * @param {string[]} leadIds - Array of lead IDs
  * @returns {Promise<Map>} Map of leadId -> { name, email, propertyCount, avgScore, topScore }
  */
@@ -103,10 +105,10 @@ async function getMatchPreviewData(leadIds) {
     console.log('📊 Fetching match preview data for', leadIds.length, 'leads');
 
     try {
-        // Fetch all leads with their data
+        // Fetch all leads with their data INCLUDING properties_already_sent
         const { data: leads, error } = await window.supabase
             .from('leads')
-            .select('id, name, email, preferences')
+            .select('id, name, email, preferences, properties_already_sent')
             .in('id', leadIds);
 
         if (error) {
@@ -120,21 +122,35 @@ async function getMatchPreviewData(leadIds) {
                 // Get smart matches for this lead (limit to 6 to match email behavior)
                 const matches = await SupabaseAPI.getSmartMatches(lead.id, { limit: 6 });
 
-                if (matches && matches.length > 0) {
-                    // Calculate average and top score
-                    const scores = matches.map(m => m.matchScore?.totalScore || 0);
+                // CRITICAL: Filter out properties that have already been sent to this lead
+                // This matches the behavior in sendSmartMatchEmail()
+                const propertiesAlreadySent = lead.properties_already_sent || [];
+                const newMatches = matches.filter(match => {
+                    const propertyId = match.property?.id;
+                    const isAlreadySent = propertiesAlreadySent.includes(propertyId);
+                    if (isAlreadySent) {
+                        console.log(`🔍 Filtering out already-sent property ${propertyId} for lead ${lead.id}`);
+                    }
+                    return !isAlreadySent;
+                });
+
+                console.log(`📊 Lead ${lead.id}: ${matches.length} total matches → ${newMatches.length} new matches (${propertiesAlreadySent.length} already sent)`);
+
+                if (newMatches && newMatches.length > 0) {
+                    // Calculate average and top score from NEW matches only
+                    const scores = newMatches.map(m => m.matchScore?.totalScore || 0);
                     const avgScore = Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
                     const topScore = Math.max(...scores);
 
                     matchData.set(lead.id, {
                         name: lead.name || lead.email,
                         email: lead.email,
-                        propertyCount: matches.length,
+                        propertyCount: newMatches.length,
                         avgScore: avgScore,
                         topScore: topScore
                     });
                 } else {
-                    // No matches found
+                    // No NEW matches found (all have been sent before)
                     matchData.set(lead.id, {
                         name: lead.name || lead.email,
                         email: lead.email,
