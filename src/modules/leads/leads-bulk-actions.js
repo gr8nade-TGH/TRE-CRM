@@ -816,13 +816,17 @@ export async function bulkSendSmartMatch() {
             return;
         }
 
-        // Step 5: Send emails to leads that have matches
+        // Step 5: Create progress modal
+        const progressModal = createProgressModal(canSendWithMatches.length);
+        document.body.appendChild(progressModal.overlay);
+
+        // Disable button during send
         bulkSendBtn.disabled = true;
         bulkSendBtn.innerHTML = `
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 6px; animation: spin 1s linear infinite;">
                 <circle cx="12" cy="12" r="10"/>
             </svg>
-            Sending ${canSendWithMatches.length}/${selectedLeadIds.length}...
+            Sending...
         `;
 
         let successCount = 0;
@@ -831,7 +835,12 @@ export async function bulkSendSmartMatch() {
         const errors = [];
 
         // Send emails sequentially to leads that have matches
-        for (const { leadId } of canSendWithMatches) {
+        for (let i = 0; i < canSendWithMatches.length; i++) {
+            const { leadId } = canSendWithMatches[i];
+
+            // Update progress
+            updateProgressModal(progressModal, i + 1, canSendWithMatches.length, successCount, failCount);
+
             try {
                 console.log(`📧 Sending Smart Match email to lead: ${leadId}`);
 
@@ -864,6 +873,13 @@ export async function bulkSendSmartMatch() {
                 console.error(`❌ Error sending email to lead: ${leadId}`, error);
             }
         }
+
+        // Final progress update
+        updateProgressModal(progressModal, canSendWithMatches.length, canSendWithMatches.length, successCount, failCount);
+
+        // Wait a moment to show completion, then close
+        await new Promise(resolve => setTimeout(resolve, 800));
+        document.body.removeChild(progressModal.overlay);
 
         // Step 6: Show results
         let resultMessage = '';
@@ -930,6 +946,77 @@ export async function bulkSendSmartMatch() {
         bulkSendBtn.disabled = false;
         bulkSendBtn.innerHTML = originalText;
     }
+}
+
+/**
+ * Create progress modal for bulk send
+ * @param {number} total - Total number of emails to send
+ * @returns {Object} Modal elements
+ */
+function createProgressModal(total) {
+    // Create overlay
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 10000;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    `;
+
+    // Create modal
+    const modal = document.createElement('div');
+    modal.className = 'bulk-send-progress-modal';
+    modal.innerHTML = `
+        <h3>
+            <span class="progress-spinner"></span>
+            Sending Smart Match Emails
+        </h3>
+        <p>Please wait while we send personalized property matches...</p>
+        <div class="progress-bar-container">
+            <div class="progress-bar-fill" style="width: 0%"></div>
+        </div>
+        <div class="progress-text">0 of ${total} sent</div>
+    `;
+
+    overlay.appendChild(modal);
+
+    return {
+        overlay,
+        modal,
+        progressBar: modal.querySelector('.progress-bar-fill'),
+        progressText: modal.querySelector('.progress-text')
+    };
+}
+
+/**
+ * Update progress modal
+ * @param {Object} progressModal - Modal elements
+ * @param {number} current - Current progress
+ * @param {number} total - Total items
+ * @param {number} successCount - Number of successes
+ * @param {number} failCount - Number of failures
+ */
+function updateProgressModal(progressModal, current, total, successCount, failCount) {
+    const percentage = Math.round((current / total) * 100);
+    progressModal.progressBar.style.width = `${percentage}%`;
+
+    let statusText = `${current} of ${total} sent`;
+    if (successCount > 0 || failCount > 0) {
+        statusText += ` (✅ ${successCount}`;
+        if (failCount > 0) {
+            statusText += `, ❌ ${failCount}`;
+        }
+        statusText += ')';
+    }
+
+    progressModal.progressText.textContent = statusText;
 }
 
 /**
