@@ -1,15 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
 	<meta charset="UTF-8" />
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 	<title>TRE CRM - Phase 1 Wireframe</title>
-	<script
-		src="https://js.sentry-cdn.com/3f73a6241615ff5791c9704729e18948.min.js"
-		crossorigin="anonymous"
-	></script>
+	<script src="https://js.sentry-cdn.com/3f73a6241615ff5791c9704729e18948.min.js" crossorigin="anonymous"></script>
 	<link rel="stylesheet" href="styles.css" />
 	<link rel="stylesheet" href="auth-styles.css" />
+	<link rel="stylesheet" href="src/styles/mission-control.css" />
+	<link rel="stylesheet" href="src/styles/emails-mission-control.css" />
+
+	<!-- Vercel Speed Insights (CDN) -->
+	<script>
+		window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+	</script>
+	<script defer src="/_vercel/speed-insights/script.js"></script>
 
 	<!-- Supabase JS Client -->
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
@@ -38,7 +44,7 @@
 		})();
 
 		// Helper function to get current session
-		window.getCurrentSession = async function() {
+		window.getCurrentSession = async function () {
 			if (!window.supabase || !window.supabase.auth) {
 				console.error('Supabase client not initialized or auth not available');
 				return null;
@@ -56,8 +62,10 @@
 	<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 	<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
 	<!-- Leaflet (keeping for now, will remove after Mapbox integration) -->
-	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
 </head>
+
 <body>
 	<!-- Login Portal (shown when not authenticated) -->
 	<div id="loginPortal" class="login-portal" style="display: none;">
@@ -72,26 +80,14 @@
 				<form id="loginForm" class="login-form">
 					<div class="form-group">
 						<label for="loginEmail">Email</label>
-						<input
-							type="email"
-							id="loginEmail"
-							name="email"
-							required
-							autocomplete="email"
-							placeholder="your.email@tre.com"
-						>
+						<input type="email" id="loginEmail" name="email" required autocomplete="email"
+							placeholder="your.email@tre.com">
 					</div>
 
 					<div class="form-group">
 						<label for="loginPassword">Password</label>
-						<input
-							type="password"
-							id="loginPassword"
-							name="password"
-							required
-							autocomplete="current-password"
-							placeholder="Enter your password"
-						>
+						<input type="password" id="loginPassword" name="password" required
+							autocomplete="current-password" placeholder="Enter your password">
 					</div>
 
 					<div id="loginError" class="error-message" style="display: none;"></div>
@@ -110,1717 +106,2987 @@
 
 	<!-- Main App Content (shown when authenticated) -->
 	<div id="mainAppContent" style="display: none;">
-	<header class="app-header">
-		<div class="brand">
-			<span class="brand-text">TRE CRM</span>
-		</div>
-		
-		<nav class="main-nav">
-			<a href="#/leads" class="nav-link" data-page="leads">Leads</a>
-			<a href="#/agents" class="nav-link" data-page="agents" id="agentsNavLink">Agents</a>
-			<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
-			<a href="#/properties" class="nav-link" data-page="properties">🔥 Specials</a>
-			<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
-			<a href="#/admin" class="nav-link" data-page="admin" id="adminNavLink">Admin</a>
-			<a href="#/bugs" class="nav-link" data-page="bugs" id="bugsNavLink">🐛</a>
-		</nav>
-		
-		<div class="header-actions">
-			<div class="user-info">
-				<span id="headerUserEmail"></span>
-				<span id="headerUserRole" class="role-badge"></span>
-			</div>
-			<button id="profileBtn" class="btn btn-secondary btn-sm" title="Profile Settings">
-				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-					<circle cx="12" cy="7" r="4"></circle>
-				</svg>
-				Profile
-			</button>
-			<button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
-		</div>
-	</header>
-
-	<main id="appRoot">
-		<!-- Route: #/leads -->
-		<section id="leadsView" class="route-view">
-			<div class="view-bar">
-				<h1>Leads</h1>
-				<div id="roleLabel" class="role-label"></div>
+		<header class="app-header">
+			<div class="brand">
+				<span class="brand-text">TRE CRM</span>
 			</div>
 
-			<div class="table-actions">
-				<input id="leadSearch" type="search" placeholder="Search name, email, phone" />
-				<button id="addLeadBtn" class="btn btn-primary">+ Add Lead</button>
-			</div>
+			<nav class="main-nav">
+				<a href="#/listings" class="nav-link" data-page="listings">Listings</a>
+				<a href="#/leads" class="nav-link" data-page="leads">Leads</a>
+				<a href="#/properties" class="nav-link" data-page="properties">🔥 Specials</a>
+				<a href="#/documents" class="nav-link" data-page="documents">Documents</a>
+				<a href="#/emails" class="nav-link" data-page="emails" id="emailsNavLink">📧 Emails</a>
+				<a href="#/agents" class="nav-link" data-page="agents" id="agentsNavLink">Agents</a>
+				<a href="#/admin" class="nav-link" data-page="admin" id="adminNavLink">Admin</a>
+				<a href="#/bugs" class="nav-link" data-page="bugs" id="bugsNavLink">🐛</a>
+			</nav>
 
-			<!-- Filters -->
-			<div class="filters" id="leadsFilters">
-				<div class="filter-group">
-					<label for="searchInput">Search</label>
-					<input type="text" id="searchInput" placeholder="Name or preferences" class="filter-input">
+			<div class="header-actions">
+				<div class="user-info">
+					<span id="headerUserEmail"></span>
+					<span id="headerUserRole" class="role-badge"></span>
 				</div>
-				<div class="filter-group">
-					<label for="statusFilter">Status</label>
-					<select id="statusFilter" class="filter-select">
-						<option value="all">All</option>
-						<option value="green">Healthy</option>
-						<option value="yellow">Warm</option>
-						<option value="red">At Risk</option>
-						<option value="closed">Closed</option>
-						<option value="lost">Lost</option>
-					</select>
+				<div class="manage-dropdown-container" style="position: relative; display: none;">
+					<button id="manageBtn" class="btn btn-icon btn-sm" title="Management">
+						<svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+							<path
+								d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" />
+						</svg>
+					</button>
+					<div id="manageDropdown" class="manage-dropdown hidden">
+						<a href="#" class="manage-dropdown-item" data-action="smart-match-config">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+							</svg>
+							Smart Match Config
+						</a>
+						<a href="#" class="manage-dropdown-item" data-action="map-settings">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+								<circle cx="12" cy="10" r="3"></circle>
+							</svg>
+							Map Settings
+						</a>
+					</div>
 				</div>
-				<div class="filter-group">
-					<label for="fromDate">From</label>
-					<input type="date" id="fromDate" class="filter-input">
-				</div>
-				<div class="filter-group">
-					<label for="toDate">To</label>
-					<input type="date" id="toDate" class="filter-input">
-				</div>
-				<div class="filter-spacer"></div>
-				<button id="clearFilters" class="btn btn-secondary">Clear</button>
-			</div>
-
-			<div class="table-wrapper">
-				<table id="leadsTable" class="data-table">
-					<thead>
-						<tr>
-							<th data-sort="name" class="sortable">Lead Name <span class="sort-icon">↕</span></th>
-							<th>View/Edit</th>
-							<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span></th>
-							<th class="sortable" data-sort="submitted_at">Lead Found Date <span class="sort-icon">↕</span></th>
-							<th>Preference Summary</th>
-							<th>Top Listing Options</th>
-							<th data-sort="assigned_agent_id" class="sortable">Agent Assigned <span class="sort-icon">↕</span></th>
-						</tr>
-					</thead>
-					<tbody id="leadsTbody">
-						<!-- rows injected -->
-					</tbody>
-				</table>
-			</div>
-			<div class="pagination">
-				<button id="prevPage">Prev</button>
-				<span id="pageInfo"></span>
-				<button id="nextPage">Next</button>
-			</div>
-		</section>
-
-		<!-- Route: #/agents -->
-		<section id="agentsView" class="route-view hidden">
-			<div class="view-bar">
-				<h1>Agents</h1>
-				<div id="agentsRoleLabel" class="role-label"></div>
-			</div>
-
-			<div class="table-actions">
-				<button id="addAgentBtn" class="primary">+ Add Agent</button>
-			</div>
-
-			<div class="table-wrapper">
-				<table id="agentsTable" class="data-table">
-					<thead>
-						<tr>
-							<th data-sort="name" class="sortable">Agent Name <span class="sort-icon">↕</span></th>
-							<th>View/Edit</th>
-							<th data-sort="leads_generated" class="sortable">Leads Generated <span class="sort-icon">↕</span></th>
-							<th data-sort="leads_assigned" class="sortable">Leads Assigned <span class="sort-icon">↕</span></th>
-							<th data-sort="leads_closed" class="sortable">Leads Closed (90d) <span class="sort-icon">↕</span></th>
-							<th>Landing Page</th>
-							<th>Actions</th>
-						</tr>
-					</thead>
-					<tbody id="agentsTbody">
-						<!-- rows injected -->
-					</tbody>
-				</table>
-			</div>
-		</section>
-
-		<!-- Route: #/listings -->
-		<section id="listingsView" class="route-view hidden">
-			<div class="view-bar">
-				<div id="listingsRoleLabel" class="role-label"></div>
-			</div>
-
-			<!-- Listings Filters -->
-			<div class="filters" id="listingsFilters">
-				<div class="filter-group">
-					<label for="listingsSearchInput">Search</label>
-					<input type="text" id="listingsSearchInput" placeholder="Community, neighborhood, amenities" class="filter-input">
-				</div>
-				<div class="filter-group">
-					<label for="marketFilter">Market</label>
-					<select id="marketFilter" class="filter-select">
-						<option value="all">All Markets</option>
-						<option value="Austin">Austin</option>
-						<option value="Dallas">Dallas</option>
-						<option value="Houston">Houston</option>
-					</select>
-				</div>
-				<div class="filter-group">
-					<label for="minPrice">Min Price</label>
-					<input type="number" id="minPrice" placeholder="e.g., 1000" class="filter-input">
-				</div>
-				<div class="filter-group">
-					<label for="maxPrice">Max Price</label>
-					<input type="number" id="maxPrice" placeholder="e.g., 2000" class="filter-input">
-				</div>
-				<div class="filter-group">
-					<label for="bedsFilter">Beds</label>
-					<select id="bedsFilter" class="filter-select">
-						<option value="any">Any</option>
-						<option value="0">Studio</option>
-						<option value="1">1+</option>
-						<option value="2">2+</option>
-						<option value="3">3+</option>
-					</select>
-				</div>
-				<div class="filter-group">
-					<label for="commissionFilter">Min Commission</label>
-					<select id="commissionFilter" class="filter-select">
-						<option value="0">Any</option>
-						<option value="1">1%+</option>
-						<option value="2">2%+</option>
-						<option value="3">3%+</option>
-						<option value="4">4%+</option>
-					</select>
-				</div>
-				<div class="filter-group">
-					<label for="amenitiesFilter">Amenities</label>
-					<select id="amenitiesFilter" class="filter-select">
-						<option value="any">Any</option>
-						<option value="pool">Pool</option>
-						<option value="gym">Gym</option>
-						<option value="pet">Pet Friendly</option>
-						<option value="ev">EV Charging</option>
-					</select>
-				</div>
-				<div class="filter-group">
-					<label class="pumi-filter-label">
-						<input type="checkbox" id="pumiOnlyFilter" class="pumi-filter-checkbox">
-						<span class="pumi-filter-icon">PUMI</span>
-						<span class="pumi-filter-text">PUMI Only</span>
-					</label>
-				</div>
-				<div class="filter-spacer"></div>
-				<button id="clearListingsFilters" class="btn btn-secondary">Clear</button>
-				<button id="addListingBtn" class="btn btn-primary">+ Add Listing</button>
-				<button id="addContactInfoBtn" class="btn btn-outline" title="Add property contact information">📞 Contact Info</button>
-
-				<!-- CSV Import/Export Buttons -->
-				<button id="downloadCSVTemplateBtn" class="btn btn-outline" title="Download CSV template for bulk import">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-						<polyline points="7 10 12 15 17 10"></polyline>
-						<line x1="12" y1="15" x2="12" y2="3"></line>
+				<button id="profileBtn" class="btn btn-secondary btn-sm" title="Profile Settings">
+					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+						<circle cx="12" cy="7" r="4"></circle>
 					</svg>
-					CSV Template
+					Profile
 				</button>
-				<button id="uploadCSVBtn" class="btn btn-outline" title="Upload CSV file to bulk import listings">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-						<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-						<polyline points="17 8 12 3 7 8"></polyline>
-						<line x1="12" y1="3" x2="12" y2="15"></line>
-					</svg>
-					Upload CSV
-				</button>
-
-				<!-- Bulk Action Buttons (all require checkbox selections) -->
-				<button id="buildShowcaseBtn" class="btn btn-success" disabled title="Select listings to build showcase">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 8px;">
-						<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-						<path d="M9 9h6v6H9z"/>
-						<path d="M9 3v6"/>
-						<path d="M9 15v6"/>
-						<path d="M15 3v6"/>
-						<path d="M15 15v6"/>
-						<path d="M3 9h6"/>
-						<path d="M15 9h6"/>
-						<path d="M3 15h6"/>
-						<path d="M15 15h6"/>
-					</svg>
-					Build Showcase
-				</button>
-				<button id="bulkMarkUnavailableBtn" class="btn btn-secondary" disabled title="Select listings to mark as unavailable">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-						<circle cx="12" cy="12" r="10"/>
-						<line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/>
-					</svg>
-					Mark Unavailable
-				</button>
-				<button id="bulkDeleteBtn" class="btn btn-danger" disabled title="Select listings to delete permanently">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="margin-right: 6px;">
-						<polyline points="3 6 5 6 21 6"/>
-						<path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-						<line x1="10" y1="11" x2="10" y2="17"/>
-						<line x1="14" y1="11" x2="14" y2="17"/>
-					</svg>
-					Delete
-				</button>
-				<span id="bulkActionsCount" class="bulk-selection-count">0 selected</span>
+				<button id="logoutBtn" class="btn btn-secondary btn-sm">Logout</button>
 			</div>
+		</header>
 
-			<div class="listings-layout">
+		<main id="appRoot">
+			<!-- Route: #/leads -->
+			<section id="leadsView" class="route-view">
+				<div class="view-bar mobile-only">
+					<h1>Leads</h1>
+					<div id="roleLabel" class="role-label"></div>
+				</div>
+
+				<!-- Statistics Banner -->
+				<div class="stats-banner">
+					<div class="stat-box stat-box-total">
+						<div class="stat-icon">
+							<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+								<circle cx="9" cy="7" r="4"></circle>
+								<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+								<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+							</svg>
+						</div>
+						<div class="stat-content">
+							<div class="stat-value" id="statTotalLeads">0</div>
+							<div class="stat-label">Total Leads</div>
+						</div>
+					</div>
+
+					<div class="stat-box stat-box-active">
+						<div class="stat-icon">
+							<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<circle cx="12" cy="12" r="10"></circle>
+								<polyline points="12 6 12 12 16 14"></polyline>
+							</svg>
+						</div>
+						<div class="stat-content">
+							<div class="stat-value" id="statActiveLeads">0</div>
+							<div class="stat-label">Active Leads</div>
+						</div>
+					</div>
+
+					<div class="stat-box stat-box-new">
+						<div class="stat-icon">
+							<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+							</svg>
+						</div>
+						<div class="stat-content">
+							<div class="stat-value" id="statNewThisWeek">0</div>
+							<div class="stat-label">New This Week</div>
+						</div>
+					</div>
+
+					<div class="stat-box stat-box-attention">
+						<div class="stat-icon">
+							<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path
+									d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+								</path>
+								<line x1="12" y1="9" x2="12" y2="13"></line>
+								<line x1="12" y1="17" x2="12.01" y2="17"></line>
+							</svg>
+						</div>
+						<div class="stat-content">
+							<div class="stat-value" id="statNeedsAttention">0</div>
+							<div class="stat-label">Needs Attention</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- Filters and Actions -->
+				<div class="filters" id="leadsFilters">
+					<div class="filter-group">
+						<label for="leadSearch">Search</label>
+						<input id="leadSearch" type="search" placeholder="Search name, email, phone"
+							class="filter-input" />
+					</div>
+					<div class="filter-group">
+						<label for="statusFilter">Status</label>
+						<select id="statusFilter" class="filter-select">
+							<option value="all">All</option>
+							<option value="green">Healthy</option>
+							<option value="yellow">Warm</option>
+							<option value="red">At Risk</option>
+							<option value="closed">Closed</option>
+							<option value="lost">Lost</option>
+						</select>
+					</div>
+					<div class="filter-group">
+						<label for="fromDate">From</label>
+						<input type="date" id="fromDate" class="filter-input">
+					</div>
+					<div class="filter-group">
+						<label for="toDate">To</label>
+						<input type="date" id="toDate" class="filter-input">
+					</div>
+					<div class="filter-spacer"></div>
+					<div class="bulk-actions-group" style="display: none;">
+						<button id="bulkSendSmartMatchBtn" class="btn btn-primary">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2" style="margin-right: 6px;">
+								<path
+									d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+							</svg>
+							Bulk Send Smart Matches
+						</button>
+						<span id="bulkLeadsCount" class="bulk-selection-count">0 selected</span>
+					</div>
+					<button id="clearFilters" class="btn btn-secondary">Clear</button>
+					<button id="addLeadBtn" class="btn btn-primary">+ Add Lead</button>
+				</div>
+
 				<div class="table-wrapper">
-					<table id="listingsTable" class="data-table">
+					<table id="leadsTable" class="data-table">
 						<thead>
 							<tr>
-								<th></th>
-								<th data-sort="name" class="sortable">Listings <span class="sort-icon">↕</span></th>
-								<th data-sort="rent_min" class="sortable">Rent Range <span class="sort-icon">↕</span></th>
+								<th style="width: 40px;">
+									<label class="checkbox-label" style="margin: 0;">
+										<input type="checkbox" id="selectAllLeads" class="select-all-checkbox"
+											style="display: none;">
+										<span class="checkmark"></span>
+									</label>
+								</th>
+								<th data-sort="name" class="sortable">Lead Name <span class="sort-icon">↕</span></th>
+								<th>View/Edit</th>
+								<th data-sort="health_status" class="sortable">Health <span class="sort-icon">↕</span>
+								</th>
+								<th class="sortable" data-sort="submitted_at">Lead Found Date <span
+										class="sort-icon">↕</span></th>
+								<th>Preference Summary</th>
+								<th>Top Listing Options</th>
+								<th data-sort="assigned_agent_id" class="sortable">Agent Assigned <span
+										class="sort-icon">↕</span></th>
 							</tr>
 						</thead>
-						<tbody id="listingsTbody">
+						<tbody id="leadsTbody">
+							<!-- Loading indicator inside table -->
+							<tr id="leadsLoadingIndicator" class="loading-row" style="display: none;">
+								<td colspan="8" class="loading-cell">
+									<div class="loading-indicator">
+										<div class="spinner"></div>
+										<p>Loading leads...</p>
+									</div>
+								</td>
+							</tr>
 							<!-- rows injected -->
 						</tbody>
 					</table>
 				</div>
-				<div class="mapwrap">
-					<div id="listingsMap" aria-label="Map of properties"></div>
+				<div class="pagination">
+					<button id="prevPage">Prev</button>
+					<span id="pageInfo"></span>
+					<button id="nextPage">Next</button>
 				</div>
-			</div>
-		</section>
+			</section>
 
-		<!-- Route: #/properties (formerly #/specials) -->
-		<section id="propertiesView" class="route-view hidden">
-			<div class="view-bar" style="display: none;">
-				<h1>🔥 Properties</h1>
-				<div id="propertiesRoleLabel" class="role-label"></div>
-			</div>
-
-			<!-- Property Specials Section -->
-			<div class="properties-section">
-				<div class="section-header">
-					<h2>🔥 Property Specials</h2>
-					<button id="addSpecialBtn" class="btn btn-primary">+ Add Special</button>
+			<!-- Route: #/agents -->
+			<section id="agentsView" class="route-view hidden">
+				<div class="view-bar mobile-only">
+					<h1>Agents</h1>
+					<div id="agentsRoleLabel" class="role-label"></div>
 				</div>
 
 				<div class="table-actions">
-					<input id="specialsSearch" type="search" placeholder="Search property name or special" />
+					<button id="addAgentBtn" class="primary">+ Add Agent</button>
 				</div>
 
-				<div class="table-container">
-					<table id="specialsTable" class="data-table">
+				<div class="table-wrapper">
+					<table id="agentsTable" class="data-table">
 						<thead>
 							<tr>
-								<th data-sort="property_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
-								<th>Current Special</th>
-								<th data-sort="commission_rate" class="sortable">Commission Rate <span class="sort-icon">↕</span></th>
-								<th data-sort="expiration_date" class="sortable">Expiration Date <span class="sort-icon">↕</span></th>
-								<th data-sort="agent_name" class="sortable">Agent <span class="sort-icon">↕</span></th>
-								<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
+								<th data-sort="name" class="sortable">Agent Name <span class="sort-icon">↕</span></th>
+								<th>View/Edit</th>
+								<th data-sort="leads_generated" class="sortable">Leads Generated <span
+										class="sort-icon">↕</span></th>
+								<th data-sort="leads_assigned" class="sortable">Leads Assigned <span
+										class="sort-icon">↕</span></th>
+								<th data-sort="leads_closed" class="sortable">Leads Closed (90d) <span
+										class="sort-icon">↕</span></th>
+								<th>Landing Page</th>
 								<th>Actions</th>
 							</tr>
 						</thead>
-						<tbody id="specialsTbody">
-							<!-- Specials will be populated here -->
+						<tbody id="agentsTbody">
+							<!-- rows injected -->
 						</tbody>
 					</table>
 				</div>
-			</div>
+			</section>
 
-			<!-- Property Contact Info Section -->
-			<div class="properties-section" style="margin-top: 40px;">
-				<div class="section-header">
-					<h2>📞 Property Contact Information</h2>
-					<button id="addPropertyContactBtn" class="btn btn-primary">+ Add Property Contact</button>
-				</div>
-
-				<div class="table-actions">
-					<input id="contactsSearch" type="search" placeholder="Search property name" />
+			<!-- Route: #/listings -->
+			<section id="listingsView" class="route-view hidden">
+				<div class="view-bar mobile-only" style="display: none;">
+					<div id="listingsRoleLabel" class="role-label"></div>
 				</div>
 
-				<div class="table-container">
-					<table id="contactsTable" class="data-table">
-						<thead>
-							<tr>
-								<th data-sort="community_name" class="sortable">Property Name <span class="sort-icon">↕</span></th>
-								<th>Contact Name</th>
-								<th>Email</th>
-								<th>Phone</th>
-								<th>Office Hours</th>
-								<th>Actions</th>
-							</tr>
-						</thead>
-						<tbody id="contactsTbody">
-							<!-- Property contacts will be populated here -->
-						</tbody>
-					</table>
-				</div>
-			</div>
-		</section>
-
-		<!-- Keep old specialsView ID for backward compatibility (redirect to propertiesView) -->
-		<section id="specialsView" class="route-view hidden"></section>
-
-		<!-- Route: #/documents -->
-		<section id="documentsView" class="route-view hidden">
-			<div class="view-bar">
-				<h1>Document Progress Tracker</h1>
-				<div id="documentsRoleLabel" class="role-label"></div>
-			</div>
-
-		<div class="table-actions">
-			<button id="historyBtn" class="btn btn-secondary">View History</button>
-		</div>
-
-		<!-- Manager View -->
-		<div id="managerDocumentsView" class="documents-manager-view">
-			<div class="documents-search">
-				<div class="search-controls">
-					<div class="search-field">
-						<label for="documentsSearch">Search:</label>
-						<input type="text" id="documentsSearch" placeholder="Search by agent name or lead name..." />
-					</div>
-					<button id="clearDocumentsSearch" class="btn btn-secondary">Clear</button>
-				</div>
-			</div>
-			
-		<div class="leads-details">
-			<h3>Lead Progress Tracking</h3>
-			<div id="documentsTbody" class="documents-container">
-				<!-- Lead tables will be generated here -->
-			</div>
-		</div>
-			</div>
-
-			<!-- Agent View -->
-			<div id="agentDocumentsView" class="documents-agent-view hidden">
-		<div class="leads-details">
-			<h3>My Lead Progress</h3>
-			<div id="agentDocumentsTbody" class="documents-container">
-				<!-- Lead tables will be generated here -->
-			</div>
-		</div>
-			</div>
-		</section>
-
-		<!-- Route: #/bugs -->
-		<section id="bugsView" class="route-view hidden">
-			<div class="view-bar">
-				<h1>🐛 Bug Tracker</h1>
-				<div id="bugsRoleLabel" class="role-label"></div>
-			</div>
-
-			<div class="admin-content">
-				<div class="admin-section">
-					<div class="section-header">
-						<h2>Bug Reports</h2>
-						<div class="bug-filters">
-							<select id="bugStatusFilter">
-								<option value="">All Status</option>
-								<option value="pending">Pending</option>
-								<option value="in_progress">In Progress</option>
-								<option value="resolved">Resolved</option>
-								<option value="closed">Closed</option>
-							</select>
-							<select id="bugPriorityFilter">
-								<option value="">All Priority</option>
-								<option value="low">Low</option>
-								<option value="medium">Medium</option>
-								<option value="high">High</option>
-								<option value="critical">Critical</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="bugs-table-wrapper">
-						<table id="bugsTable" class="data-table">
-							<thead>
-								<tr>
-									<th data-sort="id" class="sortable">ID <span class="sort-icon">↕</span></th>
-									<th data-sort="title" class="sortable">Title <span class="sort-icon">↕</span></th>
-									<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span></th>
-									<th data-sort="priority" class="sortable">Priority <span class="sort-icon">↕</span></th>
-									<th data-sort="page" class="sortable">Page <span class="sort-icon">↕</span></th>
-									<th data-sort="reported_by" class="sortable">Reported By <span class="sort-icon">↕</span></th>
-									<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
-									<th>Actions</th>
-								</tr>
-							</thead>
-							<tbody id="bugsTbody">
-								<!-- Bugs will be populated here -->
-							</tbody>
-						</table>
-					</div>
-				</div>
-			</div>
-		</section>
-
-		<!-- Route: #/admin -->
-		<section id="adminView" class="route-view hidden">
-			<div class="view-bar">
-				<h1>Admin Panel</h1>
-				<div id="adminRoleLabel" class="role-label"></div>
-			</div>
-
-			<div class="admin-content">
-				<!-- User Management Section -->
-				<div class="admin-section">
-					<div class="section-header">
-						<h2>User Management</h2>
-						<button id="addUserBtn" class="btn btn-primary">
-							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-								<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/>
-							</svg>
-							Add User
-						</button>
-					</div>
-
-					<div class="users-table-wrapper">
-						<table id="usersTable" class="data-table">
-							<thead>
-								<tr>
-									<th data-sort="name" class="sortable">Name <span class="sort-icon">↕</span></th>
-									<th>Email</th>
-									<th data-sort="role" class="sortable">Role <span class="sort-icon">↕</span></th>
-									<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span></th>
-									<th data-sort="created_at" class="sortable">Created <span class="sort-icon">↕</span></th>
-									<th>Actions</th>
-								</tr>
-							</thead>
-							<tbody id="usersTbody">
-								<!-- Users will be populated here -->
-							</tbody>
-						</table>
-					</div>
-				</div>
-
-				<!-- Audit Log Section -->
-				<div class="admin-section">
-					<div class="section-header">
-						<h2>Audit Log</h2>
-						<div class="audit-filters">
-							<select id="auditFilter">
-								<option value="all">All Actions</option>
-								<option value="user_created">User Created</option>
-								<option value="user_updated">User Updated</option>
-								<option value="user_deleted">User Deleted</option>
-								<option value="role_changed">Role Changed</option>
-								<option value="password_changed">Password Changed</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="audit-log-wrapper">
-						<div id="auditLog" class="audit-log">
-							<!-- Audit entries will be populated here -->
-						</div>
-					</div>
-				</div>
-			</div>
-		</section>
-	</main>
-
-	<!-- Lead Details Modal (Center-aligned) -->
-	<div id="leadDetailsModal" class="modal hidden">
-		<div class="modal-card large">
-			<div class="modal-header">
-				<h3>👤 Lead Details</h3>
-				<button id="closeLeadDetails" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="leadDetailsContent">
-					<!-- Lead details will be populated here -->
-				</div>
-				<hr style="margin: 20px 0;">
-				<div id="leadNotesSection">
-					<h4 style="margin-top: 0; color: #3b82f6;">📝 TRE Internal Comments</h4>
-					<div id="leadNotesContent" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
-						<!-- Notes will be populated here -->
-					</div>
-					<div class="field">
-						<label for="newLeadNote">Add New Comment</label>
-						<textarea id="newLeadNote" rows="3" placeholder="Type your internal comment here..."></textarea>
-					</div>
-					<button id="saveLeadNoteBtn" class="btn btn-primary" style="margin-top: 10px;">Add Comment</button>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="closeLeadDetailsFooter" class="btn btn-secondary">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Agent Details Drawer -->
-	<aside id="agentDrawer" class="drawer hidden">
-		<div class="drawer-header">
-			<h2>Agent Details</h2>
-			<button id="closeAgentDrawer" class="icon-btn" aria-label="Close">×</button>
-		</div>
-		<div class="drawer-content" id="agentDrawerContent">
-			<!-- details injected -->
-		</div>
-	</aside>
-
-	<!-- Agent Edit Modal (Center-aligned) -->
-	<div id="agentEditModal" class="modal hidden">
-		<div class="modal-card large">
-			<div class="modal-header">
-				<h3>👤 Agent Details</h3>
-				<button id="closeAgentEdit" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="agentEditContent">
-					<!-- Agent details will be populated here -->
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="saveAgentBtn" class="btn btn-primary">Save Changes</button>
-				<button id="closeAgentEditFooter" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Matches Modal -->
-	<div id="matchesModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Top Listing Options — <span id="leadNameTitle2">Lead</span></h3>
-				<button id="closeMatches" class="icon-btn" aria-label="Close">×</button>
-			</div>
-		<div class="modal-sticky-header">
-			<div class="showcase-controls">
-				<div class="control-group">
-					<label class="checkbox-label">
-						<input type="checkbox" id="referralBonus" class="bonus-checkbox">
-						<span class="checkmark"></span>
-						Include Referral Bonus
-					</label>
-				</div>
-				<div class="control-group">
-					<label class="checkbox-label">
-						<input type="checkbox" id="movingBonus" class="bonus-checkbox">
-						<span class="checkmark"></span>
-						Include Moving Bonus
-					</label>
-				</div>
-			</div>
-			<div class="showcase-actions">
-				<button id="sendBtn" class="btn btn-primary showcase-btn" disabled>
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-					</svg>
-					Preview & Send Showcase to <span id="sendLeadName">Lead</span>
-				</button>
-				<div class="selection-count">
-					<span id="selectedCount">0</span> properties selected
-				</div>
-			</div>
-		</div>
-			<div class="modal-body">
-				<div id="listingsGrid" class="listings-grid">
-					<!-- matches injected -->
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Showcase Preview Modal -->
-	<div id="showcaseModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Create ShowCase</h3>
-				<button id="closeShowcase" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div class="form-row">
-					<label>To</label>
-					<input id="showcaseTo" type="email" readonly />
-				</div>
-				<div class="form-row">
-					<label>Subject</label>
-					<input id="showcaseSubject" type="text" value="Top options hand picked for you" />
-				</div>
-				<div class="form-row">
-					<label>Optional Message</label>
-					<textarea id="showcaseMessage" rows="4" placeholder="Add a quick note..."></textarea>
-				</div>
-				<div id="showcasePreview" class="showcase-preview"><!-- injected --></div>
-			</div>
-			<div class="modal-footer">
-				<button id="sendShowcase" class="primary">Send Email</button>
-				<button id="copyShowcaseLink">Copy Share Link</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Interested Leads Modal -->
-	<div id="interestedLeadsModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Interested Leads - <span id="propertyName">Property</span></h3>
-				<button id="closeInterestedLeads" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="interestedLeadsList">
-					<!-- Interested leads will be populated here -->
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Build Showcase Modal -->
-	<div id="buildShowcaseModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Build Showcase</h3>
-				<button id="closeBuildShowcase" class="icon-btn" aria-label="Close">×</button>
-			</div>
-		<div class="modal-sticky-header">
-			<div class="showcase-controls">
-				<div class="control-group">
-					<label>Select Lead</label>
-					<select id="buildShowcaseLead" class="form-select">
-						<option value="">Choose a lead...</option>
-					</select>
-				</div>
-				<div class="control-group">
-					<label class="checkbox-label">
-						<input type="checkbox" id="buildReferralBonus" class="bonus-checkbox">
-						<span class="checkmark"></span>
-						Include Referral Bonus
-					</label>
-				</div>
-				<div class="control-group">
-					<label class="checkbox-label">
-						<input type="checkbox" id="buildMovingBonus" class="bonus-checkbox">
-						<span class="checkmark"></span>
-						Include Moving Bonus
-					</label>
-				</div>
-			</div>
-			<div class="showcase-actions">
-				<button id="sendBuildShowcase" class="btn btn-primary showcase-btn" disabled>
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-					</svg>
-					Preview & Send Showcase to <span id="buildSendLeadName">Lead</span>
-				</button>
-				<div class="selection-count">
-					<span id="buildSelectedCount">0</span> properties selected
-				</div>
-			</div>
-		</div>
-			<div class="modal-body">
-				<div id="buildListingsGrid" class="listings-grid">
-					<!-- selected listings will be shown here -->
-				</div>
-			</div>
-		</div>
-	</div>
-	<div id="historyModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Document History</h3>
-				<button id="closeHistory" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="historyContent">
-					<!-- History content injected -->
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Document Details Modal -->
-	<div id="documentDetailsModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Document Details - <span id="documentLeadName">Lead Name</span></h3>
-				<button id="closeDocumentDetails" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="documentSteps">
-					<!-- Document steps injected -->
-				</div>
-			</div>
-		</div>
-	</div>
-
-	<!-- Email Preview Modal -->
-	<div id="emailPreviewModal" class="modal hidden">
-		<div class="modal-card email-preview-card">
-			<div class="modal-header">
-				<h3>Email Preview</h3>
-				<div class="modal-actions">
-					<button id="previewLandingBtn" class="btn btn-secondary btn-small">Preview Landing Page</button>
-					<button id="closeEmailPreview" class="icon-btn" aria-label="Close">×</button>
-				</div>
-			</div>
-			<div class="modal-sticky-header">
-				<button id="sendEmailBtn" class="btn btn-primary showcase-btn">
-					<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
-						<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
-					</svg>
-					Send from <span id="agentEmail">agent@company.com</span>
-				</button>
-				<div class="email-info">
-					<span id="emailRecipient">To: lead@example.com</span>
-				</div>
-			</div>
-			<div class="modal-body email-preview-body">
-				<div class="email-preview">
-					<div class="email-header">
-						<div class="email-subject">Top options hand picked for you</div>
-						<div class="email-from">From: <span id="previewAgentEmail">agent@company.com</span></div>
-					</div>
-					<div class="email-content">
-						<div class="email-greeting">Hi <span id="previewLeadName">Lead Name</span>,</div>
-						<div class="email-message">
-							<p>We have some great fits for you! Go through me and you'll get these perks:</p>
-							<ul class="perks-list">
-								<li>🎯 <strong>Exclusive access</strong> to properties before they hit the market</li>
-								<li>💰 <strong>Better pricing</strong> through our direct relationships</li>
-								<li>⚡ <strong>Priority scheduling</strong> for property tours</li>
-								<li>🛡️ <strong>Expert guidance</strong> throughout your search</li>
-							</ul>
-							<p>Here's a list of options based on what you're looking for. Click which ones you're interested in and hit submit, and then we'll schedule you to go take a look at them!</p>
-						</div>
-						<div class="email-properties">
-							<div id="previewProperties" class="preview-properties-grid">
-								<!-- Selected properties will be shown here -->
+				<!-- Listings Filters - Two-Row Layout -->
+				<div class="listings-filter-bar" id="listingsFilters">
+					<!-- Row 1: Filter Controls -->
+					<div class="filter-controls-row">
+						<!-- View Mode Toggle -->
+						<div class="filter-group view-mode-toggle-group">
+							<label>View Mode</label>
+							<div class="view-mode-toggle">
+								<button id="agentViewBtn" class="view-mode-btn active" data-view="agent">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+										<circle cx="12" cy="7" r="4"></circle>
+									</svg>
+									Agent View
+								</button>
+								<button id="customerViewBtn" class="view-mode-btn" data-view="customer">
+									<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+										<circle cx="9" cy="7" r="4"></circle>
+										<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+										<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+									</svg>
+									Customer View
+								</button>
 							</div>
 						</div>
-						<div class="email-footer">
-							<p>Best regards,<br><span id="previewAgentName">Agent Name</span><br>TRE CRM Team</p>
+
+						<!-- Customer Selector (shown only in Customer View) -->
+						<div class="filter-group customer-selector-group" id="customerSelectorGroup"
+							style="display: none;">
+							<label for="customerSelector">Select Customer</label>
+							<select id="customerSelector" class="filter-select">
+								<option value="">-- Choose a customer --</option>
+								<!-- Options populated dynamically -->
+							</select>
+						</div>
+
+						<!-- Missing Data Warning (shown when customer selected with incomplete preferences) -->
+						<div class="filter-group missing-data-warning" id="missingDataWarning" style="display: none;">
+							<div class="warning-badge">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2">
+									<path
+										d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z">
+									</path>
+									<line x1="12" y1="9" x2="12" y2="13"></line>
+									<line x1="12" y1="17" x2="12.01" y2="17"></line>
+								</svg>
+								<span id="missingDataText">Missing preferences data</span>
+							</div>
+						</div>
+
+						<div class="filter-group">
+							<label for="listingsSearchInput">Search</label>
+							<input type="text" id="listingsSearchInput" placeholder="Community, neighborhood, amenities"
+								class="filter-input">
+						</div>
+						<div class="filter-group">
+							<label for="marketFilter">Market</label>
+							<select id="marketFilter" class="filter-select">
+								<option value="all">All Markets</option>
+								<option value="Austin">Austin</option>
+								<option value="Dallas">Dallas</option>
+								<option value="Houston">Houston</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label for="minPrice">Min Price</label>
+							<input type="number" id="minPrice" placeholder="e.g., 1000" class="filter-input">
+						</div>
+						<div class="filter-group">
+							<label for="maxPrice">Max Price</label>
+							<input type="number" id="maxPrice" placeholder="e.g., 2000" class="filter-input">
+						</div>
+						<div class="filter-group">
+							<label for="bedsFilter">Beds</label>
+							<select id="bedsFilter" class="filter-select">
+								<option value="any">Any</option>
+								<option value="0">Studio</option>
+								<option value="1">1+</option>
+								<option value="2">2+</option>
+								<option value="3">3+</option>
+							</select>
+						</div>
+						<div class="filter-group" id="commissionFilterGroup">
+							<label for="commissionFilter">Commission</label>
+							<select id="commissionFilter" class="filter-select">
+								<option value="0">Any</option>
+								<option value="1">1%+</option>
+								<option value="2">2%+</option>
+								<option value="3">3%+</option>
+								<option value="4">4%+</option>
+							</select>
+						</div>
+						<div class="filter-group">
+							<label for="amenitiesFilter">Amenities</label>
+							<select id="amenitiesFilter" class="filter-select">
+								<option value="any">Any</option>
+								<option value="pool">Pool</option>
+								<option value="gym">Gym</option>
+								<option value="pet">Pet Friendly</option>
+								<option value="ev">EV Charging</option>
+							</select>
+						</div>
+						<div class="filter-group pumi-filter-group">
+							<label class="pumi-filter-label">
+								<input type="checkbox" id="pumiOnlyFilter" class="pumi-filter-checkbox">
+								<span class="pumi-filter-icon">PUMI</span>
+								<span class="pumi-filter-text">PUMI Only</span>
+							</label>
+						</div>
+					</div>
+
+					<!-- Row 2: Action Buttons -->
+					<div class="filter-actions-row">
+						<!-- Primary Actions Group -->
+						<div class="action-group action-group-primary">
+							<button id="addListingBtn" class="btn btn-primary">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 6px;">
+									<line x1="12" y1="5" x2="12" y2="19"></line>
+									<line x1="5" y1="12" x2="19" y2="12"></line>
+								</svg>
+								Add Property
+							</button>
+							<button id="addContactInfoBtn" class="btn btn-outline"
+								title="Add property contact information">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 6px;">
+									<path
+										d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z">
+									</path>
+								</svg>
+								Contact Info
+							</button>
+						</div>
+
+						<!-- Utility Actions Group -->
+						<div class="action-group action-group-utility">
+							<button id="downloadCSVTemplateBtn" class="btn btn-outline btn-sm"
+								title="Download CSV template for bulk import">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+									<polyline points="7 10 12 15 17 10"></polyline>
+									<line x1="12" y1="15" x2="12" y2="3"></line>
+								</svg>
+								CSV Template
+							</button>
+							<button id="uploadCSVBtn" class="btn btn-outline btn-sm"
+								title="Upload CSV file to bulk import listings">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+									<polyline points="17 8 12 3 7 8"></polyline>
+									<line x1="12" y1="3" x2="12" y2="15"></line>
+								</svg>
+								Upload CSV
+							</button>
+							<button id="clearListingsFilters" class="btn btn-secondary btn-sm">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<line x1="18" y1="6" x2="6" y2="18"></line>
+									<line x1="6" y1="6" x2="18" y2="18"></line>
+								</svg>
+								Clear
+							</button>
+						</div>
+
+						<!-- Bulk Actions Group (shown when selections made) -->
+						<div class="action-group action-group-bulk">
+							<span id="bulkActionsCount" class="bulk-selection-count">0 selected</span>
+							<button id="buildShowcaseBtn" class="btn btn-success btn-sm" disabled
+								title="Select listings to build showcase">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+									<path d="M9 9h6v6H9z" />
+								</svg>
+								Build Showcase
+							</button>
+							<button id="bulkMarkUnavailableBtn" class="btn btn-secondary btn-sm" disabled
+								title="Select listings to mark as unavailable">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<circle cx="12" cy="12" r="10" />
+									<line x1="4.93" y1="4.93" x2="19.07" y2="19.07" />
+								</svg>
+								Mark Unavailable
+							</button>
+							<button id="bulkDeleteBtn" class="btn btn-danger btn-sm" disabled
+								title="Select listings to delete permanently">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<polyline points="3 6 5 6 21 6" />
+									<path
+										d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+								</svg>
+								Delete
+							</button>
+						</div>
+					</div>
+				</div>
+
+				<div class="listings-layout">
+					<div class="table-wrapper">
+						<table id="listingsTable" class="data-table">
+							<thead>
+								<tr>
+									<th></th>
+									<th data-sort="name" class="sortable">Listings <span class="sort-icon">↕</span></th>
+									<th data-sort="rent_min" class="sortable">Rent Range <span
+											class="sort-icon">↕</span></th>
+								</tr>
+							</thead>
+							<tbody id="listingsTbody">
+								<!-- rows injected -->
+							</tbody>
+						</table>
+					</div>
+					<div class="mapwrap">
+						<div id="listingsMap" aria-label="Map of properties"></div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/properties (formerly #/specials) -->
+			<section id="propertiesView" class="route-view hidden">
+				<div class="view-bar mobile-only" style="display: none;">
+					<h1>🔥 Properties & Specials</h1>
+					<div id="propertiesRoleLabel" class="role-label"></div>
+				</div>
+
+				<!-- Unified Properties Table -->
+				<div class="properties-section">
+					<div class="section-header">
+						<h2>🏢 Properties & Specials</h2>
+						<div style="display: flex; gap: 10px;">
+							<button id="addPropertyBtn" class="btn btn-primary">+ Add New Property</button>
+							<button id="addPropertyContactBtn" class="btn btn-primary">📞 Update Property
+								Contact</button>
+							<button id="addSpecialBtn" class="btn btn-primary">🔥 Add Special</button>
+						</div>
+					</div>
+
+					<div class="table-actions">
+						<input id="propertiesSearch" type="search"
+							placeholder="Search properties, contacts, or specials..." />
+					</div>
+
+					<div class="table-container">
+						<table id="propertiesTable" class="data-table">
+							<thead>
+								<tr>
+									<th data-sort="community_name" class="sortable">Property Name <span
+											class="sort-icon">↕</span></th>
+									<th>Address</th>
+									<th>Contact Info</th>
+									<th>Phone</th>
+									<th>Leniency</th>
+									<th>Current Special(s)</th>
+									<th>Actions</th>
+								</tr>
+							</thead>
+							<tbody id="propertiesTbody">
+								<!-- Properties with contacts and specials will be populated here -->
+							</tbody>
+						</table>
+					</div>
+
+					<!-- Pagination Controls -->
+					<div id="propertiesPagination" class="pagination-controls"
+						style="display: none; margin-top: 20px; text-align: center;">
+						<button id="propertiesPrevBtn" class="btn btn-secondary" style="margin-right: 10px;">←
+							Previous</button>
+						<span id="propertiesPageInfo" style="margin: 0 15px; font-weight: 500;"></span>
+						<button id="propertiesNextBtn" class="btn btn-secondary" style="margin-left: 10px;">Next
+							→</button>
+					</div>
+				</div>
+			</section>
+
+			<!-- Keep old specialsView ID for backward compatibility (redirect to propertiesView) -->
+			<section id="specialsView" class="route-view hidden"></section>
+
+			<!-- Route: #/documents -->
+			<section id="documentsView" class="route-view hidden">
+				<div class="view-bar mobile-only">
+					<h1>Document Progress Tracker</h1>
+					<div id="documentsRoleLabel" class="role-label"></div>
+				</div>
+
+				<!-- Manager View -->
+				<div id="managerDocumentsView" class="documents-manager-view">
+					<!-- Documents Page Header - Two-Row Layout -->
+					<div class="documents-page-header">
+						<!-- Row 1: Search Controls -->
+						<div class="documents-controls-row">
+							<div class="search-field">
+								<label for="documentsSearch">Search</label>
+								<input type="text" id="documentsSearch" class="filter-input"
+									placeholder="Search by agent name or lead name..." />
+							</div>
+							<button id="clearDocumentsSearch" class="btn btn-secondary btn-sm">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 4px;">
+									<line x1="18" y1="6" x2="6" y2="18"></line>
+									<line x1="6" y1="6" x2="18" y2="18"></line>
+								</svg>
+								Clear
+							</button>
+						</div>
+
+						<!-- Row 2: Title and Actions -->
+						<div class="documents-title-row">
+							<div class="documents-title-section">
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 8px; color: var(--brand);">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+									<polyline points="14 2 14 8 20 8"></polyline>
+									<line x1="16" y1="13" x2="8" y2="13"></line>
+									<line x1="16" y1="17" x2="8" y2="17"></line>
+									<polyline points="10 9 9 9 8 9"></polyline>
+								</svg>
+								<h2 class="documents-title">Lead Progress Tracking</h2>
+								<span id="leadCountBadge" class="lead-count-badge">0 leads</span>
+							</div>
+							<div class="documents-actions">
+								<button id="historyBtn" class="btn btn-outline">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+										style="margin-right: 6px;">
+										<circle cx="12" cy="12" r="10"></circle>
+										<polyline points="12 6 12 12 16 14"></polyline>
+									</svg>
+									View History
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Lead Tables Container -->
+					<div id="documentsTbody" class="documents-container">
+						<!-- Lead tables will be generated here -->
+					</div>
+				</div>
+
+				<!-- Agent View -->
+				<div id="agentDocumentsView" class="documents-agent-view hidden">
+					<!-- Documents Page Header - Agent View -->
+					<div class="documents-page-header">
+						<!-- Single Row: Title and Actions -->
+						<div class="documents-title-row">
+							<div class="documents-title-section">
+								<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+									style="margin-right: 8px; color: var(--brand);">
+									<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+									<polyline points="14 2 14 8 20 8"></polyline>
+									<line x1="16" y1="13" x2="8" y2="13"></line>
+									<line x1="16" y1="17" x2="8" y2="17"></line>
+									<polyline points="10 9 9 9 8 9"></polyline>
+								</svg>
+								<h2 class="documents-title">My Lead Progress</h2>
+								<span id="agentLeadCountBadge" class="lead-count-badge">0 leads</span>
+							</div>
+							<div class="documents-actions">
+								<button id="agentHistoryBtn" class="btn btn-outline">
+									<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+										style="margin-right: 6px;">
+										<circle cx="12" cy="12" r="10"></circle>
+										<polyline points="12 6 12 12 16 14"></polyline>
+									</svg>
+									View History
+								</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Lead Tables Container -->
+					<div id="agentDocumentsTbody" class="documents-container">
+						<!-- Lead tables will be generated here -->
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/emails -->
+			<section id="emailsView" class="route-view hidden">
+				<div class="view-bar mobile-only">
+					<h2>📧 Email Command Center</h2>
+					<div id="emailsRoleLabel" class="role-label"></div>
+				</div>
+
+				<div class="admin-content email-dashboard-mc">
+					<!-- Tab Navigation -->
+					<div class="email-tabs">
+						<button class="email-tab active" data-tab="overview">📊 Overview</button>
+						<button class="email-tab" data-tab="alerts">🚨 Alerts</button>
+						<button class="email-tab" data-tab="logs">📋 Email Logs</button>
+						<button class="email-tab" data-tab="templates">📝 Templates</button>
+					</div>
+
+					<!-- Overview Tab -->
+					<div class="email-tab-content active" data-tab-content="overview">
+						<!-- Email Statistics -->
+						<div id="emailStatsContainer">
+							<!-- Mission control statistics will be rendered here -->
+						</div>
+					</div>
+
+					<!-- Alerts Tab -->
+					<div class="email-tab-content" data-tab-content="alerts">
+						<div class="email-alerts-section">
+							<div class="email-alerts-header">
+								<h3 class="email-alerts-title">🚨 Email Alerts & Flags</h3>
+								<div class="email-alerts-controls">
+									<select id="alertTypeFilter">
+										<option value="">All Alert Types</option>
+										<option value="missing_agent_email">Missing Agent Email</option>
+										<option value="email_send_failed">Email Send Failed</option>
+										<option value="no_assigned_agent">No Assigned Agent</option>
+										<option value="api_error">API Error</option>
+									</select>
+									<select id="alertSeverityFilter">
+										<option value="">All Severities</option>
+										<option value="warning">⚠️ Warning</option>
+										<option value="error">🚨 Error</option>
+									</select>
+									<button id="refreshAlertsBtn" class="btn-secondary" title="Refresh Alerts">
+										🔄 Refresh
+									</button>
+								</div>
+							</div>
+
+							<div class="email-alerts-body">
+								<div id="emailAlertsContainer">
+									<!-- Alerts will be rendered here -->
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Email Logs Tab -->
+					<div class="email-tab-content" data-tab-content="logs">
+						<div class="email-logs-section">
+							<div class="email-logs-header">
+								<h3 class="email-logs-title">📧 Email Transmission Log</h3>
+								<div class="email-logs-controls">
+									<input id="emailSearch" type="search" placeholder="Search..." />
+									<select id="emailStatusFilter">
+										<option value="">All Status</option>
+										<option value="pending">Pending</option>
+										<option value="sent">Sent</option>
+										<option value="delivered">Delivered</option>
+										<option value="failed">Failed</option>
+										<option value="bounced">Bounced</option>
+									</select>
+									<select id="emailAgentFilter">
+										<option value="">All Agents</option>
+										<!-- Options will be populated dynamically -->
+									</select>
+									<button class="email-logs-toggle">
+										▼ Expand
+									</button>
+								</div>
+							</div>
+
+							<div class="email-logs-body">
+								<table class="email-logs-table" id="emailLogsTable">
+									<thead>
+										<tr>
+											<th>Recipient</th>
+											<th>Subject</th>
+											<th>Template</th>
+											<th>Status</th>
+											<th>Engagement</th>
+											<th>Sent Date</th>
+											<th>Sent By</th>
+											<th>Actions</th>
+										</tr>
+									</thead>
+									<tbody id="emailLogsTbody">
+										<!-- Email logs will be populated here -->
+									</tbody>
+								</table>
+							</div>
+
+							<!-- Pagination -->
+							<div class="email-logs-pagination">
+								<button id="emailsPrevPage" class="btn btn-secondary btn-sm">← Previous</button>
+								<span id="emailsPageInfo">Page 1</span>
+								<button id="emailsNextPage" class="btn btn-secondary btn-sm">Next →</button>
+							</div>
+						</div>
+					</div>
+
+					<!-- Templates Tab -->
+					<div class="email-tab-content" data-tab-content="templates">
+						<div id="emailTemplatesContainer" class="email-templates-mc">
+							<!-- Email templates will be rendered here -->
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/bugs -->
+			<section id="bugsView" class="route-view hidden">
+				<div class="view-bar mobile-only">
+					<h1>🐛 Bug Tracker</h1>
+					<div id="bugsRoleLabel" class="role-label"></div>
+				</div>
+
+				<div class="admin-content">
+					<div class="admin-section">
+						<div class="section-header">
+							<h2>Bug Reports</h2>
+							<div class="bug-filters">
+								<select id="bugStatusFilter">
+									<option value="">All Status</option>
+									<option value="pending">Pending</option>
+									<option value="in_progress">In Progress</option>
+									<option value="resolved">Resolved</option>
+									<option value="closed">Closed</option>
+								</select>
+								<select id="bugPriorityFilter">
+									<option value="">All Priority</option>
+									<option value="low">Low</option>
+									<option value="medium">Medium</option>
+									<option value="high">High</option>
+									<option value="critical">Critical</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="bugs-table-wrapper">
+							<table id="bugsTable" class="data-table">
+								<thead>
+									<tr>
+										<th data-sort="id" class="sortable">ID <span class="sort-icon">↕</span></th>
+										<th data-sort="title" class="sortable">Title <span class="sort-icon">↕</span>
+										</th>
+										<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span>
+										</th>
+										<th data-sort="priority" class="sortable">Priority <span
+												class="sort-icon">↕</span></th>
+										<th data-sort="page" class="sortable">Page <span class="sort-icon">↕</span></th>
+										<th data-sort="reported_by" class="sortable">Reported By <span
+												class="sort-icon">↕</span></th>
+										<th data-sort="created_at" class="sortable">Created <span
+												class="sort-icon">↕</span></th>
+										<th>Actions</th>
+									</tr>
+								</thead>
+								<tbody id="bugsTbody">
+									<!-- Bugs will be populated here -->
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/admin -->
+			<section id="adminView" class="route-view hidden">
+				<div class="view-bar mobile-only">
+					<h1>Admin Panel</h1>
+					<div id="adminRoleLabel" class="role-label"></div>
+				</div>
+
+				<div class="admin-content">
+					<!-- User Management Section -->
+					<div class="admin-section">
+						<div class="section-header">
+							<h2>User Management</h2>
+							<button id="addUserBtn" class="btn btn-primary">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" />
+								</svg>
+								Add User
+							</button>
+						</div>
+
+						<div class="users-table-wrapper">
+							<table id="usersTable" class="data-table">
+								<thead>
+									<tr>
+										<th data-sort="name" class="sortable">Name <span class="sort-icon">↕</span></th>
+										<th>Email</th>
+										<th data-sort="role" class="sortable">Role <span class="sort-icon">↕</span></th>
+										<th data-sort="status" class="sortable">Status <span class="sort-icon">↕</span>
+										</th>
+										<th data-sort="created_at" class="sortable">Created <span
+												class="sort-icon">↕</span></th>
+										<th>Actions</th>
+									</tr>
+								</thead>
+								<tbody id="usersTbody">
+									<!-- Users will be populated here -->
+								</tbody>
+							</table>
+						</div>
+
+						<!-- Users Pagination Controls -->
+						<div id="usersPagination" class="pagination-controls"
+							style="display: none; margin-top: 20px; text-align: center;">
+							<button id="usersPrevBtn" class="btn btn-secondary" style="margin-right: 10px;">←
+								Previous</button>
+							<span id="usersPageInfo" style="margin: 0 15px; font-weight: 500;"></span>
+							<button id="usersNextBtn" class="btn btn-secondary" style="margin-left: 10px;">Next
+								→</button>
+						</div>
+					</div>
+
+					<!-- Audit Log Section -->
+					<div class="admin-section">
+						<div class="section-header">
+							<h2>Audit Log</h2>
+							<div class="audit-filters">
+								<select id="auditFilter">
+									<option value="all">All Actions</option>
+									<option value="user_created">User Created</option>
+									<option value="user_updated">User Updated</option>
+									<option value="user_deleted">User Deleted</option>
+									<option value="role_changed">Role Changed</option>
+									<option value="password_changed">Password Changed</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="audit-log-wrapper">
+							<div id="auditLog" class="audit-log">
+								<!-- Audit entries will be populated here -->
+							</div>
+						</div>
+
+						<!-- Audit Log Pagination Controls -->
+						<div id="auditLogPagination" class="pagination-controls"
+							style="display: none; margin-top: 20px; text-align: center;">
+							<button id="auditLogPrevBtn" class="btn btn-secondary" style="margin-right: 10px;">←
+								Previous</button>
+							<span id="auditLogPageInfo" style="margin: 0 15px; font-weight: 500;"></span>
+							<button id="auditLogNextBtn" class="btn btn-secondary" style="margin-left: 10px;">Next
+								→</button>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/manage -->
+			<section id="manageView" class="route-view hidden mission-control-theme">
+				<div class="view-bar mobile-only">
+					<h1>⚙️ Smart Match Configuration</h1>
+					<div id="manageRoleLabel" class="role-label"></div>
+				</div>
+
+				<div class="page-container">
+					<div class="smart-match-config-page">
+						<!-- Mission Control Header -->
+						<div class="mc-header">
+							<h1 class="mc-title">⚙️ SMART MATCH MISSION CONTROL</h1>
+							<p class="mc-subtitle">Algorithm Configuration Dashboard</p>
+						</div>
+
+						<!-- Current Configuration Summary Panel -->
+						<div class="mc-summary-panel">
+							<div class="mc-summary-header">
+								<div class="mc-summary-title-group">
+									<h3>SYSTEM STATUS</h3>
+									<span class="mc-status-indicator" id="configStatusBadge">
+										<span>ONLINE</span>
+									</span>
+								</div>
+								<button type="button" id="testSmartMatchBtn" class="mc-btn mc-btn-test">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<polygon points="5 3 19 12 5 21 5 3"></polygon>
+									</svg>
+									<span>RUN TEST</span>
+								</button>
+							</div>
+							<div class="mc-summary-grid">
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">BEDROOM MODE</span>
+									<span class="mc-summary-value" id="summaryBedroomMode">EXACT</span>
+								</div>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">BATHROOM MODE</span>
+									<span class="mc-summary-value" id="summaryBathroomMode">EXACT</span>
+								</div>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">RENT TOLERANCE</span>
+									<span class="mc-summary-value" id="summaryRentTolerance">±20%</span>
+								</div>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">FILTER PREVIEW</span>
+									<span class="mc-summary-value" id="matchCounterValue">
+										<span class="mc-counter-loading-inline">...</span>
+									</span>
+								</div>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">MAX RESULTS</span>
+									<span class="mc-summary-value" id="summaryMaxProperties">10</span>
+								</div>
+								<div class="mc-summary-item">
+									<span class="mc-summary-label">LAST SYNC</span>
+									<span class="mc-summary-value" id="summaryLastModified">NEVER</span>
+								</div>
+							</div>
+
+							<!-- Algorithm Flow Diagram -->
+							<div class="mc-flow-diagram">
+								<div class="mc-flow-step">
+									<div class="mc-flow-icon">🔍</div>
+									<div class="mc-flow-label">FILTER</div>
+								</div>
+								<div class="mc-flow-arrow">→</div>
+								<div class="mc-flow-step">
+									<div class="mc-flow-icon">⚖️</div>
+									<div class="mc-flow-label">SCORE</div>
+								</div>
+								<div class="mc-flow-arrow">→</div>
+								<div class="mc-flow-step">
+									<div class="mc-flow-icon">📊</div>
+									<div class="mc-flow-label">DISPLAY</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Configuration Form -->
+						<form id="smartMatchConfigForm" class="config-form">
+
+							<!-- Dashboard Grid Layout -->
+							<div class="mc-dashboard-grid">
+
+								<!-- Column 1: Filtering Controls -->
+								<div class="mc-control-panel">
+									<div class="mc-panel-header">
+										<div class="mc-panel-icon">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+											</svg>
+										</div>
+										<div class="mc-panel-title-group">
+											<h2>FILTERING CONTROLS</h2>
+											<p class="mc-panel-description">Configure property inclusion criteria and
+												matching rules</p>
+										</div>
+									</div>
+
+									<div class="mc-control-grid">
+										<!-- Bedroom Matching -->
+										<div class="mc-control-field">
+											<label class="mc-control-label" for="bedroomMatchMode">Bedroom Matching
+												Mode</label>
+											<div class="mc-select-wrapper">
+												<select id="bedroomMatchMode" class="mc-select">
+													<option value="exact">Exact Match Only</option>
+													<option value="flexible">Allow ±1 Bedroom</option>
+													<option value="minimum">Minimum Required</option>
+												</select>
+											</div>
+											<p class="mc-control-help">How strictly to match bedroom requirements</p>
+										</div>
+
+										<!-- Bathroom Matching -->
+										<div class="mc-control-field">
+											<label class="mc-control-label" for="bathroomMatchMode">Bathroom Matching
+												Mode</label>
+											<div class="mc-select-wrapper">
+												<select id="bathroomMatchMode" class="mc-select">
+													<option value="exact">Exact Match Only</option>
+													<option value="flexible">Allow ±0.5 Bathroom</option>
+													<option value="minimum">Minimum Required</option>
+												</select>
+											</div>
+											<p class="mc-control-help">How strictly to match bathroom requirements</p>
+										</div>
+
+										<!-- Rent Tolerance -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Rent Tolerance</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">±20%</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 20%"></div>
+														<input type="range" id="rentTolerancePercent" class="mc-slider"
+															min="0" max="100" step="5" value="20" data-suffix="%"
+															data-prefix="±">
+														<div class="mc-slider-thumb" style="left: 20%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0%</span>
+													<span class="mc-slider-label">100%</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Percentage above/below budget to include</p>
+										</div>
+
+										<!-- Pet Policy Matching -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Pet Policy Mode</label>
+											<div class="mc-select-wrapper">
+												<select id="petPolicyMode" class="mc-select">
+													<option value="ignore">Ignore (No Filter)</option>
+													<option value="strict">Strict (Must Match)</option>
+													<option value="lenient">Lenient (Prefer Match)</option>
+												</select>
+											</div>
+											<p class="mc-control-help">How to handle pet policy requirements</p>
+										</div>
+
+										<!-- Move-in Flexibility -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Move-in Flexibility</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">30 days</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 8.2%"></div>
+														<input type="range" id="moveInFlexibilityDays" class="mc-slider"
+															min="0" max="365" step="7" value="30" data-suffix=" days">
+														<div class="mc-slider-thumb" style="left: 8.2%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0 days</span>
+													<span class="mc-slider-label">365 days</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Days before/after move-in date to include
+												properties
+											</p>
+										</div>
+									</div>
+								</div>
+
+								<!-- Column 2: Scoring Settings -->
+								<div class="mc-control-panel">
+									<div class="mc-panel-header">
+										<div class="mc-panel-icon">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<polygon
+													points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2">
+												</polygon>
+											</svg>
+										</div>
+										<div class="mc-panel-title-group">
+											<h2>SCORING ALGORITHM</h2>
+											<p class="mc-panel-description">Adjust property ranking weights and
+												prioritization factors</p>
+										</div>
+									</div>
+
+									<div class="mc-control-grid">
+										<!-- Price Match Perfect Score -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Price Match Perfect Score</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">25 pts</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 25%"></div>
+														<input type="range" id="priceMatchPerfectScore"
+															class="mc-slider" min="0" max="100" step="5" value="25"
+															data-suffix=" pts">
+														<div class="mc-slider-thumb" style="left: 25%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0 pts</span>
+													<span class="mc-slider-label">100 pts</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Points for rent within budget</p>
+										</div>
+
+										<!-- Move-in Date Bonus -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Move-in Date Bonus</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">10 pts</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 10%"></div>
+														<input type="range" id="moveInDateBonus" class="mc-slider"
+															min="0" max="100" step="5" value="10" data-suffix=" pts">
+														<div class="mc-slider-thumb" style="left: 10%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0 pts</span>
+													<span class="mc-slider-label">100 pts</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Bonus if available by desired date</p>
+										</div>
+
+										<!-- Commission Base Bonus -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Commission Base Bonus</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">80 pts</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 80%"></div>
+														<input type="range" id="commissionBaseBonus" class="mc-slider"
+															min="0" max="100" step="5" value="80" data-suffix=" pts">
+														<div class="mc-slider-thumb" style="left: 80%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0 pts</span>
+													<span class="mc-slider-label">100 pts</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Base bonus for high commission properties</p>
+										</div>
+
+										<!-- PUMI Bonus -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">PUMI Bonus</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">20 pts</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 20%"></div>
+														<input type="range" id="pumiBonus" class="mc-slider" min="0"
+															max="100" step="5" value="20" data-suffix=" pts">
+														<div class="mc-slider-thumb" style="left: 20%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0 pts</span>
+													<span class="mc-slider-label">100 pts</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Bonus points for PUMI properties</p>
+										</div>
+
+										<!-- Commission Threshold -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Commission Threshold</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">4.0%</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 20%"></div>
+														<input type="range" id="commissionThresholdPct"
+															class="mc-slider" min="0" max="20" step="0.5" value="4.0"
+															data-suffix="%">
+														<div class="mc-slider-thumb" style="left: 20%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0%</span>
+													<span class="mc-slider-label">20%</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Minimum commission % to receive bonus</p>
+										</div>
+									</div>
+								</div>
+
+								<!-- Column 3: Display Settings -->
+								<div class="mc-control-panel">
+									<div class="mc-panel-header">
+										<div class="mc-panel-icon">
+											<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+												<rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+												<line x1="8" y1="21" x2="16" y2="21"></line>
+												<line x1="12" y1="17" x2="12" y2="21"></line>
+											</svg>
+										</div>
+										<div class="mc-panel-title-group">
+											<h2>DISPLAY SETTINGS</h2>
+											<p class="mc-panel-description">Configure result presentation and output
+												parameters</p>
+										</div>
+									</div>
+
+									<div class="mc-control-grid">
+										<!-- Max Results -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Maximum Results</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">10</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 18%"></div>
+														<input type="range" id="maxPropertiesToShow" class="mc-slider"
+															min="1" max="50" step="1" value="10">
+														<div class="mc-slider-thumb" style="left: 18%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">1</span>
+													<span class="mc-slider-label">50</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Maximum number of properties to show per lead</p>
+										</div>
+
+										<!-- Sort By -->
+										<div class="mc-control-field">
+											<label class="mc-control-label" for="sortBy">Sort Results By</label>
+											<div class="mc-select-wrapper">
+												<select id="sortBy" class="mc-select">
+													<option value="score">Match Score (Highest First)</option>
+													<option value="price_asc">Price (Lowest First)</option>
+													<option value="price_desc">Price (Highest First)</option>
+													<option value="date_newest">Date Added (Newest First)</option>
+												</select>
+											</div>
+											<p class="mc-control-help">Default sorting order for results</p>
+										</div>
+
+										<!-- Minimum Score -->
+										<div class="mc-control-field">
+											<label class="mc-control-label">Minimum Score Threshold</label>
+											<div class="mc-slider-wrapper">
+												<div class="mc-slider-display">
+													<div class="mc-slider-value">50</div>
+													<div class="mc-slider-track">
+														<div class="mc-slider-fill" style="width: 50%"></div>
+														<input type="range" id="minScoreThreshold" class="mc-slider"
+															min="0" max="100" step="5" value="50">
+														<div class="mc-slider-thumb" style="left: 50%"></div>
+													</div>
+												</div>
+												<div class="mc-slider-labels">
+													<span class="mc-slider-label">0</span>
+													<span class="mc-slider-label">100</span>
+												</div>
+											</div>
+											<p class="mc-control-help">Minimum match score to include in results</p>
+										</div>
+									</div>
+								</div>
+
+							</div>
+							<!-- End Dashboard Grid -->
+
+							<!-- Form Actions -->
+							<div class="mc-actions">
+								<button type="button" id="resetConfigBtn" class="mc-btn mc-btn-secondary">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+										<path d="M21 3v5h-5"></path>
+										<path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+										<path d="M3 21v-5h5"></path>
+									</svg>
+									<span>RESET TO DEFAULTS</span>
+								</button>
+								<button type="submit" id="saveConfigBtn" class="mc-btn mc-btn-primary">
+									<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+										<path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z">
+										</path>
+										<polyline points="17 21 17 13 7 13 7 21"></polyline>
+										<polyline points="7 3 7 8 15 8"></polyline>
+									</svg>
+									<span>SAVE CONFIGURATION</span>
+								</button>
+							</div>
+						</form>
+					</div>
+				</div>
+			</section>
+		</main>
+
+		<!-- Lead Details Modal (Center-aligned) -->
+		<div id="leadDetailsModal" class="modal hidden">
+			<div class="modal-card large">
+				<div class="modal-header">
+					<h3>👤 Lead Details</h3>
+					<button id="closeLeadDetails" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="leadDetailsContent">
+						<!-- Lead details will be populated here -->
+					</div>
+					<hr style="margin: 20px 0;">
+					<div id="leadNotesSection">
+						<h4 style="margin-top: 0; color: #3b82f6;">📝 TRE Internal Comments</h4>
+						<div id="leadNotesContent" style="max-height: 300px; overflow-y: auto; margin-bottom: 20px;">
+							<!-- Notes will be populated here -->
+						</div>
+						<div class="field">
+							<label for="newLeadNote">Add New Comment</label>
+							<textarea id="newLeadNote" rows="3"
+								placeholder="Type your internal comment here..."></textarea>
+						</div>
+						<button id="saveLeadNoteBtn" class="btn btn-primary" style="margin-top: 10px;">Add
+							Comment</button>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="closeLeadDetailsFooter" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Agent Details Drawer -->
+		<aside id="agentDrawer" class="drawer hidden">
+			<div class="drawer-header">
+				<h2>Agent Details</h2>
+				<button id="closeAgentDrawer" class="icon-btn" aria-label="Close">×</button>
+			</div>
+			<div class="drawer-content" id="agentDrawerContent">
+				<!-- details injected -->
+			</div>
+		</aside>
+
+		<!-- Agent Edit Modal (Center-aligned) -->
+		<div id="agentEditModal" class="modal hidden">
+			<div class="modal-card large">
+				<div class="modal-header">
+					<h3>👤 Agent Details</h3>
+					<button id="closeAgentEdit" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="agentEditContent">
+						<!-- Agent details will be populated here -->
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="saveAgentBtn" class="btn btn-primary">Save Changes</button>
+					<button id="closeAgentEditFooter" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Matches Modal -->
+		<div id="matchesModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Top Listing Options — <span id="leadNameTitle2">Lead</span></h3>
+					<button id="closeMatches" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-sticky-header">
+					<div class="showcase-controls">
+						<div class="control-group">
+							<label class="checkbox-label" style="cursor: pointer;">
+								<input type="checkbox" id="referralBonus" class="bonus-checkbox">
+								<span class="checkmark"></span>
+								<span>Include Referral Bonus</span>
+							</label>
+						</div>
+						<div class="control-group">
+							<label class="checkbox-label" style="cursor: pointer;">
+								<input type="checkbox" id="movingBonus" class="bonus-checkbox">
+								<span class="checkmark"></span>
+								<span>Include Moving Bonus</span>
+							</label>
+						</div>
+					</div>
+					<div class="showcase-actions">
+						<button id="sendBtn" class="btn btn-primary showcase-btn" disabled>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+							</svg>
+							Preview & Send Showcase to <span id="sendLeadName">Lead</span>
+						</button>
+						<div class="selection-count">
+							<span id="selectedCount">0</span> properties selected
+						</div>
+					</div>
+				</div>
+				<div class="modal-body">
+					<div id="listingsGrid" class="listings-grid">
+						<!-- matches injected -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Showcase Preview Modal -->
+		<div id="showcaseModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Create ShowCase</h3>
+					<button id="closeShowcase" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div class="form-row">
+						<label>To</label>
+						<input id="showcaseTo" type="email" readonly />
+					</div>
+					<div class="form-row">
+						<label>Subject</label>
+						<input id="showcaseSubject" type="text" value="Top options hand picked for you" />
+					</div>
+					<div class="form-row">
+						<label>Optional Message</label>
+						<textarea id="showcaseMessage" rows="4" placeholder="Add a quick note..."></textarea>
+					</div>
+					<div id="showcasePreview" class="showcase-preview"><!-- injected --></div>
+				</div>
+				<div class="modal-footer">
+					<button id="sendShowcase" class="primary">Send Email</button>
+					<button id="copyShowcaseLink">Copy Share Link</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Interested Leads Modal -->
+		<div id="interestedLeadsModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Interested Leads - <span id="propertyName">Property</span></h3>
+					<button id="closeInterestedLeads" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="interestedLeadsList">
+						<!-- Interested leads will be populated here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Build Showcase Modal -->
+		<div id="buildShowcaseModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Build Showcase</h3>
+					<button id="closeBuildShowcase" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-sticky-header">
+					<div class="showcase-controls">
+						<div class="control-group">
+							<label>Select Lead</label>
+							<select id="buildShowcaseLead" class="form-select">
+								<option value="">Choose a lead...</option>
+							</select>
+						</div>
+						<div class="control-group">
+							<label class="checkbox-label">
+								<input type="checkbox" id="buildReferralBonus" class="bonus-checkbox"
+									style="display: none;">
+								<span class="checkmark"></span>
+								Include Referral Bonus
+							</label>
+						</div>
+						<div class="control-group">
+							<label class="checkbox-label">
+								<input type="checkbox" id="buildMovingBonus" class="bonus-checkbox"
+									style="display: none;">
+								<span class="checkmark"></span>
+								Include Moving Bonus
+							</label>
+						</div>
+					</div>
+					<div class="showcase-actions">
+						<button id="sendBuildShowcase" class="btn btn-primary showcase-btn" disabled>
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+							</svg>
+							Preview & Send Showcase to <span id="buildSendLeadName">Lead</span>
+						</button>
+						<div class="selection-count">
+							<span id="buildSelectedCount">0</span> properties selected
+						</div>
+					</div>
+				</div>
+				<div class="modal-body">
+					<div id="buildListingsGrid" class="listings-grid">
+						<!-- selected listings will be shown here -->
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="historyModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Document History</h3>
+					<button id="closeHistory" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="historyContent">
+						<!-- History content injected -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Document Details Modal -->
+		<div id="documentDetailsModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Document Details - <span id="documentLeadName">Lead Name</span></h3>
+					<button id="closeDocumentDetails" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="documentSteps">
+						<!-- Document steps injected -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Email Preview Modal -->
+		<div id="emailPreviewModal" class="modal hidden">
+			<div class="modal-card email-preview-card">
+				<div class="modal-header">
+					<h3>📧 Email Preview</h3>
+					<div class="modal-actions">
+						<div class="preview-mode-toggle">
+							<button id="desktopPreviewBtn" class="preview-mode-btn active" title="Desktop View">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path
+										d="M21 2H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h7v2H8v2h8v-2h-2v-2h7c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H3V4h18v12z" />
+								</svg>
+								Desktop
+							</button>
+							<button id="mobilePreviewBtn" class="preview-mode-btn" title="Mobile View">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+									<path
+										d="M17 1.01L7 1c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-1.99-2-1.99zM17 19H7V5h10v14z" />
+								</svg>
+								Mobile
+							</button>
+						</div>
+						<button id="previewLandingBtn" class="btn btn-secondary btn-small">Preview Landing Page</button>
+						<button id="closeEmailPreview" class="icon-btn" aria-label="Close">×</button>
+					</div>
+				</div>
+				<div class="modal-sticky-header">
+					<div class="email-actions-group">
+						<button id="sendTestEmailBtn" class="btn btn-secondary">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path
+									d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+							</svg>
+							Send Test to Me
+						</button>
+						<button id="sendEmailBtn" class="btn btn-primary showcase-btn">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+								<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+							</svg>
+							Send to Lead
+						</button>
+					</div>
+					<div class="email-info">
+						<div class="email-info-row">
+							<strong>To:</strong> <span id="emailRecipient">lead@example.com</span>
+						</div>
+						<div class="email-info-row">
+							<strong>From:</strong> <span id="agentEmail">agent@company.com</span>
+						</div>
+					</div>
+				</div>
+				<div class="modal-body email-preview-body">
+					<div class="email-preview-container-wrapper">
+						<div id="emailPreviewContainer" class="email-preview-container desktop-mode">
+							<div class="email-preview">
+								<div class="email-header">
+									<div class="email-subject">🏠 <span id="previewLeadName">Lead Name</span>, We Found
+										Your
+										Perfect Match!</div>
+									<div class="email-from">From: <span id="previewAgentEmail">agent@company.com</span>
+									</div>
+								</div>
+								<div class="email-content">
+									<div class="email-intro">
+										<div class="email-greeting">Hi <span class="lead-name-inline">Lead Name</span>!
+											👋</div>
+										<p class="email-intro-text">Great news! Our Smart Match system analyzed your
+											preferences
+											and found <strong><span class="property-count">5</span> properties</strong>
+											that are
+											perfect for you.</p>
+										<p class="email-intro-subtext">These aren't just random listings – they're
+											intelligently
+											matched based on your budget, location preferences, and move-in timeline.
+										</p>
+									</div>
+
+									<div class="match-badge">✨ Personalized Just For You</div>
+
+									<div class="email-properties">
+										<div id="previewProperties" class="preview-properties-grid">
+											<!-- Selected properties will be shown here -->
+										</div>
+									</div>
+
+									<div class="email-cta-section">
+										<h3 style="margin-top: 0; color: #111827; font-size: 18px;">Ready to Find Your
+											New Home?
+										</h3>
+										<p style="color: #6b7280; margin-bottom: 20px;">Let's schedule a tour of your
+											favorite
+											properties!</p>
+										<a href="#" class="email-cta-button">📅 Schedule a Tour</a>
+									</div>
+
+									<div class="email-agent-card">
+										<div class="agent-card-header">Your Dedicated Relocation Expert</div>
+										<div class="agent-card-body">
+											<div class="agent-info-item">
+												<strong>Name:</strong> <span id="previewAgentName">Agent Name</span>
+											</div>
+											<div class="agent-info-item">
+												<strong>Email:</strong> <span
+													class="agent-email-inline">agent@company.com</span>
+											</div>
+											<div class="agent-info-item">
+												<strong>Phone:</strong> <span id="previewAgentPhone">(555)
+													123-4567</span>
+											</div>
+										</div>
+										<p class="agent-card-footer">Questions? Reply to this email or give me a call
+											anytime. I'm
+											here to help you find the perfect place to call home!</p>
+									</div>
+
+									<div class="email-footer">
+										<p><strong>Texas Relocation Experts</strong></p>
+										<p style="font-size: 12px; color: #9ca3af; margin-top: 8px;">© 2025 TRE CRM. All
+											rights
+											reserved.</p>
+										<p style="font-size: 11px; color: #9ca3af; margin-top: 4px;">You received this
+											email
+											because you requested property recommendations from us.</p>
+									</div>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>
 			</div>
 		</div>
-	</div>
 
-	<!-- Property Edit Modal -->
-	<div id="listingEditModal" class="modal hidden">
-		<div class="modal-card" style="max-width: 900px; width: 90%;">
-			<div class="modal-header">
-				<h3>⚙️ Edit Property - <span id="editListingName">Property Name</span></h3>
-				<button id="closeListingEdit" class="icon-btn" aria-label="Close">×</button>
+		<!-- Property Edit Modal -->
+		<div id="listingEditModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 900px; width: 90%;">
+				<div class="modal-header">
+					<h3>⚙️ Edit Property - <span id="editListingName">Property Name</span></h3>
+					<button id="closeListingEdit" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="listingEditForm">
+						<!-- Property Flags -->
+						<div class="form-row">
+							<div class="form-group">
+								<label class="checkbox-label">
+									<input type="checkbox" id="editIsPUMI">
+									<span class="checkmark"></span>
+									Mark as PUMI
+								</label>
+							</div>
+
+							<div class="form-group">
+								<label class="checkbox-label">
+									<input type="checkbox" id="editMarkForReview">
+									<span class="checkmark"></span>
+									Mark for Review
+								</label>
+							</div>
+						</div>
+
+						<!-- Property Name -->
+						<div class="form-group">
+							<label for="editPropertyName">Property Name <span style="color: #ef4444;">*</span></label>
+							<input type="text" id="editPropertyName" required placeholder="e.g., Linden at The Rim">
+						</div>
+
+						<!-- Address Fields -->
+						<div class="form-group">
+							<label for="editStreetAddress">Street Address <span style="color: #ef4444;">*</span></label>
+							<input type="text" id="editStreetAddress" required
+								placeholder="e.g., 15022 Vance Jackson Rd">
+						</div>
+
+						<div class="form-row">
+							<div class="form-group" style="flex: 2;">
+								<label for="editCity">City <span style="color: #ef4444;">*</span></label>
+								<input type="text" id="editCity" required placeholder="Auto-filled from address"
+									readonly style="background-color: #f9fafb;">
+							</div>
+
+							<div class="form-group" style="flex: 1;">
+								<label for="editState">State <span style="color: #ef4444;">*</span></label>
+								<select id="editState" required disabled style="background-color: #f9fafb;">
+									<option value="TX">TX</option>
+									<option value="OK">OK</option>
+									<option value="LA">LA</option>
+									<option value="AR">AR</option>
+								</select>
+							</div>
+
+							<div class="form-group" style="flex: 1;">
+								<label for="editZipCode">Zip Code <span style="color: #ef4444;">*</span></label>
+								<input type="text" id="editZipCode" required placeholder="Auto-filled"
+									pattern="[0-9]{5}" readonly style="background-color: #f9fafb;">
+							</div>
+						</div>
+
+						<div class="form-group">
+							<label for="editPhone">Phone</label>
+							<input type="tel" id="editPhone" placeholder="(210) 555-1234">
+						</div>
+
+						<!-- Contact Info Section -->
+						<h4 style="margin-top: 24px; margin-bottom: 12px; color: #3b82f6;">📞 Contact Information</h4>
+						<div class="form-group">
+							<label for="editContactName">Contact Name</label>
+							<input type="text" id="editContactName" placeholder="e.g., John Smith">
+						</div>
+
+						<div class="form-group">
+							<label for="editContactEmail">Contact Email</label>
+							<input type="email" id="editContactEmail" placeholder="e.g., leasing@property.com">
+						</div>
+
+						<div class="form-group">
+							<label for="editOfficeHours">Office Hours</label>
+							<input type="text" id="editOfficeHours" placeholder="e.g., Mon-Fri 9am-6pm">
+						</div>
+
+						<!-- Active Specials Section -->
+						<h4 style="margin-top: 24px; margin-bottom: 12px; color: #3b82f6;">🔥 Active Specials</h4>
+						<div id="editPropertySpecialsList" style="margin-bottom: 16px;">
+							<!-- Specials will be populated here -->
+						</div>
+
+						<!-- Rent Range (Auto-calculated from units) -->
+						<div class="form-row">
+							<div class="form-group">
+								<label for="editRentMin">Min Rent (Auto-calculated)</label>
+								<input type="number" id="editRentMin" min="0" placeholder="Calculated from units"
+									readonly style="background-color: #f9fafb;">
+							</div>
+
+							<div class="form-group">
+								<label for="editRentMax">Max Rent (Auto-calculated)</label>
+								<input type="number" id="editRentMax" min="0" placeholder="Calculated from units"
+									readonly style="background-color: #f9fafb;">
+							</div>
+						</div>
+
+						<!-- Bed/Bath Range -->
+						<div class="form-row">
+							<div class="form-group">
+								<label for="editBedsMin">Min Beds</label>
+								<input type="number" id="editBedsMin" min="0" placeholder="1">
+							</div>
+
+							<div class="form-group">
+								<label for="editBedsMax">Max Beds</label>
+								<input type="number" id="editBedsMax" min="0" placeholder="3">
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="form-group">
+								<label for="editBathsMin">Min Baths</label>
+								<input type="number" id="editBathsMin" min="0" step="0.5" placeholder="1">
+							</div>
+
+							<div class="form-group">
+								<label for="editBathsMax">Max Baths</label>
+								<input type="number" id="editBathsMax" min="0" step="0.5" placeholder="2">
+							</div>
+						</div>
+
+						<!-- Commission -->
+						<div class="form-row">
+							<div class="form-group">
+								<label for="editCommissionPct">Commission %</label>
+								<input type="number" id="editCommissionPct" min="0" max="10" step="0.1"
+									placeholder="2.0">
+							</div>
+						</div>
+
+						<!-- Additional Info -->
+						<div class="form-group">
+							<label for="editWebsite">Website</label>
+							<input type="url" id="editWebsite" placeholder="https://property-website.com">
+						</div>
+
+						<div class="form-group">
+							<label for="editAmenities">Amenities (comma-separated)</label>
+							<input type="text" id="editAmenities" placeholder="Pool, Gym, Parking, Pet Friendly">
+						</div>
+
+						<div class="form-group">
+							<label for="editSpecials">Special Offers</label>
+							<input type="text" id="editSpecials" placeholder="1 month free, $99 deposit">
+						</div>
+
+						<div class="form-group">
+							<label for="editBonus">Bonus Text</label>
+							<input type="text" id="editBonus" placeholder="$300 bonus on approved application">
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="deleteListingBtn" class="btn btn-danger"
+						style="margin-right: auto; display: none;">Delete Listing</button>
+					<button type="button" id="cancelListingEdit" class="btn btn-secondary">Cancel</button>
+					<button type="button" id="saveListingEdit" class="btn btn-primary">Save Changes</button>
+				</div>
 			</div>
-			<div class="modal-body">
-				<form id="listingEditForm">
-					<!-- Property Flags -->
-					<div class="form-row">
-						<div class="form-group">
-							<label class="checkbox-label">
-								<input type="checkbox" id="editIsPUMI">
-								<span class="checkmark"></span>
-								Mark as PUMI
-							</label>
+		</div>
+
+		<!-- Add/Edit User Modal -->
+		<div id="userModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3 id="userModalTitle">Add User</h3>
+					<button id="closeUserModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="userForm">
+						<div class="field">
+							<label for="userName">Full Name *</label>
+							<input type="text" id="userName" required>
 						</div>
-
-						<div class="form-group">
-							<label class="checkbox-label">
-								<input type="checkbox" id="editMarkForReview">
-								<span class="checkmark"></span>
-								Mark for Review
-							</label>
+						<div class="field">
+							<label for="userEmail">Email *</label>
+							<input type="email" id="userEmail" required>
 						</div>
-					</div>
-
-					<!-- Property Name -->
-					<div class="form-group">
-						<label for="editPropertyName">Property Name <span style="color: #ef4444;">*</span></label>
-						<input type="text" id="editPropertyName" required placeholder="e.g., Linden at The Rim">
-					</div>
-
-					<!-- Address Fields -->
-					<div class="form-group">
-						<label for="editStreetAddress">Street Address <span style="color: #ef4444;">*</span></label>
-						<input type="text" id="editStreetAddress" required placeholder="e.g., 15022 Vance Jackson Rd">
-					</div>
-
-					<div class="form-row">
-						<div class="form-group" style="flex: 2;">
-							<label for="editCity">City <span style="color: #ef4444;">*</span></label>
-							<input type="text" id="editCity" required placeholder="Auto-filled from address" readonly style="background-color: #f9fafb;">
-						</div>
-
-						<div class="form-group" style="flex: 1;">
-							<label for="editState">State <span style="color: #ef4444;">*</span></label>
-							<select id="editState" required disabled style="background-color: #f9fafb;">
-								<option value="TX">TX</option>
-								<option value="OK">OK</option>
-								<option value="LA">LA</option>
-								<option value="AR">AR</option>
+						<div class="field">
+							<label for="userRole">Role *</label>
+							<select id="userRole" required>
+								<option value="agent">Agent</option>
+								<option value="manager">Manager</option>
+								<option value="super_user">Super User</option>
+								<option value="accountant">Accountant</option>
 							</select>
 						</div>
 
-						<div class="form-group" style="flex: 1;">
-							<label for="editZipCode">Zip Code <span style="color: #ef4444;">*</span></label>
-							<input type="text" id="editZipCode" required placeholder="Auto-filled" pattern="[0-9]{5}" readonly style="background-color: #f9fafb;">
+						<!-- Agent Profile Fields (shown only when adding/editing agents) -->
+						<div id="agentProfileFields" style="display: none;">
+							<hr style="margin: 20px 0; border: none; border-top: 1px solid #e5e7eb;">
+							<h4 style="margin-bottom: 15px; color: #374151; font-size: 14px; font-weight: 600;">👤 Agent
+								Profile (for Landing Pages)</h4>
+
+							<!-- Headshot Upload -->
+							<div class="field">
+								<label for="userHeadshot">Headshot Photo</label>
+								<div style="display: flex; gap: 12px; align-items: flex-start;">
+									<div id="headshotPreview"
+										style="width: 80px; height: 80px; border-radius: 50%; background: #f3f4f6; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 2px solid #e5e7eb;">
+										<span style="font-size: 32px; color: #9ca3af;">👤</span>
+									</div>
+									<div style="flex: 1;">
+										<input type="file" id="userHeadshot" accept="image/jpeg,image/png,image/webp"
+											style="margin-bottom: 6px;">
+										<p style="font-size: 12px; color: #6b7280; margin: 0;">Recommended: 400x400px,
+											JPG/PNG/WebP, max 2MB</p>
+										<input type="hidden" id="userHeadshotUrl">
+									</div>
+								</div>
+							</div>
+
+							<!-- Bio -->
+							<div class="field">
+								<label for="userBio">Bio / About <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<textarea id="userBio" rows="3"
+									placeholder="Tell leads about your experience and how you can help them find their perfect home..."
+									maxlength="500"></textarea>
+								<p style="font-size: 12px; color: #6b7280; margin: 4px 0 0 0;"><span
+										id="bioCharCount">0</span>/500 characters</p>
+							</div>
+
+							<!-- Social Media Links -->
+							<div class="field">
+								<label for="userFacebook">Facebook URL <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<input type="url" id="userFacebook" placeholder="https://facebook.com/yourprofile">
+							</div>
+							<div class="field">
+								<label for="userInstagram">Instagram URL <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<input type="url" id="userInstagram" placeholder="https://instagram.com/yourprofile">
+							</div>
+							<div class="field">
+								<label for="userX">X (Twitter) URL <span
+										style="font-size: 0.9em; color: #666;">(optional)</span></label>
+								<input type="url" id="userX" placeholder="https://x.com/yourprofile">
+							</div>
 						</div>
-					</div>
 
-					<div class="form-group">
-						<label for="editPhone">Phone</label>
-						<input type="tel" id="editPhone" placeholder="(210) 555-1234">
-					</div>
-					
-					<!-- Rent Range (Auto-calculated from units) -->
-					<div class="form-row">
-						<div class="form-group">
-							<label for="editRentMin">Min Rent (Auto-calculated)</label>
-							<input type="number" id="editRentMin" min="0" placeholder="Calculated from units" readonly style="background-color: #f9fafb;">
+						<!-- Password change permission warning -->
+						<div id="userPasswordWarning"
+							style="display: none; padding: 10px; background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; margin-bottom: 15px; color: #856404;">
+							You do not have permission to change this user's password.
 						</div>
 
-						<div class="form-group">
-							<label for="editRentMax">Max Rent (Auto-calculated)</label>
-							<input type="number" id="editRentMax" min="0" placeholder="Calculated from units" readonly style="background-color: #f9fafb;">
+						<!-- Password fields container (can be hidden based on permissions) -->
+						<div id="userPasswordFields">
+							<div class="field">
+								<label for="userPassword">Password <span style="font-size: 0.9em; color: #666;">(leave
+										blank to keep current)</span></label>
+								<input type="password" id="userPassword">
+							</div>
+							<div class="field">
+								<label for="userConfirmPassword">Confirm Password</label>
+								<input type="password" id="userConfirmPassword">
+							</div>
 						</div>
-					</div>
-
-					<!-- Bed/Bath Range -->
-					<div class="form-row">
-						<div class="form-group">
-							<label for="editBedsMin">Min Beds</label>
-							<input type="number" id="editBedsMin" min="0" placeholder="1">
-						</div>
-
-						<div class="form-group">
-							<label for="editBedsMax">Max Beds</label>
-							<input type="number" id="editBedsMax" min="0" placeholder="3">
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="form-group">
-							<label for="editBathsMin">Min Baths</label>
-							<input type="number" id="editBathsMin" min="0" step="0.5" placeholder="1">
-						</div>
-
-						<div class="form-group">
-							<label for="editBathsMax">Max Baths</label>
-							<input type="number" id="editBathsMax" min="0" step="0.5" placeholder="2">
-						</div>
-					</div>
-
-					<!-- Commission -->
-					<div class="form-row">
-						<div class="form-group">
-							<label for="editCommissionPct">Commission %</label>
-							<input type="number" id="editCommissionPct" min="0" max="10" step="0.1" placeholder="2.0">
-						</div>
-					</div>
-
-					<!-- Additional Info -->
-					<div class="form-group">
-						<label for="editWebsite">Website</label>
-						<input type="url" id="editWebsite" placeholder="https://property-website.com">
-					</div>
-
-					<div class="form-group">
-						<label for="editAmenities">Amenities (comma-separated)</label>
-						<input type="text" id="editAmenities" placeholder="Pool, Gym, Parking, Pet Friendly">
-					</div>
-
-					<div class="form-group">
-						<label for="editSpecials">Special Offers</label>
-						<input type="text" id="editSpecials" placeholder="1 month free, $99 deposit">
-					</div>
-
-					<div class="form-group">
-						<label for="editBonus">Bonus Text</label>
-						<input type="text" id="editBonus" placeholder="$300 bonus on approved application">
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button type="button" id="deleteListingBtn" class="btn btn-danger" style="margin-right: auto; display: none;">Delete Listing</button>
-				<button type="button" id="cancelListingEdit" class="btn btn-secondary">Cancel</button>
-				<button type="button" id="saveListingEdit" class="btn btn-primary">Save Changes</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Add/Edit User Modal -->
-	<div id="userModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3 id="userModalTitle">Add User</h3>
-				<button id="closeUserModal" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<form id="userForm">
-					<div class="field">
-						<label for="userName">Full Name *</label>
-						<input type="text" id="userName" required>
-					</div>
-					<div class="field">
-						<label for="userEmail">Email *</label>
-						<input type="email" id="userEmail" required>
-					</div>
-					<div class="field">
-						<label for="userRole">Role *</label>
-						<select id="userRole" required>
-							<option value="agent">Agent</option>
-							<option value="manager">Manager</option>
-							<option value="super_user">Super User</option>
-							<option value="accountant">Accountant</option>
-						</select>
-					</div>
-					<div class="field">
-						<label for="userPassword">Password *</label>
-						<input type="password" id="userPassword" required>
-					</div>
-					<div class="field">
-						<label for="userConfirmPassword">Confirm Password *</label>
-						<input type="password" id="userConfirmPassword" required>
-					</div>
-					<!-- Email invitation feature disabled for now -->
-					<!-- <div class="field">
+						<!-- Email invitation feature disabled for now -->
+						<!-- <div class="field">
 						<label>
 							<input type="checkbox" id="sendInvitation">
 							Send invitation email
 						</label>
 					</div> -->
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="saveUserBtn" class="btn btn-primary">Save User</button>
-				<button id="cancelUserBtn" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Change Password Modal -->
-	<div id="passwordModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Change Password</h3>
-				<button id="closePasswordModal" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<form id="passwordForm">
-					<div class="field">
-						<label for="newPassword">New Password *</label>
-						<input type="password" id="newPassword" required>
-					</div>
-					<div class="field">
-						<label for="confirmNewPassword">Confirm New Password *</label>
-						<input type="password" id="confirmNewPassword" required>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="savePasswordBtn" class="btn btn-primary">Update Password</button>
-				<button id="cancelPasswordBtn" class="btn btn-secondary">Cancel</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="saveUserBtn" class="btn btn-primary">Save User</button>
+					<button id="cancelUserBtn" class="btn btn-secondary">Cancel</button>
+				</div>
 			</div>
 		</div>
-	</div>
 
-	<!-- Profile Settings Modal -->
-	<div id="profileModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>Profile Settings</h3>
-				<button id="closeProfileModal" class="icon-btn" aria-label="Close">×</button>
+		<!-- Change Password Modal -->
+		<div id="passwordModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Change Password</h3>
+					<button id="closePasswordModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="passwordForm">
+						<div class="field">
+							<label for="newPassword">New Password *</label>
+							<input type="password" id="newPassword" required>
+						</div>
+						<div class="field">
+							<label for="confirmNewPassword">Confirm New Password *</label>
+							<input type="password" id="confirmNewPassword" required>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="savePasswordBtn" class="btn btn-primary">Update Password</button>
+					<button id="cancelPasswordBtn" class="btn btn-secondary">Cancel</button>
+				</div>
 			</div>
-			<div class="modal-body">
-				<form id="profileForm">
-					<!-- Display Name -->
+		</div>
+
+		<!-- Profile Settings Modal -->
+		<div id="profileModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>Profile Settings</h3>
+					<button id="closeProfileModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="profileForm">
+						<!-- Display Name -->
+						<div class="field">
+							<label for="profileDisplayName">Display Name *</label>
+							<input type="text" id="profileDisplayName" required>
+							<small style="color: #666;">This is how your name appears throughout the CRM</small>
+						</div>
+
+						<!-- Email (Read-only) -->
+						<div class="field">
+							<label for="profileEmail">Email</label>
+							<input type="email" id="profileEmail" readonly
+								style="background-color: #f5f5f5; cursor: not-allowed;">
+							<small style="color: #666;">Email cannot be changed</small>
+						</div>
+
+						<!-- Role (Read-only) -->
+						<div class="field">
+							<label for="profileRole">Role</label>
+							<input type="text" id="profileRole" readonly
+								style="background-color: #f5f5f5; cursor: not-allowed;">
+						</div>
+
+						<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+						<!-- Change Password Section -->
+						<h4 style="margin-bottom: 15px; color: #333;">Change Password</h4>
+
+						<div class="field password-field" id="newPasswordField">
+							<label for="profileNewPassword">New Password</label>
+							<input type="password" id="profileNewPassword"
+								placeholder="Leave blank to keep current password">
+							<small style="color: #666;">Minimum 6 characters</small>
+							<div class="password-error">Password must be at least 6 characters</div>
+						</div>
+
+						<div class="field password-field" id="confirmPasswordField">
+							<label for="profileConfirmPassword">Confirm New Password</label>
+							<input type="password" id="profileConfirmPassword" placeholder="Confirm new password">
+							<div class="password-error">Passwords do not match</div>
+						</div>
+
+						<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
+
+						<!-- Notification Preferences Section -->
+						<h4 style="margin-bottom: 15px; color: #333;">Notification Preferences</h4>
+
+						<div class="field">
+							<label class="checkbox-label">
+								<input type="checkbox" id="profileEmailNotifications">
+								<span>Receive email notifications for lead activities</span>
+							</label>
+							<small style="color: #666; display: block; margin-top: 5px;">
+								Get notified when leads are assigned, updated, or require attention
+							</small>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="cancelProfileBtn" class="btn btn-secondary">Cancel</button>
+					<button id="saveProfileBtn" class="btn btn-primary">Save Changes</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Add Lead Modal -->
+		<div id="addLeadModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 900px;">
+				<div class="modal-header">
+					<h3>Add New Lead</h3>
+					<button id="closeAddLeadModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="addLeadForm">
+						<div class="form-row">
+							<div class="field">
+								<label for="leadName">Full Name *</label>
+								<input type="text" id="leadName" required>
+							</div>
+							<div class="field">
+								<label for="leadEmail">Email *</label>
+								<input type="email" id="leadEmail" required>
+							</div>
+							<div class="field">
+								<label for="leadPhone">Phone *</label>
+								<input type="tel" id="leadPhone" required>
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="field">
+								<label for="leadBestTime">Best Time to Call</label>
+								<select id="leadBestTime">
+									<option value="">Select</option>
+									<option value="morning">Morning (8AM-12PM)</option>
+									<option value="afternoon">Afternoon (12PM-5PM)</option>
+									<option value="evening">Evening (5PM-8PM)</option>
+									<option value="anytime">Anytime</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="leadBedrooms"># of Bedrooms</label>
+								<select id="leadBedrooms">
+									<option value="">Select</option>
+									<option value="studio">Studio</option>
+									<option value="1">1 Bedroom</option>
+									<option value="2">2 Bedrooms</option>
+									<option value="3">3 Bedrooms</option>
+									<option value="4">4 Bedrooms</option>
+									<option value="5+">5+ Bedrooms</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="leadBathrooms"># of Bathrooms</label>
+								<select id="leadBathrooms">
+									<option value="">Select</option>
+									<option value="1">1 Bathroom</option>
+									<option value="1.5">1.5 Bathrooms</option>
+									<option value="2">2 Bathrooms</option>
+									<option value="2.5">2.5 Bathrooms</option>
+									<option value="3">3 Bathrooms</option>
+									<option value="3+">3+ Bathrooms</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="field">
+								<label for="leadPriceRange">Price Range</label>
+								<select id="leadPriceRange">
+									<option value="">Select</option>
+									<option value="under-1000">Under $1,000</option>
+									<option value="1000-1500">$1,000 - $1,500</option>
+									<option value="1500-2000">$1,500 - $2,000</option>
+									<option value="2000-2500">$2,000 - $2,500</option>
+									<option value="2500-3000">$2,500 - $3,000</option>
+									<option value="3000-4000">$3,000 - $4,000</option>
+									<option value="4000+">$4,000+</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="leadAreaOfTown">Area of Town</label>
+								<select id="leadAreaOfTown">
+									<option value="">Select</option>
+									<option value="downtown">Downtown</option>
+									<option value="north-side">North Side</option>
+									<option value="south-side">South Side</option>
+									<option value="east-side">East Side</option>
+									<option value="west-side">West Side</option>
+									<option value="northwest">Northwest</option>
+									<option value="northeast">Northeast</option>
+									<option value="southwest">Southwest</option>
+									<option value="southeast">Southeast</option>
+									<option value="suburbs">Suburbs</option>
+									<option value="flexible">Flexible</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="leadMoveInDate">Target Move-in Date</label>
+								<input type="date" id="leadMoveInDate">
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="field">
+								<label for="leadCreditHistory">Credit History</label>
+								<select id="leadCreditHistory">
+									<option value="">Select</option>
+									<option value="excellent">Excellent (750+)</option>
+									<option value="good">Good (700-749)</option>
+									<option value="fair">Fair (650-699)</option>
+									<option value="poor">Poor (Below 650)</option>
+									<option value="no-credit">No Credit History</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="leadStatus">Status</label>
+								<select id="leadStatus">
+									<option value="new">New</option>
+									<option value="contacted">Contacted</option>
+									<option value="qualified">Qualified</option>
+									<option value="proposal">Proposal</option>
+									<option value="negotiation">Negotiation</option>
+									<option value="closed_won">Closed Won</option>
+									<option value="closed_lost">Closed Lost</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="leadHealth">Health Status</label>
+								<select id="leadHealth">
+									<option value="GREEN" selected>Green (New)</option>
+									<option value="YELLOW">Yellow</option>
+									<option value="RED">Red</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="form-row">
+							<div class="field">
+								<label for="leadSource">Source</label>
+								<select id="leadSource">
+									<option value="landing_page">Landing Page</option>
+									<option value="website">Website</option>
+									<option value="referral">Referral</option>
+									<option value="cold_call">Cold Call</option>
+									<option value="social_media">Social Media</option>
+									<option value="advertisement">Advertisement</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+						</div>
+
+						<div class="field">
+							<label for="leadComments">Lease Term / Special Requirements / Comments</label>
+							<textarea id="leadComments" rows="3"
+								placeholder="Any specific requirements or comments..."></textarea>
+						</div>
+
+						<div class="field">
+							<label for="leadNotes">Internal Notes</label>
+							<textarea id="leadNotes" rows="2"
+								placeholder="Any additional notes about this lead (internal use only)..."></textarea>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="saveAddLeadBtn" class="btn btn-primary">Add Lead</button>
+					<button id="cancelAddLeadBtn" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Add Property Contact Modal -->
+		<div id="addPropertyContactModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>📞 Update Property Contact Info</h3>
+					<button id="closeAddPropertyContactModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="addPropertyContactForm">
+						<div class="field">
+							<label for="contactPropertySelect">Property *</label>
+							<select id="contactPropertySelect" required>
+								<option value="">Select a property...</option>
+								<!-- Will be populated with properties -->
+							</select>
+							<small class="field-hint">Select the apartment complex (not individual units)</small>
+						</div>
+						<div class="field">
+							<label for="contactAddress">Address</label>
+							<input type="text" id="contactAddress"
+								placeholder="e.g., 123 Main St, San Antonio, TX 78201">
+							<small class="field-hint">Full property address</small>
+						</div>
+						<div class="field">
+							<label for="contactName">Contact Name</label>
+							<input type="text" id="contactName" placeholder="e.g., John Smith">
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="contactEmail">Contact Email</label>
+								<input type="email" id="contactEmail" placeholder="e.g., leasing@property.com">
+							</div>
+							<div class="field">
+								<label for="contactPhone">Contact Phone</label>
+								<input type="tel" id="contactPhone" placeholder="e.g., (210) 555-1234">
+							</div>
+						</div>
+						<div class="field">
+							<label for="contactOfficeHours">Office Hours</label>
+							<input type="text" id="contactOfficeHours"
+								placeholder="e.g., Mon-Fri 9am-5pm, Sat 10am-2pm">
+						</div>
+						<div class="field">
+							<label for="contactLeniency">Application Leniency</label>
+							<select id="contactLeniency">
+								<option value="">Not Set</option>
+								<option value="LOW">🔴 Low - Strict requirements (high credit score, full income
+									verification)</option>
+								<option value="MEDIUM">🟡 Medium - Moderate requirements (some flexibility)</option>
+								<option value="HIGH">🟢 High - Lenient requirements (easier approval, flexible on
+									credit/income)</option>
+							</select>
+							<small class="field-hint">💡 Indicates how flexible this property is with application
+								requirements (credit score, income verification, background checks, etc.)</small>
+						</div>
+						<div class="field">
+							<label for="contactNotes">Notes</label>
+							<textarea id="contactNotes" rows="3"
+								placeholder="Any additional notes about contacting this property..."></textarea>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="savePropertyContactBtn" class="btn btn-primary">Save Contact Info</button>
+					<button id="cancelPropertyContactBtn" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Add Special Modal -->
+		<div id="addSpecialModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>🔥 Add New Special</h3>
+					<button id="closeAddSpecialModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="addSpecialForm">
+						<div class="field">
+							<label for="specialPropertyName">Property Name *</label>
+							<select id="specialPropertyName" required>
+								<option value="">Select a property...</option>
+							</select>
+							<div class="helper-text" style="margin-top: 8px; font-size: 11px;">
+								💡 Property not listed? <a href="#" id="addPropertyContactLink"
+									style="color: var(--accent); text-decoration: underline;">Add property contact info
+									first</a>
+							</div>
+						</div>
+						<div class="field">
+							<label for="specialCurrentSpecial">Current Special *</label>
+							<textarea id="specialCurrentSpecial" rows="4" required
+								placeholder="Describe the special offer, discount, or promotion..."></textarea>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="specialCommissionRate">Commission Rate *</label>
+								<input type="text" id="specialCommissionRate" required
+									placeholder="e.g., 5%, $500, 10%">
+							</div>
+							<div class="field">
+								<label for="specialExpirationDate">Expiration Date *</label>
+								<input type="date" id="specialExpirationDate" required>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="saveAddSpecialBtn" class="btn btn-primary">Add Special</button>
+					<button id="cancelAddSpecialBtn" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Edit Special Modal -->
+		<div id="editSpecialModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>🔥 Edit Special - <span id="editSpecialPropertyName"></span></h3>
+					<button id="closeEditSpecialModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="editSpecialForm">
+						<input type="hidden" id="editSpecialId">
+						<div class="field">
+							<label for="editSpecialTitle">Special Title *</label>
+							<textarea id="editSpecialTitle" rows="2" required
+								placeholder="e.g., First Month Free"></textarea>
+						</div>
+						<div class="field">
+							<label for="editSpecialDescription">Details *</label>
+							<textarea id="editSpecialDescription" rows="4" required
+								placeholder="Describe the special offer, discount, or promotion..."></textarea>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="editSpecialValidFrom">Valid From *</label>
+								<input type="date" id="editSpecialValidFrom" required>
+							</div>
+							<div class="field">
+								<label for="editSpecialValidUntil">Valid Until *</label>
+								<input type="date" id="editSpecialValidUntil" required>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="saveEditSpecialBtn" class="btn btn-primary">Save Changes</button>
+					<button id="deleteEditSpecialBtn" class="btn btn-danger" style="margin-right: auto;">Delete
+						Special</button>
+					<button id="cancelEditSpecialBtn" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- View Property Specials Modal (from Properties page) -->
+		<div id="viewSpecialsModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>🔥 Specials for <span id="viewSpecialsPropertyName"></span></h3>
+					<button id="closeViewSpecialsModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>Special</th>
+								<th>Commission</th>
+								<th>Expires</th>
+								<th>Actions</th>
+							</tr>
+						</thead>
+						<tbody id="viewSpecialsTbody">
+							<!-- Specials will be populated here -->
+						</tbody>
+					</table>
+				</div>
+				<div class="modal-footer">
+					<button id="closeViewSpecialsBtn" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- View Listing Specials Modal (from Listings page) -->
+		<div id="listingSpecialsModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>🔥 Active Specials for <span id="listingSpecialsPropertyName"></span></h3>
+					<button id="closeListingSpecialsModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<table class="data-table">
+						<thead>
+							<tr>
+								<th>Special</th>
+								<th>Details</th>
+								<th>Expires</th>
+							</tr>
+						</thead>
+						<tbody id="listingSpecialsTbody">
+							<!-- Specials will be populated here -->
+						</tbody>
+					</table>
+				</div>
+				<div class="modal-footer">
+					<button id="closeListingSpecialsBtn" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Toasts -->
+		<div id="toast" class="toast hidden"></div>
+
+		<!-- Health Status Popover -->
+		<div id="healthPopover" class="popover">
+			<div class="arrow"></div>
+			<h4 id="popTitle">Lead Status</h4>
+			<ul id="popList"></ul>
+			<div class="small">Click anywhere to dismiss</div>
+		</div>
+
+		<!-- Bug Report Modal -->
+		<div id="bugReportModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>🐛 Report Bug</h3>
+					<button id="closeBugReportModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="bugReportForm">
+						<div class="field">
+							<label for="bugTitle">What's not working? *</label>
+							<input type="text" id="bugTitle" required placeholder="Brief description of the issue">
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="bugPriority">Priority</label>
+								<select id="bugPriority">
+									<option value="low">Low - Minor issue</option>
+									<option value="medium" selected>Medium - Affects functionality</option>
+									<option value="high">High - Major issue</option>
+									<option value="critical">Critical - System broken</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="bugCategory">Category</label>
+								<select id="bugCategory">
+									<option value="ui">UI/Display Issue</option>
+									<option value="functionality">Functionality Issue</option>
+									<option value="performance">Performance Issue</option>
+									<option value="data">Data Issue</option>
+									<option value="navigation">Navigation Issue</option>
+									<option value="other">Other</option>
+								</select>
+							</div>
+						</div>
+						<div class="field">
+							<label for="bugDescription">What happened? *</label>
+							<textarea id="bugDescription" rows="4" required
+								placeholder="Describe what you were trying to do and what went wrong..."></textarea>
+						</div>
+						<div class="field">
+							<label for="bugExpected">What did you expect to happen?</label>
+							<textarea id="bugExpected" rows="2"
+								placeholder="What should have happened instead?"></textarea>
+						</div>
+						<div class="field">
+							<label for="bugSteps">Steps to reproduce (if known)</label>
+							<textarea id="bugSteps" rows="3"
+								placeholder="1. Go to...&#10;2. Click on...&#10;3. See error..."></textarea>
+						</div>
+						<div class="field">
+							<label for="bugScreenshot">Screenshot (optional)</label>
+							<input type="file" id="bugScreenshot" accept="image/*" placeholder="Upload a screenshot">
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="saveBugReportBtn" class="btn btn-primary">Submit Bug Report</button>
+					<button id="cancelBugReportBtn" class="btn btn-secondary">Cancel</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Bug Details Modal -->
+		<div id="bugDetailsModal" class="modal hidden">
+			<div class="modal-card large">
+				<div class="modal-header">
+					<h3>🐛 Bug Details</h3>
+					<button id="closeBugDetailsModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="bugDetailsContent">
+						<!-- Bug details will be populated here -->
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="updateBugStatusBtn" class="btn btn-primary">Update Status</button>
+					<button id="closeBugDetailsModalBtn" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Generic Dynamic Modal -->
+		<div id="dynamicModal" class="modal hidden">
+			<div class="modal-card large" id="dynamicModalCard">
+				<div class="modal-header">
+					<h3 id="dynamicModalTitle">Modal Title</h3>
+					<button id="closeDynamicModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="dynamicModalContent">
+						<!-- Dynamic content will be populated here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Property Notes Modal -->
+		<div id="propertyNotesModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>📝 Property Notes</h3>
+					<button id="closePropertyNotes" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="propertyNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+						<!-- Notes will be populated here -->
+					</div>
 					<div class="field">
-						<label for="profileDisplayName">Display Name *</label>
-						<input type="text" id="profileDisplayName" required>
-						<small style="color: #666;">This is how your name appears throughout the CRM</small>
+						<label for="newPropertyNote">Add New Note</label>
+						<textarea id="newPropertyNote" rows="3" placeholder="Type your note here..."></textarea>
 					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="savePropertyNoteBtn" class="btn btn-primary">Add Note</button>
+					<button id="cancelPropertyNotes" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
 
-					<!-- Email (Read-only) -->
+		<!-- Lead Notes Modal (Standalone) -->
+		<div id="leadNotesModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3 id="leadNotesTitle">📝 Notes: Lead Name</h3>
+					<button id="closeLeadNotes" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="standaloneLeadNotesContent"
+						style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+						<!-- Notes will be populated here -->
+					</div>
 					<div class="field">
-						<label for="profileEmail">Email</label>
-						<input type="email" id="profileEmail" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
-						<small style="color: #666;">Email cannot be changed</small>
+						<label for="standaloneNewLeadNote">Add New Note</label>
+						<textarea id="standaloneNewLeadNote" rows="3" placeholder="Type your note here..."></textarea>
 					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="standaloneSaveLeadNoteBtn" class="btn btn-primary">Add Note</button>
+					<button id="cancelLeadNotes" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
 
-					<!-- Role (Read-only) -->
+		<!-- Activity Log Modal -->
+		<div id="activityLogModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 800px;">
+				<div class="modal-header">
+					<h3 id="activityLogTitle">📋 Activity Log</h3>
+					<button id="closeActivityLog" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="activityLogContent" style="max-height: 600px; overflow-y: auto;">
+						<!-- Activities will be populated here -->
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="closeActivityLogBtn" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
+
+		<!-- Unit Notes Modal -->
+		<div id="unitNotesModal" class="modal hidden">
+			<div class="modal-card">
+				<div class="modal-header">
+					<h3>📝 Unit Notes</h3>
+					<button id="closeUnitNotes" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="unitNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
+						<!-- Notes will be populated here -->
+					</div>
 					<div class="field">
-						<label for="profileRole">Role</label>
-						<input type="text" id="profileRole" readonly style="background-color: #f5f5f5; cursor: not-allowed;">
+						<label for="newUnitNote">Add New Note</label>
+						<textarea id="newUnitNote" rows="3" placeholder="Type your note here..."></textarea>
 					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="saveUnitNoteBtn" class="btn btn-primary">Add Note</button>
+					<button id="cancelUnitNotes" class="btn btn-secondary">Close</button>
+				</div>
+			</div>
+		</div>
 
-					<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
-
-					<!-- Change Password Section -->
-					<h4 style="margin-bottom: 15px; color: #333;">Change Password</h4>
-
-					<div class="field password-field" id="newPasswordField">
-						<label for="profileNewPassword">New Password</label>
-						<input type="password" id="profileNewPassword" placeholder="Leave blank to keep current password">
-						<small style="color: #666;">Minimum 6 characters</small>
-						<div class="password-error">Password must be at least 6 characters</div>
+		<!-- Unit Configuration Modal -->
+		<div id="unitConfigModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 600px;">
+				<div class="modal-header">
+					<h3>⚙️ Configure Unit</h3>
+					<button id="closeUnitConfig" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div class="field">
+						<label for="configUnitNumber">Unit Number *</label>
+						<input type="text" id="configUnitNumber" placeholder="e.g., 101, 2A" required>
 					</div>
-
-					<div class="field password-field" id="confirmPasswordField">
-						<label for="profileConfirmPassword">Confirm New Password</label>
-						<input type="password" id="profileConfirmPassword" placeholder="Confirm new password">
-						<div class="password-error">Passwords do not match</div>
-					</div>
-
-					<hr style="margin: 20px 0; border: none; border-top: 1px solid #e0e0e0;">
-
-					<!-- Notification Preferences Section -->
-					<h4 style="margin-bottom: 15px; color: #333;">Notification Preferences</h4>
 
 					<div class="field">
-						<label class="checkbox-label">
-							<input type="checkbox" id="profileEmailNotifications">
-							<span>Receive email notifications for lead activities</span>
+						<label for="configUnitFloor">Floor</label>
+						<input type="number" id="configUnitFloor" placeholder="e.g., 1, 2, 3">
+					</div>
+
+					<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+						<div class="field">
+							<label for="configUnitRent">Rent ($)</label>
+							<input type="number" id="configUnitRent" placeholder="e.g., 1200">
+						</div>
+
+						<div class="field">
+							<label for="configUnitMarketRent">Market Rent ($)</label>
+							<input type="number" id="configUnitMarketRent" placeholder="e.g., 1300">
+						</div>
+					</div>
+
+					<div class="field">
+						<label for="configUnitAvailableFrom">Available From</label>
+						<input type="date" id="configUnitAvailableFrom">
+					</div>
+
+					<div class="field">
+						<label for="configUnitStatus">Status</label>
+						<select id="configUnitStatus">
+							<option value="available">Available</option>
+							<option value="pending">Pending</option>
+							<option value="leased">Leased</option>
+							<option value="unavailable">Unavailable</option>
+						</select>
+					</div>
+
+					<div class="field">
+						<label class="checkbox-label"
+							title="Unit is physically available for leasing (not currently leased)">
+							<input type="checkbox" id="configUnitIsAvailable">
+							<span>Unit is available for leasing</span>
 						</label>
-						<small style="color: #666; display: block; margin-top: 5px;">
-							Get notified when leads are assigned, updated, or require attention
-						</small>
+						<div class="field-hint" style="margin-top: 4px; font-size: 0.85em; color: #6b7280;">
+							Physical availability - uncheck if unit is currently leased
+						</div>
 					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="cancelProfileBtn" class="btn btn-secondary">Cancel</button>
-				<button id="saveProfileBtn" class="btn btn-primary">Save Changes</button>
+
+					<div class="field">
+						<label class="checkbox-label" title="Unit is visible to agents and can be added to showcases">
+							<input type="checkbox" id="configUnitIsActive">
+							<span>Unit is active (on market)</span>
+						</label>
+						<div class="field-hint" style="margin-top: 4px; font-size: 0.85em; color: #6b7280;">
+							Market visibility - uncheck to hide from showcases (unit stays in list but grayed out)
+						</div>
+					</div>
+
+					<div class="field">
+						<label for="configUnitNotes">Internal Notes</label>
+						<textarea id="configUnitNotes" rows="3"
+							placeholder="Internal notes about this unit..."></textarea>
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="saveUnitConfigBtn" class="btn btn-primary">Save Changes</button>
+					<button id="cancelUnitConfig" class="btn btn-secondary">Cancel</button>
+				</div>
 			</div>
 		</div>
-	</div>
 
-	<!-- Add Lead Modal -->
-	<div id="addLeadModal" class="modal hidden">
-		<div class="modal-card" style="max-width: 900px;">
-			<div class="modal-header">
-				<h3>Add New Lead</h3>
-				<button id="closeAddLeadModal" class="icon-btn" aria-label="Close">×</button>
+		<!-- Add Listing Modal -->
+		<div id="addListingModal" class="modal hidden">
+			<div class="modal-card large">
+				<div class="modal-header">
+					<h3>🏘 Add New Property</h3>
+					<button id="closeAddListing" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<form id="addListingForm">
+						<!-- Basic Info -->
+						<h4 style="margin-top: 0; color: #3b82f6;">🏘 Basic Info</h4>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingCommunityName">Community Name *</label>
+								<input type="text" id="listingCommunityName" required
+									placeholder="e.g., Sunset Apartments">
+							</div>
+							<div class="field">
+								<label for="listingStreetAddress">Street Address *</label>
+								<input type="text" id="listingStreetAddress" required placeholder="e.g., 123 Main St">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingMarket">City *</label>
+								<select id="listingMarket" required>
+									<option value="">Select City</option>
+									<option value="Austin">Austin</option>
+									<option value="Dallas">Dallas</option>
+									<option value="Houston">Houston</option>
+									<option value="San Antonio">San Antonio</option>
+									<option value="Fort Worth">Fort Worth</option>
+								</select>
+							</div>
+							<div class="field">
+								<label for="listingZipCode">Zip Code *</label>
+								<input type="text" id="listingZipCode" required placeholder="e.g., 78701"
+									pattern="[0-9]{5}">
+							</div>
+						</div>
+
+						<!-- Unit Details -->
+						<h4 style="margin-top: 20px; color: #3b82f6;">🛏 Unit Details</h4>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingBedRange">Bed Range *</label>
+								<input type="text" id="listingBedRange" required placeholder="e.g., 1-3">
+							</div>
+							<div class="field">
+								<label for="listingBathRange">Bath Range *</label>
+								<input type="text" id="listingBathRange" required placeholder="e.g., 1-2">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingRentMin">Rent Min ($) *</label>
+								<input type="number" id="listingRentMin" required placeholder="e.g., 1000" min="0">
+							</div>
+							<div class="field">
+								<label for="listingRentMax">Rent Max ($) *</label>
+								<input type="number" id="listingRentMax" required placeholder="e.g., 2000" min="0">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingCommission">Commission % *</label>
+								<input type="number" id="listingCommission" required placeholder="e.g., 2.5" min="0"
+									max="100" step="0.1">
+							</div>
+							<div class="field">
+								<label for="listingAmenities">Amenities (comma-separated)</label>
+								<input type="text" id="listingAmenities" placeholder="e.g., Pool, Gym, Parking">
+							</div>
+						</div>
+
+						<!-- Additional Info -->
+						<h4 style="margin-top: 20px; color: #3b82f6;">💰 Additional Info</h4>
+						<div class="form-row">
+							<div class="field">
+								<label class="pumi-filter-label"
+									style="border: 2px solid #e5e7eb; padding: 12px; border-radius: 8px;">
+									<input type="checkbox" id="listingIsPUMI" class="pumi-filter-checkbox">
+									<span class="pumi-filter-icon">PUMI</span>
+									<span class="pumi-filter-text">Mark as PUMI listing</span>
+								</label>
+							</div>
+							<div class="field">
+								<label for="listingLastUpdated">Last Updated</label>
+								<input type="date" id="listingLastUpdated">
+							</div>
+						</div>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingContactEmail">Contact Email</label>
+								<input type="email" id="listingContactEmail" placeholder="e.g., leasing@property.com">
+							</div>
+							<div class="field">
+								<label for="listingLeasingLink">Leasing Link</label>
+								<input type="url" id="listingLeasingLink" placeholder="e.g., https://property.com">
+							</div>
+						</div>
+
+						<!-- Map Coordinates -->
+						<h4 style="margin-top: 20px; color: #3b82f6;">🗺 Map Location</h4>
+						<div class="form-row">
+							<div class="field">
+								<label for="listingMapLat">Latitude</label>
+								<input type="number" id="listingMapLat" placeholder="e.g., 30.2672" step="0.000001">
+							</div>
+							<div class="field">
+								<label for="listingMapLng">Longitude</label>
+								<input type="number" id="listingMapLng" placeholder="e.g., -97.7431" step="0.000001">
+							</div>
+						</div>
+						<p style="font-size: 12px; color: #64748b; margin-top: 5px;">
+							💡 Tip: Leave blank to auto-geocode from address
+						</p>
+
+						<!-- Notes -->
+						<h4 style="margin-top: 20px; color: #3b82f6;">📝 Notes</h4>
+						<div class="field">
+							<label for="listingNotes">Add Note (optional)</label>
+							<textarea id="listingNotes" rows="3"
+								placeholder="Add any notes about this listing..."></textarea>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="saveListingBtn" class="btn btn-primary">Save Listing</button>
+					<button id="cancelAddListing" class="btn btn-secondary">Cancel</button>
+				</div>
 			</div>
-			<div class="modal-body">
-				<form id="addLeadForm">
-					<div class="form-row">
-						<div class="field">
-							<label for="leadName">Full Name *</label>
-							<input type="text" id="leadName" required>
-						</div>
-						<div class="field">
-							<label for="leadEmail">Email *</label>
-							<input type="email" id="leadEmail" required>
-						</div>
-						<div class="field">
-							<label for="leadPhone">Phone *</label>
-							<input type="tel" id="leadPhone" required>
-						</div>
-					</div>
+		</div>
 
-					<div class="form-row">
-						<div class="field">
-							<label for="leadBestTime">Best Time to Call</label>
-							<select id="leadBestTime">
-								<option value="">Select</option>
-								<option value="morning">Morning (8AM-12PM)</option>
-								<option value="afternoon">Afternoon (12PM-5PM)</option>
-								<option value="evening">Evening (5PM-8PM)</option>
-								<option value="anytime">Anytime</option>
+
+		<!-- Test Smart Match Modal -->
+		<div id="testSmartMatchModal" class="modal hidden" role="dialog" aria-labelledby="testModalTitle"
+			aria-modal="true">
+			<div class="modal-card" style="max-width: 600px;">
+				<div class="modal-header">
+					<h3 id="testModalTitle">🧪 Test Smart Match Configuration</h3>
+					<button id="closeTestSmartMatch" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<p style="margin-bottom: 20px; color: #6b7280; font-size: 14px;">
+						Select an existing lead or enter custom test criteria to preview how your current configuration
+						settings will match properties.
+						This uses your <strong>current form values</strong> (including unsaved changes).
+					</p>
+					<form id="testSmartMatchForm">
+						<!-- Lead Selector -->
+						<div class="form-group"
+							style="border-bottom: 1px solid #e5e7eb; padding-bottom: 16px; margin-bottom: 16px;">
+							<label for="testLeadSelector">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2" style="vertical-align: middle; margin-right: 4px;">
+									<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+									<circle cx="12" cy="7" r="4"></circle>
+								</svg>
+								Select Existing Lead (Optional)
+							</label>
+							<select id="testLeadSelector" class="form-select">
+								<option value="">-- Enter Custom Criteria --</option>
 							</select>
+							<small style="color: #6b7280; font-size: 12px;">Choose a lead to auto-populate their
+								preferences, or enter custom criteria below</small>
 						</div>
-						<div class="field">
-							<label for="leadBedrooms"># of Bedrooms</label>
-							<select id="leadBedrooms">
-								<option value="">Select</option>
-								<option value="studio">Studio</option>
+
+						<!-- Test Criteria Fields -->
+						<div class="form-group">
+							<label for="testBedrooms">Bedrooms</label>
+							<select id="testBedrooms" class="form-select" required>
+								<option value="">Select bedrooms...</option>
+								<option value="0">Studio</option>
 								<option value="1">1 Bedroom</option>
-								<option value="2">2 Bedrooms</option>
+								<option value="2" selected>2 Bedrooms</option>
 								<option value="3">3 Bedrooms</option>
-								<option value="4">4 Bedrooms</option>
-								<option value="5+">5+ Bedrooms</option>
+								<option value="4">4+ Bedrooms</option>
 							</select>
 						</div>
-						<div class="field">
-							<label for="leadBathrooms"># of Bathrooms</label>
-							<select id="leadBathrooms">
-								<option value="">Select</option>
+						<div class="form-group">
+							<label for="testBathrooms">Bathrooms</label>
+							<select id="testBathrooms" class="form-select" required>
+								<option value="">Select bathrooms...</option>
 								<option value="1">1 Bathroom</option>
 								<option value="1.5">1.5 Bathrooms</option>
-								<option value="2">2 Bathrooms</option>
+								<option value="2" selected>2 Bathrooms</option>
 								<option value="2.5">2.5 Bathrooms</option>
-								<option value="3">3 Bathrooms</option>
-								<option value="3+">3+ Bathrooms</option>
+								<option value="3">3+ Bathrooms</option>
 							</select>
 						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field">
-							<label for="leadPriceRange">Price Range</label>
-							<select id="leadPriceRange">
-								<option value="">Select</option>
-								<option value="under-1000">Under $1,000</option>
-								<option value="1000-1500">$1,000 - $1,500</option>
-								<option value="1500-2000">$1,500 - $2,000</option>
-								<option value="2000-2500">$2,000 - $2,500</option>
-								<option value="2500-3000">$2,500 - $3,000</option>
-								<option value="3000-4000">$3,000 - $4,000</option>
-								<option value="4000+">$4,000+</option>
+						<div class="form-group">
+							<label for="testBudget">Monthly Budget ($)</label>
+							<input type="number" id="testBudget" class="form-input" placeholder="e.g., 2000" min="0"
+								step="50" value="2000" required>
+							<small style="color: #6b7280; font-size: 12px;">Your maximum monthly rent budget</small>
+						</div>
+						<div class="form-group">
+							<label for="testMoveInDate">Desired Move-in Date</label>
+							<input type="date" id="testMoveInDate" class="form-input" required>
+							<small style="color: #6b7280; font-size: 12px;">When you'd like to move in</small>
+						</div>
+						<div class="form-group">
+							<label for="testPets">Pets</label>
+							<select id="testPets" class="form-select" required>
+								<option value="no" selected>No Pets</option>
+								<option value="yes">Has Pets</option>
 							</select>
 						</div>
-						<div class="field">
-							<label for="leadAreaOfTown">Area of Town</label>
-							<select id="leadAreaOfTown">
-								<option value="">Select</option>
-								<option value="downtown">Downtown</option>
-								<option value="north-side">North Side</option>
-								<option value="south-side">South Side</option>
-								<option value="east-side">East Side</option>
-								<option value="west-side">West Side</option>
-								<option value="northwest">Northwest</option>
-								<option value="northeast">Northeast</option>
-								<option value="southwest">Southwest</option>
-								<option value="southeast">Southeast</option>
-								<option value="suburbs">Suburbs</option>
-								<option value="flexible">Flexible</option>
+						<div class="form-group">
+							<label for="testParking">Parking Needed</label>
+							<select id="testParking" class="form-select" required>
+								<option value="no" selected>No Parking Needed</option>
+								<option value="yes">Parking Required</option>
 							</select>
 						</div>
-						<div class="field">
-							<label for="leadMoveInDate">Target Move-in Date</label>
-							<input type="date" id="leadMoveInDate">
+						<div class="form-group">
+							<label for="testCity">Preferred City/Area</label>
+							<input type="text" id="testCity" class="form-input" placeholder="e.g., Austin, TX"
+								value="Austin" required>
+							<small style="color: #6b7280; font-size: 12px;">City or area you're looking in</small>
 						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field">
-							<label for="leadCreditHistory">Credit History</label>
-							<select id="leadCreditHistory">
-								<option value="">Select</option>
-								<option value="excellent">Excellent (750+)</option>
-								<option value="good">Good (700-749)</option>
-								<option value="fair">Fair (650-699)</option>
-								<option value="poor">Poor (Below 650)</option>
-								<option value="no-credit">No Credit History</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="leadStatus">Status</label>
-							<select id="leadStatus">
-								<option value="new">New</option>
-								<option value="contacted">Contacted</option>
-								<option value="qualified">Qualified</option>
-								<option value="proposal">Proposal</option>
-								<option value="negotiation">Negotiation</option>
-								<option value="closed_won">Closed Won</option>
-								<option value="closed_lost">Closed Lost</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="leadHealth">Health Status</label>
-							<select id="leadHealth">
-								<option value="GREEN" selected>Green (New)</option>
-								<option value="YELLOW">Yellow</option>
-								<option value="RED">Red</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="form-row">
-						<div class="field">
-							<label for="leadSource">Source</label>
-							<select id="leadSource">
-								<option value="landing_page">Landing Page</option>
-								<option value="website">Website</option>
-								<option value="referral">Referral</option>
-								<option value="cold_call">Cold Call</option>
-								<option value="social_media">Social Media</option>
-								<option value="advertisement">Advertisement</option>
-								<option value="other">Other</option>
-							</select>
-						</div>
-					</div>
-
-					<div class="field">
-						<label for="leadComments">Lease Term / Special Requirements / Comments</label>
-						<textarea id="leadComments" rows="3" placeholder="Any specific requirements or comments..."></textarea>
-					</div>
-
-					<div class="field">
-						<label for="leadNotes">Internal Notes</label>
-						<textarea id="leadNotes" rows="2" placeholder="Any additional notes about this lead (internal use only)..."></textarea>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="saveAddLeadBtn" class="btn btn-primary">Add Lead</button>
-				<button id="cancelAddLeadBtn" class="btn btn-secondary">Cancel</button>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button id="cancelTestSmartMatch" class="btn btn-secondary">Cancel</button>
+					<button id="runTestSmartMatch" class="btn btn-primary">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+							stroke-width="2" style="margin-right: 6px;">
+							<polygon points="5 3 19 12 5 21 5 3"></polygon>
+						</svg>
+						Run Test
+					</button>
+				</div>
 			</div>
 		</div>
-	</div>
-
-	<!-- Add Property Contact Modal -->
-	<div id="addPropertyContactModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>📞 Add Property Contact Info</h3>
-				<button id="closeAddPropertyContactModal" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<form id="addPropertyContactForm">
-					<div class="field">
-						<label for="contactPropertySelect">Property *</label>
-						<select id="contactPropertySelect" required>
-							<option value="">Select a property...</option>
-							<!-- Will be populated with properties -->
-						</select>
-						<small class="field-hint">Select the apartment complex (not individual units)</small>
-					</div>
-					<div class="field">
-						<label for="contactName">Contact Name</label>
-						<input type="text" id="contactName" placeholder="e.g., John Smith">
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="contactEmail">Contact Email</label>
-							<input type="email" id="contactEmail" placeholder="e.g., leasing@property.com">
-						</div>
-						<div class="field">
-							<label for="contactPhone">Contact Phone</label>
-							<input type="tel" id="contactPhone" placeholder="e.g., (210) 555-1234">
-						</div>
-					</div>
-					<div class="field">
-						<label for="contactOfficeHours">Office Hours</label>
-						<input type="text" id="contactOfficeHours" placeholder="e.g., Mon-Fri 9am-5pm, Sat 10am-2pm">
-					</div>
-					<div class="field">
-						<label for="contactNotes">Notes</label>
-						<textarea id="contactNotes" rows="3" placeholder="Any additional notes about contacting this property..."></textarea>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="savePropertyContactBtn" class="btn btn-primary">Save Contact Info</button>
-				<button id="cancelPropertyContactBtn" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Add Special Modal -->
-	<div id="addSpecialModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>🔥 Add New Special</h3>
-				<button id="closeAddSpecialModal" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<form id="addSpecialForm">
-					<div class="field">
-						<label for="specialPropertyName">Property Name *</label>
-						<input type="text" id="specialPropertyName" required placeholder="Enter property name">
-					</div>
-					<div class="field">
-						<label for="specialCurrentSpecial">Current Special *</label>
-						<textarea id="specialCurrentSpecial" rows="4" required placeholder="Describe the special offer, discount, or promotion..."></textarea>
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="specialCommissionRate">Commission Rate *</label>
-							<input type="text" id="specialCommissionRate" required placeholder="e.g., 5%, $500, 10%">
-						</div>
-						<div class="field">
-							<label for="specialExpirationDate">Expiration Date *</label>
-							<input type="date" id="specialExpirationDate" required>
-						</div>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="saveAddSpecialBtn" class="btn btn-primary">Add Special</button>
-				<button id="cancelAddSpecialBtn" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Toasts -->
-	<div id="toast" class="toast hidden"></div>
-
-	<!-- Health Status Popover -->
-	<div id="healthPopover" class="popover">
-		<div class="arrow"></div>
-		<h4 id="popTitle">Lead Status</h4>
-		<ul id="popList"></ul>
-		<div class="small">Click anywhere to dismiss</div>
-	</div>
-
-	<!-- Bug Report Modal -->
-	<div id="bugReportModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>🐛 Report Bug</h3>
-				<button id="closeBugReportModal" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<form id="bugReportForm">
-					<div class="field">
-						<label for="bugTitle">What's not working? *</label>
-						<input type="text" id="bugTitle" required placeholder="Brief description of the issue">
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="bugPriority">Priority</label>
-							<select id="bugPriority">
-								<option value="low">Low - Minor issue</option>
-								<option value="medium" selected>Medium - Affects functionality</option>
-								<option value="high">High - Major issue</option>
-								<option value="critical">Critical - System broken</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="bugCategory">Category</label>
-							<select id="bugCategory">
-								<option value="ui">UI/Display Issue</option>
-								<option value="functionality">Functionality Issue</option>
-								<option value="performance">Performance Issue</option>
-								<option value="data">Data Issue</option>
-								<option value="navigation">Navigation Issue</option>
-								<option value="other">Other</option>
-							</select>
-						</div>
-					</div>
-					<div class="field">
-						<label for="bugDescription">What happened? *</label>
-						<textarea id="bugDescription" rows="4" required placeholder="Describe what you were trying to do and what went wrong..."></textarea>
-					</div>
-					<div class="field">
-						<label for="bugExpected">What did you expect to happen?</label>
-						<textarea id="bugExpected" rows="2" placeholder="What should have happened instead?"></textarea>
-					</div>
-					<div class="field">
-						<label for="bugSteps">Steps to reproduce (if known)</label>
-						<textarea id="bugSteps" rows="3" placeholder="1. Go to...&#10;2. Click on...&#10;3. See error..."></textarea>
-					</div>
-					<div class="field">
-						<label for="bugScreenshot">Screenshot (optional)</label>
-						<input type="file" id="bugScreenshot" accept="image/*" placeholder="Upload a screenshot">
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="saveBugReportBtn" class="btn btn-primary">Submit Bug Report</button>
-				<button id="cancelBugReportBtn" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Bug Details Modal -->
-	<div id="bugDetailsModal" class="modal hidden">
-		<div class="modal-card large">
-			<div class="modal-header">
-				<h3>🐛 Bug Details</h3>
-				<button id="closeBugDetailsModal" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="bugDetailsContent">
-					<!-- Bug details will be populated here -->
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="updateBugStatusBtn" class="btn btn-primary">Update Status</button>
-				<button id="closeBugDetailsModalBtn" class="btn btn-secondary">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Property Notes Modal -->
-	<div id="propertyNotesModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>📝 Property Notes</h3>
-				<button id="closePropertyNotes" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="propertyNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
-					<!-- Notes will be populated here -->
-				</div>
-				<div class="field">
-					<label for="newPropertyNote">Add New Note</label>
-					<textarea id="newPropertyNote" rows="3" placeholder="Type your note here..."></textarea>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="savePropertyNoteBtn" class="btn btn-primary">Add Note</button>
-				<button id="cancelPropertyNotes" class="btn btn-secondary">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Lead Notes Modal (Standalone) -->
-	<div id="leadNotesModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3 id="leadNotesTitle">📝 Notes: Lead Name</h3>
-				<button id="closeLeadNotes" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="standaloneLeadNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
-					<!-- Notes will be populated here -->
-				</div>
-				<div class="field">
-					<label for="standaloneNewLeadNote">Add New Note</label>
-					<textarea id="standaloneNewLeadNote" rows="3" placeholder="Type your note here..."></textarea>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="standaloneSaveLeadNoteBtn" class="btn btn-primary">Add Note</button>
-				<button id="cancelLeadNotes" class="btn btn-secondary">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Activity Log Modal -->
-	<div id="activityLogModal" class="modal hidden">
-		<div class="modal-card" style="max-width: 800px;">
-			<div class="modal-header">
-				<h3 id="activityLogTitle">📋 Activity Log</h3>
-				<button id="closeActivityLog" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="activityLogContent" style="max-height: 600px; overflow-y: auto;">
-					<!-- Activities will be populated here -->
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="closeActivityLogBtn" class="btn btn-secondary">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Unit Notes Modal -->
-	<div id="unitNotesModal" class="modal hidden">
-		<div class="modal-card">
-			<div class="modal-header">
-				<h3>📝 Unit Notes</h3>
-				<button id="closeUnitNotes" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div id="unitNotesContent" style="max-height: 400px; overflow-y: auto; margin-bottom: 20px;">
-					<!-- Notes will be populated here -->
-				</div>
-				<div class="field">
-					<label for="newUnitNote">Add New Note</label>
-					<textarea id="newUnitNote" rows="3" placeholder="Type your note here..."></textarea>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="saveUnitNoteBtn" class="btn btn-primary">Add Note</button>
-				<button id="cancelUnitNotes" class="btn btn-secondary">Close</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Unit Configuration Modal -->
-	<div id="unitConfigModal" class="modal hidden">
-		<div class="modal-card" style="max-width: 600px;">
-			<div class="modal-header">
-				<h3>⚙️ Configure Unit</h3>
-				<button id="closeUnitConfig" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<div class="field">
-					<label for="configUnitNumber">Unit Number *</label>
-					<input type="text" id="configUnitNumber" placeholder="e.g., 101, 2A" required>
-				</div>
-
-				<div class="field">
-					<label for="configUnitFloor">Floor</label>
-					<input type="number" id="configUnitFloor" placeholder="e.g., 1, 2, 3">
-				</div>
-
-				<div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
-					<div class="field">
-						<label for="configUnitRent">Rent ($)</label>
-						<input type="number" id="configUnitRent" placeholder="e.g., 1200">
-					</div>
-
-					<div class="field">
-						<label for="configUnitMarketRent">Market Rent ($)</label>
-						<input type="number" id="configUnitMarketRent" placeholder="e.g., 1300">
-					</div>
-				</div>
-
-				<div class="field">
-					<label for="configUnitAvailableFrom">Available From</label>
-					<input type="date" id="configUnitAvailableFrom">
-				</div>
-
-				<div class="field">
-					<label for="configUnitStatus">Status</label>
-					<select id="configUnitStatus">
-						<option value="available">Available</option>
-						<option value="pending">Pending</option>
-						<option value="leased">Leased</option>
-						<option value="unavailable">Unavailable</option>
-					</select>
-				</div>
-
-				<div class="field">
-					<label class="checkbox-label" title="Unit is physically available for leasing (not currently leased)">
-						<input type="checkbox" id="configUnitIsAvailable">
-						<span>Unit is available for leasing</span>
-					</label>
-					<div class="field-hint" style="margin-top: 4px; font-size: 0.85em; color: #6b7280;">
-						Physical availability - uncheck if unit is currently leased
-					</div>
-				</div>
-
-				<div class="field">
-					<label class="checkbox-label" title="Unit is visible to agents and can be added to showcases">
-						<input type="checkbox" id="configUnitIsActive">
-						<span>Unit is active (on market)</span>
-					</label>
-					<div class="field-hint" style="margin-top: 4px; font-size: 0.85em; color: #6b7280;">
-						Market visibility - uncheck to hide from showcases (unit stays in list but grayed out)
-					</div>
-				</div>
-
-				<div class="field">
-					<label for="configUnitNotes">Internal Notes</label>
-					<textarea id="configUnitNotes" rows="3" placeholder="Internal notes about this unit..."></textarea>
-				</div>
-			</div>
-			<div class="modal-footer">
-				<button id="saveUnitConfigBtn" class="btn btn-primary">Save Changes</button>
-				<button id="cancelUnitConfig" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
-
-	<!-- Add Listing Modal -->
-	<div id="addListingModal" class="modal hidden">
-		<div class="modal-card large">
-			<div class="modal-header">
-				<h3>🏘 Add New Listing</h3>
-				<button id="closeAddListing" class="icon-btn" aria-label="Close">×</button>
-			</div>
-			<div class="modal-body">
-				<form id="addListingForm">
-					<!-- Basic Info -->
-					<h4 style="margin-top: 0; color: #3b82f6;">🏘 Basic Info</h4>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingCommunityName">Community Name *</label>
-							<input type="text" id="listingCommunityName" required placeholder="e.g., Sunset Apartments">
-						</div>
-						<div class="field">
-							<label for="listingStreetAddress">Street Address *</label>
-							<input type="text" id="listingStreetAddress" required placeholder="e.g., 123 Main St">
-						</div>
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingMarket">City *</label>
-							<select id="listingMarket" required>
-								<option value="">Select City</option>
-								<option value="Austin">Austin</option>
-								<option value="Dallas">Dallas</option>
-								<option value="Houston">Houston</option>
-								<option value="San Antonio">San Antonio</option>
-								<option value="Fort Worth">Fort Worth</option>
-							</select>
-						</div>
-						<div class="field">
-							<label for="listingZipCode">Zip Code *</label>
-							<input type="text" id="listingZipCode" required placeholder="e.g., 78701" pattern="[0-9]{5}">
-						</div>
-					</div>
-
-					<!-- Unit Details -->
-					<h4 style="margin-top: 20px; color: #3b82f6;">🛏 Unit Details</h4>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingBedRange">Bed Range *</label>
-							<input type="text" id="listingBedRange" required placeholder="e.g., 1-3">
-						</div>
-						<div class="field">
-							<label for="listingBathRange">Bath Range *</label>
-							<input type="text" id="listingBathRange" required placeholder="e.g., 1-2">
-						</div>
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingRentMin">Rent Min ($) *</label>
-							<input type="number" id="listingRentMin" required placeholder="e.g., 1000" min="0">
-						</div>
-						<div class="field">
-							<label for="listingRentMax">Rent Max ($) *</label>
-							<input type="number" id="listingRentMax" required placeholder="e.g., 2000" min="0">
-						</div>
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingCommission">Commission % *</label>
-							<input type="number" id="listingCommission" required placeholder="e.g., 2.5" min="0" max="100" step="0.1">
-						</div>
-						<div class="field">
-							<label for="listingAmenities">Amenities (comma-separated)</label>
-							<input type="text" id="listingAmenities" placeholder="e.g., Pool, Gym, Parking">
-						</div>
-					</div>
-
-					<!-- Additional Info -->
-					<h4 style="margin-top: 20px; color: #3b82f6;">💰 Additional Info</h4>
-					<div class="form-row">
-						<div class="field">
-							<label class="pumi-filter-label" style="border: 2px solid #e5e7eb; padding: 12px; border-radius: 8px;">
-								<input type="checkbox" id="listingIsPUMI" class="pumi-filter-checkbox">
-								<span class="pumi-filter-icon">PUMI</span>
-								<span class="pumi-filter-text">Mark as PUMI listing</span>
-							</label>
-						</div>
-						<div class="field">
-							<label for="listingLastUpdated">Last Updated</label>
-							<input type="date" id="listingLastUpdated">
-						</div>
-					</div>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingContactEmail">Contact Email</label>
-							<input type="email" id="listingContactEmail" placeholder="e.g., leasing@property.com">
-						</div>
-						<div class="field">
-							<label for="listingLeasingLink">Leasing Link</label>
-							<input type="url" id="listingLeasingLink" placeholder="e.g., https://property.com">
-						</div>
-					</div>
-
-					<!-- Map Coordinates -->
-					<h4 style="margin-top: 20px; color: #3b82f6;">🗺 Map Location</h4>
-					<div class="form-row">
-						<div class="field">
-							<label for="listingMapLat">Latitude</label>
-							<input type="number" id="listingMapLat" placeholder="e.g., 30.2672" step="0.000001">
-						</div>
-						<div class="field">
-							<label for="listingMapLng">Longitude</label>
-							<input type="number" id="listingMapLng" placeholder="e.g., -97.7431" step="0.000001">
-						</div>
-					</div>
-					<p style="font-size: 12px; color: #64748b; margin-top: 5px;">
-						💡 Tip: Leave blank to auto-geocode from address
-					</p>
-
-					<!-- Notes -->
-					<h4 style="margin-top: 20px; color: #3b82f6;">📝 Notes</h4>
-					<div class="field">
-						<label for="listingNotes">Add Note (optional)</label>
-						<textarea id="listingNotes" rows="3" placeholder="Add any notes about this listing..."></textarea>
-					</div>
-				</form>
-			</div>
-			<div class="modal-footer">
-				<button id="saveListingBtn" class="btn btn-primary">Save Listing</button>
-				<button id="cancelAddListing" class="btn btn-secondary">Cancel</button>
-			</div>
-		</div>
-	</div>
 
 	</div><!-- End mainAppContent -->
 
 	<!-- Hidden file input for CSV upload -->
 	<input type="file" id="csvFileInput" accept=".csv" style="display: none;">
 
-	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+	<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+		integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 	<script>
 		// Mapbox configuration
 		mapboxgl.accessToken = 'pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg';
@@ -1828,4 +3094,5 @@
 	<script src="auth.js"></script>
 	<script type="module" src="script.js"></script>
 </body>
+
 </html>

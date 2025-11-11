@@ -7,10 +7,9 @@ import * as SupabaseAPI from './supabase-api.js';
  * Create API wrapper object
  * @param {Object} options - Dependencies
  * @param {Object} options.mockInterestedLeads - Mock interested leads data (temporary)
- * @param {Array} options.mockBugs - Mock bugs data (temporary)
  * @returns {Object} API object with all methods
  */
-export function createAPI({ mockInterestedLeads, mockBugs }) {
+export function createAPI({ mockInterestedLeads }) {
 	// Helper function to handle API responses
 	async function handleResponse(response) {
 		if (!response.ok) {
@@ -40,8 +39,8 @@ export function createAPI({ mockInterestedLeads, mockBugs }) {
 			// Get current user info for activity logging
 			const userEmail = window.currentUser?.email || 'unknown';
 			const userName = window.currentUser?.user_metadata?.name ||
-							 window.currentUser?.email ||
-							 'Unknown User';
+				window.currentUser?.email ||
+				'Unknown User';
 
 			return await SupabaseAPI.updateLead(id, {
 				assigned_agent_id: agent_id,
@@ -50,6 +49,62 @@ export function createAPI({ mockInterestedLeads, mockBugs }) {
 		},
 
 		async getMatches(lead_id, limit = 10) {
+			// Use Smart Match algorithm to get intelligent property matches
+			const smartMatches = await SupabaseAPI.getSmartMatches(lead_id, limit);
+
+			// Transform Smart Match results to match expected UI structure
+			return smartMatches.map(match => {
+				const { unit, floorPlan, property, matchScore } = match;
+
+				// Calculate rent (use unit.rent if available, otherwise floor_plan.starting_at)
+				const rent = unit.rent || floorPlan.starting_at;
+				const marketRent = unit.market_rent || floorPlan.market_rent;
+
+				// Build specials text from floor plan concessions
+				let specialsText = 'Available Now';
+				if (floorPlan.has_concession && floorPlan.concession_description) {
+					specialsText = floorPlan.concession_description;
+				}
+
+				// Build bonus text from property amenities or location
+				let bonusText = property.city || 'Great Location';
+				if (property.amenities && property.amenities.length > 0) {
+					bonusText = property.amenities.slice(0, 2).join(' • ');
+				}
+
+				// Use property image or placeholder
+				const imageUrl = property.image_url || floorPlan.image_url ||
+					'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop';
+
+				// Get commission percentage (for internal agent use only)
+				const commissionPct = property.commission_pct || 0;
+
+				return {
+					id: unit.id,
+					name: property.name || property.community_name || 'Property',
+					rent_min: rent,
+					rent_max: rent,
+					beds_min: floorPlan.beds,
+					beds_max: floorPlan.beds,
+					baths_min: floorPlan.baths,
+					baths_max: floorPlan.baths,
+					sqft_min: floorPlan.sqft || 0,
+					sqft_max: floorPlan.sqft || 0,
+					effective_commission_pct: commissionPct, // For internal agent use (not shown to leads)
+					specials_text: specialsText,
+					bonus_text: bonusText,
+					image_url: imageUrl,
+					// Include match score and unit details for internal use
+					_matchScore: matchScore.totalScore,
+					_unit_number: unit.unit_number,
+					_floor_plan_name: floorPlan.name,
+					_property_id: property.id
+				};
+			});
+		},
+
+		// Legacy mock data (kept for reference, not used)
+		async _getMatchesMock(lead_id, limit = 10) {
 			// Return example listings for now
 			return [
 				{
@@ -171,17 +226,15 @@ export function createAPI({ mockInterestedLeads, mockBugs }) {
 		},
 
 		async getInterestedLeadsCount(propertyId) {
-			// Note: Using mock data for now - will be replaced with Supabase later
-			const interestedLeads = mockInterestedLeads[propertyId] || [];
-			return interestedLeads.length;
+			// Use real Supabase data from property_activities
+			console.log('✅ Using Supabase for interested leads count');
+			return await SupabaseAPI.getInterestedLeadsCount(propertyId);
 		},
 
 		async getInterestedLeads(propertyId) {
-			// Note: Using mock data for now - will be replaced with Supabase later
-			console.log('getInterestedLeads called with propertyId:', propertyId);
-			const data = mockInterestedLeads[propertyId] || [];
-			console.log('Mock data for', propertyId, ':', data);
-			return data;
+			// Use real Supabase data from property_activities
+			console.log('✅ Using Supabase for interested leads');
+			return await SupabaseAPI.getInterestedLeads(propertyId);
 		},
 
 		async createLeadInterest({ lead_id, property_id, agent_id, interest_type, status, notes }) {
@@ -213,58 +266,50 @@ export function createAPI({ mockInterestedLeads, mockBugs }) {
 		},
 
 		// Bugs API functions
-		// Note: Bugs table exists but no Supabase API methods yet
-		// Keeping mock data implementation for now (will be fixed later)
 		async getBugs({ status, priority, page, pageSize } = {}) {
-			console.log('Using mock data for bugs, count:', mockBugs.length);
-			let filteredBugs = [...mockBugs];
-
-			// Filter by status
-			if (status) {
-				filteredBugs = filteredBugs.filter(bug => bug.status === status);
-			}
-
-			// Filter by priority
-			if (priority) {
-				filteredBugs = filteredBugs.filter(bug => bug.priority === priority);
-			}
-
-			// Sort by created date (newest first)
-			filteredBugs.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-
-			return {
-				items: filteredBugs,
-				total: filteredBugs.length
-			};
+			return await SupabaseAPI.getBugs({ status, priority, page, pageSize });
 		},
 
 		async createBug(bugData) {
-			const newBug = {
-				id: `bug_${Date.now()}`,
-				...bugData,
-				created_at: new Date().toISOString(),
-				updated_at: new Date().toISOString()
-			};
-			mockBugs.unshift(newBug);
-			return newBug;
+			return await SupabaseAPI.createBug(bugData);
 		},
 
-		async updateBug(id, bugData) {
-			const index = mockBugs.findIndex(b => b.id === id);
-			if (index !== -1) {
-				mockBugs[index] = { ...mockBugs[index], ...bugData, updated_at: new Date().toISOString() };
-				return mockBugs[index];
-			}
-			throw new Error('Bug not found');
+		async updateBug(bugId, updates) {
+			return await SupabaseAPI.updateBug(bugId, updates);
 		},
 
-		async deleteBug(id) {
-			const index = mockBugs.findIndex(b => b.id === id);
-			if (index !== -1) {
-				mockBugs.splice(index, 1);
-				return { success: true };
-			}
-			throw new Error('Bug not found');
+		async deleteBug(bugId) {
+			return await SupabaseAPI.deleteBug(bugId);
+		},
+
+		async getBug(bugId) {
+			return await SupabaseAPI.getBug(bugId);
+		},
+
+		// Email API functions
+		async getEmailTemplates(options) {
+			return await SupabaseAPI.getEmailTemplates(options);
+		},
+
+		async getEmailTemplate(templateId) {
+			return await SupabaseAPI.getEmailTemplate(templateId);
+		},
+
+		async getEmailLogs(options) {
+			return await SupabaseAPI.getEmailLogs(options);
+		},
+
+		async sendEmail(emailData) {
+			return await SupabaseAPI.sendEmail(emailData);
+		},
+
+		// Users API functions
+		async getUsers() {
+			return await SupabaseAPI.getUsers();
+		},
+
+		async getUser(userId) {
+			return await SupabaseAPI.getUser(userId);
 		}
 	};
 }

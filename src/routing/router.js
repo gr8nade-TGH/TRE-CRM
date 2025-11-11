@@ -18,6 +18,7 @@
  * @param {Function} deps.renderProperties - Function to render properties page
  * @param {Function} deps.renderAdmin - Function to render admin page
  * @param {Function} deps.renderBugs - Function to render bugs page
+ * @param {Function} deps.renderEmails - Function to render emails page
  * @param {Function} deps.renderLeads - Function to render leads page
  * @param {Function} deps.initMap - Function to initialize map
  * @param {Function} deps.updateNavigation - Function to update navigation
@@ -35,6 +36,7 @@ export function route(deps) {
 		renderProperties,
 		renderAdmin,
 		renderBugs,
+		renderEmails,
 		renderLeads,
 		initMap,
 		updateNavigation,
@@ -48,9 +50,9 @@ export function route(deps) {
 	}
 
 	const hash = location.hash.slice(1);
-	
+
 	// public showcase route: #/sc_xxxxxx
-	if (hash.startsWith('/sc_')){
+	if (hash.startsWith('/sc_')) {
 		// render public showcase view (read-only)
 		document.body.innerHTML = `
 			<link rel="stylesheet" href="styles.css" />
@@ -75,20 +77,38 @@ export function route(deps) {
 	// Hide all views
 	document.querySelectorAll('.route-view').forEach(view => hide(view));
 
+	// Cleanup mission control theme when leaving manage page
+	if (hash !== '/manage') {
+		document.body.classList.remove('mission-control-active');
+	}
+
 	// Show appropriate view based on route
 	if (hash === '/agents') {
 		state.currentPage = 'agents';
 		show(document.getElementById('agentsView'));
 		setRoleLabel('agents');
 		renderAgents();
-	} else if (hash === '/listings') {
+	} else if (hash === '/listings' || hash.startsWith('/listings?')) {
 		state.currentPage = 'listings';
 		show(document.getElementById('listingsView'));
 		setRoleLabel('listings');
+
+		// Parse query parameters for deep linking
+		let autoSelectProperty = null;
+		if (hash.includes('?')) {
+			const queryString = hash.split('?')[1];
+			const params = new URLSearchParams(queryString);
+			autoSelectProperty = params.get('property');
+			if (autoSelectProperty) {
+				// Decode URL-encoded property name
+				autoSelectProperty = decodeURIComponent(autoSelectProperty);
+			}
+		}
+
 		// Initialize map if not already done
 		setTimeout(() => {
 			initMap();
-			renderListings();
+			renderListings(autoSelectProperty);
 		}, 100);
 	} else if (hash === '/documents') {
 		state.currentPage = 'documents';
@@ -109,11 +129,44 @@ export function route(deps) {
 		show(document.getElementById('adminView'));
 		setRoleLabel('admin');
 		renderAdmin();
+	} else if (hash === '/manage') {
+		state.currentPage = 'manage';
+		show(document.getElementById('manageView'));
+		setRoleLabel('manage');
+		// Initialize Smart Match Configuration Page
+		(async () => {
+			try {
+				const { initializeConfigPage } = await import('../modules/admin/smart-match-page.js');
+				await initializeConfigPage();
+			} catch (error) {
+				console.error('Error loading Smart Match config page:', error);
+			}
+		})();
 	} else if (hash === '/bugs') {
 		state.currentPage = 'bugs';
 		show(document.getElementById('bugsView'));
 		setRoleLabel('bugs');
 		renderBugs();
+	} else if (hash === '/emails') {
+		state.currentPage = 'emails';
+		show(document.getElementById('emailsView'));
+		setRoleLabel('emails');
+		renderEmails();
+	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
+		// Leads page with optional query parameters
+		state.currentPage = 'leads';
+		show(document.getElementById('leadsView'));
+		setRoleLabel('leads');
+
+		// Parse query parameters for deep linking
+		let autoSelectLeadId = null;
+		if (hash.includes('?')) {
+			const queryString = hash.split('?')[1];
+			const params = new URLSearchParams(queryString);
+			autoSelectLeadId = params.get('select');
+		}
+
+		renderLeads(autoSelectLeadId);
 	} else {
 		// default: leads
 		state.currentPage = 'leads';

@@ -3,8 +3,9 @@
 
 export function updateBulkActionsBar(options) {
 	const { state } = options;
-	
-	const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
+
+	// Look for unit checkboxes (the actual checkboxes in the listings table)
+	const selectedCount = document.querySelectorAll('.unit-checkbox:checked').length;
 	const bulkActionsCount = document.getElementById('bulkActionsCount');
 	const buildShowcaseBtn = document.getElementById('buildShowcaseBtn');
 	const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
@@ -40,87 +41,90 @@ export function updateBulkActionsBar(options) {
 
 export async function bulkMarkAsUnavailable(options) {
 	const { SupabaseAPI, toast, renderListings } = options;
-	
-	const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-	const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
 
-	if (selectedIds.length === 0) {
-		toast('No listings selected', 'error');
+	// Get selected unit checkboxes
+	const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
+	const selectedUnitIds = Array.from(checkboxes).map(cb => cb.dataset.unitId);
+
+	if (selectedUnitIds.length === 0) {
+		toast('No units selected', 'error');
 		return;
 	}
 
-	if (!confirm(`Mark ${selectedIds.length} listing(s) as unavailable?`)) {
+	if (!confirm(`Mark ${selectedUnitIds.length} unit(s) as unavailable?`)) {
 		return;
 	}
 
 	try {
-		// Update each listing's availability status
-		for (const listingId of selectedIds) {
-			await SupabaseAPI.updateProperty(listingId, {
+		// Update each unit's availability status
+		for (const unitId of selectedUnitIds) {
+			await SupabaseAPI.updateUnit(unitId, {
 				is_available: false,
 				updated_at: new Date().toISOString()
 			});
 		}
 
 		// Show success message
-		toast(`${selectedIds.length} listing(s) marked as unavailable`, 'success');
+		toast(`${selectedUnitIds.length} unit(s) marked as unavailable`, 'success');
 
 		// Clear selections and refresh
 		checkboxes.forEach(cb => cb.checked = false);
 		updateBulkActionsBar({ state: window.state });
 		await renderListings();
 	} catch (error) {
-		console.error('Error marking listings as unavailable:', error);
+		console.error('Error marking units as unavailable:', error);
 		toast(`Error: ${error.message}`, 'error');
 	}
 }
 
 export async function bulkDeleteListings(options) {
 	const { SupabaseAPI, toast, renderListings } = options;
-	
+
 	console.log('bulkDeleteListings called!');
-	const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-	const selectedIds = Array.from(checkboxes).map(cb => cb.dataset.listingId);
+	// Get selected unit checkboxes
+	const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
+	const selectedUnitIds = Array.from(checkboxes).map(cb => cb.dataset.unitId);
 
-	console.log('Selected IDs for deletion:', selectedIds);
+	console.log('Selected unit IDs for deletion:', selectedUnitIds);
 
-	if (selectedIds.length === 0) {
-		toast('No listings selected', 'error');
+	if (selectedUnitIds.length === 0) {
+		toast('No units selected', 'error');
 		return;
 	}
 
-	if (!confirm(`Are you sure you want to permanently delete ${selectedIds.length} listing(s)? This action cannot be undone.`)) {
+	if (!confirm(`Are you sure you want to permanently delete ${selectedUnitIds.length} unit(s)? This action cannot be undone.`)) {
 		return;
 	}
 
 	try {
 		console.log('Starting bulk delete...');
 
-		// Delete each listing
-		for (const listingId of selectedIds) {
-			console.log('Deleting listing:', listingId);
-			await SupabaseAPI.deleteProperty(listingId);
+		// Delete each unit
+		for (const unitId of selectedUnitIds) {
+			console.log('Deleting unit:', unitId);
+			await SupabaseAPI.deleteUnit(unitId);
 		}
 
 		console.log('Bulk delete completed successfully');
 
 		// Show success message
-		toast(`${selectedIds.length} listing(s) deleted successfully`, 'success');
+		toast(`${selectedUnitIds.length} unit(s) deleted successfully`, 'success');
 
 		// Clear selections and refresh
 		checkboxes.forEach(cb => cb.checked = false);
 		updateBulkActionsBar({ state: window.state });
 		await renderListings();
 	} catch (error) {
-		console.error('Error deleting listings:', error);
+		console.error('Error deleting units:', error);
 		toast(`Error: ${error.message}`, 'error');
 	}
 }
 
 export function updateBuildShowcaseButton() {
-	const selectedCount = document.querySelectorAll('.listing-checkbox:checked').length;
+	// Look for unit checkboxes (the actual checkboxes in the listings table)
+	const selectedCount = document.querySelectorAll('.unit-checkbox:checked').length;
 	const buildBtn = document.getElementById('buildShowcaseBtn');
-	
+
 	if (buildBtn) {
 		buildBtn.disabled = selectedCount === 0;
 		buildBtn.textContent = selectedCount > 0 ? `Build Showcase (${selectedCount})` : 'Build Showcase';

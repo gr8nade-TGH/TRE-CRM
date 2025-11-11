@@ -14,7 +14,6 @@ import {
 import {
 	mockProperties,
 	mockInterestedLeads,
-	mockBugs,
 	mockDocumentStatuses,
 	mockClosedLeads
 } from './src/state/mockData.js';
@@ -40,13 +39,14 @@ import * as Admin from './src/modules/admin/index.js';
 import * as Properties from './src/modules/properties/index.js';
 import * as Modals from './src/modules/modals/index.js';
 import * as Showcases from './src/modules/showcases/index.js';
+import * as Emails from './src/modules/emails/index.js';
 import * as Routing from './src/routing/index.js';
 import * as Init from './src/init/index.js';
 
 /* global mapboxgl */
 let api, renderLeads, renderSpecials;
 
-(function() {
+(function () {
 	// Real agents loaded from Supabase users table
 	let realAgents = [];
 
@@ -106,11 +106,10 @@ let api, renderLeads, renderSpecials;
 	}
 
 	api = createAPI({
-		mockInterestedLeads,
-		mockBugs
+		mockInterestedLeads
 	});
 
-	renderLeads = async function(){
+	renderLeads = async function (autoSelectLeadId = null) {
 		// Call module render function with realAgents (global variable)
 		await Leads.renderLeads({
 			api,
@@ -120,10 +119,10 @@ let api, renderLeads, renderSpecials;
 			openLeadNotesModal,
 			openActivityLogModal,
 			agents: realAgents
-		});
+		}, autoSelectLeadId);
 	}
 
-	window.saveNewLead = async function() {
+	window.saveNewLead = async function () {
 		await Leads.saveNewLead({
 			SupabaseAPI,
 			state,
@@ -133,8 +132,8 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function renderAgentSelect(lead){
-		const opts = realAgents.map(a => `<option value="${a.id}" ${a.id===lead.assigned_agent_id?'selected':''}>${a.name}</option>`).join('');
+	function renderAgentSelect(lead) {
+		const opts = realAgents.map(a => `<option value="${a.id}" ${a.id === lead.assigned_agent_id ? 'selected' : ''}>${a.name}</option>`).join('');
 		return `<select class="select" data-assign="${lead.id}"><option value="">Unassigned</option>${opts}</select>`;
 	}
 
@@ -167,7 +166,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function renderDocuments(){
+	async function renderDocuments() {
 		await Documents.renderDocuments({
 			state,
 			renderAgentDocuments,
@@ -175,7 +174,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function renderManagerDocuments(){
+	async function renderManagerDocuments() {
 		await Documents.renderManagerDocuments({
 			SupabaseAPI,
 			state,
@@ -184,7 +183,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function renderAgentDocuments(){
+	async function renderAgentDocuments() {
 		await Documents.renderAgentDocuments({
 			SupabaseAPI,
 			state,
@@ -195,44 +194,205 @@ let api, renderLeads, renderSpecials;
 
 	async function renderProperties() {
 		await Properties.renderProperties({
-			renderPropertyContacts,
-			renderSpecials
+			SupabaseAPI,
+			toast,
+			state
 		});
+	}
+
+	function populatePropertyDropdown(communityNames) {
+		Properties.populatePropertyDropdown(communityNames);
+	}
+
+	async function populateSpecialPropertyDropdown() {
+		await Properties.populateSpecialPropertyDropdown(SupabaseAPI);
+	}
+
+	async function populatePropertyDropdownForContact() {
+		// Fetch all properties and populate the contact property dropdown
+		try {
+			const properties = await SupabaseAPI.getProperties({ search: '', market: 'all' });
+
+			// Filter valid properties (exclude test entries)
+			const validProperties = properties.filter(prop => {
+				const name = prop.community_name || prop.name;
+				const isTestEntry = name && /^(act\d+|.*activity.*test.*|test\s*\d*)$/i.test(name.trim());
+				return name && name.trim() !== '' && !isTestEntry;
+			});
+
+			// Extract unique community names
+			const communityNames = [...new Set(validProperties.map(p => p.community_name || p.name))];
+
+			// Populate dropdown
+			Properties.populatePropertyDropdown(communityNames);
+		} catch (error) {
+			console.error('Error populating property dropdown:', error);
+		}
 	}
 
 	async function renderPropertyContacts() {
-		await Properties.renderPropertyContacts({
-			state,
-			SupabaseAPI,
-			populatePropertyDropdown,
-			toast
-		});
+		// Legacy function - now calls renderProperties
+		await renderProperties();
+		// Populate dropdown after rendering
+		await populatePropertyDropdownForContact();
 	}
 
 	async function savePropertyContact() {
-		await Properties.savePropertyContact({ SupabaseAPI, hideModal, renderPropertyContacts, toast });
-	}
-	async function editPropertyContact(propertyId, communityName) {
-		await Properties.editPropertyContact(propertyId, communityName, { SupabaseAPI, showModal, toast });
+		await Properties.savePropertyContact({ SupabaseAPI, hideModal, renderProperties, toast });
 	}
 
-	renderSpecials = async function(){
-		await Properties.renderSpecials({
-			state,
-			api,
-			formatDate,
-			updateSortHeaders
+	async function editPropertyContact(propertyId, communityName) {
+		await Properties.editPropertyContact(propertyId, communityName, {
+			SupabaseAPI,
+			showModal,
+			toast,
+			populatePropertyDropdownForContact
 		});
 	}
 
-	window.saveNewSpecial = function() {
-		Properties.saveNewSpecial({ api, toast, hideModal, renderSpecials, state });
+	// Window functions for inline onclick handlers
+	window.editPropertyContact = async function (propertyId, communityName) {
+		await Properties.editPropertyContact(propertyId, communityName, {
+			SupabaseAPI,
+			showModal,
+			toast,
+			populatePropertyDropdownForContact
+		});
+	};
+
+	window.addSpecialForProperty = function (propertyName) {
+		Properties.addSpecialForProperty(propertyName, {
+			showModal,
+			populateSpecialPropertyDropdown
+		});
+	};
+
+	window.viewPropertySpecials = async function (propertyId, propertyName) {
+		await Properties.viewPropertySpecials(propertyId, propertyName, {
+			SupabaseAPI,
+			showModal
+		});
+	};
+
+	window.editPropertySpecial = async function (specialId, propertyName) {
+		await Properties.editPropertySpecial(specialId, propertyName, {
+			SupabaseAPI,
+			showModal,
+			toast
+		});
+	};
+
+	async function saveEditedSpecial() {
+		await Properties.saveEditedSpecial({
+			SupabaseAPI,
+			toast,
+			hideModal,
+			renderProperties
+		});
 	}
-	window.deleteSpecial = function(specialId) {
-		Properties.deleteSpecial(specialId, { api, toast, renderSpecials });
+
+	async function deleteEditedSpecial() {
+		await Properties.deleteEditedSpecial({
+			SupabaseAPI,
+			toast,
+			hideModal,
+			renderProperties
+		});
+	}
+
+	// View property specials from listing table (specials data already loaded)
+	window.viewPropertySpecialsFromListing = function (propertyId, propertyName, specialsData) {
+		// Show modal with specials
+		const modal = document.getElementById('listingSpecialsModal');
+		const propertyNameSpan = document.getElementById('listingSpecialsPropertyName');
+		const tbody = document.getElementById('listingSpecialsTbody');
+
+		if (!modal || !propertyNameSpan || !tbody) {
+			console.error('Listing specials modal elements not found');
+			return;
+		}
+
+		propertyNameSpan.textContent = propertyName;
+		tbody.innerHTML = '';
+
+		// Render specials
+		specialsData.forEach(special => {
+			const expDate = new Date(special.valid_until || special.expiration_date);
+			const isExpired = expDate < new Date();
+			const specialTitle = special.title || special.current_special;
+			const specialDesc = special.description || special.commission_rate;
+
+			const tr = document.createElement('tr');
+			tr.innerHTML = `
+				<td>
+					<strong>${specialTitle}</strong>
+					${isExpired ? '<span style="color: #ef4444; font-size: 0.85em; margin-left: 8px;">(Expired)</span>' : ''}
+				</td>
+				<td>${specialDesc}</td>
+				<td>${expDate.toLocaleDateString()}</td>
+			`;
+			tbody.appendChild(tr);
+		});
+
+		showModal('listingSpecialsModal');
+	};
+
+	// Listing edit modal functions - defined in outer scope so renderListings can access them
+	async function openListingEditModal(property) {
+		await Modals.openListingEditModal(property, {
+			state,
+			showModal,
+			SupabaseAPI
+		});
+	}
+
+	function closeListingEditModal() {
+		Modals.closeListingEditModal({ hideModal });
+	}
+
+	async function deleteListing() {
+		await Modals.deleteListing({
+			SupabaseAPI,
+			toast,
+			closeListingEditModal,
+			renderListings
+		});
+	}
+
+	async function saveListingEdit() {
+		await Modals.saveListingEdit({
+			SupabaseAPI,
+			toast,
+			closeListingEditModal,
+			renderListings
+		});
+	}
+
+	renderSpecials = async function () {
+		// Legacy function - now calls renderProperties (merged table)
+		await renderProperties();
+	}
+
+	window.saveNewSpecial = function () {
+		Properties.saveNewSpecial({ api, toast, hideModal, renderSpecials: renderProperties, state });
+	}
+	window.deleteSpecial = function (specialId) {
+		Properties.deleteSpecial(specialId, { api, toast, renderSpecials: renderProperties });
 	}
 	async function renderBugs() {
 		await Properties.renderBugs({ api, formatDate });
+	}
+	async function renderEmails() {
+		await Emails.renderEmails({ api, state, showEmailPreview });
+	}
+	function showEmailPreview(emailId) {
+		Emails.showEmailDetails(emailId, { api, showModal, formatDate });
+	}
+	async function showTemplatePreview(templateId) {
+		await Emails.showTemplatePreview(templateId, { api, showModal });
+	}
+	async function sendTestEmail(templateId) {
+		await Emails.sendTestEmail(templateId, { api, toast });
 	}
 	function showBugReportModal(context = {}) {
 		Properties.showBugReportModal(context, { state, showModal });
@@ -258,7 +418,10 @@ let api, renderLeads, renderSpecials;
 	async function saveBugChanges(bugId) {
 		await Properties.saveBugChanges(bugId, { api, toast, renderBugs });
 	}
-	function renderLeadsTable(searchTerm = '', searchType = 'both'){
+	function handleBugFieldChange(bugId) {
+		Properties.handleBugFieldChange(bugId);
+	}
+	function renderLeadsTable(searchTerm = '', searchType = 'both') {
 		Documents.renderLeadsTable(searchTerm, searchType, {
 			state,
 			realAgents,
@@ -267,7 +430,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function renderAgents(){
+	async function renderAgents() {
 		await Agents.renderAgents({
 			mockAgents: realAgents,
 			state,
@@ -309,7 +472,7 @@ let api, renderLeads, renderSpecials;
 		await Modals.addPropertyNote({ state, SupabaseAPI, loadPropertyNotes, renderListings, toast });
 	}
 
-	async function renderListings(){
+	async function renderListings(autoSelectProperty = null) {
 		await Listings.renderListings({
 			SupabaseAPI,
 			state,
@@ -324,10 +487,10 @@ let api, renderLeads, renderSpecials;
 			clearMarkers,
 			addMarker,
 			toast
-		});
+		}, autoSelectProperty);
 	}
 
-	async function openLeadDetailsModal(leadId){
+	async function openLeadDetailsModal(leadId) {
 		await Modals.openLeadDetailsModal(leadId, {
 			state,
 			api,
@@ -339,7 +502,13 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function closeLeadDetailsModal(){
+	// Expose to window for Customer View "Edit Lead" button
+	window.openLeadDetailsModal = openLeadDetailsModal;
+
+	// Expose showToast for notifications
+	window.showToast = Listings.showToast;
+
+	function closeLeadDetailsModal() {
 		Modals.closeLeadDetailsModal({
 			hideModal
 		});
@@ -367,11 +536,17 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function closeActivityLogModal() {
+		Modals.closeActivityLogModal({
+			hideModal
+		});
+	}
+
 	function renderActivityLog(activities) {
 		return Modals.renderActivityLog(activities, {
-			getActivityIcon,
-			formatTimeAgo,
-			renderActivityMetadata
+			getActivityIcon: Modals.getActivityIcon,
+			formatTimeAgo: Modals.formatTimeAgo,
+			renderActivityMetadata: Modals.renderActivityMetadata
 		});
 	}
 
@@ -383,19 +558,19 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// Legacy function for backward compatibility
-	async function openDrawer(leadId){
+	async function openDrawer(leadId) {
 		await Modals.openDrawer(leadId, {
 			openLeadDetailsModal
 		});
 	}
 
-	function closeDrawer(){
+	function closeDrawer() {
 		Modals.closeDrawer({
 			closeLeadDetailsModal
 		});
 	}
 
-	async function openAgentDrawer(agentId){
+	async function openAgentDrawer(agentId) {
 		await openAgentDrawerUtil({
 			agentId,
 			state,
@@ -405,7 +580,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function closeAgentEditModal(){
+	function closeAgentEditModal() {
 		hideModal('agentEditModal');
 		state.selectedAgentId = null;
 	}
@@ -436,7 +611,13 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function openMatches(leadId){
+	function closeHistory() {
+		Modals.closeHistory({
+			hide
+		});
+	}
+
+	async function openMatches(leadId) {
 		await Modals.openMatches(leadId, {
 			state,
 			api,
@@ -445,13 +626,13 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function closeMatches(){
+	function closeMatches() {
 		Modals.closeMatches({
 			hide
 		});
 	}
 
-	async function openEmailPreview(){
+	async function openEmailPreview() {
 		await Modals.openEmailPreview({
 			state,
 			api,
@@ -471,7 +652,7 @@ let api, renderLeads, renderSpecials;
 		await Showcases.openInterestedLeads(propertyId, propertyName, { api, show });
 	}
 
-	async function sendShowcaseEmail(){
+	async function sendShowcaseEmail() {
 		await Modals.sendShowcaseEmail({
 			state,
 			api,
@@ -480,13 +661,13 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	function updateSelectionSummary(){
+	function updateSelectionSummary() {
 		Modals.updateSelectionSummary({
 			state
 		});
 	}
 
-	async function openShowcasePreview(){
+	async function openShowcasePreview() {
 		await Modals.openShowcasePreview({
 			state,
 			api,
@@ -494,7 +675,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function openBuildShowcaseModal(){
+	async function openBuildShowcaseModal() {
 		await Modals.openBuildShowcaseModal({
 			state,
 			mockLeads: state.leads || [],
@@ -520,6 +701,14 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	function updateLeadBulkActionsBar() {
+		Leads.updateLeadBulkActionsBar();
+	}
+
+	async function bulkSendSmartMatch() {
+		await Leads.bulkSendSmartMatch();
+	}
+
 	async function sendBuildShowcase() {
 		await sendBuildShowcaseUtil({
 			state,
@@ -531,7 +720,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	async function sendShowcase(){
+	async function sendShowcase() {
 		await Showcases.sendShowcase({
 			state, api, realAgents, mockProperties, toast,
 			closeShowcase: () => Modals.closeShowcase({ hide }),
@@ -543,11 +732,11 @@ let api, renderLeads, renderSpecials;
 		Modals.closeBuildShowcase({ hide });
 	}
 
-	function setRoleLabel(page = 'leads'){
+	function setRoleLabel(page = 'leads') {
 		Routing.setRoleLabel(page, state);
 	}
 
-	function route(){
+	function route() {
 		Routing.route({
 			state,
 			hide,
@@ -559,6 +748,7 @@ let api, renderLeads, renderSpecials;
 			renderProperties,
 			renderAdmin,
 			renderBugs,
+			renderEmails,
 			renderLeads,
 			initMap: Listings.initMap,
 			updateNavigation: Routing.updateNavigation,
@@ -566,7 +756,7 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
-	window.initializeApp = async function() {
+	window.initializeApp = async function () {
 		await Init.initializeApp({
 			state,
 			SupabaseAPI,
@@ -592,56 +782,34 @@ let api, renderLeads, renderSpecials;
 		// Create and inject all dependencies
 		const deps = createDependencies({
 			state, realAgents, realUsers, api, mockClosedLeads, SupabaseAPI,
-			renderLeads, renderListings, renderAgents, renderDocuments, renderSpecials,
+			renderLeads, renderListings, renderAgents, renderDocuments, renderManagerDocuments, renderAgentDocuments, renderSpecials,
 			renderBugs, renderAdmin, renderLeadsTable, renderProperties, renderAuditLog,
 			openDrawer, closeDrawer, openAgentDrawer, openMatches,
 			closeMatches, showModal, hideModal, closeLeadDetailsModal, closeLeadNotesModal,
-			closeAgentEditModal,
+			closeActivityLogModal, closeAgentEditModal, closeListingEditModal,
 			openInterestedLeads,
 			openPropertyNotesModal, closePropertyNotesModal, openAddListingModal,
 			closeAddListingModal, openBuildShowcaseModal, openShowcasePreview,
 			saveNewLead, savePropertyContact, editPropertyContact, saveNewSpecial,
+			saveEditedSpecial,
+			deleteEditedSpecial,
 			deleteSpecial, createListing, addPropertyNote, saveAgentChanges, saveLeadNote,
 			updateUser, createUser, changeUserPassword, saveListingEdit, deleteListing,
 			updateUserProfile, changeOwnPassword, updateNotificationPreferences, openProfileModal,
 			sortTable, toast, formatDate, showPopover, initPopover, hidePopover, toggleLeadTable,
-			updateBulkActionsBar,
+			updateBulkActionsBar, populateSpecialPropertyDropdown, populatePropertyDropdownForContact,
 			updateBuildShowcaseButton: Listings.updateBuildShowcaseButton,
-			bulkMarkAsUnavailable, bulkDeleteListings, downloadCSVTemplate, importCSV,
-			submitBugReport, saveBugChanges, addBugFlags, showBugDetails,
+			bulkMarkAsUnavailable, bulkDeleteListings, updateLeadBulkActionsBar, bulkSendSmartMatch,
+			downloadCSVTemplate, importCSV,
+			submitBugReport, saveBugChanges, addBugFlags, showBugDetails, handleBugFieldChange,
 			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
 			openEmailPreview, previewLandingPage, openHistory,
-			sendShowcaseEmail, openHistoryDocumentDetails
+			sendShowcaseEmail, openHistoryDocumentDetails,
+			showEmailPreview, showTemplatePreview, sendTestEmail
 		});
 
 		setupAllEventListeners(deps);
 	});
-
-	async function openListingEditModal(property) {
-		await Modals.openListingEditModal(property, {
-			state,
-			showModal,
-			SupabaseAPI
-		});
-	}
-
-	async function deleteListing() {
-		await Modals.deleteListing({
-			SupabaseAPI,
-			toast,
-			closeListingEditModal: () => Modals.closeListingEditModal({ hideModal }),
-			renderListings
-		});
-	}
-
-	async function saveListingEdit() {
-		await Modals.saveListingEdit({
-			SupabaseAPI,
-			toast,
-			closeListingEditModal: () => Modals.closeListingEditModal({ hideModal }),
-			renderListings
-		});
-	}
 
 	// initializeHealthStatus removed - was using mockLeads
 	// Health status is now calculated from real Supabase data
@@ -657,10 +825,79 @@ let api, renderLeads, renderSpecials;
 	// Global function for activity log modal (used by unit icons)
 	window.openActivityLogModal = openActivityLogModal;
 
+	// Global function for viewing email content
+	window.viewEmailContent = async function (emailLogId, templateId) {
+		try {
+			// Fetch email log data
+			const emailLog = await SupabaseAPI.getEmailLog(emailLogId);
+
+			if (!emailLog) {
+				toast('Email not found', 'error');
+				return;
+			}
+
+			// Fetch template data
+			const { data: template } = await SupabaseAPI.supabase
+				.from('email_templates')
+				.select('*')
+				.eq('id', templateId)
+				.single();
+
+			// Create modal content
+			const modalContent = `
+				<div class="email-preview-modal">
+					<h3>📧 ${template?.name || 'Email'}</h3>
+					<div class="email-meta">
+						<div class="meta-row">
+							<strong>To:</strong> ${emailLog.recipient_email}
+						</div>
+						<div class="meta-row">
+							<strong>Subject:</strong> ${emailLog.subject || template?.subject || 'N/A'}
+						</div>
+						<div class="meta-row">
+							<strong>Sent:</strong> ${formatDate(emailLog.sent_at)}
+						</div>
+						<div class="meta-row">
+							<strong>Status:</strong> <span class="status-badge status-${emailLog.status}">${emailLog.status}</span>
+						</div>
+					</div>
+					<div class="email-stats">
+						<div class="stat-box">
+							<div class="stat-value">${emailLog.opens || 0}</div>
+							<div class="stat-label">Opens</div>
+						</div>
+						<div class="stat-box">
+							<div class="stat-value">${emailLog.clicks || 0}</div>
+							<div class="stat-label">Clicks</div>
+						</div>
+						<div class="stat-box">
+							<div class="stat-value">${emailLog.last_opened_at ? formatDate(emailLog.last_opened_at) : 'Never'}</div>
+							<div class="stat-label">Last Opened</div>
+						</div>
+					</div>
+					<div class="email-content-preview">
+						<h4>Email Content:</h4>
+						<div class="email-iframe-container">
+							<iframe srcdoc="${emailLog.html_content?.replace(/"/g, '&quot;') || '<p>No content available</p>'}"
+									style="width: 100%; height: 400px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+						</div>
+					</div>
+				</div>
+			`;
+
+			showModal('Email Preview', modalContent);
+		} catch (error) {
+			console.error('Error viewing email:', error);
+			toast('Error loading email content', 'error');
+		}
+	};
+
 	// Bulk actions event listeners moved to dom-event-listeners.js
 
-	// Expose state to global scope
+	// Expose state, SupabaseAPI, and toast to global scope
 	window.state = state;
+	window.SupabaseAPI = SupabaseAPI;
+	window.toast = toast;
 })();
 
 // Admin page functions - defined in global scope
@@ -683,16 +920,24 @@ async function loadAuditLog() {
 }
 
 async function createUser(userData) {
-	return await Admin.createUser(userData, {
+	const result = await Admin.createUser(userData, {
 		loadUsers
 	});
+	// Reset pagination to page 1 after creating user
+	Admin.resetUsersPagination();
+	Admin.resetAuditLogPagination();
+	return result;
 }
 
 async function updateUser(userId, userData) {
-	return await Admin.updateUser(userId, userData, {
+	const result = await Admin.updateUser(userId, userData, {
 		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
 		renderUsersTable
 	});
+	// Reset pagination to page 1 after updating user
+	Admin.resetUsersPagination();
+	Admin.resetAuditLogPagination();
+	return result;
 }
 
 async function deleteUserFromAPI(userId) {
@@ -701,12 +946,17 @@ async function deleteUserFromAPI(userId) {
 		renderUsersTable,
 		loadAuditLog
 	});
+	// Reset pagination to page 1 after deleting user
+	Admin.resetUsersPagination();
+	Admin.resetAuditLogPagination();
 }
 
 async function changeUserPassword(userId, newPassword) {
 	await Admin.changeUserPassword(userId, newPassword, {
 		loadAuditLog
 	});
+	// Reset audit log pagination to page 1 after password change
+	Admin.resetAuditLogPagination();
 }
 
 async function renderAdmin() {
@@ -714,7 +964,8 @@ async function renderAdmin() {
 		loadUsers,
 		loadAuditLog,
 		renderUsersTable,
-		renderAuditLog
+		renderAuditLog,
+		initializeCustomizer: Admin.initializeCustomizer
 	});
 }
 
@@ -737,7 +988,8 @@ function renderAuditLog() {
 function editUser(userId) {
 	Admin.editUser(userId, {
 		realUsers: { get value() { return realUsers; }, set value(v) { realUsers = v; } },
-		showModal
+		showModal,
+		currentUser: window.currentUser
 	});
 }
 
@@ -763,7 +1015,7 @@ async function deleteUser(userId) {
 // ============================================================================
 // This function can be called manually from the console or via a button
 // In production, this should be run as a scheduled job (e.g., hourly via cron)
-window.runInactivityDetection = async function() {
+window.runInactivityDetection = async function () {
 	console.log('🔍 Manually triggering inactivity detection...');
 	try {
 		const result = await SupabaseAPI.detectInactiveLeads();

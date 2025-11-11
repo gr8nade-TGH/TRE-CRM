@@ -1,0 +1,37 @@
+{
+  "version": "1.0.0",
+  "exportedAt": "2025-11-04T06:00:02.199Z",
+  "conversation": {
+    "id": "8fb274c0-f9a7-4db5-bb4a-6cf71d410517",
+    "createdAtIso": "2025-10-31T00:34:21.063Z",
+    "lastInteractedAtIso": "2025-10-31T00:34:21.063Z",
+    "chatHistory": [],
+    "feedbackStates": {},
+    "toolUseStates": {},
+    "draftExchange": {
+      "request_message": "",
+      "rich_text_json_repr": {
+        "type": "doc",
+        "content": [
+          {
+            "type": "paragraph"
+          }
+        ]
+      },
+      "mentioned_items": [],
+      "status": "draft"
+    },
+    "requestIds": [],
+    "isPinned": false,
+    "isShareable": false,
+    "extraData": {
+      "isAgentConversation": true,
+      "hasDirtyEdits": false
+    },
+    "personaType": 0
+  },
+  "metadata": {
+    "exportedBy": "Augment Debug Utils",
+    "notes": "Exported from thread menu on 2025-11-04T06:00:02.199Z"
+  }
+}

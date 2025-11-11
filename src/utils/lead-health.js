@@ -6,22 +6,27 @@ import { getLeadActivities } from '../api/supabase-api.js';
 /**
  * Get current step from lead activities
  * @param {string} leadId - Lead ID
- * @returns {Promise<number>} Current step number (1-8)
+ * @param {Array} activities - Optional pre-fetched activities array (for batch optimization)
+ * @returns {Promise<number>} Current step number (1-6)
  */
-export async function getCurrentStepFromActivities(leadId) {
+export async function getCurrentStepFromActivities(leadId, activities = null) {
 	try {
-		const activities = await getLeadActivities(leadId);
+		// If activities not provided, fetch them
+		if (!activities) {
+			activities = await getLeadActivities(leadId);
+		}
 
 		// Map activity types to step numbers
+		// UPDATED: Changed 'showcase_sent' to 'smart_match_sent' to match actual activity logging
+		// Note: 'property_matcher_submitted' is optional and doesn't advance the step counter
+		// Note: 'lease_signed' is optional and doesn't advance the step counter
 		const stepMapping = {
 			'lead_created': 1,
-			'showcase_sent': 2,
-			'showcase_response': 3,
-			'guest_card_sent': 4,
-			'property_selected': 5,
-			'lease_sent': 6,
-			'lease_signed': 7,
-			'lease_finalized': 8
+			'smart_match_sent': 2,  // ← CHANGED from 'showcase_sent'
+			'guest_card_sent': 3,
+			'property_selected': 4,
+			'lease_sent': 5,
+			'lease_finalized': 6
 		};
 
 		// Find the highest step reached
@@ -42,19 +47,17 @@ export async function getCurrentStepFromActivities(leadId) {
 
 /**
  * Get step label from step number
- * @param {number} stepNumber - Step number (1-8)
+ * @param {number} stepNumber - Step number (1-6)
  * @returns {string} Step label
  */
 export function getStepLabel(stepNumber) {
 	const stepLabels = {
 		1: 'Lead Joined',
-		2: 'Showcase Sent',
-		3: 'Showcase Response',
-		4: 'Guest Card Sent',
-		5: 'Property Selected',
-		6: 'Lease Sent',
-		7: 'Lease Signed',
-		8: 'Lease Finalized'
+		2: 'Smart Match Sent',  // ← CHANGED from 'Showcase Sent'
+		3: 'Guest Card Sent',
+		4: 'Property Selected',
+		5: 'Lease Sent',
+		6: 'Lease Finalized'
 	};
 	return stepLabels[stepNumber] || 'Unknown';
 }
@@ -85,7 +88,7 @@ export async function getHealthMessages(lead, formatDate) {
 	// Get current step
 	const currentStepNumber = lead.current_step || await getCurrentStepFromActivities(lead.id);
 	const currentStepLabel = getStepLabel(currentStepNumber);
-	const nextStepNumber = currentStepNumber < 8 ? currentStepNumber + 1 : null;
+	const nextStepNumber = currentStepNumber < 6 ? currentStepNumber + 1 : null;
 	const nextStepLabel = nextStepNumber ? getStepLabel(nextStepNumber) : 'Complete';
 
 	// Format time display

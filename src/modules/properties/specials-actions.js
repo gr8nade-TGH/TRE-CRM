@@ -4,9 +4,9 @@
 /**
  * Save a new special from the Add Special modal
  */
-export function saveNewSpecial(options) {
-	const { api, toast, hideModal, renderSpecials } = options;
-	
+export async function saveNewSpecial(options) {
+	const { api, toast, hideModal, renderSpecials, state } = options;
+
 	const propertyName = document.getElementById('specialPropertyName').value.trim();
 	const currentSpecial = document.getElementById('specialCurrentSpecial').value.trim();
 	const commissionRate = document.getElementById('specialCommissionRate').value.trim();
@@ -24,21 +24,36 @@ export function saveNewSpecial(options) {
 		return;
 	}
 
-	// Create new special
+	// Generate unique ID
+	const specialId = `special_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+	// Map form fields to database schema
+	// Database expects: id, property_id, property_name, market, title, description, valid_from, valid_until, active, featured, terms
+	// Form provides: property_name, current_special (title), commission_rate (description), expiration_date (valid_until)
 	const newSpecial = {
+		id: specialId,
+		property_id: null, // Will be set if we can find matching property
 		property_name: propertyName,
-		current_special: currentSpecial,
-		commission_rate: commissionRate,
-		expiration_date: expirationDate,
-		agent_id: options.state?.currentAgent || 'agent_1', // Default agent
-		agent_name: options.state?.role === 'agent' ? 'Current Agent' : 'Manager' // Will be updated with real name
+		market: state?.market || 'San Antonio', // Default market
+		title: currentSpecial, // Map current_special to title
+		description: `Commission: ${commissionRate}`, // Map commission_rate to description
+		valid_from: new Date().toISOString().split('T')[0], // Today
+		valid_until: expirationDate, // Map expiration_date to valid_until
+		active: true,
+		featured: false,
+		terms: null
 	};
 
-	// Create special via API
-	api.createSpecial(newSpecial);
-	toast('Special added successfully!', 'success');
-	hideModal('addSpecialModal');
-	renderSpecials(); // Refresh the specials list
+	try {
+		// Create special via API
+		await api.createSpecial(newSpecial);
+		toast('Special added successfully!', 'success');
+		hideModal('addSpecialModal');
+		await renderSpecials(); // Refresh the specials list
+	} catch (error) {
+		console.error('Error creating special:', error);
+		toast('Error adding special: ' + error.message, 'error');
+	}
 }
 
 /**

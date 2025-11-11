@@ -50,16 +50,24 @@ export function prefsSummary(p) {
 	}
 
 	// Budget tag - check multiple possible field names
-	// priceRange is from landing page (e.g., "1500-2000")
-	// budget_max/budget_min is from mock data
+	// priceRange can be:
+	// - String format from landing page (e.g., "1500-2000")
+	// - Object format from database (e.g., {"min": 1500, "max": 2000})
+	// - budget_max/budget_min is from mock data
 	let price = '';
 	if (prefs.priceRange) {
-		// Handle "1500-2000" format from landing page
-		const parts = prefs.priceRange.split('-');
-		if (parts.length === 2) {
-			price = `$${parts[0]}-${parts[1]}/mo`;
-		} else {
-			price = `$${prefs.priceRange}/mo`;
+		// Handle object format {"min": 1400, "max": 2000}
+		if (typeof prefs.priceRange === 'object' && prefs.priceRange.min && prefs.priceRange.max) {
+			price = `$${prefs.priceRange.min}-${prefs.priceRange.max}/mo`;
+		}
+		// Handle string format "1500-2000"
+		else if (typeof prefs.priceRange === 'string') {
+			const parts = prefs.priceRange.split('-');
+			if (parts.length === 2) {
+				price = `$${parts[0]}-${parts[1]}/mo`;
+			} else {
+				price = `$${prefs.priceRange}/mo`;
+			}
 		}
 	} else if (prefs.budget_max || prefs.max_budget || prefs.budgetMax) {
 		const budgetMax = prefs.budget_max || prefs.max_budget || prefs.budgetMax;
@@ -86,10 +94,10 @@ export function prefsSummary(p) {
 // ============================================================================
 
 export const mockAgents = [
-	{ 
-		id: 'agent_1', 
-		name: 'Alex Agent', 
-		email: 'alex@example.com', 
+	{
+		id: 'agent_1',
+		name: 'Alex Agent',
+		email: 'alex@example.com',
 		phone: '555-0101',
 		active: true,
 		hireDate: '2023-01-15',
@@ -97,10 +105,10 @@ export const mockAgents = [
 		specialties: ['Residential', 'Luxury'],
 		notes: 'Top performer, excellent with first-time buyers'
 	},
-	{ 
-		id: 'agent_2', 
-		name: 'Bailey Broker', 
-		email: 'bailey@example.com', 
+	{
+		id: 'agent_2',
+		name: 'Bailey Broker',
+		email: 'bailey@example.com',
 		phone: '555-0102',
 		active: true,
 		hireDate: '2022-08-22',
@@ -108,10 +116,10 @@ export const mockAgents = [
 		specialties: ['Commercial', 'Investment'],
 		notes: 'Strong commercial background, great with investors'
 	},
-	{ 
-		id: 'agent_3', 
-		name: 'Casey Consultant', 
-		email: 'casey@example.com', 
+	{
+		id: 'agent_3',
+		name: 'Casey Consultant',
+		email: 'casey@example.com',
 		phone: '555-0103',
 		active: true,
 		hireDate: '2023-03-10',
@@ -119,10 +127,10 @@ export const mockAgents = [
 		specialties: ['Rental', 'Student Housing'],
 		notes: 'New but promising, great with rental properties'
 	},
-	{ 
-		id: 'agent_4', 
-		name: 'Dana Director', 
-		email: 'dana@example.com', 
+	{
+		id: 'agent_4',
+		name: 'Dana Director',
+		email: 'dana@example.com',
 		phone: '555-0104',
 		active: true,
 		hireDate: '2021-11-05',
@@ -130,10 +138,10 @@ export const mockAgents = [
 		specialties: ['Luxury', 'New Construction'],
 		notes: 'Senior agent, handles high-end properties'
 	},
-	{ 
-		id: 'agent_5', 
-		name: 'Evan Expert', 
-		email: 'evan@example.com', 
+	{
+		id: 'agent_5',
+		name: 'Evan Expert',
+		email: 'evan@example.com',
 		phone: '555-0105',
 		active: false,
 		hireDate: '2022-05-18',
@@ -148,22 +156,22 @@ export const mockAgents = [
 // ============================================================================
 
 export const mockLeads = Array.from({ length: 37 }).map((_, i) => {
-	const id = `lead_${i+1}`;
+	const id = `lead_${i + 1}`;
 	const assigned = i % 2 === 0 ? 'agent_1' : (i % 3 === 0 ? 'agent_2' : null);
 	const foundBy = i % 4 === 0 ? 'agent_2' : 'agent_3';
 	const submittedAt = randomDate(45);
 	const submittedDate = new Date(submittedAt);
-	
+
 	// Generate realistic health tracking data
 	const showcaseSent = i % 3 !== 0; // 2/3 of leads have showcase sent
 	const showcaseResponse = i % 4 !== 0; // 3/4 of those respond
 	const leaseSent = i % 5 === 0; // 1/5 have lease sent
 	const leaseSigned = i % 10 === 0; // 1/10 have lease signed
-	
+
 	return {
 		id,
-		name: `Lead ${i+1}`,
-		email: `lead${i+1}@example.com`,
+		name: `Lead ${i + 1}`,
+		email: `lead${i + 1}@example.com`,
 		phone: `555-000-${String(1000 + i)}`,
 		submitted_at: submittedAt,
 		found_by_agent_id: foundBy,
@@ -171,7 +179,7 @@ export const mockLeads = Array.from({ length: 37 }).map((_, i) => {
 		health_status: 'green', // Will be calculated dynamically
 		health_score: 100,
 		health_updated_at: new Date().toISOString(),
-		
+
 		// Health tracking timestamps
 		showcase_sent_at: showcaseSent ? new Date(submittedDate.getTime() + (i % 3) * 24 * 60 * 60 * 1000).toISOString() : null,
 		showcase_response_at: showcaseResponse && showcaseSent ? new Date(submittedDate.getTime() + (i % 2 + 1) * 24 * 60 * 60 * 1000).toISOString() : null,
@@ -181,25 +189,25 @@ export const mockLeads = Array.from({ length: 37 }).map((_, i) => {
 		lease_signed_at: leaseSigned ? new Date(submittedDate.getTime() + (i % 15 + 10) * 24 * 60 * 60 * 1000).toISOString() : null,
 		tour_scheduled_at: i % 6 === 0 ? new Date(submittedDate.getTime() + (i % 4 + 2) * 24 * 60 * 60 * 1000).toISOString() : null,
 		tour_completed_at: i % 8 === 0 ? new Date(submittedDate.getTime() + (i % 6 + 3) * 24 * 60 * 60 * 1000).toISOString() : null,
-		
+
 		// Events array for tracking interactions
 		events: [],
-		
+
 		prefs: {
-			market: ['Austin','Dallas','Houston'][i%3],
-			neighborhoods: ['Downtown','Uptown','Midtown'].slice(0, (i%3)+1),
-			budget_min: 1000 + (i%5)*100,
-			budget_max: 1800 + (i%5)*150,
-			beds: (i%3)+1,
-			baths: (i%2)+1,
+			market: ['Austin', 'Dallas', 'Houston'][i % 3],
+			neighborhoods: ['Downtown', 'Uptown', 'Midtown'].slice(0, (i % 3) + 1),
+			budget_min: 1000 + (i % 5) * 100,
+			budget_max: 1800 + (i % 5) * 150,
+			beds: (i % 3) + 1,
+			baths: (i % 2) + 1,
 			move_in: '30-60 days',
-			pets: i%2===0 ? 'Yes' : 'No',
-			parking: i%3===0 ? 'Required' : 'Optional',
+			pets: i % 2 === 0 ? 'Yes' : 'No',
+			parking: i % 3 === 0 ? 'Required' : 'Optional',
 			sqft_min: 650,
 			sqft_max: 1100,
-			amenities: ['Pool','Gym','In-Unit W/D'].slice(0, (i%3)+1),
-			credit_tier: ['A','B','C'][i%3],
-			background: ['None','Eviction'][i%2],
+			amenities: ['Pool', 'Gym', 'In-Unit W/D'].slice(0, (i % 3) + 1),
+			credit_tier: ['A', 'B', 'C'][i % 3],
+			background: ['None', 'Eviction'][i % 2],
 			notes: 'Initial intake notes here.'
 		},
 		status: 'new',
@@ -220,41 +228,51 @@ export const mockDocumentSteps = [
 ];
 
 export const mockDocumentStatuses = {
-	'lead_1': { currentStep: 2, steps: [
-		{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v1.pdf', 'property_details.pdf'] },
-		{ ...mockDocumentSteps[1], status: 'in_progress', attachments: ['signed_lease_draft.pdf'] },
-		{ ...mockDocumentSteps[2], status: 'pending', attachments: [] },
-		{ ...mockDocumentSteps[3], status: 'pending', attachments: [] },
-		{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
-	]},
-	'lead_2': { currentStep: 1, steps: [
-		{ ...mockDocumentSteps[0], status: 'in_progress', attachments: ['lease_agreement_v2.pdf'] },
-		{ ...mockDocumentSteps[1], status: 'pending', attachments: [] },
-		{ ...mockDocumentSteps[2], status: 'pending', attachments: [] },
-		{ ...mockDocumentSteps[3], status: 'pending', attachments: [] },
-		{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
-	]},
-	'lead_3': { currentStep: 4, steps: [
-		{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v3.pdf'] },
-		{ ...mockDocumentSteps[1], status: 'completed', attachments: ['lead_signature.pdf', 'id_verification.pdf'] },
-		{ ...mockDocumentSteps[2], status: 'completed', attachments: ['owner_signature.pdf', 'property_owner_id.pdf'] },
-		{ ...mockDocumentSteps[3], status: 'in_progress', attachments: ['finalization_checklist.pdf'] },
-		{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
-	]},
-	'lead_4': { currentStep: 5, steps: [
-		{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v4.pdf'] },
-		{ ...mockDocumentSteps[1], status: 'completed', attachments: ['lead_signature_v2.pdf'] },
-		{ ...mockDocumentSteps[2], status: 'completed', attachments: ['owner_signature_v2.pdf'] },
-		{ ...mockDocumentSteps[3], status: 'completed', attachments: ['finalized_lease.pdf', 'agent_approval.pdf'] },
-		{ ...mockDocumentSteps[4], status: 'in_progress', attachments: ['payment_instructions.pdf'] }
-	]},
-	'lead_5': { currentStep: 3, steps: [
-		{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v5.pdf'] },
-		{ ...mockDocumentSteps[1], status: 'completed', attachments: ['lead_signature_v3.pdf'] },
-		{ ...mockDocumentSteps[2], status: 'in_progress', attachments: ['owner_review_document.pdf'] },
-		{ ...mockDocumentSteps[3], status: 'pending', attachments: [] },
-		{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
-	]}
+	'lead_1': {
+		currentStep: 2, steps: [
+			{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v1.pdf', 'property_details.pdf'] },
+			{ ...mockDocumentSteps[1], status: 'in_progress', attachments: ['signed_lease_draft.pdf'] },
+			{ ...mockDocumentSteps[2], status: 'pending', attachments: [] },
+			{ ...mockDocumentSteps[3], status: 'pending', attachments: [] },
+			{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
+		]
+	},
+	'lead_2': {
+		currentStep: 1, steps: [
+			{ ...mockDocumentSteps[0], status: 'in_progress', attachments: ['lease_agreement_v2.pdf'] },
+			{ ...mockDocumentSteps[1], status: 'pending', attachments: [] },
+			{ ...mockDocumentSteps[2], status: 'pending', attachments: [] },
+			{ ...mockDocumentSteps[3], status: 'pending', attachments: [] },
+			{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
+		]
+	},
+	'lead_3': {
+		currentStep: 4, steps: [
+			{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v3.pdf'] },
+			{ ...mockDocumentSteps[1], status: 'completed', attachments: ['lead_signature.pdf', 'id_verification.pdf'] },
+			{ ...mockDocumentSteps[2], status: 'completed', attachments: ['owner_signature.pdf', 'property_owner_id.pdf'] },
+			{ ...mockDocumentSteps[3], status: 'in_progress', attachments: ['finalization_checklist.pdf'] },
+			{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
+		]
+	},
+	'lead_4': {
+		currentStep: 5, steps: [
+			{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v4.pdf'] },
+			{ ...mockDocumentSteps[1], status: 'completed', attachments: ['lead_signature_v2.pdf'] },
+			{ ...mockDocumentSteps[2], status: 'completed', attachments: ['owner_signature_v2.pdf'] },
+			{ ...mockDocumentSteps[3], status: 'completed', attachments: ['finalized_lease.pdf', 'agent_approval.pdf'] },
+			{ ...mockDocumentSteps[4], status: 'in_progress', attachments: ['payment_instructions.pdf'] }
+		]
+	},
+	'lead_5': {
+		currentStep: 3, steps: [
+			{ ...mockDocumentSteps[0], status: 'completed', attachments: ['lease_agreement_v5.pdf'] },
+			{ ...mockDocumentSteps[1], status: 'completed', attachments: ['lead_signature_v3.pdf'] },
+			{ ...mockDocumentSteps[2], status: 'in_progress', attachments: ['owner_review_document.pdf'] },
+			{ ...mockDocumentSteps[3], status: 'pending', attachments: [] },
+			{ ...mockDocumentSteps[4], status: 'pending', attachments: [] }
+		]
+	}
 };
 
 export const mockClosedLeads = [
@@ -326,30 +344,30 @@ export const mockInterestedLeads = {
 };
 
 export const mockProperties = Array.from({ length: 50 }).map((_, i) => {
-	const id = `prop_${i+1}`;
-	const market = ['Austin','Dallas','Houston'][i%3];
-	const rentMin = 1000 + (i%6)*150;
-	const rentMax = rentMin + 400 + (i%3)*100;
-	const escort_pct = [0.0, 1.5, 2.0, 2.5, 3.0][i%5];
-	const send_pct = [1.0, 2.0, 2.5, 3.5, 4.0][(i+2)%5];
+	const id = `prop_${i + 1}`;
+	const market = ['Austin', 'Dallas', 'Houston'][i % 3];
+	const rentMin = 1000 + (i % 6) * 150;
+	const rentMax = rentMin + 400 + (i % 3) * 100;
+	const escort_pct = [0.0, 1.5, 2.0, 2.5, 3.0][i % 5];
+	const send_pct = [1.0, 2.0, 2.5, 3.5, 4.0][(i + 2) % 5];
 	// Add coordinates for map
 	const lat = 29.48 + (Math.random() - 0.5) * 0.2; // Austin area
 	const lng = -98.50 + (Math.random() - 0.5) * 0.2;
 	return {
 		id,
-		name: `Community ${i+1}`,
+		name: `Community ${i + 1}`,
 		market,
-		neighborhoods: ['Downtown','Uptown','Midtown'].slice(0, (i%3)+1),
+		neighborhoods: ['Downtown', 'Uptown', 'Midtown'].slice(0, (i % 3) + 1),
 		beds_min: 1, beds_max: 3,
 		baths_min: 1, baths_max: 2,
 		rent_min: rentMin, rent_max: rentMax,
 		sqft_min: 600, sqft_max: 1300,
-		amenities: ['Pool','Gym','In-Unit W/D','Parking'].slice(0, (i%4)+1),
+		amenities: ['Pool', 'Gym', 'In-Unit W/D', 'Parking'].slice(0, (i % 4) + 1),
 		escort_pct, send_pct,
-		bonus_text: i%4===0 ? '$300 bonus' : '',
-		specials_text: i%3===0 ? '1 month free' : '',
+		bonus_text: i % 4 === 0 ? '$300 bonus' : '',
+		specials_text: i % 3 === 0 ? '1 month free' : '',
 		website: 'https://example.com',
-		address: `${100+i} Example St`,
+		address: `${100 + i} Example St`,
 		phone: '555-111-2222',
 		pricing_last_updated: randomDate(15),
 		lat, lng,

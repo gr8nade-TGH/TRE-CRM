@@ -39,6 +39,7 @@ export function updateNavigation(activePage) {
 export function updateNavVisibility(state) {
 	const agentsNavLink = document.getElementById('agentsNavLink');
 	const adminNavLink = document.getElementById('adminNavLink');
+	const manageDropdownContainer = document.querySelector('.manage-dropdown-container');
 
 	if (agentsNavLink) {
 		if (state.role === 'agent') {
@@ -53,6 +54,15 @@ export function updateNavVisibility(state) {
 			adminNavLink.style.display = 'none';
 		} else {
 			adminNavLink.style.display = 'block';
+		}
+	}
+
+	// Show manage dropdown for managers and super_users
+	if (manageDropdownContainer) {
+		if (state.role === 'manager' || state.role === 'super_user') {
+			manageDropdownContainer.style.display = 'block';
+		} else {
+			manageDropdownContainer.style.display = 'none';
 		}
 	}
 }

@@ -1,0 +1,1299 @@
+/**
+ * Mission Control Theme for Smart Match Configuration
+ * Cockpit dashboard / control panel aesthetic
+ */
+
+/* ============================================
+   MISSION CONTROL COLOR PALETTE
+   ============================================ */
+:root {
+	/* Dark theme base */
+	--mc-bg-primary: #0a0e1a;
+	--mc-bg-secondary: #131824;
+	--mc-bg-tertiary: #1a2030;
+	--mc-bg-panel: #1e2738;
+
+	/* Accent colors */
+	--mc-accent-blue: #3b82f6;
+	--mc-accent-cyan: #06b6d4;
+	--mc-accent-green: #10b981;
+	--mc-accent-orange: #f59e0b;
+	--mc-accent-red: #ef4444;
+	--mc-accent-purple: #8b5cf6;
+
+	/* Glow effects */
+	--mc-glow-blue: rgba(59, 130, 246, 0.4);
+	--mc-glow-cyan: rgba(6, 182, 212, 0.4);
+	--mc-glow-green: rgba(16, 185, 129, 0.4);
+	--mc-glow-orange: rgba(245, 158, 11, 0.4);
+
+	/* Text colors */
+	--mc-text-primary: #f9fafb;
+	--mc-text-secondary: #9ca3af;
+	--mc-text-muted: #6b7280;
+
+	/* Border colors */
+	--mc-border-primary: #374151;
+	--mc-border-glow: rgba(59, 130, 246, 0.3);
+}
+
+/* ============================================
+   MISSION CONTROL PAGE LAYOUT
+   ============================================ */
+
+/* Override body and main backgrounds when mission control page is active */
+body.mission-control-active {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active main {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active #appRoot {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active #manageView {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+.mission-control-theme {
+	background: linear-gradient(135deg, var(--mc-bg-primary) 0%, var(--mc-bg-secondary) 100%);
+	min-height: 100vh;
+	color: var(--mc-text-primary);
+	overflow-x: hidden;
+}
+
+/* Override white background from global .page-container */
+.mission-control-theme .page-container {
+	background: var(--mc-bg-primary) !important;
+	padding: 0 !important;
+	margin: 0 !important;
+	box-shadow: none !important;
+	border: none !important;
+	min-height: 100vh !important;
+}
+
+/* Additional override for nested containers */
+body.mission-control-active .page-container {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+body.mission-control-active .smart-match-config-page {
+	background: var(--mc-bg-primary) !important;
+	min-height: 100vh !important;
+}
+
+/* Target ALL possible white background elements */
+body.mission-control-active section,
+body.mission-control-active form,
+body.mission-control-active .mc-dashboard-grid,
+body.mission-control-active .mc-control-panel,
+body.mission-control-active .mc-reset-section,
+body.mission-control-active .mc-save-section {
+	background: transparent !important;
+}
+
+/* Ensure form container has dark background */
+body.mission-control-active #smartMatchConfigForm {
+	background: var(--mc-bg-primary) !important;
+}
+
+/* Override white background from global .view-bar on mobile */
+.mission-control-theme .view-bar {
+	background: var(--mc-bg-panel) !important;
+	border-bottom: 1px solid var(--mc-border-primary) !important;
+}
+
+.mission-control-theme .view-bar h1 {
+	color: var(--mc-text-primary) !important;
+}
+
+/* Override white backgrounds from global form styles */
+.mission-control-theme select,
+.mission-control-theme input[type="text"],
+.mission-control-theme input[type="email"],
+.mission-control-theme input[type="tel"],
+.mission-control-theme input[type="date"],
+.mission-control-theme input[type="number"],
+.mission-control-theme textarea {
+	background: var(--mc-bg-tertiary) !important;
+	color: var(--mc-text-primary) !important;
+	border-color: var(--mc-border-primary) !important;
+}
+
+.mission-control-theme select:focus,
+.mission-control-theme input:focus,
+.mission-control-theme textarea:focus {
+	background: var(--mc-bg-panel) !important;
+	border-color: var(--mc-accent-cyan) !important;
+	outline: none !important;
+}
+
+.mission-control-theme .smart-match-config-page {
+	max-width: 1600px;
+	margin: 0 auto;
+	padding: 16px;
+	height: 100vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* ============================================
+   MISSION CONTROL HEADER
+   ============================================ */
+.mc-header {
+	text-align: center;
+	margin-bottom: 12px;
+	position: relative;
+	flex-shrink: 0;
+}
+
+.mc-header::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 200px;
+	height: 200px;
+	background: radial-gradient(circle, var(--mc-glow-blue) 0%, transparent 70%);
+	opacity: 0.1;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.mc-title {
+	font-size: 24px;
+	font-weight: 800;
+	margin: 0 0 4px 0;
+	background: linear-gradient(135deg, var(--mc-accent-cyan) 0%, var(--mc-accent-blue) 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+	text-transform: uppercase;
+	letter-spacing: 2px;
+	position: relative;
+	z-index: 1;
+	text-shadow: 0 0 30px var(--mc-glow-blue);
+}
+
+.mc-subtitle {
+	font-size: 11px;
+	color: var(--mc-text-secondary);
+	margin: 0;
+	position: relative;
+	z-index: 1;
+	text-transform: uppercase;
+	letter-spacing: 1.5px;
+}
+
+/* ============================================
+   MISSION CONTROL SUMMARY PANEL
+   ============================================ */
+.mc-summary-panel {
+	background: var(--mc-bg-panel);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 12px;
+	padding: 12px 16px;
+	margin-bottom: 12px;
+	box-shadow:
+		0 0 20px rgba(0, 0, 0, 0.5),
+		inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	position: relative;
+	overflow: hidden;
+	flex-shrink: 0;
+}
+
+.mc-summary-panel::before {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: linear-gradient(90deg,
+			transparent 0%,
+			var(--mc-accent-cyan) 50%,
+			transparent 100%);
+	animation: scanline 3s linear infinite;
+}
+
+@keyframes scanline {
+	0% {
+		transform: translateX(-100%);
+	}
+
+	100% {
+		transform: translateX(100%);
+	}
+}
+
+.mc-summary-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 24px;
+	gap: 16px;
+}
+
+.mc-summary-title-group {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.mc-summary-title-group h3 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--mc-text-primary);
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.mc-status-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 14px;
+	background: rgba(16, 185, 129, 0.1);
+	border: 1px solid var(--mc-accent-green);
+	border-radius: 20px;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--mc-accent-green);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	box-shadow: 0 0 10px var(--mc-glow-green);
+}
+
+.mc-status-indicator::before {
+	content: '';
+	width: 8px;
+	height: 8px;
+	background: var(--mc-accent-green);
+	border-radius: 50%;
+	box-shadow: 0 0 8px var(--mc-accent-green);
+	animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+	0%,
+	100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	50% {
+		opacity: 0.6;
+		transform: scale(0.9);
+	}
+}
+
+.mc-summary-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 16px;
+}
+
+.mc-summary-item {
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 8px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	transition: all 0.3s ease;
+}
+
+.mc-summary-item:hover {
+	border-color: var(--mc-accent-blue);
+	box-shadow: 0 0 15px var(--mc-glow-blue);
+	transform: translateY(-2px);
+}
+
+.mc-summary-label {
+	font-size: 11px;
+	color: var(--mc-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	font-weight: 600;
+}
+
+.mc-summary-value {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--mc-accent-cyan);
+	font-family: 'Courier New', monospace;
+}
+
+/* Inline Match Counter Styles */
+.mc-counter-loading-inline {
+	color: var(--mc-text-secondary);
+	animation: pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse {
+
+	0%,
+	100% {
+		opacity: 0.4;
+	}
+
+	50% {
+		opacity: 1;
+	}
+}
+
+#matchCounterValue .mc-counter-good {
+	color: var(--mc-accent-green);
+	text-shadow: 0 0 10px var(--mc-glow-green);
+}
+
+#matchCounterValue .mc-counter-warning {
+	color: var(--mc-accent-orange);
+	text-shadow: 0 0 10px var(--mc-glow-orange);
+}
+
+#matchCounterValue .mc-counter-none {
+	color: #ef4444;
+	text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+}
+
+#matchCounterValue .mc-counter-error {
+	color: #ef4444;
+	font-size: 12px;
+}
+
+/* Algorithm Flow Diagram */
+.mc-flow-diagram {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	margin-top: 12px;
+	padding-top: 12px;
+	border-top: 1px solid var(--mc-border-primary);
+}
+
+.mc-flow-step {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 8px 12px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 6px;
+	transition: all 0.3s ease;
+}
+
+.mc-flow-step:hover {
+	border-color: var(--mc-accent-cyan);
+	box-shadow: 0 0 12px var(--mc-glow-cyan);
+	transform: translateY(-2px);
+}
+
+.mc-flow-icon {
+	font-size: 18px;
+	line-height: 1;
+}
+
+.mc-flow-label {
+	font-size: 9px;
+	font-weight: 700;
+	color: var(--mc-text-secondary);
+	letter-spacing: 0.8px;
+}
+
+.mc-flow-arrow {
+	font-size: 16px;
+	color: var(--mc-accent-cyan);
+	opacity: 0.5;
+	animation: arrowPulse 2s ease-in-out infinite;
+}
+
+/* ============================================
+   MISSION CONTROL FORM CONTAINER
+   ============================================ */
+.config-form {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding-right: 8px;
+}
+
+.config-form::-webkit-scrollbar {
+	width: 8px;
+}
+
+.config-form::-webkit-scrollbar-track {
+	background: var(--mc-bg-secondary);
+	border-radius: 4px;
+}
+
+.config-form::-webkit-scrollbar-thumb {
+	background: var(--mc-accent-blue);
+	border-radius: 4px;
+	box-shadow: 0 0 10px var(--mc-glow-blue);
+}
+
+.config-form::-webkit-scrollbar-thumb:hover {
+	background: var(--mc-accent-cyan);
+}
+
+/* Dashboard Grid Layout */
+.mc-dashboard-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+	margin-bottom: 16px;
+	position: relative;
+}
+
+/* Visual Flow Indicators - Connection Lines Between Panels */
+.mc-dashboard-grid::before,
+.mc-dashboard-grid::after {
+	content: '';
+	position: absolute;
+	top: 50%;
+	height: 2px;
+	background: linear-gradient(90deg,
+			transparent 0%,
+			var(--mc-accent-cyan) 20%,
+			var(--mc-accent-blue) 50%,
+			var(--mc-accent-cyan) 80%,
+			transparent 100%);
+	opacity: 0.3;
+	pointer-events: none;
+	z-index: 0;
+	animation: flowPulse 3s ease-in-out infinite;
+}
+
+.mc-dashboard-grid::before {
+	left: calc(33.33% - 8px);
+	width: 16px;
+}
+
+.mc-dashboard-grid::after {
+	left: calc(66.66% - 8px);
+	width: 16px;
+}
+
+@keyframes flowPulse {
+
+	0%,
+	100% {
+		opacity: 0.2;
+		box-shadow: 0 0 5px var(--mc-glow-cyan);
+	}
+
+	50% {
+		opacity: 0.5;
+		box-shadow: 0 0 15px var(--mc-glow-cyan);
+	}
+}
+
+/* Data Flow Arrows */
+.mc-control-panel::before {
+	content: '→';
+	position: absolute;
+	right: -24px;
+	top: 50%;
+	transform: translateY(-50%);
+	font-size: 20px;
+	color: var(--mc-accent-cyan);
+	opacity: 0.4;
+	z-index: 10;
+	animation: arrowPulse 2s ease-in-out infinite;
+}
+
+.mc-control-panel:last-child::before {
+	display: none;
+}
+
+@keyframes arrowPulse {
+
+	0%,
+	100% {
+		opacity: 0.3;
+		transform: translateY(-50%) translateX(0);
+	}
+
+	50% {
+		opacity: 0.7;
+		transform: translateY(-50%) translateX(3px);
+	}
+}
+
+/* ============================================
+   MISSION CONTROL SECTIONS (CONTROL PANELS)
+   ============================================ */
+.mc-control-panel {
+	background: var(--mc-bg-panel);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 10px;
+	padding: 16px;
+	margin-bottom: 0;
+	box-shadow:
+		0 4px 20px rgba(0, 0, 0, 0.4),
+		inset 0 1px 0 rgba(255, 255, 255, 0.05);
+	position: relative;
+	height: 100%;
+}
+
+.mc-control-panel::after {
+	content: '';
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	border-radius: 12px;
+	background: linear-gradient(135deg,
+			rgba(59, 130, 246, 0.05) 0%,
+			transparent 50%);
+	pointer-events: none;
+}
+
+.mc-panel-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 14px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--mc-border-primary);
+	position: relative;
+	z-index: 1;
+}
+
+.mc-panel-icon {
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: linear-gradient(135deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
+	border-radius: 6px;
+	box-shadow: 0 0 12px var(--mc-glow-blue);
+	animation: rotate 10s linear infinite;
+	flex-shrink: 0;
+}
+
+@keyframes rotate {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.mc-panel-icon svg {
+	width: 16px;
+	height: 16px;
+	stroke: white;
+	stroke-width: 2.5;
+}
+
+.mc-panel-title-group h2 {
+	margin: 0 0 2px 0;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--mc-text-primary);
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+}
+
+.mc-panel-description {
+	margin: 0;
+	font-size: 10px;
+	color: var(--mc-text-secondary);
+	line-height: 1.3;
+}
+
+.mc-control-grid {
+	display: grid;
+	grid-template-columns: 1fr;
+	gap: 12px;
+	position: relative;
+	z-index: 1;
+}
+
+/* ============================================
+   MISSION CONTROL FORM CONTROLS
+   ============================================ */
+.mc-control-field {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.mc-control-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--mc-text-primary);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.mc-control-label::before {
+	content: '▸';
+	color: var(--mc-accent-cyan);
+	font-size: 10px;
+}
+
+.mc-control-help {
+	font-size: 9px;
+	color: var(--mc-text-muted);
+	margin: 0;
+	font-style: italic;
+	line-height: 1.2;
+}
+
+/* ============================================
+   TOGGLE SWITCHES
+   ============================================ */
+.mc-toggle-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.mc-toggle {
+	position: relative;
+	width: 56px;
+	height: 28px;
+	background: var(--mc-bg-tertiary);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 14px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mc-toggle::before {
+	content: '';
+	position: absolute;
+	top: 2px;
+	left: 2px;
+	width: 20px;
+	height: 20px;
+	background: var(--mc-text-muted);
+	border-radius: 50%;
+	transition: all 0.3s ease;
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mc-toggle.active {
+	background: linear-gradient(135deg, var(--mc-accent-green) 0%, var(--mc-accent-cyan) 100%);
+	border-color: var(--mc-accent-green);
+	box-shadow:
+		inset 0 2px 4px rgba(0, 0, 0, 0.3),
+		0 0 15px var(--mc-glow-green);
+}
+
+.mc-toggle.active::before {
+	left: 30px;
+	background: #e5e7eb;
+	box-shadow: 0 0 8px var(--mc-glow-green);
+}
+
+.mc-toggle-label {
+	font-size: 13px;
+	color: var(--mc-text-secondary);
+	user-select: none;
+}
+
+.mc-toggle.active+.mc-toggle-label {
+	color: var(--mc-accent-green);
+	font-weight: 600;
+}
+
+/* ============================================
+   SLIDER CONTROLS
+   ============================================ */
+.mc-slider-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.mc-slider-display {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+}
+
+.mc-slider-value {
+	min-width: 65px;
+	padding: 4px 10px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 4px;
+	font-family: 'Courier New', monospace;
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--mc-accent-cyan);
+	text-align: center;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mc-slider-track {
+	flex: 1;
+	position: relative;
+	height: 6px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 3px;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mc-slider-fill {
+	position: absolute;
+	top: 0;
+	left: 0;
+	height: 100%;
+	background: linear-gradient(90deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
+	border-radius: 4px;
+	transition: width 0.2s ease;
+	box-shadow: 0 0 10px var(--mc-glow-blue);
+}
+
+.mc-slider {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	transform: translateY(-50%);
+	opacity: 0;
+	cursor: pointer;
+	z-index: 2;
+}
+
+.mc-slider-thumb {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 14px;
+	height: 14px;
+	background: #e5e7eb;
+	border: 2px solid var(--mc-accent-cyan);
+	border-radius: 50%;
+	transform: translate(-50%, -50%);
+	transition: all 0.2s ease;
+	box-shadow:
+		0 0 12px var(--mc-glow-cyan),
+		0 2px 4px rgba(0, 0, 0, 0.3);
+	pointer-events: none;
+	z-index: 1;
+}
+
+.mc-slider:hover+.mc-slider-thumb {
+	transform: translate(-50%, -50%) scale(1.15);
+	box-shadow:
+		0 0 16px var(--mc-glow-cyan),
+		0 3px 6px rgba(0, 0, 0, 0.4);
+}
+
+.mc-slider-labels {
+	display: flex;
+	justify-content: space-between;
+	margin-top: 2px;
+}
+
+.mc-slider-label {
+	font-size: 9px;
+	color: var(--mc-text-muted);
+	font-family: 'Courier New', monospace;
+}
+
+/* ============================================
+   SELECT DROPDOWNS
+   ============================================ */
+.mc-select-wrapper {
+	position: relative;
+}
+
+.mc-select {
+	width: 100%;
+	padding: 12px 40px 12px 16px;
+	background: var(--mc-bg-tertiary);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 8px;
+	color: var(--mc-text-primary);
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	appearance: none;
+	transition: all 0.3s ease;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mc-select:hover {
+	border-color: var(--mc-accent-blue);
+	box-shadow:
+		inset 0 2px 4px rgba(0, 0, 0, 0.3),
+		0 0 10px var(--mc-glow-blue);
+}
+
+.mc-select:focus {
+	outline: none;
+	border-color: var(--mc-accent-cyan);
+	box-shadow:
+		inset 0 2px 4px rgba(0, 0, 0, 0.3),
+		0 0 15px var(--mc-glow-cyan);
+}
+
+.mc-select-wrapper::after {
+	content: '▼';
+	position: absolute;
+	right: 16px;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--mc-accent-cyan);
+	font-size: 12px;
+	pointer-events: none;
+}
+
+/* ============================================
+   NUMBER INPUTS
+   ============================================ */
+.mc-input {
+	width: 100%;
+	padding: 12px 16px;
+	background: var(--mc-bg-tertiary);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 8px;
+	color: var(--mc-text-primary);
+	font-size: 14px;
+	font-weight: 500;
+	font-family: 'Courier New', monospace;
+	transition: all 0.3s ease;
+	box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.mc-input:hover {
+	border-color: var(--mc-accent-blue);
+	box-shadow:
+		inset 0 2px 4px rgba(0, 0, 0, 0.3),
+		0 0 10px var(--mc-glow-blue);
+}
+
+.mc-input:focus {
+	outline: none;
+	border-color: var(--mc-accent-cyan);
+	box-shadow:
+		inset 0 2px 4px rgba(0, 0, 0, 0.3),
+		0 0 15px var(--mc-glow-cyan);
+}
+
+/* ============================================
+   ACTION BUTTONS
+   ============================================ */
+.mc-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 12px;
+	margin-top: 12px;
+	padding: 12px 16px;
+	background: var(--mc-bg-panel);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 8px;
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+	flex-shrink: 0;
+}
+
+.mc-btn {
+	padding: 8px 16px;
+	border: 2px solid;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.8px;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	position: relative;
+	overflow: hidden;
+}
+
+.mc-btn svg {
+	width: 14px;
+	height: 14px;
+}
+
+.mc-btn::before {
+	content: '';
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0;
+	height: 0;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.2);
+	transform: translate(-50%, -50%);
+	transition: width 0.6s ease, height 0.6s ease;
+}
+
+.mc-btn:hover::before {
+	width: 300px;
+	height: 300px;
+}
+
+.mc-btn svg {
+	width: 18px;
+	height: 18px;
+	position: relative;
+	z-index: 1;
+}
+
+.mc-btn-primary {
+	background: linear-gradient(135deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
+	border-color: var(--mc-accent-cyan);
+	color: white;
+	box-shadow: 0 0 20px var(--mc-glow-blue);
+}
+
+.mc-btn-primary:hover {
+	box-shadow: 0 0 30px var(--mc-glow-cyan);
+	transform: translateY(-2px);
+}
+
+.mc-btn-secondary {
+	background: var(--mc-bg-tertiary);
+	border-color: var(--mc-border-primary);
+	color: var(--mc-text-primary);
+}
+
+.mc-btn-secondary:hover {
+	border-color: var(--mc-accent-orange);
+	box-shadow: 0 0 15px var(--mc-glow-orange);
+	transform: translateY(-2px);
+}
+
+.mc-btn-test {
+	background: linear-gradient(135deg, var(--mc-accent-green) 0%, var(--mc-accent-cyan) 100%);
+	border-color: var(--mc-accent-green);
+	color: white;
+	box-shadow: 0 0 20px var(--mc-glow-green);
+}
+
+.mc-btn-test:hover {
+	box-shadow: 0 0 30px var(--mc-glow-green);
+	transform: translateY(-2px);
+}
+
+/* ============================================
+   MATCH COUNTER COMPONENT
+   ============================================ */
+
+.mc-match-counter {
+	background: var(--mc-bg-panel);
+	border: 2px solid var(--mc-border-primary);
+	border-radius: 8px;
+	padding: 10px 14px;
+	margin-bottom: 12px;
+	transition: all 0.3s ease;
+	flex-shrink: 0;
+}
+
+.mc-counter-header {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 8px;
+}
+
+.mc-counter-icon {
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 5px;
+	flex-shrink: 0;
+}
+
+.mc-counter-icon svg {
+	width: 16px;
+	height: 16px;
+	stroke: var(--mc-accent-cyan);
+}
+
+.mc-counter-title {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.mc-counter-label {
+	font-size: 9px;
+	font-weight: 600;
+	letter-spacing: 1.2px;
+	color: var(--mc-text-secondary);
+	text-transform: uppercase;
+}
+
+.mc-counter-status {
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.5px;
+	text-transform: uppercase;
+}
+
+.mc-counter-display {
+	text-align: center;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.02);
+	border-radius: 6px;
+	margin-bottom: 6px;
+	min-height: 60px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+}
+
+.mc-counter-value {
+	font-size: 32px;
+	font-weight: 700;
+	line-height: 1;
+	margin-bottom: 4px;
+	font-family: 'Courier New', monospace;
+	text-shadow: 0 0 15px currentColor;
+}
+
+.mc-counter-unit {
+	font-size: 10px;
+	font-weight: 600;
+	letter-spacing: 1.5px;
+	color: var(--mc-text-secondary);
+	text-transform: uppercase;
+}
+
+.mc-counter-help {
+	font-size: 9px;
+	color: var(--mc-text-secondary);
+	text-align: center;
+	line-height: 1.3;
+	margin-bottom: 6px;
+}
+
+.mc-counter-save-btn {
+	width: 100%;
+	padding: 6px 12px;
+	background: linear-gradient(135deg, var(--mc-accent-blue), var(--mc-accent-cyan));
+	border: none;
+	border-radius: 5px;
+	color: var(--mc-text-primary);
+	font-size: 10px;
+	font-weight: 700;
+	letter-spacing: 0.8px;
+	text-transform: uppercase;
+	cursor: pointer;
+	transition: all 0.3s ease;
+	box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.mc-counter-save-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.5);
+}
+
+.mc-counter-save-btn:active {
+	transform: translateY(0);
+}
+
+/* Status Colors */
+.mc-counter-good {
+	border-color: var(--mc-accent-green);
+	box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.mc-counter-good .mc-counter-icon {
+	background: rgba(16, 185, 129, 0.1);
+}
+
+.mc-counter-good .mc-counter-icon svg {
+	stroke: var(--mc-accent-green);
+}
+
+.mc-counter-good .mc-counter-status {
+	color: var(--mc-accent-green);
+}
+
+.mc-counter-good .mc-counter-value {
+	color: var(--mc-accent-green);
+}
+
+.mc-counter-warning {
+	border-color: var(--mc-accent-orange);
+	box-shadow: 0 0 20px rgba(245, 158, 11, 0.2);
+}
+
+.mc-counter-warning .mc-counter-icon {
+	background: rgba(245, 158, 11, 0.1);
+}
+
+.mc-counter-warning .mc-counter-icon svg {
+	stroke: var(--mc-accent-orange);
+}
+
+.mc-counter-warning .mc-counter-status {
+	color: var(--mc-accent-orange);
+}
+
+.mc-counter-warning .mc-counter-value {
+	color: var(--mc-accent-orange);
+}
+
+.mc-counter-none {
+	border-color: #ef4444;
+	box-shadow: 0 0 20px rgba(239, 68, 68, 0.2);
+}
+
+.mc-counter-none .mc-counter-icon {
+	background: rgba(239, 68, 68, 0.1);
+}
+
+.mc-counter-none .mc-counter-icon svg {
+	stroke: #ef4444;
+}
+
+.mc-counter-none .mc-counter-status {
+	color: #ef4444;
+}
+
+.mc-counter-none .mc-counter-value {
+	color: #ef4444;
+}
+
+/* Loading State */
+.mc-counter-loading {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+}
+
+.mc-counter-loading span {
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 2px;
+	color: var(--mc-accent-cyan);
+	text-transform: uppercase;
+}
+
+.mc-spinner {
+	width: 40px;
+	height: 40px;
+	border: 4px solid rgba(255, 255, 255, 0.1);
+	border-top-color: var(--mc-accent-cyan);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+/* Error State */
+.mc-counter-error {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+}
+
+.mc-counter-error span {
+	font-size: 16px;
+	font-weight: 700;
+	letter-spacing: 2px;
+	color: #ef4444;
+	text-transform: uppercase;
+}
+
+/* ============================================
+   RESPONSIVE DESIGN
+   ============================================ */
+@media (max-width: 1400px) {
+	.mc-dashboard-grid {
+		grid-template-columns: 1fr;
+		gap: 12px;
+	}
+
+	.mc-control-panel::before {
+		display: none;
+	}
+
+	.mc-dashboard-grid::before,
+	.mc-dashboard-grid::after {
+		display: none;
+	}
+}
+
+@media (max-width: 768px) {
+	.mc-title {
+		font-size: 20px;
+	}
+
+	.mc-subtitle {
+		font-size: 10px;
+	}
+
+	.mc-summary-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.mc-control-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.mc-actions {
+		flex-direction: column-reverse;
+	}
+
+	.mc-btn {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.mc-summary-header {
+		flex-direction: column;
+		align-items: stretch;
+	}
+
+	.mc-counter-value {
+		font-size: 48px;
+	}
+
+	.mc-match-counter {
+		padding: 16px;
+	}
+}

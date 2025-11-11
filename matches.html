@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Matches - Texas Relocation Experts</title>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+    <script>
+        // Initialize Supabase client
+        const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA';
+
+        if (typeof supabase !== 'undefined' && supabase.createClient) {
+            window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+            console.log('✅ Supabase client initialized');
+        } else {
+            console.error('❌ Supabase library not loaded');
+        }
+    </script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f9fafb;
+            min-height: 100vh;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 40px 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            margin-bottom: 24px;
+        }
+
+        .header h1 {
+            color: #111827;
+            font-size: 32px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            color: #6b7280;
+            font-size: 16px;
+        }
+
+        .content {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 40px;
+            height: 40px;
+            border: 4px solid #e2e8f0;
+            border-radius: 50%;
+            border-top-color: #667eea;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error {
+            background: #fee2e2;
+            border: 2px solid #fca5a5;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #991b1b;
+        }
+
+        .error h2 {
+            margin-bottom: 10px;
+        }
+
+        .greeting {
+            font-size: 24px;
+            color: #1a202c;
+            margin-bottom: 20px;
+        }
+
+        .intro {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            border-radius: 6px;
+            margin-bottom: 30px;
+        }
+
+        .intro p {
+            color: #1e40af;
+            margin: 5px 0;
+        }
+
+        .property-card {
+            background: #ffffff;
+            border: 1px solid #e5e7eb;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 20px;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        .property-card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+
+        .property-card.selected {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .property-image {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+            background: #f3f4f6;
+        }
+
+        .property-body {
+            padding: 20px;
+        }
+
+        .property-header {
+            display: flex;
+            align-items: start;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .property-checkbox {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            flex-shrink: 0;
+            margin-top: 5px;
+            accent-color: #6366f1;
+        }
+
+        .property-info {
+            flex: 1;
+        }
+
+        .property-name {
+            font-size: 20px;
+            font-weight: 700;
+            color: #111827;
+            margin-bottom: 8px;
+        }
+
+        .property-location {
+            color: #6b7280;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .property-rent {
+            font-size: 28px;
+            font-weight: 800;
+            color: #059669;
+            margin-bottom: 12px;
+            line-height: 1;
+        }
+
+        .property-rent-label {
+            font-size: 12px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .property-specs {
+            display: flex;
+            gap: 16px;
+            margin: 12px 0;
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 8px;
+        }
+
+        .spec-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: #374151;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .spec-label {
+            font-size: 13px;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .property-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 13px;
+            color: #6b7280;
+            padding: 10px 0;
+            border-top: 1px solid #e5e7eb;
+            border-bottom: 1px solid #e5e7eb;
+            margin: 12px 0;
+        }
+
+        .property-details>div {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .property-details strong {
+            color: #374151;
+        }
+
+        .divider-dot {
+            width: 4px;
+            height: 4px;
+            background: #d1d5db;
+            border-radius: 50%;
+        }
+
+        .special-badge {
+            display: inline-block;
+            background: #fef3c7;
+            border-left: 4px solid #f59e0b;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 12px 0;
+        }
+
+        .special-badge strong {
+            color: #92400e;
+        }
+
+        .special-badge p {
+            margin: 5px 0 0 0;
+            color: #78350f;
+            font-size: 14px;
+        }
+
+        .tour-section {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #e5e7eb;
+            display: none;
+        }
+
+        .tour-section.visible {
+            display: block;
+        }
+
+        .tour-section label {
+            display: block;
+            color: #374151;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .tour-section input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e5e7eb;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .tour-section input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .actions {
+            margin-top: 40px;
+            padding-top: 30px;
+            border-top: 2px solid #e5e7eb;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-primary {
+            background: #6366f1;
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: #4f46e5;
+        }
+
+        .btn-secondary {
+            background: #10b981;
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #059669;
+        }
+
+        .btn-outline {
+            background: white;
+            color: #6366f1;
+            border: 2px solid #6366f1;
+        }
+
+        .btn-outline:hover:not(:disabled) {
+            background: #eff6ff;
+        }
+
+        .success-message {
+            background: #d1fae5;
+            border: 2px solid #86efac;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #065f46;
+            text-align: center;
+        }
+
+        .success-message h2 {
+            margin-bottom: 10px;
+        }
+
+        @media (max-width: 600px) {
+            .header {
+                padding: 30px 20px;
+            }
+
+            .header h1 {
+                font-size: 24px;
+            }
+
+            .content {
+                padding: 20px;
+            }
+
+            .property-specs {
+                flex-direction: column;
+                gap: 8px;
+            }
+
+            .actions {
+                flex-direction: column;
+            }
+
+            .btn {
+                width: 100%;
+                justify-content: center;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏡 My Matches</h1>
+            <p>Your personalized property recommendations</p>
+        </div>
+
+        <div class="content" id="content">
+            <div class="loading">
+                <div class="spinner"></div>
+                <p>Loading your matches...</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="/src/modules/property-matcher/property-matcher-page.js"></script>
+</body>
+
+</html>

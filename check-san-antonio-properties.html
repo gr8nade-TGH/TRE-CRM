@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check San Antonio Properties</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>San Antonio Properties Check</h1>
+    <button onclick="checkProperties()">Check Properties</button>
+    <pre id="output"></pre>
+
+    <script type="module">
+        import { supabaseConfig } from './supabase-config.js';
+        
+        const { createClient } = supabase;
+        const supabaseClient = createClient(supabaseConfig.url, supabaseConfig.anonKey);
+
+        window.checkProperties = async function() {
+            const output = document.getElementById('output');
+            output.textContent = 'Checking...';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('properties')
+                    .select('id, community_name, name, address, market')
+                    .eq('market', 'San Antonio')
+                    .order('community_name');
+
+                if (error) throw error;
+
+                output.textContent = JSON.stringify(data, null, 2);
+                console.log('San Antonio properties:', data);
+            } catch (error) {
+                output.textContent = 'Error: ' + error.message;
+                console.error(error);
+            }
+        };
+    </script>
+</body>
+</html>
+

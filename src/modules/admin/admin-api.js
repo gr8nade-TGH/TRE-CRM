@@ -2,7 +2,7 @@
 
 export async function loadUsers(options) {
 	const { realUsers, renderUsersTable } = options;
-	
+
 	try {
 		console.log('Loading users from Supabase...');
 
@@ -28,7 +28,7 @@ export async function loadUsers(options) {
 
 export async function loadAuditLog(options) {
 	const { realAuditLog, renderAuditLog } = options;
-	
+
 	// Check if we're running locally or on production
 	const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 		? 'http://localhost:3001/api'
@@ -55,7 +55,7 @@ export async function loadAuditLog(options) {
 
 export async function createUser(userData, options) {
 	const { loadUsers } = options;
-	
+
 	try {
 		console.log('Creating user with Supabase:', userData);
 
@@ -94,27 +94,63 @@ export async function createUser(userData, options) {
 
 export async function updateUser(userId, userData, options) {
 	const { realUsers, renderUsersTable } = options;
-	
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
 
-		const response = await fetch(`${apiBase}/users/${userId}`, {
+	try {
+		console.log('Updating user with Supabase:', userId, userData);
+
+		// Get current user info for permission validation
+		const currentUser = window.currentUser;
+
+		// Build request payload
+		const payload = {
+			email: userData.email,
+			password: userData.password, // Optional - only sent if provided
+			name: userData.name,
+			role: userData.role,
+			currentUserId: currentUser?.id,
+			currentUserRole: currentUser?.role
+		};
+
+		// Add agent profile fields if present
+		if (userData.headshot_url !== undefined) payload.headshot_url = userData.headshot_url;
+		if (userData.bio !== undefined) payload.bio = userData.bio;
+		if (userData.facebook_url !== undefined) payload.facebook_url = userData.facebook_url;
+		if (userData.instagram_url !== undefined) payload.instagram_url = userData.instagram_url;
+		if (userData.x_url !== undefined) payload.x_url = userData.x_url;
+
+		// Call our serverless function to update the user
+		const response = await fetch(`/api/update-user?userId=${userId}`, {
 			method: 'PUT',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				...userData,
-				updatedBy: 'system' // In production, get from auth token
-			})
+			headers: {
+				'Content-Type': 'application/json'
+			},
+			body: JSON.stringify(payload)
 		});
-		if (!response.ok) throw new Error('Failed to update user');
-		const updatedUser = await response.json();
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || 'Failed to update user');
+		}
+
+		const result = await response.json();
+		console.log('✅ User updated successfully:', result.user);
+
+		// Update local state
 		const index = realUsers.value.findIndex(u => u.id === userId);
-		if (index !== -1) realUsers.value[index] = updatedUser;
+		if (index !== -1) {
+			realUsers.value[index] = {
+				...realUsers.value[index],
+				...result.user
+			};
+		}
+
 		renderUsersTable();
-		return updatedUser;
+
+		// Return both user data and passwordChanged flag
+		return {
+			user: result.user,
+			passwordChanged: result.passwordChanged
+		};
 	} catch (error) {
 		console.error('Error updating user:', error);
 		throw error;
@@ -123,22 +159,29 @@ export async function updateUser(userId, userData, options) {
 
 export async function deleteUserFromAPI(userId, options) {
 	const { realUsers, renderUsersTable, loadAuditLog } = options;
-	
-	try {
-		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-			? 'http://localhost:3001/api'
-			: null;
-		if (!apiBase) throw new Error('API not available in production');
 
-		const response = await fetch(`${apiBase}/users/${userId}`, {
+	try {
+		console.log('Deleting user with Supabase:', userId);
+
+		// Call our serverless function to delete the user
+		const response = await fetch(`/api/delete-user?userId=${userId}`, {
 			method: 'DELETE',
-			headers: { 'Content-Type': 'application/json' },
-			body: JSON.stringify({
-				deletedBy: 'system' // In production, get from auth token
-			})
+			headers: {
+				'Content-Type': 'application/json'
+			}
 		});
-		if (!response.ok) throw new Error('Failed to delete user');
+
+		if (!response.ok) {
+			const error = await response.json();
+			throw new Error(error.error || 'Failed to delete user');
+		}
+
+		const result = await response.json();
+		console.log('✅ User deleted successfully:', result);
+
+		// Remove from local state
 		realUsers.value = realUsers.value.filter(u => u.id !== userId);
+
 		renderUsersTable();
 		await loadAuditLog(); // Refresh audit log
 	} catch (error) {
@@ -149,7 +192,7 @@ export async function deleteUserFromAPI(userId, options) {
 
 export async function changeUserPassword(userId, newPassword, options) {
 	const { loadAuditLog } = options;
-	
+
 	try {
 		const apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
 			? 'http://localhost:3001/api'

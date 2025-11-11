@@ -1,0 +1,28 @@
+﻿{
+    "files.watcherExclude":  {
+                                 "**/archive/**":  true,
+                                 "**/.git/objects/**":  true,
+                                 "**/.git/subtree-cache/**":  true,
+                                 "**/dist/**":  true,
+                                 "**/build/**":  true,
+                                 "**/node_modules/**":  true,
+                                 "**/checkpoints/**":  true
+                             },
+    "search.exclude":  {
+                           "**/checkpoints/**":  true,
+                           "**/archive/**":  true,
+                           "**/node_modules/**":  true,
+                           "**/dist/**":  true,
+                           "**/build/**":  true,
+                           "**/node_modules":  true,
+                           "**/checkpoints":  true
+                       },
+    "files.exclude":  {
+                          "**/checkpoints/**":  false,
+                          "**/archive/**":  false,
+                          "**/checkpoints":  true
+                      },
+    "typescript.tsserver.maxTsServerMemory":  32768,
+    "javascript.maxTsServerMemory":  32768,
+    "files.maxMemoryForLargeFilesMB":  16384
+}

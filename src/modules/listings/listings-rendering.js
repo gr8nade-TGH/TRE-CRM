@@ -35,7 +35,7 @@ import { formatDate, updateSortHeaders } from '../../utils/helpers.js';
  * @param {Function} options.toast - Toast notification function
  * @returns {Promise<void>}
  */
-export async function renderListings(options) {
+export async function renderListings(options, autoSelectProperty = null) {
 	const {
 		SupabaseAPI,
 		state,
@@ -58,15 +58,42 @@ export async function renderListings(options) {
 		return;
 	}
 
+	// Customer View: Show prompt if no customer selected
+	if (state.customerView.isActive && !state.customerView.selectedCustomer) {
+		tbody.innerHTML = `
+			<tr>
+				<td colspan="3" style="padding: 60px 20px; text-align: center;">
+					<div class="customer-view-prompt">
+						<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
+							<circle cx="9" cy="7" r="4"></circle>
+							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
+							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
+						</svg>
+						<h3>Select a Customer</h3>
+						<p>Choose a customer from the dropdown above to view listings with match scores</p>
+					</div>
+				</td>
+			</tr>
+		`;
+		return;
+	}
+
 	try {
-		// Fetch properties from Supabase
-		const properties = await SupabaseAPI.getProperties({
-			search: state.search,
-			market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
-			minPrice: state.listingsFilters.minPrice,
-			maxPrice: state.listingsFilters.maxPrice,
-			beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
-		});
+		// Fetch properties and specials in parallel
+		const [properties, specialsData] = await Promise.all([
+			SupabaseAPI.getProperties({
+				search: state.search,
+				market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
+				minPrice: state.listingsFilters.minPrice,
+				maxPrice: state.listingsFilters.maxPrice,
+				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
+			}),
+			SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' })
+		]);
+
+		// Extract specials array from response
+		const specials = specialsData?.items || specialsData || [];
 
 		// Filter out unavailable listings (is_available = false)
 		const availableProperties = properties.filter(prop => {
@@ -74,143 +101,196 @@ export async function renderListings(options) {
 			return prop.is_available !== false;
 		});
 
-		// Fetch floor plans and units for each property
-		const propertiesWithData = await Promise.all(
-			availableProperties.map(async (prop) => {
-				try {
-					// Get notes count
-					const notes = await SupabaseAPI.getPropertyNotes(prop.id);
+		// OPTIMIZED: Batch fetch all data for all properties (4 queries instead of N*4 queries)
+		const propertyIds = availableProperties.map(prop => prop.id);
 
-					// Get floor plans for this property
-					const floorPlans = await SupabaseAPI.getFloorPlans(prop.id);
+		const [propertyNotesCountsMap, floorPlansMap, unitsMap, interestedLeadsCountsMap] = await Promise.all([
+			SupabaseAPI.getBatchPropertyNotesCounts(propertyIds),
+			SupabaseAPI.getBatchFloorPlans(propertyIds),
+			SupabaseAPI.getBatchUnits(propertyIds, { isActive: null }),
+			SupabaseAPI.getBatchInterestedLeadsCounts(propertyIds)
+		]);
 
-					// Get units for this property (include inactive units - isActive: null means get all)
-					const units = await SupabaseAPI.getUnits({ propertyId: prop.id, isActive: null });
+		// OPTIMIZED: Batch fetch unit notes counts for ALL units across ALL properties (1 query instead of N*M queries)
+		const allUnits = Object.values(unitsMap).flat();
+		const unitIds = allUnits.map(unit => unit.id);
+		const unitNotesCountsMap = await SupabaseAPI.getBatchUnitNotesCounts(unitIds);
 
-					// Fetch notes count for each unit
-					const unitsWithNotes = await Promise.all(
-						(units || []).map(async (unit) => {
-							try {
-								const unitNotes = await SupabaseAPI.getUnitNotes(unit.id);
-								return {
-									...unit,
-									notesCount: unitNotes.length
-								};
-							} catch (error) {
-								console.warn('Error fetching unit notes:', error);
-								return {
-									...unit,
-									notesCount: 0
-								};
-							}
-						})
-					);
+		// Build properties with all data from batch queries
+		const propertiesWithData = availableProperties.map(prop => {
+			try {
+				// Get data from batch query results
+				const notesCount = propertyNotesCountsMap[prop.id] || 0;
+				const floorPlans = floorPlansMap[prop.id] || [];
+				const units = unitsMap[prop.id] || [];
+				const interestedLeadsCount = interestedLeadsCountsMap[prop.id] || 0;
 
-					// Calculate rent range from units
-					let rentMin = prop.rent_range_min || 0;
-					let rentMax = prop.rent_range_max || 0;
+				// Add notes count to each unit
+				const unitsWithNotes = units.map(unit => ({
+					...unit,
+					notesCount: unitNotesCountsMap[unit.id] || 0
+				}));
 
-					if (units && units.length > 0) {
-						const rents = units.map(u => u.rent).filter(r => r > 0);
-						if (rents.length > 0) {
-							rentMin = Math.min(...rents);
-							rentMax = Math.max(...rents);
-						}
+				// Calculate rent range from units
+				let rentMin = prop.rent_range_min || 0;
+				let rentMax = prop.rent_range_max || 0;
+
+				if (units && units.length > 0) {
+					const rents = units.map(u => u.rent).filter(r => r > 0);
+					if (rents.length > 0) {
+						rentMin = Math.min(...rents);
+						rentMax = Math.max(...rents);
 					}
-
-					return {
-						...prop,
-						notesCount: notes.length,
-						floorPlans: floorPlans || [],
-						units: unitsWithNotes || [],
-						rent_range_min: rentMin,
-						rent_range_max: rentMax
-					};
-				} catch (error) {
-					console.warn('Error fetching property data:', error);
-					return {
-						...prop,
-						notesCount: 0,
-						floorPlans: [],
-						units: []
-					};
 				}
-			})
-		);
+
+				// Find active specials for this property
+				const propName = prop.community_name || prop.name;
+				const propSpecials = specials.filter(s => s.property_name === propName);
+				const activeSpecials = propSpecials.filter(s => {
+					const expDate = new Date(s.valid_until || s.expiration_date);
+					return expDate > new Date();
+				});
+
+				return {
+					...prop,
+					notesCount,
+					interestedLeadsCount,
+					floorPlans,
+					activeSpecials,
+					units: unitsWithNotes,
+					rent_range_min: rentMin,
+					rent_range_max: rentMax
+				};
+			} catch (error) {
+				console.warn('Error processing property data:', error);
+				return {
+					...prop,
+					notesCount: 0,
+					floorPlans: [],
+					units: []
+				};
+			}
+		});
 
 		let filtered = propertiesWithData;
 
 		// Apply additional filters
 		filtered = filtered.filter(prop => matchesListingsFilters(prop, state.listingsFilters));
 
-	// Apply sorting if active
-	if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
-		filtered.sort((a, b) => {
-			let aVal, bVal;
+		// Customer View: Calculate match scores if customer is selected
+		if (state.customerView.isActive && state.customerView.selectedCustomer) {
+			console.log('🎯 Customer View active - calculating match scores...');
 
-			if (state.sort.key === 'name') {
-				aVal = a.name.toLowerCase();
-				bVal = b.name.toLowerCase();
-			} else if (state.sort.key === 'rent_min') {
-				aVal = a.rent_min;
-				bVal = b.rent_min;
-			} else if (state.sort.key === 'commission_pct') {
-				aVal = Math.max(a.escort_pct, a.send_pct);
-				bVal = Math.max(b.escort_pct, b.send_pct);
-			} else {
-				return 0;
+			const { calculateMatchScores } = await import('./customer-view.js');
+			const { getActiveConfig } = await import('../../api/smart-match-config-api.js');
+
+			// Fetch active Smart Match configuration
+			let config;
+			try {
+				config = await getActiveConfig();
+			} catch (error) {
+				console.warn('⚠️ Failed to load Smart Match config, using defaults:', error);
+				const { DEFAULT_SMART_MATCH_CONFIG } = await import('../../utils/smart-match-config-defaults.js');
+				config = DEFAULT_SMART_MATCH_CONFIG;
 			}
 
-			// Handle numeric sorting
-			if (['rent_min', 'commission_pct'].includes(state.sort.key)) {
-				const aNum = typeof aVal === 'number' ? aVal : parseFloat(aVal) || 0;
-				const bNum = typeof bVal === 'number' ? bVal : parseFloat(bVal) || 0;
-				return state.sort.dir === 'asc' ? aNum - bNum : bNum - aNum;
-			} else {
-				// Text sorting
-				if (state.sort.dir === 'asc') {
-					return aVal.localeCompare(bVal);
+			// Calculate match scores for all properties
+			await calculateMatchScores(filtered, state.customerView.selectedCustomer, config);
+
+			// Sort by match score (highest first) in Customer View
+			filtered.sort((a, b) => {
+				const scoreA = state.customerView.matchScores.get(a.id) || 0;
+				const scoreB = state.customerView.matchScores.get(b.id) || 0;
+				return scoreB - scoreA;
+			});
+
+			console.log('✅ Properties sorted by match score');
+		}
+		// Agent View: Apply normal sorting
+		else if (state.sort.key && state.sort.dir && state.sort.dir !== 'none') {
+			filtered.sort((a, b) => {
+				let aVal, bVal;
+
+				if (state.sort.key === 'name') {
+					aVal = a.name.toLowerCase();
+					bVal = b.name.toLowerCase();
+				} else if (state.sort.key === 'rent_min') {
+					aVal = a.rent_min;
+					bVal = b.rent_min;
+				} else if (state.sort.key === 'commission_pct') {
+					aVal = Math.max(a.escort_pct, a.send_pct);
+					bVal = Math.max(b.escort_pct, b.send_pct);
 				} else {
-					return bVal.localeCompare(aVal);
+					return 0;
 				}
-			}
-		});
-	}
 
-	tbody.innerHTML = '';
-	console.log('Rendering', filtered.length, 'filtered properties');
-	filtered.forEach((prop, index) => {
-		console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI, 'Units:', prop.units?.length || 0);
-
-		// Create property row (parent)
-		const tr = document.createElement('tr');
-		tr.dataset.propertyId = prop.id;
-		tr.classList.add('property-row');
-
-		// Add PUMI class for styling
-		if (prop.isPUMI || prop.is_pumi) {
-			tr.classList.add('pumi-listing');
-			console.log('Added pumi-listing class to:', prop.name);
+				// Handle numeric sorting
+				if (['rent_min', 'commission_pct'].includes(state.sort.key)) {
+					const aNum = typeof aVal === 'number' ? aVal : parseFloat(aVal) || 0;
+					const bNum = typeof bVal === 'number' ? bVal : parseFloat(bVal) || 0;
+					return state.sort.dir === 'asc' ? aNum - bNum : bNum - aNum;
+				} else {
+					// Text sorting
+					if (state.sort.dir === 'asc') {
+						return aVal.localeCompare(bVal);
+					} else {
+						return bVal.localeCompare(aVal);
+					}
+				}
+			});
 		}
 
-		const communityName = prop.community_name || prop.name;
-		const address = prop.street_address || prop.address;
-		const rentMin = prop.rent_range_min || prop.rent_min;
-		const rentMax = prop.rent_range_max || prop.rent_max;
-		const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
-		const isPUMI = prop.is_pumi || prop.isPUMI;
-		const markedForReview = prop.mark_for_review || prop.markForReview;
-		const hasUnits = prop.units && prop.units.length > 0;
+		// Import star rating generator if in Customer View
+		let generateStarRating = null;
+		if (state.customerView.isActive) {
+			const customerViewModule = await import('./customer-view.js');
+			generateStarRating = customerViewModule.generateStarRating;
+		}
 
-		tr.innerHTML = `
+		tbody.innerHTML = '';
+		console.log('Rendering', filtered.length, 'filtered properties');
+		filtered.forEach((prop, index) => {
+			console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI, 'Units:', prop.units?.length || 0);
+
+			// Create property row (parent)
+			const tr = document.createElement('tr');
+			tr.dataset.propertyId = prop.id;
+			tr.classList.add('property-row');
+
+			// Add PUMI class for styling
+			if (prop.isPUMI || prop.is_pumi) {
+				tr.classList.add('pumi-listing');
+				console.log('Added pumi-listing class to:', prop.name);
+			}
+
+			const communityName = prop.community_name || prop.name;
+			const address = prop.street_address || prop.address;
+			const rentMin = prop.rent_range_min || prop.rent_min;
+			const rentMax = prop.rent_range_max || prop.rent_max;
+			const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
+			const isPUMI = prop.is_pumi || prop.isPUMI;
+			const markedForReview = prop.mark_for_review || prop.markForReview;
+			const hasUnits = prop.units && prop.units.length > 0;
+			const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
+
+			// Get match score if in Customer View
+			const matchScore = state.customerView.isActive ? state.customerView.matchScores.get(prop.id) : null;
+			let matchScoreBadge = '';
+			if (matchScore !== null && matchScore !== undefined && generateStarRating) {
+				matchScoreBadge = generateStarRating(matchScore);
+			}
+
+			tr.innerHTML = `
 			<td>
 				${hasUnits ? `<span class="expand-arrow" data-property-id="${prop.id}" style="cursor: pointer; user-select: none;">▶</span>` : ''}
 			</td>
 			<td data-sort="name">
 				<div class="lead-name">
 					<strong>${communityName}</strong>
+					${matchScoreBadge}
+					${hasActiveSpecials ? `<span class="special-icon" onclick="window.viewPropertySpecialsFromListing('${prop.id}', '${communityName.replace(/'/g, "\\'")}', ${JSON.stringify(prop.activeSpecials).replace(/"/g, '&quot;')})" title="${prop.activeSpecials.length} active special(s)" style="cursor: pointer; margin-left: 6px; font-size: 1em;">🔥</span>` : ''}
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
-					${commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
+					${!state.customerView.isActive && commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
@@ -231,7 +311,7 @@ export async function renderListings(options) {
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #ef4444;">
 								<path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
 							</svg>
-							<span>${mockInterestedLeads[prop.id] ? mockInterestedLeads[prop.id].length : 0}</span>
+							<span>${prop.interestedLeadsCount || 0}</span>
 						</div>
 						<div class="notes-count ${prop.notesCount > 0 ? 'has-notes' : ''}" onclick="openPropertyNotesModal('${prop.id}', '${communityName.replace(/'/g, "\\'")}')" title="${prop.notesCount > 0 ? prop.notesCount + ' note(s)' : 'Add a note'}" style="cursor: pointer;">
 							<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: ${prop.notesCount > 0 ? '#fbbf24' : '#9ca3af'};">
@@ -251,111 +331,120 @@ export async function renderListings(options) {
 			<td class="mono" data-sort="rent_min">$${rentMin} - $${rentMax}</td>
 		`;
 
-		// Add click handler to table row
-		tr.addEventListener('click', (e) => {
-			// Don't trigger if clicking on gear icon or heart icon
-			if (!e.target.closest('.gear-icon') && !e.target.closest('.interest-count')) {
-			selectProperty(prop);
-			}
-		});
-
-		// Add gear icon click handler (manager only)
-		if (state.role === 'manager') {
-			const gearIcon = tr.querySelector('.gear-icon');
-			if (gearIcon) {
-				gearIcon.addEventListener('click', (e) => {
-					e.stopPropagation();
-					openListingEditModal(prop);
-				});
-			}
-		}
-
-		// Add interest count click handler
-		const interestCount = tr.querySelector('.interest-count');
-		if (interestCount) {
-			interestCount.addEventListener('click', (e) => {
-				console.log('=== HEART ICON CLICKED ===');
-				console.log('Property ID:', prop.id);
-				console.log('Property Name:', prop.name);
-				e.stopPropagation();
-				openInterestedLeads(prop.id, prop.name);
-			});
-		}
-
-		// Add activity count click handler
-		const activityCount = tr.querySelector('.activity-count');
-		if (activityCount) {
-			activityCount.addEventListener('click', (e) => {
-				console.log('=== ACTIVITY ICON CLICKED ===');
-				console.log('Property ID:', prop.id);
-				console.log('Property Name:', prop.name);
-				e.stopPropagation();
-				const propertyId = e.currentTarget.dataset.propertyId;
-				const propertyName = e.currentTarget.dataset.propertyName;
-				openActivityLogModal(propertyId, 'property', propertyName);
-			});
-		}
-
-		// Add expand/collapse handler for units
-		if (hasUnits) {
-			const expandArrow = tr.querySelector('.expand-arrow');
-			if (expandArrow) {
-				expandArrow.addEventListener('click', (e) => {
-					e.stopPropagation();
-					const isExpanded = expandArrow.textContent === '▼';
-					expandArrow.textContent = isExpanded ? '▶' : '▼';
-
-					// Toggle unit rows visibility
-					const unitRows = tbody.querySelectorAll(`tr.unit-row[data-parent-property-id="${prop.id}"]`);
-					unitRows.forEach(unitRow => {
-						unitRow.style.display = isExpanded ? 'none' : 'table-row';
-					});
-				});
-			}
-		}
-
-		tbody.appendChild(tr);
-
-		// Add unit rows (initially hidden)
-		// Sort units: active units first, then inactive units
-		if (hasUnits) {
-			const activeUnits = prop.units.filter(u => u.is_active !== false);
-			const inactiveUnits = prop.units.filter(u => u.is_active === false);
-			const sortedUnits = [...activeUnits, ...inactiveUnits];
-
-			sortedUnits.forEach(unit => {
-				const isInactive = unit.is_active === false;
-
-				const unitTr = document.createElement('tr');
-				unitTr.classList.add('unit-row');
-				unitTr.dataset.parentPropertyId = prop.id;
-				unitTr.dataset.unitId = unit.id;
-				unitTr.style.display = 'none'; // Initially hidden
-
-				// Visual distinction for inactive units
-				if (isInactive) {
-					unitTr.style.backgroundColor = '#f3f4f6'; // Darker gray for inactive
-					unitTr.style.opacity = '0.6'; // Slightly faded
-				} else {
-					unitTr.style.backgroundColor = '#f9fafb'; // Light gray background
+			// Add click handler to table row
+			tr.addEventListener('click', (e) => {
+				// Don't trigger if clicking on gear icon or heart icon
+				if (!e.target.closest('.gear-icon') && !e.target.closest('.interest-count')) {
+					selectProperty(prop);
 				}
+			});
 
-				// Get unit details
-				const floorPlan = unit.floor_plan || {};
-				const unitRent = unit.rent || floorPlan.starting_at || 0;
-				const unitMarketRent = unit.market_rent || floorPlan.market_rent || 0;
-				const beds = floorPlan.beds || '?';
-				const baths = floorPlan.baths || '?';
-				const sqft = floorPlan.sqft || '?';
-				const availableDate = unit.available_from ? new Date(unit.available_from).toLocaleDateString() : 'TBD';
+			// Add gear icon click handler (manager only)
+			if (state.role === 'manager') {
+				const gearIcon = tr.querySelector('.gear-icon');
+				if (gearIcon) {
+					gearIcon.addEventListener('click', (e) => {
+						e.stopPropagation();
+						openListingEditModal(prop);
+					});
+				}
+			}
 
-				unitTr.innerHTML = `
+			// Add interest count click handler
+			const interestCount = tr.querySelector('.interest-count');
+			if (interestCount) {
+				interestCount.addEventListener('click', (e) => {
+					console.log('=== HEART ICON CLICKED ===');
+					console.log('Property ID:', prop.id);
+					console.log('Property Name:', prop.name);
+					e.stopPropagation();
+					openInterestedLeads(prop.id, prop.name);
+				});
+			}
+
+			// Add activity count click handler
+			const activityCount = tr.querySelector('.activity-count');
+			if (activityCount) {
+				activityCount.addEventListener('click', (e) => {
+					console.log('=== ACTIVITY ICON CLICKED ===');
+					console.log('Property ID:', prop.id);
+					console.log('Property Name:', prop.name);
+					e.stopPropagation();
+					const propertyId = e.currentTarget.dataset.propertyId;
+					const propertyName = e.currentTarget.dataset.propertyName;
+					openActivityLogModal(propertyId, 'property', propertyName);
+				});
+			}
+
+			// Add expand/collapse handler for units
+			if (hasUnits) {
+				const expandArrow = tr.querySelector('.expand-arrow');
+				if (expandArrow) {
+					expandArrow.addEventListener('click', (e) => {
+						e.stopPropagation();
+						const isExpanded = expandArrow.textContent === '▼';
+						expandArrow.textContent = isExpanded ? '▶' : '▼';
+
+						// Toggle unit rows visibility
+						const unitRows = tbody.querySelectorAll(`tr.unit-row[data-parent-property-id="${prop.id}"]`);
+						unitRows.forEach(unitRow => {
+							unitRow.style.display = isExpanded ? 'none' : 'table-row';
+						});
+					});
+				}
+			}
+
+			tbody.appendChild(tr);
+
+			// Add unit rows (initially hidden)
+			// Sort units: active units first, then inactive units
+			if (hasUnits) {
+				const activeUnits = prop.units.filter(u => u.is_active !== false);
+				const inactiveUnits = prop.units.filter(u => u.is_active === false);
+				const sortedUnits = [...activeUnits, ...inactiveUnits];
+
+				sortedUnits.forEach(unit => {
+					const isInactive = unit.is_active === false;
+
+					const unitTr = document.createElement('tr');
+					unitTr.classList.add('unit-row');
+					unitTr.dataset.parentPropertyId = prop.id;
+					unitTr.dataset.unitId = unit.id;
+					unitTr.style.display = 'none'; // Initially hidden
+
+					// Visual distinction for inactive units
+					if (isInactive) {
+						unitTr.style.backgroundColor = '#f3f4f6'; // Darker gray for inactive
+						unitTr.style.opacity = '0.6'; // Slightly faded
+					} else {
+						unitTr.style.backgroundColor = '#f9fafb'; // Light gray background
+					}
+
+					// Get unit details
+					const floorPlan = unit.floor_plan || {};
+					const unitRent = unit.rent || floorPlan.starting_at || 0;
+					const unitMarketRent = unit.market_rent || floorPlan.market_rent || 0;
+					const beds = floorPlan.beds || '?';
+					const baths = floorPlan.baths || '?';
+					const sqft = floorPlan.sqft || '?';
+					const availableDate = unit.available_from ? new Date(unit.available_from).toLocaleDateString() : 'TBD';
+
+					// Get unit match score if in Customer View
+					const unitScoreData = state.customerView.isActive ? state.customerView.unitScores.get(unit.id) : null;
+					let unitMatchScoreBadge = '';
+					if (unitScoreData && generateStarRating) {
+						const recommendedBadge = unitScoreData.isRecommended ? '<span class="recommended-badge" style="background: #10b981; color: white; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; margin-left: 6px;">BEST MATCH</span>' : '';
+						unitMatchScoreBadge = generateStarRating(unitScoreData.score) + recommendedBadge;
+					}
+
+					unitTr.innerHTML = `
 					<td style="padding-left: 40px;">
 						<input type="checkbox" class="unit-checkbox" data-unit-id="${unit.id}" ${isInactive ? 'disabled' : ''}>
 					</td>
 					<td>
 						<div class="lead-name" style="font-size: 0.9em;">
 							<span style="color: #6b7280;">Unit ${unit.unit_number}</span>
+							${unitMatchScoreBadge}
 							${isInactive ? '<span class="badge" style="background: #9ca3af; color: #fff;">Off Market</span>' : ''}
 							${unit.status === 'pending' ? '<span class="badge" style="background: #fbbf24; color: #000;">Pending</span>' : ''}
 							${unit.status === 'leased' ? '<span class="badge" style="background: #ef4444; color: #fff;">Leased</span>' : ''}
@@ -397,103 +486,134 @@ export async function renderListings(options) {
 					</td>
 				`;
 
-				// Add unit-level event handlers
-				const unitNotesIcon = unitTr.querySelector('.unit-notes');
-				const unitActivityIcon = unitTr.querySelector('.unit-activity');
-				const unitGearIcon = unitTr.querySelector('.unit-gear');
+					// Add unit-level event handlers
+					const unitNotesIcon = unitTr.querySelector('.unit-notes');
+					const unitActivityIcon = unitTr.querySelector('.unit-activity');
+					const unitGearIcon = unitTr.querySelector('.unit-gear');
 
-				// Unit Notes Icon
-				if (unitNotesIcon) {
-					unitNotesIcon.addEventListener('click', async (e) => {
-						e.stopPropagation();
-						e.preventDefault();
-						console.log('Unit notes icon clicked for unit:', unit.id);
-						try {
-							const { openUnitNotesModal } = await import('../modals/unit-modals.js');
-							await openUnitNotesModal(unit.id, unit.unit_number, prop.community_name, prop.id);
-						} catch (error) {
-							console.error('Error opening unit notes modal:', error);
-						}
-					});
-				}
+					// Unit Notes Icon
+					if (unitNotesIcon) {
+						unitNotesIcon.addEventListener('click', async (e) => {
+							e.stopPropagation();
+							e.preventDefault();
+							console.log('Unit notes icon clicked for unit:', unit.id);
+							try {
+								const { openUnitNotesModal } = await import('../modals/unit-modals.js');
+								await openUnitNotesModal(unit.id, unit.unit_number, prop.community_name, prop.id);
+							} catch (error) {
+								console.error('Error opening unit notes modal:', error);
+							}
+						});
+					}
 
-				// Unit Activity Icon
-				if (unitActivityIcon) {
-					unitActivityIcon.addEventListener('click', async (e) => {
-						e.stopPropagation();
-						e.preventDefault();
-						console.log('Unit activity icon clicked for unit:', unit.id);
-						if (window.openActivityLogModal) {
-							await window.openActivityLogModal(unit.id, 'unit', `Unit ${unit.unit_number} - ${prop.community_name}`);
-						}
-					});
-				}
+					// Unit Activity Icon
+					if (unitActivityIcon) {
+						unitActivityIcon.addEventListener('click', async (e) => {
+							e.stopPropagation();
+							e.preventDefault();
+							console.log('Unit activity icon clicked for unit:', unit.id);
+							if (window.openActivityLogModal) {
+								await window.openActivityLogModal(unit.id, 'unit', `Unit ${unit.unit_number} - ${prop.community_name}`);
+							}
+						});
+					}
 
-				// Unit Gear Icon (Configuration)
-				if (unitGearIcon) {
-					unitGearIcon.addEventListener('click', async (e) => {
-						e.stopPropagation();
-						e.preventDefault();
-						console.log('Unit gear icon clicked for unit:', unit.id);
-						try {
-							const { openUnitConfigModal } = await import('../modals/unit-modals.js');
-							await openUnitConfigModal(unit.id);
-						} catch (error) {
-							console.error('Error opening unit config modal:', error);
-						}
-					});
-				}
+					// Unit Gear Icon (Configuration)
+					if (unitGearIcon) {
+						unitGearIcon.addEventListener('click', async (e) => {
+							e.stopPropagation();
+							e.preventDefault();
+							console.log('Unit gear icon clicked for unit:', unit.id);
+							try {
+								const { openUnitConfigModal } = await import('../modals/unit-modals.js');
+								await openUnitConfigModal(unit.id);
+							} catch (error) {
+								console.error('Error opening unit config modal:', error);
+							}
+						});
+					}
 
-				tbody.appendChild(unitTr);
-			});
-		}
-	});
-
-	// Update map - simplified marker addition
-	if (map) {
-		console.log('Map exists, clearing markers and adding new ones');
-		clearMarkers();
-
-		// Add markers directly (only for properties with valid coordinates)
-		if (filtered.length > 0) {
-			const validProps = filtered.filter(prop => prop.lat && prop.lng);
-			console.log('Adding', validProps.length, 'markers to map (out of', filtered.length, 'total properties)');
-			validProps.forEach(prop => {
-				console.log('Adding marker for:', prop.name, 'at', prop.lng, prop.lat);
-				try {
-					addMarker(prop);
-				} catch (error) {
-					console.error('Error adding marker for', prop.name, ':', error);
-				}
-			});
-		}
-	} else {
-		console.log('Map not available yet');
-	}
-
-	// Ensure map fills container after rendering
-	setTimeout(() => {
-		if (map) map.resize();
-	}, 100);
-
-	// Update sort headers
-	updateSortHeaders('listingsTable');
-
-	// Debug table column widths
-	console.log('=== TABLE WIDTH DEBUG ===');
-	const table = document.getElementById('listingsTable');
-	if (table) {
-		const cols = table.querySelectorAll('th');
-		cols.forEach((col, i) => {
-			console.log(`Column ${i + 1}:`, col.textContent.trim(), 'Width:', col.offsetWidth + 'px');
+					tbody.appendChild(unitTr);
+				});
+			}
 		});
 
-		const firstCol = table.querySelector('th:first-child');
-		if (firstCol) {
-			console.log('First column computed style:', getComputedStyle(firstCol).width);
-			console.log('First column offsetWidth:', firstCol.offsetWidth);
+		// Update map - simplified marker addition
+		if (map) {
+			console.log('Map exists, clearing markers and adding new ones');
+			clearMarkers();
+
+			// Add markers directly (only for properties with valid coordinates)
+			if (filtered.length > 0) {
+				const validProps = filtered.filter(prop => prop.lat && prop.lng);
+				console.log('Adding', validProps.length, 'markers to map (out of', filtered.length, 'total properties)');
+				validProps.forEach(prop => {
+					console.log('Adding marker for:', prop.name, 'at', prop.lng, prop.lat);
+					try {
+						// Pass match score if in Customer View
+						const matchScore = state.customerView.isActive ? state.customerView.matchScores.get(prop.id) : null;
+						addMarker(prop, matchScore);
+					} catch (error) {
+						console.error('Error adding marker for', prop.name, ':', error);
+					}
+				});
+			}
+		} else {
+			console.log('Map not available yet');
 		}
-	}
+
+		// Ensure map fills container after rendering
+		setTimeout(() => {
+			if (map) map.resize();
+		}, 100);
+
+		// Update sort headers
+		updateSortHeaders('listingsTable');
+
+		// Debug table column widths
+		console.log('=== TABLE WIDTH DEBUG ===');
+		const table = document.getElementById('listingsTable');
+		if (table) {
+			const cols = table.querySelectorAll('th');
+			cols.forEach((col, i) => {
+				console.log(`Column ${i + 1}:`, col.textContent.trim(), 'Width:', col.offsetWidth + 'px');
+			});
+
+			const firstCol = table.querySelector('th:first-child');
+			if (firstCol) {
+				console.log('First column computed style:', getComputedStyle(firstCol).width);
+				console.log('First column offsetWidth:', firstCol.offsetWidth);
+			}
+		}
+
+		// Auto-select property if specified (deep linking support)
+		if (autoSelectProperty) {
+			console.log('🔗 Deep linking: Auto-selecting property:', autoSelectProperty);
+
+			// Find the property by name (community_name or name)
+			const propertyToSelect = filtered.find(prop => {
+				const propName = prop.community_name || prop.name;
+				return propName === autoSelectProperty;
+			});
+
+			if (propertyToSelect) {
+				console.log('✅ Found property to auto-select:', propertyToSelect.name);
+
+				// Use setTimeout to ensure DOM is fully rendered
+				setTimeout(() => {
+					selectProperty(propertyToSelect);
+
+					// Scroll the property into view
+					const propertyRow = document.querySelector(`tr[data-property-id="${propertyToSelect.id}"]`);
+					if (propertyRow) {
+						propertyRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+					}
+				}, 200);
+			} else {
+				console.warn('⚠️ Property not found for auto-select:', autoSelectProperty);
+			}
+		}
+
 	} catch (error) {
 		console.error('Error rendering listings:', error);
 		toast('Error loading listings', 'error');

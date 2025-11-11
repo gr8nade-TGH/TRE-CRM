@@ -176,22 +176,27 @@ function setupLogoutButton() {
 	logoutBtn.addEventListener('click', async () => {
 		try {
 			console.log('Logging out...');
-			
+
 			// Sign out from Supabase
 			const { error } = await window.supabase.auth.signOut();
-			
-			if (error) {
+
+			// Ignore session missing errors - this can happen if password was changed
+			if (error && error.message !== 'Auth session missing!') {
 				throw error;
 			}
-			
-			console.log('✅ Logged out successfully');
-			
+
+			if (error) {
+				console.log('⚠️ Session already invalidated (likely due to password change)');
+			} else {
+				console.log('✅ Logged out successfully');
+			}
+
 			// Clear global user
 			window.currentUser = null;
-			
+
 			// Show login portal
 			showLoginPortal();
-			
+
 		} catch (error) {
 			console.error('Logout error:', error);
 			alert('Logout failed: ' + error.message);

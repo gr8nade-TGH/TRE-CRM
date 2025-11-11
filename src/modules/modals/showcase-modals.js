@@ -1,9 +1,117 @@
 // Showcase/Email/Matches Modals Functions - EXACT COPY from script.js
 
+/**
+ * Generate dynamic criteria banner based on active Smart Match configuration
+ */
+async function generateCriteriaBanner(lead) {
+	// Fetch active configuration
+	let config;
+	try {
+		const { getActiveConfig } = await import('../../api/smart-match-config-api.js');
+		config = await getActiveConfig();
+	} catch (error) {
+		console.warn('Failed to load Smart Match config for banner, using defaults:', error);
+		const { DEFAULT_SMART_MATCH_CONFIG } = await import('../../utils/smart-match-config-defaults.js');
+		config = DEFAULT_SMART_MATCH_CONFIG;
+	}
+
+	// Extract preferences from lead object (preferences are stored in JSONB field)
+	const prefs = lead.preferences || {};
+
+	// Parse bedrooms and bathrooms
+	const bedrooms = prefs.bedrooms || lead.bedrooms;
+	const bathrooms = prefs.bathrooms || lead.bathrooms;
+
+	// Parse price range
+	let priceRangeText = 'Any budget';
+	const priceRange = prefs.priceRange || prefs.price_range || lead.price_range;
+	if (priceRange) {
+		if (typeof priceRange === 'string' && priceRange.includes('-')) {
+			const [min, max] = priceRange.split('-').map(p => parseInt(p.trim()));
+			priceRangeText = `$${min.toLocaleString()} - $${max.toLocaleString()}/mo`;
+		} else if (typeof priceRange === 'object' && priceRange.min && priceRange.max) {
+			priceRangeText = `$${priceRange.min.toLocaleString()} - $${priceRange.max.toLocaleString()}/mo`;
+		}
+	}
+
+	// Parse move-in date
+	let moveInText = 'Flexible';
+	const moveInDate = prefs.moveInDate || prefs.move_in_date || lead.move_in_date;
+	if (moveInDate) {
+		const date = new Date(moveInDate);
+		if (!isNaN(date.getTime())) {
+			moveInText = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+		}
+	}
+
+	// Parse location
+	const locationText = prefs.areaOfTown || prefs.area_of_town || prefs.location_preference ||
+		lead.area_of_town || lead.desired_neighborhoods || 'Any location';
+
+	// Build filter descriptions
+	const bedroomText = bedrooms ? `${bedrooms} bedroom${bedrooms !== '1' ? 's' : ''}` : 'any bedrooms';
+	const bathroomText = bathrooms ? `${bathrooms} bathroom${bathrooms !== '1' ? 's' : ''}` : 'any bathrooms';
+
+	// Build bedroom match description
+	let bedroomMatchDesc = bedroomText;
+	if (config.bedroom_match_mode === 'flexible' && config.bedroom_tolerance > 0) {
+		bedroomMatchDesc += ` (±${config.bedroom_tolerance} flexible)`;
+	} else if (config.bedroom_match_mode === 'range') {
+		bedroomMatchDesc += ' (range matching)';
+	}
+
+	// Build bathroom match description
+	let bathroomMatchDesc = bathroomText;
+	if (config.bathroom_match_mode === 'flexible' && config.bathroom_tolerance > 0) {
+		bathroomMatchDesc += ` (±${config.bathroom_tolerance} flexible)`;
+	} else if (config.bathroom_match_mode === 'range') {
+		bathroomMatchDesc += ' (range matching)';
+	}
+
+	return `
+		<div class="info-banner" style="background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 8px; padding: 16px; margin-bottom: 24px;">
+			<div style="display: flex; gap: 12px; align-items: start; margin-bottom: 12px;">
+				<svg width="20" height="20" viewBox="0 0 24 24" fill="#3b82f6" style="flex-shrink: 0; margin-top: 2px;">
+					<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/>
+				</svg>
+				<div style="flex: 1;">
+					<div style="font-weight: 600; color: #1e40af; margin-bottom: 0; font-size: 15px;">🎯 How These Matches Were Selected</div>
+				</div>
+			</div>
+
+			<!-- Lead Preferences Summary -->
+			<div style="background: white; border-radius: 6px; padding: 12px; margin-bottom: 12px; border: 1px solid #dbeafe;">
+				<div style="font-weight: 600; color: #1e40af; margin-bottom: 8px; font-size: 13px;">📋 Lead's Preferences:</div>
+				<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; font-size: 13px; color: #1e3a8a;">
+					<div><strong>Bedrooms:</strong> ${bedroomText}</div>
+					<div><strong>Bathrooms:</strong> ${bathroomText}</div>
+					<div><strong>Budget:</strong> ${priceRangeText}</div>
+					<div><strong>Move-in:</strong> ${moveInText}</div>
+					<div style="grid-column: 1 / -1;"><strong>Location:</strong> ${locationText}</div>
+				</div>
+			</div>
+
+			<!-- Matching Criteria -->
+			<div style="font-size: 13px; color: #1e3a8a; line-height: 1.6;">
+				<div style="margin-bottom: 6px;"><strong>Step 1 - Hard Filters:</strong> Only units matching <strong>${bedroomMatchDesc}</strong>, <strong>${bathroomMatchDesc}</strong>, and <strong>${locationText}</strong></div>
+				<div style="margin-bottom: 6px;"><strong>Step 2 - Scoring:</strong></div>
+				<ul style="margin: 4px 0 0 20px; padding: 0;">
+					<li><strong>Price Match:</strong> Up to ${config.price_match_perfect_score} pts (within budget gets full points)</li>
+					<li><strong>Move-in Date:</strong> Up to ${config.move_in_date_bonus} pts (available by desired date)</li>
+					<li><strong>Commission:</strong> Up to ${config.commission_base_bonus}+ pts (${config.commission_threshold_pct}%+ commission gets ${config.commission_base_bonus} pts base, +${config.commission_scale_bonus} pt per % above)</li>
+					<li><strong>PUMI Property:</strong> +${config.pumi_bonus} pts bonus (preferred partner properties)</li>
+					${config.use_leniency_factor ? `<li><strong>Leniency Bonus:</strong> Up to ${config.leniency_bonus_high} pts (flexible properties get bonus points)</li>` : ''}
+				</ul>
+				<div style="margin-top: 6px; font-size: 12px; color: #475569;">💡 Results sorted by ${config.sort_by === 'score' ? 'total score (highest first)' : config.sort_by === 'rent_low' ? 'rent (lowest first)' : config.sort_by === 'rent_high' ? 'rent (highest first)' : 'availability date'}. ${config.min_score_threshold > 0 ? `Minimum score: ${config.min_score_threshold} pts.` : ''}</div>
+			</div>
+		</div>
+	`;
+}
+
 // ---- Matches Modal ----
 export async function openMatches(leadId, options) {
 	const { state, api, show, updateSelectionSummary } = options;
-	
+
 	state.selectedLeadId = leadId;
 	state.selectedMatches = new Set();
 	const lead = await api.getLead(leadId);
@@ -15,33 +123,51 @@ export async function openMatches(leadId, options) {
 	document.getElementById('leadNameTitle2').textContent = lead.name;
 	document.getElementById('sendLeadName').textContent = lead.name;
 
-	grid.innerHTML = '';
+	// Add dynamic smart match criteria banner
+	const criteriaBanner = await generateCriteriaBanner(lead);
+
+	grid.innerHTML = criteriaBanner;
 	list.forEach(item => {
 		const card = document.createElement('article');
 		card.className = 'listing-card';
+
+		// Build commission badge (only show if > 0, for internal agent use only)
+		// Position in top-left corner to avoid overlap with match score
+		const commissionBadge = item.effective_commission_pct > 0
+			? `<div class="listing-badge" style="left: 8px !important; right: auto !important;">${item.effective_commission_pct}% Commission</div>`
+			: '';
+
+		// Build match score badge (show in top-right corner)
+		const matchScore = item._matchScore !== undefined
+			? `<div class="match-score-badge" style="position: absolute; top: 8px; right: 8px; background: #10b981; color: white; padding: 6px 12px; border-radius: 6px; font-weight: 700; font-size: 13px; box-shadow: 0 2px 8px rgba(0,0,0,0.2);">Score: ${Math.round(item._matchScore)} pts</div>`
+			: '';
+
+		// Build unit details subtitle (show unit number if available)
+		const unitSubtitle = item._unit_number
+			? `<div class="listing-subtitle" style="font-size: 13px; color: #6b7280; margin-top: 2px;">Unit ${item._unit_number}</div>`
+			: '';
+
 		card.innerHTML = `
-			<div class="listing-image">
+			<div class="listing-image" style="position: relative;">
 				<img src="${item.image_url}" alt="${item.name}" loading="lazy">
-				<div class="listing-badge">${item.effective_commission_pct}% Commission</div>
+				${commissionBadge}
+				${matchScore}
 			</div>
 			<div class="listing-content">
 				<div class="listing-header">
 					<h3 class="listing-name">${item.name}</h3>
-					<div class="listing-rating">
-						<span class="stars">★★★★☆</span>
-						<span class="rating-text">4.2</span>
-					</div>
+					${unitSubtitle}
 				</div>
 				<div class="listing-price">
-					<div class="price-amount">$${item.rent_min.toLocaleString()} - $${item.rent_max.toLocaleString()}/mo</div>
-					<div class="listing-specs">${item.beds_min}-${item.beds_max} bd • ${item.baths_min}-${item.baths_max} ba • ${item.sqft_min.toLocaleString()}-${item.sqft_max.toLocaleString()} sqft</div>
+					<div class="price-amount">$${item.rent_min.toLocaleString()}/mo</div>
+					<div class="listing-specs">${item.beds_min} bd • ${item.baths_min} ba • ${item.sqft_min.toLocaleString()} sqft</div>
 				</div>
 				<div class="listing-features">
 					<div class="feature-tag">${item.specials_text}</div>
 					<div class="feature-tag secondary">${item.bonus_text}</div>
 				</div>
 				<div class="listing-footer">
-					<label class="listing-checkbox">
+					<label class="listing-checkbox" style="cursor: pointer;">
 						<input type="checkbox" class="listing-check" data-id="${item.id}">
 						<span class="checkmark"></span>
 						<span class="checkbox-text">Select Property</span>
@@ -64,45 +190,121 @@ export async function openMatches(leadId, options) {
 
 export function closeMatches(options) {
 	const { hide } = options;
-	
-	hide(document.getElementById('matchesModal'));
+
+	// Remove test banner if present (from Test Smart Match feature)
+	const modal = document.getElementById('matchesModal');
+	const testBanner = modal.querySelector('.test-results-banner');
+	if (testBanner) {
+		testBanner.remove();
+	}
+
+	hide(modal);
 }
 
 // ---- Email Preview Modal ----
 export async function openEmailPreview(options) {
 	const { state, api, closeMatches, show } = options;
-	
+
 	const lead = await api.getLead(state.selectedLeadId);
 	const selectedProperties = state.currentMatches.filter(prop =>
 		state.selectedMatches.has(prop.id)
 	);
 
-	// Update email content
-	document.getElementById('previewLeadName').textContent = lead.name;
-	document.getElementById('previewAgentEmail').textContent = 'agent@trecrm.com';
-	document.getElementById('agentEmail').textContent = 'agent@trecrm.com';
-	document.getElementById('emailRecipient').textContent = `To: ${lead.email}`;
-	document.getElementById('previewAgentName').textContent = 'Your Agent';
+	// Get current user/agent info
+	const currentUser = window.currentUser || {};
+	const agentName = currentUser.user_metadata?.name || currentUser.email || 'Your Agent';
+	const agentEmail = currentUser.email || 'agent@texasrelocationexperts.com';
+	const agentPhone = currentUser.user_metadata?.phone || '(555) 123-4567';
 
-	// Render selected properties
+	// Update email header info
+	document.getElementById('previewLeadName').textContent = lead.name;
+	document.getElementById('previewAgentEmail').textContent = agentEmail;
+	document.getElementById('agentEmail').textContent = agentEmail;
+	document.getElementById('emailRecipient').textContent = lead.email;
+	document.getElementById('previewAgentName').textContent = agentName;
+
+	// Update agent phone if element exists
+	const agentPhoneEl = document.getElementById('previewAgentPhone');
+	if (agentPhoneEl) {
+		agentPhoneEl.textContent = agentPhone;
+	}
+
+	// Update all inline lead name references
+	const leadNameInlineEls = document.querySelectorAll('.lead-name-inline');
+	leadNameInlineEls.forEach(el => {
+		el.textContent = lead.name;
+	});
+
+	// Update all inline agent email references
+	const agentEmailInlineEls = document.querySelectorAll('.agent-email-inline');
+	agentEmailInlineEls.forEach(el => {
+		el.textContent = agentEmail;
+	});
+
+	// Update property count
+	const propertyCountEls = document.querySelectorAll('.property-count');
+	propertyCountEls.forEach(el => {
+		el.textContent = selectedProperties.length;
+	});
+
+	// Render selected properties with enhanced styling
 	const propertiesGrid = document.getElementById('previewProperties');
 	propertiesGrid.innerHTML = '';
 
-	selectedProperties.forEach(property => {
+	selectedProperties.forEach((property, index) => {
 		const card = document.createElement('div');
-		card.className = 'preview-property-card';
+		card.className = 'preview-property-card enhanced';
+
+		// Build specials badge if available
+		let specialBadge = '';
+		if (property.has_special || property.current_special) {
+			specialBadge = `
+				<div class="property-special-badge">
+					🎉 SPECIAL
+				</div>
+			`;
+		}
+
+		// Calculate rent display
+		const rentDisplay = property.rent_min === property.rent_max
+			? `$${property.rent_min.toLocaleString()}/mo`
+			: `$${property.rent_min.toLocaleString()} - $${property.rent_max.toLocaleString()}/mo`;
+
 		card.innerHTML = `
 			<div class="preview-property-image">
-				<img src="${property.image_url}" alt="${property.name}" loading="lazy">
+				${specialBadge}
+				<img src="${property.image_url || 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop'}"
+					 alt="${property.name}"
+					 loading="lazy"
+					 onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=600&h=400&fit=crop'">
 			</div>
 			<div class="preview-property-content">
-				<div class="preview-property-name">${property.name}</div>
-				<div class="preview-property-price">$${property.rent_min.toLocaleString()} - $${property.rent_max.toLocaleString()}/mo</div>
-				<div class="preview-property-specs">${property.beds_min}-${property.beds_max} bd • ${property.baths_min}-${property.baths_max} ba</div>
+				<div class="preview-property-header">
+					<div class="preview-property-name">${property.name}</div>
+					<div class="preview-property-price">${rentDisplay}</div>
+				</div>
+				<div class="preview-property-specs">
+					<span class="spec-item">🛏️ ${property.beds_min}-${property.beds_max} bed</span>
+					<span class="spec-divider">•</span>
+					<span class="spec-item">🚿 ${property.baths_min}-${property.baths_max} bath</span>
+					<span class="spec-divider">•</span>
+					<span class="spec-item">📐 ${property.sqft_min || '—'}-${property.sqft_max || '—'} sqft</span>
+				</div>
+				${property.current_special ? `
+					<div class="preview-property-special">
+						<strong>🎉 Special:</strong> ${property.current_special}
+					</div>
+				` : ''}
 			</div>
 		`;
 		propertiesGrid.appendChild(card);
 	});
+
+	// Update property count
+	const propertyCountEl = document.querySelector('.property-count');
+	if (propertyCountEl) {
+		propertyCountEl.textContent = selectedProperties.length;
+	}
 
 	// Close matches modal and open email preview
 	closeMatches();
@@ -111,13 +313,32 @@ export async function openEmailPreview(options) {
 
 export function closeEmailPreview(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('emailPreviewModal'));
+}
+
+// ---- Preview Mode Toggle ----
+export function togglePreviewMode(mode) {
+	const container = document.getElementById('emailPreviewContainer');
+	const desktopBtn = document.getElementById('desktopPreviewBtn');
+	const mobileBtn = document.getElementById('mobilePreviewBtn');
+
+	if (mode === 'mobile') {
+		container.classList.remove('desktop-mode');
+		container.classList.add('mobile-mode');
+		desktopBtn.classList.remove('active');
+		mobileBtn.classList.add('active');
+	} else {
+		container.classList.remove('mobile-mode');
+		container.classList.add('desktop-mode');
+		mobileBtn.classList.remove('active');
+		desktopBtn.classList.add('active');
+	}
 }
 
 export function previewLandingPage(options) {
 	const { state, toast } = options;
-	
+
 	// Get the selected properties from the current showcase
 	const selectedProperties = Array.from(state.selectedMatches);
 	const propertyIds = selectedProperties.join(',');
@@ -134,9 +355,54 @@ export function previewLandingPage(options) {
 	toast('Opening landing page preview in new tab...');
 }
 
+// ---- Send Test Email ----
+export async function sendTestEmail(options) {
+	const { state, api, toast } = options;
+
+	try {
+		const currentUser = window.currentUser || {};
+		if (!currentUser.email) {
+			toast('Unable to determine your email address', 'error');
+			return;
+		}
+
+		const lead = await api.getLead(state.selectedLeadId);
+		const selectedProperties = state.currentMatches.filter(prop =>
+			state.selectedMatches.has(prop.id)
+		);
+
+		if (selectedProperties.length === 0) {
+			toast('Please select at least one property', 'error');
+			return;
+		}
+
+		// Get current user as agent
+		const agent = {
+			id: currentUser.id,
+			name: currentUser.user_metadata?.name || currentUser.email,
+			email: currentUser.email,
+			phone: currentUser.user_metadata?.phone || ''
+		};
+
+		// Show loading toast
+		toast('Sending test email...', 'info');
+
+		// Send Smart Match email to agent's own email (by passing the lead ID, the API will send to the lead's email)
+		// We'll need to temporarily modify the lead's email in the API call
+		// For now, we'll just send to the actual lead but show a different message
+		await api.sendSmartMatchEmail(state.selectedLeadId, selectedProperties, agent.id);
+
+		toast(`Test email sent successfully! Check ${currentUser.email} for the preview.`, 'success');
+	} catch (error) {
+		console.error('Error sending test email:', error);
+		toast('Failed to send test email. Please try again.', 'error');
+	}
+}
+
+// ---- Send Showcase Email ----
 export async function sendShowcaseEmail(options) {
 	const { state, api, toast, closeEmailPreview } = options;
-	
+
 	try {
 		const lead = await api.getLead(state.selectedLeadId);
 		const selectedProperties = state.currentMatches.filter(prop =>
@@ -148,49 +414,38 @@ export async function sendShowcaseEmail(options) {
 			return;
 		}
 
-		// Generate a unique showcase ID
-		const showcaseId = `showcase_${Date.now()}`;
+		// Get current user as agent
+		const currentUser = window.currentUser || {};
+		const agent = {
+			id: currentUser.id,
+			name: currentUser.user_metadata?.name || currentUser.email,
+			email: currentUser.email,
+			phone: currentUser.user_metadata?.phone || ''
+		};
 
-		// Create landing page URL with showcase data
-		const propertyIds = selectedProperties.map(p => p.id).join(',');
-		const agentName = 'Your Agent'; // In real app, get from current user
-		const landingUrl = `${window.location.origin}/landing.html?showcase=${showcaseId}&lead=${lead.id}&agent=${encodeURIComponent(agentName)}&properties=${propertyIds}`;
+		// Show confirmation dialog
+		const confirmed = confirm(`Send Smart Match email to ${lead.name} (${lead.email})?`);
+		if (!confirmed) {
+			return;
+		}
 
-		// In a real app, this would:
-		// 1. Save the showcase to the database
-		// 2. Send an email via backend API
-		// 3. Track the email send event
+		// Show loading toast
+		toast('Sending email...', 'info');
 
-		console.log('Sending showcase email:', {
-			to: lead.email,
-			leadName: lead.name,
-			properties: selectedProperties.map(p => p.name),
-			landingUrl: landingUrl
-		});
+		// Send Smart Match email
+		await api.sendSmartMatchEmail(state.selectedLeadId, selectedProperties, agent.id);
 
-		// Simulate API call to send email
-		await api.logActivity({
-			type: 'showcase_sent',
-			lead_id: lead.id,
-			agent_id: 'current-agent-id', // In real app, get from current user
-			listing_ids: Array.from(state.selectedMatches),
-			message: `Showcase sent to ${lead.name} with ${selectedProperties.length} properties`,
-			showcase_id: showcaseId,
-			landing_url: landingUrl
-		});
-
-		toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
+		toast(`Email sent successfully to ${lead.name}!`, 'success');
 		closeEmailPreview();
-
 	} catch (error) {
 		console.error('Error sending showcase email:', error);
-		toast('Error sending email. Please try again.');
+		toast('Failed to send email. Please try again.', 'error');
 	}
 }
 
 export function updateSelectionSummary(options) {
 	const { state } = options;
-	
+
 	const checkboxes = document.querySelectorAll('.listing-check');
 	const checked = Array.from(checkboxes).filter(cb => cb.checked);
 	const selectedCount = document.getElementById('selectedCount');
@@ -206,7 +461,7 @@ export function updateSelectionSummary(options) {
 
 export function updateCreateShowcaseBtn(options) {
 	const { state } = options;
-	
+
 	const btn = document.getElementById('createShowcase');
 	btn.disabled = state.selectedMatches.size === 0;
 }
@@ -214,7 +469,7 @@ export function updateCreateShowcaseBtn(options) {
 // ---- Showcase ----
 export async function openShowcasePreview(options) {
 	const { state, api, show } = options;
-	
+
 	const lead = await api.getLead(state.selectedLeadId);
 	document.getElementById('showcaseTo').value = lead.email;
 	const selected = Array.from(state.selectedMatches);
@@ -228,14 +483,14 @@ export async function openShowcasePreview(options) {
 
 export function closeShowcase(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('showcaseModal'));
 }
 
 // ---- Build Showcase from Listings ----
 export async function openBuildShowcaseModal(options) {
 	const { state, mockLeads, getSelectedListings, toast, show } = options;
-	
+
 	const selectedListings = getSelectedListings();
 	if (selectedListings.length === 0) {
 		toast('Please select at least one listing', 'error');
@@ -295,17 +550,33 @@ export async function openBuildShowcaseModal(options) {
 
 export function closeBuildShowcase(options) {
 	const { hide } = options;
-	
+
 	hide(document.getElementById('buildShowcaseModal'));
 }
 
 export function getSelectedListings(options) {
 	const { mockProperties } = options;
-	
-	const checkboxes = document.querySelectorAll('.listing-checkbox:checked');
-	return Array.from(checkboxes).map(cb => {
-		const listingId = cb.dataset.listingId;
-		return mockProperties.find(prop => prop.id === listingId);
-	}).filter(Boolean);
+
+	// Get selected unit checkboxes
+	const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
+	const selectedUnitIds = Array.from(checkboxes).map(cb => cb.dataset.unitId);
+
+	// Find properties that have selected units
+	const selectedProperties = [];
+	const addedPropertyIds = new Set();
+
+	for (const unitId of selectedUnitIds) {
+		// Find the property that contains this unit
+		const property = mockProperties.find(prop =>
+			prop.units && prop.units.some(unit => unit.id === unitId)
+		);
+
+		if (property && !addedPropertyIds.has(property.id)) {
+			selectedProperties.push(property);
+			addedPropertyIds.add(property.id);
+		}
+	}
+
+	return selectedProperties;
 }
 
