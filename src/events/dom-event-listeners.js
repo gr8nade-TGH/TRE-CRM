@@ -712,29 +712,34 @@ export function setupAllEventListeners(deps) {
 
 	// Documents search functionality
 	const documentsSearch = document.getElementById('documentsSearch');
-	const searchType = document.getElementById('searchType');
 	const clearDocumentsSearch = document.getElementById('clearDocumentsSearch');
 
-	if (documentsSearch && searchType && clearDocumentsSearch) {
+	if (documentsSearch) {
 		// Search input event
 		documentsSearch.addEventListener('input', (e) => {
-			const searchTerm = e.target.value;
-			const type = searchType.value;
-			renderLeadsTable(searchTerm, type);
+			state.documentsSearch = e.target.value;
+			// Re-render the documents view based on role
+			if (state.role === 'agent') {
+				renderAgentDocuments();
+			} else {
+				renderManagerDocuments();
+			}
 		});
+	}
 
-		// Search type change event
-		searchType.addEventListener('change', (e) => {
-			const searchTerm = documentsSearch.value;
-			const type = e.target.value;
-			renderLeadsTable(searchTerm, type);
-		});
-
+	if (clearDocumentsSearch) {
 		// Clear search event
 		clearDocumentsSearch.addEventListener('click', () => {
-			documentsSearch.value = '';
-			searchType.value = 'both';
-			renderLeadsTable('', 'both');
+			if (documentsSearch) {
+				documentsSearch.value = '';
+			}
+			state.documentsSearch = '';
+			// Re-render the documents view based on role
+			if (state.role === 'agent') {
+				renderAgentDocuments();
+			} else {
+				renderManagerDocuments();
+			}
 		});
 	}
 
@@ -1809,7 +1814,7 @@ export function setupAllEventListeners(deps) {
 		}, 100);
 	};
 
-	// Event delegation for expand buttons (works for both manager and agent views)
+	// Event delegation for expand buttons and lead table headers (works for both manager and agent views)
 	document.addEventListener('click', (e) => {
 		console.log('Click detected on:', e.target);
 		console.log('Target classList:', e.target.classList);
@@ -1824,6 +1829,22 @@ export function setupAllEventListeners(deps) {
 			const leadId = expandBtn.getAttribute('data-lead-id');
 			console.log('Lead ID:', leadId);
 			toggleLeadTable(leadId);
+			return;
+		}
+
+		// Check if clicked element is lead table header (but not the expand button)
+		const leadTableHeader = e.target.closest('.lead-table-header');
+		if (leadTableHeader && !e.target.closest('.expand-btn')) {
+			console.log('Lead table header clicked!');
+			e.preventDefault();
+			e.stopPropagation();
+			// Find the expand button within this header
+			const headerExpandBtn = leadTableHeader.querySelector('.expand-btn');
+			if (headerExpandBtn) {
+				const leadId = headerExpandBtn.getAttribute('data-lead-id');
+				console.log('Lead ID from header:', leadId);
+				toggleLeadTable(leadId);
+			}
 		}
 	});
 

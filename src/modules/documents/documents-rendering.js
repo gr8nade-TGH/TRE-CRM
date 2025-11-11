@@ -57,13 +57,27 @@ export async function renderManagerDocuments(options) {
 		const result = await SupabaseAPI.getLeads({
 			role: state.role,
 			agentId: state.agentId,
-			search: '',
+			search: state.documentsSearch || '', // Use documents search state
 			sortKey: 'created_at',
 			sortDir: 'desc',
 			page: 1,
 			pageSize: 100,
 			filters: {}
 		});
+
+		// Fetch all agents to map agent names
+		const { data: agents } = await SupabaseAPI.getSupabase()
+			.from('users')
+			.select('id, name, email')
+			.eq('role', 'AGENT');
+
+		// Create agent lookup map
+		const agentMap = new Map();
+		if (agents) {
+			agents.forEach(agent => {
+				agentMap.set(agent.id, agent);
+			});
+		}
 
 		// OPTIMIZATION: Fetch all activities for all leads in one batch query
 		// This is much faster than fetching activities for each lead individually
@@ -98,11 +112,16 @@ export async function renderManagerDocuments(options) {
 		const transformedLeads = result.items.map((lead) => {
 			const leadActivities = allActivitiesMap.get(lead.id) || new Set();
 
+			// Get agent info from map
+			const agent = agentMap.get(lead.assigned_agent_id);
+			const agentName = agent ? agent.name : 'Unassigned';
+			const agentEmail = agent ? agent.email : '';
+
 			return {
 				id: lead.id,
 				leadName: lead.name,
-				agentName: lead.agent_name || 'Unassigned',
-				agentEmail: lead.agent_email || '',
+				agentName: agentName,
+				agentEmail: agentEmail,
 				currentStep: lead.current_step || 1,
 				lastUpdated: lead.updated_at || lead.created_at,
 				status: lead.health_status === 'closed' ? 'completed' : 'current',
@@ -179,13 +198,27 @@ export async function renderAgentDocuments(options) {
 		const result = await SupabaseAPI.getLeads({
 			role: 'agent',
 			agentId: state.agentId,
-			search: '',
+			search: state.documentsSearch || '', // Use documents search state
 			sortKey: 'created_at',
 			sortDir: 'desc',
 			page: 1,
 			pageSize: 100,
 			filters: {}
 		});
+
+		// Fetch all agents to map agent names
+		const { data: agents } = await SupabaseAPI.getSupabase()
+			.from('users')
+			.select('id, name, email')
+			.eq('role', 'AGENT');
+
+		// Create agent lookup map
+		const agentMap = new Map();
+		if (agents) {
+			agents.forEach(agent => {
+				agentMap.set(agent.id, agent);
+			});
+		}
 
 		// OPTIMIZATION: Fetch all activities for all leads in one batch query
 		// This is much faster than fetching activities for each lead individually
@@ -220,11 +253,16 @@ export async function renderAgentDocuments(options) {
 		const transformedLeads = result.items.map((lead) => {
 			const leadActivities = allActivitiesMap.get(lead.id) || new Set();
 
+			// Get agent info from map
+			const agent = agentMap.get(lead.assigned_agent_id);
+			const agentName = agent ? agent.name : 'Unassigned';
+			const agentEmail = agent ? agent.email : '';
+
 			return {
 				id: lead.id,
 				leadName: lead.name,
-				agentName: lead.agent_name || 'Unassigned',
-				agentEmail: lead.agent_email || '',
+				agentName: agentName,
+				agentEmail: agentEmail,
 				currentStep: lead.current_step || 1,
 				lastUpdated: lead.updated_at || lead.created_at,
 				status: lead.health_status === 'closed' ? 'completed' : 'current',

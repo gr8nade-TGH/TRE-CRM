@@ -28,6 +28,7 @@ export const state = {
 
 	// Search state
 	search: '',
+	documentsSearch: '', // Separate search for Documents page
 
 	// Selection state
 	selectedLeadId: null,
