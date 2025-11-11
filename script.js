@@ -825,6 +825,73 @@ let api, renderLeads, renderSpecials;
 	// Global function for activity log modal (used by unit icons)
 	window.openActivityLogModal = openActivityLogModal;
 
+	// Global function for viewing email content
+	window.viewEmailContent = async function (emailLogId, templateId) {
+		try {
+			// Fetch email log data
+			const emailLog = await SupabaseAPI.getEmailLog(emailLogId);
+
+			if (!emailLog) {
+				toast('Email not found', 'error');
+				return;
+			}
+
+			// Fetch template data
+			const { data: template } = await SupabaseAPI.supabase
+				.from('email_templates')
+				.select('*')
+				.eq('id', templateId)
+				.single();
+
+			// Create modal content
+			const modalContent = `
+				<div class="email-preview-modal">
+					<h3>📧 ${template?.name || 'Email'}</h3>
+					<div class="email-meta">
+						<div class="meta-row">
+							<strong>To:</strong> ${emailLog.recipient_email}
+						</div>
+						<div class="meta-row">
+							<strong>Subject:</strong> ${emailLog.subject || template?.subject || 'N/A'}
+						</div>
+						<div class="meta-row">
+							<strong>Sent:</strong> ${formatDate(emailLog.sent_at)}
+						</div>
+						<div class="meta-row">
+							<strong>Status:</strong> <span class="status-badge status-${emailLog.status}">${emailLog.status}</span>
+						</div>
+					</div>
+					<div class="email-stats">
+						<div class="stat-box">
+							<div class="stat-value">${emailLog.opens || 0}</div>
+							<div class="stat-label">Opens</div>
+						</div>
+						<div class="stat-box">
+							<div class="stat-value">${emailLog.clicks || 0}</div>
+							<div class="stat-label">Clicks</div>
+						</div>
+						<div class="stat-box">
+							<div class="stat-value">${emailLog.last_opened_at ? formatDate(emailLog.last_opened_at) : 'Never'}</div>
+							<div class="stat-label">Last Opened</div>
+						</div>
+					</div>
+					<div class="email-content-preview">
+						<h4>Email Content:</h4>
+						<div class="email-iframe-container">
+							<iframe srcdoc="${emailLog.html_content?.replace(/"/g, '&quot;') || '<p>No content available</p>'}"
+									style="width: 100%; height: 400px; border: 1px solid #e2e8f0; border-radius: 8px;"></iframe>
+						</div>
+					</div>
+				</div>
+			`;
+
+			showModal('Email Preview', modalContent);
+		} catch (error) {
+			console.error('Error viewing email:', error);
+			toast('Error loading email content', 'error');
+		}
+	};
+
 	// Bulk actions event listeners moved to dom-event-listeners.js
 
 	// Expose state, SupabaseAPI, and toast to global scope

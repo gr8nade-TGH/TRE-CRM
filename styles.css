@@ -3664,6 +3664,171 @@ body {
 	}
 }
 
+/* Email Preview Modal */
+.email-preview-modal {
+	max-width: 800px;
+}
+
+.email-preview-modal h3 {
+	margin: 0 0 20px 0;
+	color: #1e293b;
+	font-size: 24px;
+}
+
+.email-meta {
+	background: #f8fafc;
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 20px;
+}
+
+.meta-row {
+	padding: 8px 0;
+	border-bottom: 1px solid #e2e8f0;
+	font-size: 14px;
+}
+
+.meta-row:last-child {
+	border-bottom: none;
+}
+
+.meta-row strong {
+	color: #475569;
+	margin-right: 8px;
+}
+
+.status-badge {
+	padding: 4px 12px;
+	border-radius: 12px;
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+}
+
+.status-badge.status-sent {
+	background: #dbeafe;
+	color: #1e40af;
+}
+
+.status-badge.status-delivered {
+	background: #d1fae5;
+	color: #065f46;
+}
+
+.status-badge.status-opened {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.email-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+	margin-bottom: 24px;
+}
+
+.stat-box {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 16px;
+	text-align: center;
+}
+
+.stat-box .stat-value {
+	font-size: 24px;
+	font-weight: 700;
+	color: #3b82f6;
+	margin-bottom: 4px;
+}
+
+.stat-box .stat-label {
+	font-size: 12px;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.email-content-preview h4 {
+	margin: 0 0 12px 0;
+	color: #475569;
+	font-size: 16px;
+}
+
+.email-iframe-container {
+	background: white;
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+/* Email Info Box in Step Modal */
+.email-info-box {
+	background: #f0f9ff;
+	border: 1px solid #bae6fd;
+	border-radius: 8px;
+	padding: 16px;
+	margin-top: 12px;
+}
+
+.email-detail {
+	padding: 6px 0;
+	font-size: 14px;
+	color: #0c4a6e;
+}
+
+.email-detail strong {
+	color: #075985;
+	margin-right: 8px;
+}
+
+.email-tracking-stats {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 12px;
+	margin: 12px 0;
+	padding: 12px;
+	background: white;
+	border-radius: 6px;
+}
+
+.email-tracking-stats .stat-item {
+	text-align: center;
+}
+
+.email-tracking-stats .stat-label {
+	display: block;
+	font-size: 11px;
+	color: #64748b;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 4px;
+}
+
+.email-tracking-stats .stat-value {
+	display: block;
+	font-size: 18px;
+	font-weight: 700;
+	color: #3b82f6;
+}
+
+.email-not-sent {
+	padding: 12px;
+	background: #fef2f2;
+	border: 1px solid #fecaca;
+	border-radius: 6px;
+	margin-top: 8px;
+}
+
+.email-not-sent em {
+	color: #991b1b;
+}
+
+.btn-sm {
+	padding: 8px 16px;
+	font-size: 13px;
+	margin-top: 12px;
+}
+
 @media (max-width: 1100px) {
 	.listings-layout {
 		grid-template-columns: 1fr;
@@ -4438,6 +4603,24 @@ body {
 	text-align: center;
 	text-transform: uppercase;
 	letter-spacing: 0.5px;
+}
+
+/* Clickable indicator */
+.optional-indicator.clickable {
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.optional-indicator.clickable:hover {
+	transform: translateX(-50%) scale(1.1);
+}
+
+.optional-indicator.clickable:hover .checkmark {
+	box-shadow: 0 4px 12px rgba(59, 130, 246, 0.6);
+}
+
+.optional-indicator.clickable:hover .label {
+	text-decoration: underline;
 }
 
 /* Specific indicator colors */

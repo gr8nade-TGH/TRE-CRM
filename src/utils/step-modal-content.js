@@ -67,20 +67,72 @@ export async function getStepModalContent(lead, step, formatDate) {
 					prefsHTML += '</ul></div>';
 				}
 
-				// Welcome email section (placeholder for Resend integration)
-				const welcomeEmailHTML = `
-					<div class="modal-section">
-						<strong>Welcome Email:</strong>
-						<div class="email-placeholder">
-							<em>📧 Email integration coming soon (Resend)</em>
-							<div class="email-details-placeholder">
-								• Welcome email will be sent automatically<br>
-								• Email status and details will appear here<br>
-								• Click to view email content and delivery status
+				// Welcome email section - check if welcome email was sent
+				const welcomeEmailActivity = activities.find(a => a.activity_type === 'welcome_email_sent');
+				let welcomeEmailHTML = '';
+
+				if (welcomeEmailActivity) {
+					const emailMetadata = welcomeEmailActivity.metadata || {};
+					const emailId = emailMetadata.email_id;
+					const sentAt = formatDate(welcomeEmailActivity.created_at);
+					const agentName = emailMetadata.agent_name || 'System';
+
+					// Fetch email log data if email_id exists
+					let emailLogData = null;
+					if (emailId) {
+						try {
+							emailLogData = await SupabaseAPI.getEmailLog(emailId);
+						} catch (error) {
+							console.error('Error fetching email log:', error);
+						}
+					}
+
+					// Build email status display
+					let statusHTML = '';
+					if (emailLogData) {
+						const opens = emailLogData.opens || 0;
+						const clicks = emailLogData.clicks || 0;
+						const status = emailLogData.status || 'sent';
+
+						statusHTML = `
+							<div class="email-tracking-stats">
+								<div class="stat-item">
+									<span class="stat-label">Status:</span>
+									<span class="stat-value status-${status}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+								</div>
+								<div class="stat-item">
+									<span class="stat-label">Opens:</span>
+									<span class="stat-value">${opens}</span>
+								</div>
+								<div class="stat-item">
+									<span class="stat-label">Clicks:</span>
+									<span class="stat-value">${clicks}</span>
+								</div>
+							</div>
+						`;
+					}
+
+					welcomeEmailHTML = `
+						<div class="modal-section">
+							<strong>✅ Welcome Email Sent</strong>
+							<div class="email-info-box">
+								<div class="email-detail"><strong>Sent:</strong> ${sentAt}</div>
+								<div class="email-detail"><strong>Sent by:</strong> ${agentName}</div>
+								${statusHTML}
+								${emailId ? `<button class="btn btn-secondary btn-sm" onclick="window.viewEmailContent('${emailId}', 'welcome_lead')">📧 View Email</button>` : ''}
 							</div>
 						</div>
-					</div>
-				`;
+					`;
+				} else {
+					welcomeEmailHTML = `
+						<div class="modal-section">
+							<strong>Welcome Email:</strong>
+							<div class="email-not-sent">
+								<em>❌ Welcome email not sent yet</em>
+							</div>
+						</div>
+					`;
+				}
 
 				return `
 					<div class="modal-details"><strong>Lead Name:</strong> ${leadData.name}</div>

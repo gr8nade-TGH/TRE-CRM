@@ -1817,7 +1817,32 @@ export function setupAllEventListeners(deps) {
 	};
 
 	// Event delegation for expand buttons and lead table headers (works for both manager and agent views)
-	document.addEventListener('click', (e) => {
+	document.addEventListener('click', async (e) => {
+		// Check if clicked element is welcome email indicator
+		const welcomeEmailIndicator = e.target.closest('[data-action="view-welcome-email"]');
+		if (welcomeEmailIndicator) {
+			e.preventDefault();
+			e.stopPropagation();
+			const leadId = welcomeEmailIndicator.getAttribute('data-lead-id');
+
+			// Fetch welcome email activity
+			try {
+				const activities = await SupabaseAPI.getLeadActivities(leadId);
+				const welcomeEmailActivity = activities.find(a => a.activity_type === 'welcome_email_sent');
+
+				if (welcomeEmailActivity && welcomeEmailActivity.metadata?.email_id) {
+					const emailId = welcomeEmailActivity.metadata.email_id;
+					window.viewEmailContent(emailId, 'welcome_lead');
+				} else {
+					toast('Welcome email details not found', 'warning');
+				}
+			} catch (error) {
+				console.error('Error fetching welcome email:', error);
+				toast('Error loading welcome email', 'error');
+			}
+			return;
+		}
+
 		// Check if clicked element is expand button or inside expand button
 		const expandBtn = e.target.closest('.expand-btn');
 		if (expandBtn) {

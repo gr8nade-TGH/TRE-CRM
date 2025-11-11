@@ -64,9 +64,12 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 
 		// Optional indicators (appear above their parent step when achieved)
 
-		// Step 1: Welcome Email Sent indicator
+		// Step 1: Welcome Email Sent indicator (clickable to view email)
 		const welcomeEmailIndicator = (step.id === 1 && hasWelcomeEmailSent) ? `
-									<div class="optional-indicator welcome-email-indicator" title="Welcome Email Sent">
+									<div class="optional-indicator welcome-email-indicator clickable"
+										 title="Click to view welcome email"
+										 data-lead-id="${lead.id}"
+										 data-action="view-welcome-email">
 										<span class="checkmark">✓</span>
 										<span class="label">Welcome Email Sent</span>
 									</div>
