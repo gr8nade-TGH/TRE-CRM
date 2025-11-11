@@ -32,13 +32,22 @@ function parseRange(rangeStr) {
 }
 
 /**
- * Parse price range string (e.g., "$1000-$1500")
- * @param {string} priceStr - Price range string
+ * Parse price range string or object (e.g., "$1000-$1500" or {min: 1000, max: 1500})
+ * @param {string|Object} priceStr - Price range string or object
  * @returns {Object} { min, max }
  */
 function parsePriceRange(priceStr) {
     if (!priceStr) return { min: null, max: null };
 
+    // Handle object format {min: 1400, max: 2000}
+    if (typeof priceStr === 'object' && priceStr.min !== undefined && priceStr.max !== undefined) {
+        return {
+            min: parseInt(priceStr.min),
+            max: parseInt(priceStr.max)
+        };
+    }
+
+    // Handle string format "1400-2000"
     const str = String(priceStr).replace(/[$,]/g, '').trim();
     if (str === '' || str === 'Any') return { min: null, max: null };
 

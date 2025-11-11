@@ -148,7 +148,11 @@ export async function renderLeads(options, autoSelectLeadId = null) {
 			return m > 0 ? `${h}h ${m}m` : `${h}h`;
 		};
 
-		items.forEach((lead, index) => {
+		// Cap display to 20 leads maximum
+		const displayItems = items.slice(0, 20);
+		console.log(`📊 Displaying ${displayItems.length} of ${items.length} total leads (capped at 20)`);
+
+		displayItems.forEach((lead, index) => {
 			const notesCount = lead._notesCount || 0;
 			// Always show note icon: gray if no notes, yellow with pulse if notes exist
 			const noteColor = notesCount > 0 ? '#fbbf24' : '#9ca3af';
