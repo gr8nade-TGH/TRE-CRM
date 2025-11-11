@@ -65,6 +65,8 @@ export function setupAllEventListeners(deps) {
 		renderListings,
 		renderAgents,
 		renderDocuments,
+		renderManagerDocuments,
+		renderAgentDocuments,
 		renderSpecials,
 		renderBugs,
 		renderAdmin,

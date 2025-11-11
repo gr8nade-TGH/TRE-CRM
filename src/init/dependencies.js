@@ -18,19 +18,21 @@ export function createDependencies(context) {
 		api,
 		mockClosedLeads,
 		SupabaseAPI,
-		
+
 		// Render functions
 		renderLeads,
 		renderListings,
 		renderAgents,
 		renderDocuments,
+		renderManagerDocuments,
+		renderAgentDocuments,
 		renderSpecials,
 		renderBugs,
 		renderAdmin,
 		renderLeadsTable,
 		renderProperties,
 		renderAuditLog,
-		
+
 		// Drawer and modal functions
 		openDrawer,
 		closeDrawer,
@@ -51,7 +53,7 @@ export function createDependencies(context) {
 		closeAddListingModal,
 		openBuildShowcaseModal,
 		openShowcasePreview,
-		
+
 		// CRUD operation functions
 		saveNewLead,
 		savePropertyContact,
@@ -69,13 +71,13 @@ export function createDependencies(context) {
 		changeUserPassword,
 		saveListingEdit,
 		deleteListing,
-		
+
 		// Profile functions
 		updateUserProfile,
 		changeOwnPassword,
 		updateNotificationPreferences,
 		openProfileModal,
-		
+
 		// Utility functions
 		sortTable,
 		toast,
@@ -98,7 +100,7 @@ export function createDependencies(context) {
 		// CSV import/export functions
 		downloadCSVTemplate,
 		importCSV,
-		
+
 		// Bug tracker functions
 		submitBugReport,
 		saveBugChanges,
@@ -125,7 +127,7 @@ export function createDependencies(context) {
 		sendShowcaseEmail,
 		openHistoryDocumentDetails
 	} = context;
-	
+
 	return {
 		// State and global variables
 		state,
@@ -134,19 +136,21 @@ export function createDependencies(context) {
 		api,
 		mockClosedLeads,
 		SupabaseAPI,
-		
+
 		// Render functions
 		renderLeads,
 		renderListings,
 		renderAgents,
 		renderDocuments,
+		renderManagerDocuments,
+		renderAgentDocuments,
 		renderSpecials,
 		renderBugs,
 		renderAdmin,
 		renderLeadsTable,
 		renderProperties,
 		renderAuditLog,
-		
+
 		// Drawer and modal functions
 		openDrawer,
 		closeDrawer,
@@ -167,7 +171,7 @@ export function createDependencies(context) {
 		closeAddListingModal,
 		openBuildShowcaseModal,
 		openShowcasePreview,
-		
+
 		// CRUD operation functions
 		saveNewLead,
 		savePropertyContact,
@@ -185,13 +189,13 @@ export function createDependencies(context) {
 		changeUserPassword,
 		saveListingEdit,
 		deleteListing,
-		
+
 		// Profile functions
 		updateProfile: updateUserProfile,
 		changePassword: changeOwnPassword,
 		updateNotificationPreferences,
 		openProfileModal,
-		
+
 		// Utility functions
 		sortTable,
 		toast,
@@ -210,11 +214,11 @@ export function createDependencies(context) {
 		bulkDeleteListings,
 		updateLeadBulkActionsBar,
 		bulkSendSmartMatch,
-		
+
 		// CSV import/export functions
 		downloadCSVTemplate,
 		importCSV,
-		
+
 		// Bug tracker functions
 		submitBugReport,
 		saveBugChanges,

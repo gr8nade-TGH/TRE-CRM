@@ -782,7 +782,7 @@ let api, renderLeads, renderSpecials;
 		// Create and inject all dependencies
 		const deps = createDependencies({
 			state, realAgents, realUsers, api, mockClosedLeads, SupabaseAPI,
-			renderLeads, renderListings, renderAgents, renderDocuments, renderSpecials,
+			renderLeads, renderListings, renderAgents, renderDocuments, renderManagerDocuments, renderAgentDocuments, renderSpecials,
 			renderBugs, renderAdmin, renderLeadsTable, renderProperties, renderAuditLog,
 			openDrawer, closeDrawer, openAgentDrawer, openMatches,
 			closeMatches, showModal, hideModal, closeLeadDetailsModal, closeLeadNotesModal,
