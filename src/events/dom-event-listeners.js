@@ -1818,18 +1818,12 @@ export function setupAllEventListeners(deps) {
 
 	// Event delegation for expand buttons and lead table headers (works for both manager and agent views)
 	document.addEventListener('click', (e) => {
-		console.log('Click detected on:', e.target);
-		console.log('Target classList:', e.target.classList);
-		console.log('Target parent:', e.target.parentElement);
-
 		// Check if clicked element is expand button or inside expand button
 		const expandBtn = e.target.closest('.expand-btn');
 		if (expandBtn) {
-			console.log('Expand button clicked!');
 			e.preventDefault();
 			e.stopPropagation();
 			const leadId = expandBtn.getAttribute('data-lead-id');
-			console.log('Lead ID:', leadId);
 			toggleLeadTable(leadId);
 			return;
 		}
@@ -1837,14 +1831,12 @@ export function setupAllEventListeners(deps) {
 		// Check if clicked element is lead table header (but not the expand button)
 		const leadTableHeader = e.target.closest('.lead-table-header');
 		if (leadTableHeader && !e.target.closest('.expand-btn')) {
-			console.log('Lead table header clicked!');
 			e.preventDefault();
 			e.stopPropagation();
 			// Find the expand button within this header
 			const headerExpandBtn = leadTableHeader.querySelector('.expand-btn');
 			if (headerExpandBtn) {
 				const leadId = headerExpandBtn.getAttribute('data-lead-id');
-				console.log('Lead ID from header:', leadId);
 				toggleLeadTable(leadId);
 			}
 		}
