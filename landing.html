@@ -1196,12 +1196,17 @@
 						console.error('⚠️ Exception stack:', activityError.stack);
 					}
 
+					console.log('🔄 About to send welcome email...');
+
 					// Send welcome email to the lead
 					try {
 						console.log('📧 Attempting to send welcome email...');
+						console.log('📧 Importing welcome email module...');
 
 						// Import the welcome email utility
 						const { sendWelcomeEmailSafe } = await import('/src/utils/welcome-email.js');
+
+						console.log('📧 Module imported successfully, sendWelcomeEmailSafe:', typeof sendWelcomeEmailSafe);
 
 						// Prepare lead and agent data
 						const leadForEmail = {
