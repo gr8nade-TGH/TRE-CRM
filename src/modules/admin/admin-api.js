@@ -1,13 +1,40 @@
 // Admin API Functions - EXACT COPY from script.js lines 6383-6541
 
+/**
+ * Get authentication headers for protected API requests
+ * @returns {Promise<Object>} Headers object with Authorization token
+ */
+async function getAuthHeaders() {
+	try {
+		// Get current session from Supabase
+		const { data: { session }, error } = await window.supabase.auth.getSession();
+
+		if (error || !session?.access_token) {
+			console.error('❌ No valid session found for API request');
+			throw new Error('Not authenticated - please log in');
+		}
+
+		return {
+			'Content-Type': 'application/json',
+			'Authorization': `Bearer ${session.access_token}`
+		};
+	} catch (error) {
+		console.error('❌ Error getting auth headers:', error);
+		throw error;
+	}
+}
+
 export async function loadUsers(options) {
 	const { realUsers, renderUsersTable } = options;
 
 	try {
 		console.log('Loading users from Supabase...');
 
-		// Call our serverless function to list users
-		const response = await fetch('/api/list-users');
+		// Call our serverless function to list users (requires authentication)
+		const response = await fetch('/api/list-users', {
+			method: 'GET',
+			headers: await getAuthHeaders()
+		});
 
 		if (!response.ok) {
 			const error = await response.json();
@@ -59,13 +86,10 @@ export async function createUser(userData, options) {
 	try {
 		console.log('Creating user with Supabase:', userData);
 
-		// Call our serverless function to create the user
-		// This uses the service role key on the backend
+		// Call our serverless function to create the user (requires manager/super_user role)
 		const response = await fetch('/api/create-user', {
 			method: 'POST',
-			headers: {
-				'Content-Type': 'application/json'
-			},
+			headers: await getAuthHeaders(),
 			body: JSON.stringify({
 				email: userData.email,
 				password: userData.password,
@@ -118,12 +142,10 @@ export async function updateUser(userId, userData, options) {
 		if (userData.instagram_url !== undefined) payload.instagram_url = userData.instagram_url;
 		if (userData.x_url !== undefined) payload.x_url = userData.x_url;
 
-		// Call our serverless function to update the user
+		// Call our serverless function to update the user (requires manager/super_user role)
 		const response = await fetch(`/api/update-user?userId=${userId}`, {
 			method: 'PUT',
-			headers: {
-				'Content-Type': 'application/json'
-			},
+			headers: await getAuthHeaders(),
 			body: JSON.stringify(payload)
 		});
 
@@ -163,12 +185,10 @@ export async function deleteUserFromAPI(userId, options) {
 	try {
 		console.log('Deleting user with Supabase:', userId);
 
-		// Call our serverless function to delete the user
+		// Call our serverless function to delete the user (requires manager/super_user role)
 		const response = await fetch(`/api/delete-user?userId=${userId}`, {
 			method: 'DELETE',
-			headers: {
-				'Content-Type': 'application/json'
-			}
+			headers: await getAuthHeaders()
 		});
 
 		if (!response.ok) {

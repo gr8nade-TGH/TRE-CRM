@@ -1,7 +1,12 @@
 /**
  * Vercel Serverless Function to list Supabase auth users
  * This uses the service role key which cannot be exposed in the frontend
+ *
+ * SECURITY: Protected endpoint - requires any authenticated user
  */
+
+import { createClient } from '@supabase/supabase-js';
+import { requireAuth } from './_auth-helper.js';
 
 export default async function handler(req, res) {
 	// Only allow GET requests
@@ -18,6 +23,13 @@ export default async function handler(req, res) {
 		return res.status(500).json({ error: 'Server configuration error' });
 	}
 
+	// Initialize Supabase client with service role key
+	const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+	// ✅ SECURITY: Any authenticated user can list users (read-only)
+	const authenticatedUser = await requireAuth(req, res, supabase);
+	if (!authenticatedUser) return; // Response already sent by requireAuth
+
 	try {
 		console.log('Fetching users from Supabase auth...');
 
@@ -33,14 +45,14 @@ export default async function handler(req, res) {
 		if (!response.ok) {
 			const error = await response.json();
 			console.error('Supabase error:', error);
-			return res.status(response.status).json({ 
-				error: error.message || error.msg || 'Failed to fetch users' 
+			return res.status(response.status).json({
+				error: error.message || error.msg || 'Failed to fetch users'
 			});
 		}
 
 		const data = await response.json();
 		const users = data.users || [];
-		
+
 		console.log(`✅ Fetched ${users.length} users`);
 
 		// Transform users to match our format
@@ -62,8 +74,8 @@ export default async function handler(req, res) {
 
 	} catch (error) {
 		console.error('Error fetching users:', error);
-		return res.status(500).json({ 
-			error: 'Internal server error: ' + error.message 
+		return res.status(500).json({
+			error: 'Internal server error: ' + error.message
 		});
 	}
 }

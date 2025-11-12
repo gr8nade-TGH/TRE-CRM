@@ -1,7 +1,12 @@
 /**
  * Vercel Serverless Function to delete Supabase auth users
  * This uses the service role key which cannot be exposed in the frontend
+ *
+ * SECURITY: Protected endpoint - requires manager or super_user role
  */
+
+import { createClient } from '@supabase/supabase-js';
+import { requireRole } from './_auth-helper.js';
 
 export default async function handler(req, res) {
 	// Only allow DELETE requests
@@ -17,6 +22,13 @@ export default async function handler(req, res) {
 		console.error('Missing SUPABASE_SERVICE_ROLE_KEY environment variable');
 		return res.status(500).json({ error: 'Server configuration error' });
 	}
+
+	// Initialize Supabase client with service role key
+	const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+	// ✅ SECURITY: Only managers and super_users can delete users
+	const authenticatedUser = await requireRole(req, res, supabase, ['manager', 'super_user']);
+	if (!authenticatedUser) return; // Response already sent by requireRole
 
 	// Get user ID from query parameter
 	const { userId } = req.query;
@@ -42,8 +54,8 @@ export default async function handler(req, res) {
 		if (!response.ok) {
 			const error = await response.json();
 			console.error('Supabase error:', error);
-			return res.status(response.status).json({ 
-				error: error.message || error.msg || 'Failed to delete user' 
+			return res.status(response.status).json({
+				error: error.message || error.msg || 'Failed to delete user'
 			});
 		}
 
@@ -57,8 +69,8 @@ export default async function handler(req, res) {
 
 	} catch (error) {
 		console.error('Error deleting user:', error);
-		return res.status(500).json({ 
-			error: 'Internal server error: ' + error.message 
+		return res.status(500).json({
+			error: 'Internal server error: ' + error.message
 		});
 	}
 }

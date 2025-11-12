@@ -15,6 +15,30 @@ export function getSupabase() {
 }
 
 /**
+ * Get authentication headers for protected API requests
+ * @returns {Promise<Object>} Headers object with Authorization token
+ */
+async function getAuthHeaders() {
+    try {
+        // Get current session from Supabase
+        const { data: { session }, error } = await window.supabase.auth.getSession();
+
+        if (error || !session?.access_token) {
+            console.error('❌ No valid session found for API request');
+            throw new Error('Not authenticated - please log in');
+        }
+
+        return {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session.access_token}`
+        };
+    } catch (error) {
+        console.error('❌ Error getting auth headers:', error);
+        throw error;
+    }
+}
+
+/**
  * Get interested leads count for a property
  * Counts unique leads who selected this property on Property Matcher page
  * @param {string} propertyId - Property ID
@@ -527,8 +551,11 @@ export async function getUsers() {
     try {
         console.log('📋 Fetching users from Supabase auth...');
 
-        // Call our serverless function to list users
-        const response = await fetch('/api/list-users');
+        // Call our serverless function to list users (requires authentication)
+        const response = await fetch('/api/list-users', {
+            method: 'GET',
+            headers: await getAuthHeaders()
+        });
 
         if (!response.ok) {
             const error = await response.json();
@@ -2309,11 +2336,11 @@ export async function sendEmail(emailData) {
     console.log('📧 sendEmail called with:', emailData);
 
     try {
+        // ✅ SECURITY: Include auth headers for protected templates
+        // Public templates (welcome_lead) don't require auth, but including it doesn't hurt
         const response = await fetch('/api/send-email', {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
+            headers: await getAuthHeaders(),
             body: JSON.stringify(emailData)
         });
 
