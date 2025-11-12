@@ -7,11 +7,7 @@
    EMAIL DASHBOARD LAYOUT
    ============================================ */
 
-/* Override admin-content padding for Emails page - Full width design */
-#emailsView .admin-content {
-    padding: 0 !important;
-    max-width: 100% !important;
-}
+/* Emails page uses standard admin-content padding (removed full-width override) */
 
 .email-dashboard-mc {
     display: flex;
@@ -461,11 +457,7 @@
 
 @media (max-width: 768px) {
 
-    /* Maintain full width on mobile */
-    #emailsView .admin-content {
-        padding: 0 !important;
-    }
-
+    /* Mobile responsive adjustments */
     .email-dashboard-mc {
         padding: 0;
     }
