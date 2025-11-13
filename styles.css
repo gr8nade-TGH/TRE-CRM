@@ -4218,7 +4218,7 @@ body {
 
 .lead-table-content.expanded {
 	max-height: 2000px;
-	padding: 20px 24px 24px 24px;
+	padding: 16px 24px 20px 24px;
 	overflow: visible;
 	background: #fafbfc;
 	/* Allow indicators to show when expanded */
@@ -4455,13 +4455,18 @@ body {
 	margin: 0;
 	background: transparent;
 	padding: 0;
-	padding-top: 40px;
-	padding-bottom: 8px;
-	/* Extra padding at top for optional indicators */
+	padding-top: 12px;
+	padding-bottom: 0;
+	/* Minimal top padding - indicators will add their own space */
 	width: 100%;
 	box-sizing: border-box;
 	min-width: 0;
 	overflow: visible;
+}
+
+/* Add extra top padding only when indicators are present */
+.progress-bar-container:has(.optional-indicator) {
+	padding-top: 38px;
 }
 
 .progress-bar {
@@ -6162,15 +6167,15 @@ main#appRoot {
 }
 
 .form-section {
-	margin-bottom: 20px;
+	margin-bottom: 16px;
 }
 
 .form-section:first-child {
-	margin-top: 16px;
+	margin-top: 12px;
 }
 
 .form-section h4 {
-	margin: 0 0 12px 0;
+	margin: 0 0 10px 0;
 	color: var(--ink);
 	font-size: 13px;
 	font-weight: 600;
