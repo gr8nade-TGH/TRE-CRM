@@ -4087,13 +4087,21 @@ body {
 
 .lead-details {
 	display: flex;
-	align-items: center;
+	flex-direction: column;
+	gap: 6px;
+	align-items: flex-start;
 }
 
 .lead-names {
 	display: flex;
 	align-items: center;
-	gap: 16px;
+	gap: 8px;
+}
+
+.lead-names .arrow {
+	color: #94a3b8;
+	font-weight: 400;
+	font-size: 14px;
 }
 
 .agent-label,
@@ -4105,41 +4113,67 @@ body {
 	letter-spacing: 0.5px;
 }
 
-.agent-name,
-.lead-name {
+.agent-name {
 	font-weight: 600;
+	color: #64748b;
+	font-size: 13px;
+}
+
+.lead-name {
+	font-weight: 700;
 	color: #1e293b;
 	font-size: 14px;
 }
 
-.progress-center {
+.lead-meta {
 	display: flex;
 	align-items: center;
-	justify-content: center;
-	flex: 1;
-}
-
-.progress-info {
-	display: flex;
-	align-items: baseline;
 	gap: 8px;
-	font-size: 13px;
+	flex-wrap: wrap;
+}
+
+.health-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 3px 10px;
+	border-radius: 12px;
+	font-size: 11px;
 	font-weight: 600;
-	text-align: center;
-	white-space: nowrap;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
 }
 
-.progress-percentage {
-	font-size: 16px;
-	font-weight: 700;
-	color: #3b82f6;
+.health-badge .health-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	display: inline-block;
 }
 
-.progress-step-name {
-	font-size: 13px;
+.match-score-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 3px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	color: #92400e;
+	border: 1px solid #fbbf2440;
+}
+
+.step-progress {
+	font-size: 11px;
 	font-weight: 500;
 	color: #64748b;
+	padding: 3px 8px;
+	background: #f1f5f9;
+	border-radius: 10px;
 }
+
+/* Removed .progress-center - no longer used in redesigned header */
 
 .lead-actions {
 	display: flex;
@@ -4301,19 +4335,25 @@ body {
 	}
 
 	.lead-info,
-	.progress-center,
 	.lead-actions {
 		width: 100%;
 		justify-content: flex-start;
 	}
 
-	.progress-info {
-		font-size: 12px;
-		padding: 4px 8px;
-	}
-
 	.last-updated {
 		font-size: 11px;
+	}
+
+	.lead-meta {
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.health-badge,
+	.match-score-badge,
+	.step-progress {
+		font-size: 10px;
+		padding: 2px 6px;
 	}
 
 	.lead-table-content.expanded {

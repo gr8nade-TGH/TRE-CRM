@@ -18,6 +18,29 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 
+	// Health status rendering
+	const healthStatus = lead.health_status || 'green';
+	const healthLabels = {
+		green: 'Healthy',
+		yellow: 'Warm',
+		red: 'At Risk',
+		closed: 'Closed',
+		lost: 'Lost'
+	};
+	const healthColors = {
+		green: '#25d366',
+		yellow: '#ffd84d',
+		red: '#ff3b30',
+		closed: '#10b981',
+		lost: '#ef4444'
+	};
+	const healthLabel = healthLabels[healthStatus] || 'Unknown';
+	const healthColor = healthColors[healthStatus] || '#6b7280';
+
+	// Match score (if available)
+	const matchScore = lead.match_score || lead.smart_match_score || null;
+	const matchScoreDisplay = matchScore ? `⭐ ${matchScore}%` : '';
+
 	// Optional indicators (non-blocking achievements)
 	const hasWelcomeEmailSent = lead.welcomeEmailSent || false;  // Step 1 indicator
 	const hasLeadResponded = lead.leadResponded || false;        // Step 2 indicator
@@ -36,16 +59,19 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 				</div>
 				<div class="lead-details">
 					<div class="lead-names">
-						<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
-						<span class="lead-label">Lead:</span> <span class="lead-name">${lead.leadName}</span>
+						<span class="agent-name">${lead.agentName}</span>
+						<span class="arrow">→</span>
+						<span class="lead-name">${lead.leadName}</span>
+					</div>
+					<div class="lead-meta">
+						<span class="health-badge" style="background-color: ${healthColor}20; color: ${healthColor}; border: 1px solid ${healthColor}40;">
+							<span class="health-dot" style="background-color: ${healthColor};"></span>
+							${healthLabel}
+						</span>
+						${matchScoreDisplay ? `<span class="match-score-badge">${matchScoreDisplay}</span>` : ''}
+						<span class="step-progress">Step ${lead.currentStep} of ${progressSteps.length}</span>
 					</div>
 				</div>
-			</div>
-			<div class="progress-center">
-				<span class="progress-info">
-					<span class="progress-percentage">${progressPercentage}%</span>
-					<span class="progress-step-name">${currentStepName}</span>
-				</span>
 			</div>
 			<div class="lead-actions">
 				<span class="last-updated">${formatDate(lead.lastUpdated)}</span>
