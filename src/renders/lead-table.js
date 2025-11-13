@@ -42,10 +42,13 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 				</div>
 			</div>
 			<div class="progress-center">
-				<span class="progress-info">${progressPercentage}% Complete - Current Step: ${currentStepName}</span>
+				<span class="progress-info">
+					<span class="progress-percentage">${progressPercentage}%</span>
+					<span class="progress-step-name">${currentStepName}</span>
+				</span>
 			</div>
 			<div class="lead-actions">
-				<span class="last-updated">Last Update: ${formatDate(lead.lastUpdated)}</span>
+				<span class="last-updated">${formatDate(lead.lastUpdated)}</span>
 				<button class="expand-btn" data-lead-id="${lead.id}">
 					<span class="expand-icon">${isExpanded ? '▼' : '▶'}</span>
 				</button>
