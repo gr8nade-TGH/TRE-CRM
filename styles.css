@@ -4218,7 +4218,7 @@ body {
 
 .lead-table-content.expanded {
 	max-height: 2000px;
-	padding: 30px 24px;
+	padding: 20px 24px 24px 24px;
 	overflow: visible;
 	background: #fafbfc;
 	/* Allow indicators to show when expanded */
@@ -4452,10 +4452,11 @@ body {
 	height: auto;
 	display: flex;
 	align-items: center;
-	margin: 24px 0;
+	margin: 0;
 	background: transparent;
 	padding: 0;
-	padding-top: 45px;
+	padding-top: 40px;
+	padding-bottom: 8px;
 	/* Extra padding at top for optional indicators */
 	width: 100%;
 	box-sizing: border-box;
@@ -4580,14 +4581,15 @@ body {
 }
 
 .progress-step-label {
-	font-size: 11px;
+	font-size: 10px;
 	font-weight: 600;
 	color: #64748b;
-	margin-top: 8px;
+	margin-top: 10px;
 	text-align: center;
-	max-width: 85px;
-	line-height: 1.3;
-	white-space: nowrap;
+	max-width: 90px;
+	line-height: 1.2;
+	white-space: normal;
+	word-wrap: break-word;
 }
 
 .progress-step.completed .progress-step-label {
@@ -4627,12 +4629,13 @@ body {
 }
 
 .optional-indicator .label {
-	font-size: 9px;
-	font-weight: 600;
+	font-size: 8px;
+	font-weight: 700;
 	white-space: nowrap;
 	text-align: center;
 	text-transform: uppercase;
-	letter-spacing: 0.3px;
+	letter-spacing: 0.5px;
+	line-height: 1.1;
 }
 
 /* Clickable indicator */
@@ -6159,13 +6162,18 @@ main#appRoot {
 }
 
 .form-section {
-	margin-bottom: 24px;
+	margin-bottom: 20px;
+}
+
+.form-section:first-child {
+	margin-top: 16px;
 }
 
 .form-section h4 {
-	margin: 0 0 16px 0;
+	margin: 0 0 12px 0;
 	color: var(--ink);
-	font-size: 14px;
+	font-size: 13px;
+	font-weight: 600;
 	text-align: center;
 }
 
