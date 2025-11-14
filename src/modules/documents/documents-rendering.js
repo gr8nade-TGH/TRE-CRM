@@ -5,6 +5,8 @@
  * @module documents/rendering
  */
 
+import { initProgressFilters } from './progress-filters.js';
+
 /**
  * Render documents (delegates to manager or agent view)
  * EXACT COPY from script.js (lines 2362-2368)
@@ -155,10 +157,12 @@ export async function renderManagerDocuments(options) {
 			};
 		});
 
-		// Render progress table with real data
-		renderProgressTable('documentsTbody', transformedLeads);
+		// Initialize progress filters with callback to re-render
+		initProgressFilters(transformedLeads, (filteredLeads) => {
+			renderProgressTable('documentsTbody', filteredLeads);
+		});
 
-		// Update lead count badge
+		// Update lead count badge (total, not filtered)
 		const leadCountBadge = document.getElementById('leadCountBadge');
 		if (leadCountBadge) {
 			const count = transformedLeads.length;
@@ -296,10 +300,12 @@ export async function renderAgentDocuments(options) {
 			};
 		});
 
-		// Render progress table with real data
-		renderProgressTable('agentDocumentsTbody', transformedLeads);
+		// Initialize progress filters with callback to re-render
+		initProgressFilters(transformedLeads, (filteredLeads) => {
+			renderProgressTable('agentDocumentsTbody', filteredLeads);
+		});
 
-		// Update lead count badge
+		// Update lead count badge (total, not filtered)
 		const agentLeadCountBadge = document.getElementById('agentLeadCountBadge');
 		if (agentLeadCountBadge) {
 			const count = transformedLeads.length;

@@ -729,6 +729,51 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	// Quick action buttons (event delegation)
+	document.addEventListener('click', (e) => {
+		const quickActionBtn = e.target.closest('.quick-action-btn');
+		if (quickActionBtn) {
+			e.stopPropagation(); // Prevent expanding the lead card
+			const action = quickActionBtn.dataset.action;
+			const leadId = quickActionBtn.dataset.leadId;
+
+			// Find the lead data
+			const leads = state.leads || [];
+			const lead = leads.find(l => l.id === leadId);
+
+			if (!lead) {
+				console.warn('Lead not found for quick action:', leadId);
+				return;
+			}
+
+			switch (action) {
+				case 'call':
+					if (lead.phone) {
+						window.location.href = `tel:${lead.phone}`;
+					} else {
+						toast('No phone number available for this lead');
+					}
+					break;
+
+				case 'email':
+					if (lead.email) {
+						window.location.href = `mailto:${lead.email}`;
+					} else {
+						toast('No email address available for this lead');
+					}
+					break;
+
+				case 'sms':
+					if (lead.phone) {
+						window.location.href = `sms:${lead.phone}`;
+					} else {
+						toast('No phone number available for this lead');
+					}
+					break;
+			}
+		}
+	});
+
 	if (clearDocumentsSearch) {
 		// Clear search event
 		clearDocumentsSearch.addEventListener('click', () => {
