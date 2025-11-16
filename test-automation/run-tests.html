@@ -1,9 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TRE CRM - Backend Test Suite</title>
+
+    <!-- Supabase JS Client -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+
     <style>
         * {
             margin: 0;
@@ -230,10 +235,13 @@
         }
 
         @keyframes spin {
-            to { transform: rotate(360deg); }
+            to {
+                transform: rotate(360deg);
+            }
         }
     </style>
 </head>
+
 <body>
     <div class="container">
         <h1>
@@ -255,7 +263,7 @@
 
         <div class="config-section">
             <h2>⚙️ Test Configuration</h2>
-            
+
             <div class="field">
                 <label for="testEmail">Test Email Address</label>
                 <input type="email" id="testEmail" value="tucker.harris@gmail.com" placeholder="your.email@example.com">
@@ -288,6 +296,31 @@
             Click "Run Tests" to begin the automated test suite.
         </div>
     </div>
+
+    <!-- Initialize Supabase Client -->
+    <script>
+        // Supabase configuration
+        const SUPABASE_URL = 'https://mevirooooypfjbsrmzrk.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA';
+
+        // Initialize Supabase client when library loads
+        (function initSupabase() {
+            // Check if client is already initialized
+            if (window.supabase && window.supabase.auth) {
+                console.log('✅ Supabase client already initialized');
+                return;
+            }
+
+            // Check if the library object exists (from CDN)
+            if (typeof supabase !== 'undefined' && supabase.createClient) {
+                window.supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase client initialized for test suite');
+            } else {
+                console.log('⏳ Waiting for Supabase library to load...');
+                setTimeout(initSupabase, 50);
+            }
+        })();
+    </script>
 
     <script type="module">
         import { runBackendTests } from './backend-test-suite.js';
@@ -358,5 +391,5 @@
         });
     </script>
 </body>
-</html>
 
+</html>

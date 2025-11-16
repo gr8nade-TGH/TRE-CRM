@@ -1,6 +1,6 @@
 /**
  * Automated Backend Test Suite for TRE CRM
- * 
+ *
  * This script tests the complete backend flow:
  * 1. Create test lead
  * 2. Send welcome email
@@ -9,7 +9,7 @@
  * 5. Verify activity logging
  * 6. Check progress tracking
  * 7. Test Property Matcher session creation
- * 
+ *
  * Usage:
  * 1. Open browser console on https://tre-crm.vercel.app
  * 2. Make sure you're logged in as an agent or manager
@@ -19,7 +19,13 @@
  * 6. Check your email inbox for test emails
  */
 
-import { getSupabase } from '../src/api/supabase-api.js';
+// Get Supabase client from window (initialized in run-tests.html)
+function getSupabase() {
+    if (!window.supabase) {
+        throw new Error('Supabase client not initialized. Make sure the Supabase library is loaded.');
+    }
+    return window.supabase;
+}
 
 // Test configuration
 const TEST_CONFIG = {
