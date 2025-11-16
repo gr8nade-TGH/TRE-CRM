@@ -18,6 +18,29 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
 
+	// Health status rendering
+	const healthStatus = lead.health_status || 'green';
+	const healthLabels = {
+		green: 'Healthy',
+		yellow: 'Warm',
+		red: 'At Risk',
+		closed: 'Closed',
+		lost: 'Lost'
+	};
+	const healthColors = {
+		green: '#25d366',
+		yellow: '#ffd84d',
+		red: '#ff3b30',
+		closed: '#10b981',
+		lost: '#ef4444'
+	};
+	const healthLabel = healthLabels[healthStatus] || 'Unknown';
+	const healthColor = healthColors[healthStatus] || '#6b7280';
+
+	// Match score (if available)
+	const matchScore = lead.match_score || lead.smart_match_score || null;
+	const matchScoreDisplay = matchScore ? `⭐ ${matchScore}%` : '';
+
 	// Optional indicators (non-blocking achievements)
 	const hasWelcomeEmailSent = lead.welcomeEmailSent || false;  // Step 1 indicator
 	const hasLeadResponded = lead.leadResponded || false;        // Step 2 indicator
@@ -36,16 +59,40 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 				</div>
 				<div class="lead-details">
 					<div class="lead-names">
-						<span class="agent-label">Agent:</span> <span class="agent-name">${lead.agentName}</span>
-						<span class="lead-label">Lead:</span> <span class="lead-name">${lead.leadName}</span>
+						<span class="agent-name">${lead.agentName}</span>
+						<span class="arrow">→</span>
+						<span class="lead-name">${lead.leadName}</span>
+					</div>
+					<div class="lead-meta">
+						<span class="health-badge" style="background-color: ${healthColor}20; color: ${healthColor}; border: 1px solid ${healthColor}40;">
+							<span class="health-dot" style="background-color: ${healthColor};"></span>
+							${healthLabel}
+						</span>
+						${matchScoreDisplay ? `<span class="match-score-badge">${matchScoreDisplay}</span>` : ''}
+						<span class="step-progress">Step ${lead.currentStep} of ${progressSteps.length}</span>
 					</div>
 				</div>
 			</div>
-			<div class="progress-center">
-				<span class="progress-info">${progressPercentage}% Complete - Current Step: ${currentStepName}</span>
-			</div>
 			<div class="lead-actions">
-				<span class="last-updated">Last Update: ${formatDate(lead.lastUpdated)}</span>
+				<div class="quick-actions">
+					<button class="quick-action-btn" data-action="call" data-lead-id="${lead.id}" title="Call Lead">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+						</svg>
+					</button>
+					<button class="quick-action-btn" data-action="email" data-lead-id="${lead.id}" title="Email Lead">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+							<polyline points="22,6 12,13 2,6"></polyline>
+						</svg>
+					</button>
+					<button class="quick-action-btn" data-action="sms" data-lead-id="${lead.id}" title="Text Lead">
+						<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+						</svg>
+					</button>
+				</div>
+				<span class="last-updated">${formatDate(lead.lastUpdated)}</span>
 				<button class="expand-btn" data-lead-id="${lead.id}">
 					<span class="expand-icon">${isExpanded ? '▼' : '▶'}</span>
 				</button>

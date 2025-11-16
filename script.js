@@ -837,7 +837,7 @@ let api, renderLeads, renderSpecials;
 			}
 
 			// Fetch template data
-			const { data: template } = await SupabaseAPI.supabase
+			const { data: template } = await window.supabase
 				.from('email_templates')
 				.select('*')
 				.eq('id', templateId)
@@ -885,7 +885,7 @@ let api, renderLeads, renderSpecials;
 				</div>
 			`;
 
-			showModal('Email Preview', modalContent);
+			showModal('Email Preview', modalContent, { wide: true });
 		} catch (error) {
 			console.error('Error viewing email:', error);
 			toast('Error loading email content', 'error');

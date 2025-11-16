@@ -60,18 +60,18 @@ async function wasGuestCardRecentlySent(leadId, propertyId, supabase) {
  */
 function formatLeadPreferences(lead) {
     const prefs = lead.preferences || {};
-    
-    const budget = prefs.budget 
-        ? `$${prefs.budget}/month` 
-        : (prefs.budget_min && prefs.budget_max 
+
+    const budget = prefs.budget
+        ? `$${prefs.budget}/month`
+        : (prefs.budget_min && prefs.budget_max
             ? `$${prefs.budget_min} - $${prefs.budget_max}/month`
             : 'Not specified');
-    
+
     const bedrooms = prefs.beds || lead.bedrooms || 'Not specified';
     const bathrooms = prefs.baths || lead.bathrooms || 'Not specified';
-    
+
     const moveInDate = prefs.move_in_date || lead.move_in_date || 'Flexible';
-    
+
     return {
         budget,
         bedrooms,
@@ -96,9 +96,9 @@ async function sendSingleGuestCard({ lead, property, agent, smartMatchEmailLogId
         // Validate property owner email
         if (!property.contact_email) {
             console.warn(`⚠️ Property ${property.id} has no contact_email - skipping guest card`);
-            return { 
-                success: false, 
-                skipped: true, 
+            return {
+                success: false,
+                skipped: true,
                 reason: 'no_owner_email',
                 propertyId: property.id,
                 propertyName: property.name || property.community_name
@@ -109,9 +109,9 @@ async function sendSingleGuestCard({ lead, property, agent, smartMatchEmailLogId
         const recentlySent = await wasGuestCardRecentlySent(lead.id, property.id, supabase);
         if (recentlySent) {
             console.log(`⏭️ Guest card already sent for property ${property.id} and lead ${lead.id} - skipping`);
-            return { 
-                success: false, 
-                skipped: true, 
+            return {
+                success: false,
+                skipped: true,
                 reason: 'duplicate_prevention',
                 propertyId: property.id,
                 propertyName: property.name || property.community_name
@@ -137,13 +137,21 @@ async function sendSingleGuestCard({ lead, property, agent, smartMatchEmailLogId
             agentPhone: agent.phone || '(555) 123-4567'
         };
 
-        // Send email via API
+        // Send email via API (requires authentication)
         console.log(`📧 Sending guest card to ${property.contact_email} for property ${property.id}`);
-        
+
+        // Get auth headers
+        const { data: { session }, error: sessionError } = await window.supabase.auth.getSession();
+
+        if (sessionError || !session?.access_token) {
+            throw new Error('Not authenticated - please log in');
+        }
+
         const response = await fetch('/api/send-email', {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${session.access_token}`
             },
             body: JSON.stringify({
                 templateId: 'guest_card_email',
@@ -338,12 +346,12 @@ export async function sendGuestCardsSafe(params) {
         return await sendGuestCards(params);
     } catch (error) {
         console.error('❌ Error in sendGuestCardsSafe:', error);
-        return { 
-            sent: 0, 
-            skipped: 0, 
-            failed: 0, 
-            details: [], 
-            error: error.message 
+        return {
+            sent: 0,
+            skipped: 0,
+            failed: 0,
+            details: [],
+            error: error.message
         };
     }
 }

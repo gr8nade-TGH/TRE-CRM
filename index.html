@@ -752,6 +752,66 @@
 						</div>
 					</div>
 
+					<!-- Lead Progress Controls -->
+					<div class="lead-progress-controls">
+						<div class="control-row">
+							<!-- Search -->
+							<div class="search-control">
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2">
+									<circle cx="11" cy="11" r="8"></circle>
+									<path d="m21 21-4.35-4.35"></path>
+								</svg>
+								<input type="text" id="progressSearchInput" placeholder="Search leads..."
+									class="search-input">
+							</div>
+
+							<!-- Filter by Health -->
+							<div class="filter-control">
+								<label class="filter-label">Health:</label>
+								<select id="progressHealthFilter" class="filter-select">
+									<option value="all">All</option>
+									<option value="red">🔴 At Risk</option>
+									<option value="yellow">🟡 Warm</option>
+									<option value="green">🟢 Healthy</option>
+									<option value="closed">✓ Closed</option>
+									<option value="lost">✗ Lost</option>
+								</select>
+							</div>
+
+							<!-- Filter by Step -->
+							<div class="filter-control">
+								<label class="filter-label">Step:</label>
+								<select id="progressStepFilter" class="filter-select">
+									<option value="all">All Steps</option>
+									<option value="1">Step 1: Lead Joined</option>
+									<option value="2">Step 2: Smart Match Sent</option>
+									<option value="3">Step 3: Guest Card Sent</option>
+									<option value="4">Step 4: Property Selected</option>
+									<option value="5">Step 5: Lease Sent</option>
+									<option value="6">Step 6: Lease Finalized</option>
+								</select>
+							</div>
+
+							<!-- Sort -->
+							<div class="filter-control">
+								<label class="filter-label">Sort:</label>
+								<select id="progressSortSelect" class="filter-select">
+									<option value="recent">Most Recent</option>
+									<option value="oldest">Oldest First</option>
+									<option value="health">Health (Worst First)</option>
+									<option value="score">Match Score (Best First)</option>
+									<option value="step">Progress (Furthest First)</option>
+								</select>
+							</div>
+
+							<!-- Results Count -->
+							<div class="results-count">
+								<span id="progressResultsCount">0 leads</span>
+							</div>
+						</div>
+					</div>
+
 					<!-- Lead Tables Container -->
 					<div id="agentDocumentsTbody" class="documents-container">
 						<!-- Lead tables will be generated here -->

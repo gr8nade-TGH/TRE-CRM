@@ -3,6 +3,10 @@
  *
  * This function handles sending emails through Resend and logs them to the database.
  *
+ * SECURITY: Partial protection
+ * - Public templates (welcome_lead): No authentication required (for landing pages)
+ * - All other templates: Requires authentication
+ *
  * Request Body:
  * {
  *   templateId: string,           // Email template ID from email_templates table
@@ -23,6 +27,7 @@
  */
 
 import { createClient } from '@supabase/supabase-js';
+import { requireAuth } from './_auth-helper.js';
 
 export default async function handler(req, res) {
 	// Only allow POST requests
@@ -64,6 +69,19 @@ export default async function handler(req, res) {
 		// Validate required fields
 		if (!templateId || !recipientEmail) {
 			return res.status(400).json({ error: 'Missing required fields: templateId, recipientEmail' });
+		}
+
+		// ✅ SECURITY: Check if authentication is required for this template
+		const publicTemplates = ['welcome_lead']; // Templates that can be sent without authentication
+
+		if (!publicTemplates.includes(templateId)) {
+			// Require authentication for non-public templates
+			const authenticatedUser = await requireAuth(req, res, supabase);
+			if (!authenticatedUser) return; // Response already sent by requireAuth
+
+			console.log('📧 Authenticated email send by:', authenticatedUser.email);
+		} else {
+			console.log('📧 Public template send (no auth required):', templateId);
 		}
 
 		console.log('📧 Sending email:', { templateId, recipientEmail, recipientName, fromEmail });
