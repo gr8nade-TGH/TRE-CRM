@@ -84,10 +84,9 @@ async function testCreateLead(supabase, agentId) {
         },
         source: 'automated_test',
         assigned_agent_id: agentId,
-        found_by_agent_id: agentId,
-        health_status: 'green',
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        found_by_agent_id: agentId
+        // Note: health_status will use database default value
+        // created_at and updated_at will use database defaults
     };
 
     console.log('📝 Creating test lead:', leadData);
