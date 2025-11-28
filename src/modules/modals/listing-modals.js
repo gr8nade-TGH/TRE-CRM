@@ -303,8 +303,7 @@ export async function openListingEditModal(property, options) {
 	document.getElementById('editCommissionPct').value = commission;
 	document.getElementById('editWebsite').value = fullProperty.website || fullProperty.leasing_link || '';
 	document.getElementById('editAmenities').value = Array.isArray(fullProperty.amenities) ? fullProperty.amenities.join(', ') : '';
-	document.getElementById('editSpecials').value = fullProperty.specials_text || '';
-	document.getElementById('editBonus').value = fullProperty.bonus_text || '';
+	// Note: editSpecials and editBonus fields removed - specials are now displayed in read-only section
 	document.getElementById('editIsPUMI').checked = fullProperty.is_pumi || fullProperty.isPUMI || false;
 	document.getElementById('editMarkForReview').checked = fullProperty.mark_for_review || fullProperty.markForReview || false;
 
