@@ -10,6 +10,7 @@
 	<link rel="stylesheet" href="auth-styles.css" />
 	<link rel="stylesheet" href="src/styles/mission-control.css" />
 	<link rel="stylesheet" href="src/styles/emails-mission-control.css" />
+	<link rel="stylesheet" href="src/styles/property-edit-modal.css" />
 
 	<!-- Vercel Speed Insights (CDN) -->
 	<script>
@@ -1872,161 +1873,337 @@
 					<h3>⚙️ Edit Property - <span id="editListingName">Property Name</span></h3>
 					<button id="closeListingEdit" class="icon-btn" aria-label="Close">×</button>
 				</div>
-				<div class="modal-body">
+				<div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
 					<form id="listingEditForm">
-						<!-- Property Flags -->
-						<div class="form-row">
-							<div class="form-group">
-								<label class="checkbox-label">
-									<input type="checkbox" id="editIsPUMI">
-									<span class="checkmark"></span>
-									Mark as PUMI
-								</label>
-							</div>
 
-							<div class="form-group">
-								<label class="checkbox-label">
-									<input type="checkbox" id="editMarkForReview">
-									<span class="checkmark"></span>
-									Mark for Review
-								</label>
-							</div>
-						</div>
+						<!-- Section 1: Property Name & Address -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="property-name-address">
+								<span class="section-icon">🏢</span>
+								<span class="section-title">Property Name & Address</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-property-name-address">
+								<div class="form-group">
+									<label for="editPropertyName">Property Name <span
+											style="color: #ef4444;">*</span></label>
+									<input type="text" id="editPropertyName" required
+										placeholder="e.g., Linden at The Rim">
+								</div>
 
-						<!-- Property Name -->
-						<div class="form-group">
-							<label for="editPropertyName">Property Name <span style="color: #ef4444;">*</span></label>
-							<input type="text" id="editPropertyName" required placeholder="e.g., Linden at The Rim">
-						</div>
+								<div class="form-group">
+									<label for="editStreetAddress">Street Address <span
+											style="color: #ef4444;">*</span></label>
+									<input type="text" id="editStreetAddress" required
+										placeholder="e.g., 15022 Vance Jackson Rd">
+								</div>
 
-						<!-- Address Fields -->
-						<div class="form-group">
-							<label for="editStreetAddress">Street Address <span style="color: #ef4444;">*</span></label>
-							<input type="text" id="editStreetAddress" required
-								placeholder="e.g., 15022 Vance Jackson Rd">
-						</div>
+								<div class="form-row">
+									<div class="form-group" style="flex: 2;">
+										<label for="editCity">City <span style="color: #ef4444;">*</span></label>
+										<input type="text" id="editCity" required placeholder="Auto-filled from address"
+											readonly style="background-color: #f9fafb;">
+									</div>
 
-						<div class="form-row">
-							<div class="form-group" style="flex: 2;">
-								<label for="editCity">City <span style="color: #ef4444;">*</span></label>
-								<input type="text" id="editCity" required placeholder="Auto-filled from address"
-									readonly style="background-color: #f9fafb;">
-							</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="editState">State <span style="color: #ef4444;">*</span></label>
+										<select id="editState" required disabled style="background-color: #f9fafb;">
+											<option value="TX">TX</option>
+											<option value="OK">OK</option>
+											<option value="LA">LA</option>
+											<option value="AR">AR</option>
+										</select>
+									</div>
 
-							<div class="form-group" style="flex: 1;">
-								<label for="editState">State <span style="color: #ef4444;">*</span></label>
-								<select id="editState" required disabled style="background-color: #f9fafb;">
-									<option value="TX">TX</option>
-									<option value="OK">OK</option>
-									<option value="LA">LA</option>
-									<option value="AR">AR</option>
-								</select>
-							</div>
+									<div class="form-group" style="flex: 1;">
+										<label for="editZipCode">Zip Code <span style="color: #ef4444;">*</span></label>
+										<input type="text" id="editZipCode" required placeholder="Auto-filled"
+											pattern="[0-9]{5}" readonly style="background-color: #f9fafb;">
+									</div>
+								</div>
 
-							<div class="form-group" style="flex: 1;">
-								<label for="editZipCode">Zip Code <span style="color: #ef4444;">*</span></label>
-								<input type="text" id="editZipCode" required placeholder="Auto-filled"
-									pattern="[0-9]{5}" readonly style="background-color: #f9fafb;">
+								<div class="form-group">
+									<label for="editWebsite">Website</label>
+									<input type="url" id="editWebsite" placeholder="https://property-website.com">
+								</div>
 							</div>
 						</div>
 
-						<div class="form-group">
-							<label for="editPhone">Phone</label>
-							<input type="tel" id="editPhone" placeholder="(210) 555-1234">
-						</div>
+						<!-- Section 2: Contact Info -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="contact-info">
+								<span class="section-icon">📞</span>
+								<span class="section-title">Contact Information</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-contact-info">
+								<div class="form-group">
+									<label for="editPhone">Phone</label>
+									<input type="tel" id="editPhone" placeholder="(210) 555-1234">
+								</div>
 
-						<!-- Contact Info Section -->
-						<h4 style="margin-top: 24px; margin-bottom: 12px; color: #3b82f6;">📞 Contact Information</h4>
-						<div class="form-group">
-							<label for="editContactName">Contact Name</label>
-							<input type="text" id="editContactName" placeholder="e.g., John Smith">
-						</div>
+								<div class="form-group">
+									<label for="editContactName">Contact Name</label>
+									<input type="text" id="editContactName" placeholder="e.g., John Smith">
+								</div>
 
-						<div class="form-group">
-							<label for="editContactEmail">Contact Email</label>
-							<input type="email" id="editContactEmail" placeholder="e.g., leasing@property.com">
-						</div>
+								<div class="form-group">
+									<label for="editContactEmail">Contact Email</label>
+									<input type="email" id="editContactEmail" placeholder="e.g., leasing@property.com">
+								</div>
 
-						<div class="form-group">
-							<label for="editOfficeHours">Office Hours</label>
-							<input type="text" id="editOfficeHours" placeholder="e.g., Mon-Fri 9am-6pm">
-						</div>
-
-						<!-- Active Specials Section -->
-						<h4 style="margin-top: 24px; margin-bottom: 12px; color: #3b82f6;">🔥 Active Specials</h4>
-						<div id="editPropertySpecialsList" style="margin-bottom: 16px;">
-							<!-- Specials will be populated here -->
-						</div>
-
-						<!-- Rent Range (Auto-calculated from units) -->
-						<div class="form-row">
-							<div class="form-group">
-								<label for="editRentMin">Min Rent (Auto-calculated)</label>
-								<input type="number" id="editRentMin" min="0" placeholder="Calculated from units"
-									readonly style="background-color: #f9fafb;">
-							</div>
-
-							<div class="form-group">
-								<label for="editRentMax">Max Rent (Auto-calculated)</label>
-								<input type="number" id="editRentMax" min="0" placeholder="Calculated from units"
-									readonly style="background-color: #f9fafb;">
+								<div class="form-group">
+									<label for="editOfficeHours">Office Hours</label>
+									<input type="text" id="editOfficeHours" placeholder="e.g., Mon-Fri 9am-6pm">
+								</div>
 							</div>
 						</div>
 
-						<!-- Bed/Bath Range -->
-						<div class="form-row">
-							<div class="form-group">
-								<label for="editBedsMin">Min Beds</label>
-								<input type="number" id="editBedsMin" min="0" placeholder="1">
-							</div>
-
-							<div class="form-group">
-								<label for="editBedsMax">Max Beds</label>
-								<input type="number" id="editBedsMax" min="0" placeholder="3">
-							</div>
-						</div>
-
-						<div class="form-row">
-							<div class="form-group">
-								<label for="editBathsMin">Min Baths</label>
-								<input type="number" id="editBathsMin" min="0" step="0.5" placeholder="1">
-							</div>
-
-							<div class="form-group">
-								<label for="editBathsMax">Max Baths</label>
-								<input type="number" id="editBathsMax" min="0" step="0.5" placeholder="2">
+						<!-- Section 3: Active Specials -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="active-specials">
+								<span class="section-icon">🔥</span>
+								<span class="section-title">Active Specials</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-active-specials">
+								<div id="editPropertySpecialsList" style="margin-bottom: 16px;">
+									<!-- Specials will be populated here -->
+								</div>
 							</div>
 						</div>
 
-						<!-- Commission -->
-						<div class="form-row">
-							<div class="form-group">
-								<label for="editCommissionPct">Commission %</label>
-								<input type="number" id="editCommissionPct" min="0" max="10" step="0.1"
-									placeholder="2.0">
+						<!-- Section 4: Unit Details & Pricing -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="unit-details">
+								<span class="section-icon">🏠</span>
+								<span class="section-title">Unit Details & Pricing</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-unit-details">
+								<!-- Rent Range (Auto-calculated from units) -->
+								<div class="form-row">
+									<div class="form-group">
+										<label for="editRentMin">Min Rent (Auto-calculated)</label>
+										<input type="number" id="editRentMin" min="0"
+											placeholder="Calculated from units" readonly
+											style="background-color: #f9fafb;">
+									</div>
+
+									<div class="form-group">
+										<label for="editRentMax">Max Rent (Auto-calculated)</label>
+										<input type="number" id="editRentMax" min="0"
+											placeholder="Calculated from units" readonly
+											style="background-color: #f9fafb;">
+									</div>
+								</div>
+
+								<!-- Bed/Bath Range (Auto-calculated from floor plans) -->
+								<div class="form-row">
+									<div class="form-group">
+										<label for="editBedsMin">Min Beds (Auto-calculated)</label>
+										<input type="number" id="editBedsMin" min="0"
+											placeholder="Calculated from floor plans" readonly
+											style="background-color: #f9fafb;">
+									</div>
+
+									<div class="form-group">
+										<label for="editBedsMax">Max Beds (Auto-calculated)</label>
+										<input type="number" id="editBedsMax" min="0"
+											placeholder="Calculated from floor plans" readonly
+											style="background-color: #f9fafb;">
+									</div>
+								</div>
+
+								<div class="form-row">
+									<div class="form-group">
+										<label for="editBathsMin">Min Baths (Auto-calculated)</label>
+										<input type="number" id="editBathsMin" min="0" step="0.5"
+											placeholder="Calculated from floor plans" readonly
+											style="background-color: #f9fafb;">
+									</div>
+
+									<div class="form-group">
+										<label for="editBathsMax">Max Baths (Auto-calculated)</label>
+										<input type="number" id="editBathsMax" min="0" step="0.5"
+											placeholder="Calculated from floor plans" readonly
+											style="background-color: #f9fafb;">
+									</div>
+								</div>
+
+								<!-- Commission -->
+								<div class="form-row">
+									<div class="form-group">
+										<label for="editCommissionPct">Commission %</label>
+										<input type="number" id="editCommissionPct" min="0" max="10" step="0.1"
+											placeholder="2.0">
+									</div>
+								</div>
 							</div>
 						</div>
 
-						<!-- Additional Info -->
-						<div class="form-group">
-							<label for="editWebsite">Website</label>
-							<input type="url" id="editWebsite" placeholder="https://property-website.com">
+						<!-- Section 5: Amenities -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="amenities">
+								<span class="section-icon">✨</span>
+								<span class="section-title">Amenities</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-amenities">
+								<div class="form-group">
+									<label for="editAmenities">Amenities (comma-separated)</label>
+									<textarea id="editAmenities" rows="3"
+										placeholder="Pool, Gym, Parking, Pet Friendly, Clubhouse, Business Center"></textarea>
+								</div>
+							</div>
 						</div>
 
-						<div class="form-group">
-							<label for="editAmenities">Amenities (comma-separated)</label>
-							<input type="text" id="editAmenities" placeholder="Pool, Gym, Parking, Pet Friendly">
+						<!-- Section 6: Policies -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="policies">
+								<span class="section-icon">📋</span>
+								<span class="section-title">Policies</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-policies">
+								<!-- Broken Lease -->
+								<div class="policy-group">
+									<h4 class="policy-group-title">Broken Lease Acceptance</h4>
+									<div class="checkbox-grid">
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsBrokenLeaseUnder1">
+											<span class="checkmark"></span>
+											Under 1 year
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsBrokenLease1Year">
+											<span class="checkmark"></span>
+											1 year old
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsBrokenLease2Year">
+											<span class="checkmark"></span>
+											2 years old
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsBrokenLease3Plus">
+											<span class="checkmark"></span>
+											3+ years old
+										</label>
+									</div>
+								</div>
+
+								<!-- Eviction -->
+								<div class="policy-group">
+									<h4 class="policy-group-title">Eviction Acceptance</h4>
+									<div class="checkbox-grid">
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsEvictionUnder1">
+											<span class="checkmark"></span>
+											Under 1 year
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsEviction1Year">
+											<span class="checkmark"></span>
+											1 year old
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsEviction2Year">
+											<span class="checkmark"></span>
+											2 years old
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsEviction3Plus">
+											<span class="checkmark"></span>
+											3+ years old
+										</label>
+									</div>
+								</div>
+
+								<!-- Criminal Background -->
+								<div class="policy-group">
+									<h4 class="policy-group-title">Criminal Background</h4>
+									<div class="checkbox-grid">
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsMisdemeanor">
+											<span class="checkmark"></span>
+											Accepts Misdemeanor
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsFelony">
+											<span class="checkmark"></span>
+											Accepts Felony
+										</label>
+									</div>
+								</div>
+
+								<!-- Other Policies -->
+								<div class="policy-group">
+									<h4 class="policy-group-title">Other Policies</h4>
+									<div class="checkbox-grid">
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsBadCredit">
+											<span class="checkmark"></span>
+											Accepts Bad Credit
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editSameDayMoveIn">
+											<span class="checkmark"></span>
+											Same Day Move-In
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editPassportOnlyAccepted">
+											<span class="checkmark"></span>
+											Passport Only Accepted
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editVisaRequired">
+											<span class="checkmark"></span>
+											Visa Required
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsSection8">
+											<span class="checkmark"></span>
+											Accepts Section 8
+										</label>
+										<label class="checkbox-label">
+											<input type="checkbox" id="editAcceptsUpTo3Pets">
+											<span class="checkmark"></span>
+											Accepts up to 3 Pets
+										</label>
+									</div>
+								</div>
+							</div>
 						</div>
 
-						<div class="form-group">
-							<label for="editSpecials">Special Offers</label>
-							<input type="text" id="editSpecials" placeholder="1 month free, $99 deposit">
+						<!-- Section 7: Status Flags -->
+						<div class="collapsible-section">
+							<button type="button" class="section-header collapsed" data-section="status-flags">
+								<span class="section-icon">🚩</span>
+								<span class="section-title">Status Flags</span>
+								<span class="chevron">▼</span>
+							</button>
+							<div class="section-content" id="section-status-flags">
+								<div class="form-row">
+									<div class="form-group">
+										<label class="checkbox-label">
+											<input type="checkbox" id="editIsPUMI">
+											<span class="checkmark"></span>
+											Mark as PUMI
+										</label>
+									</div>
+
+									<div class="form-group">
+										<label class="checkbox-label">
+											<input type="checkbox" id="editMarkForReview">
+											<span class="checkmark"></span>
+											Mark for Review
+										</label>
+									</div>
+								</div>
+							</div>
 						</div>
 
-						<div class="form-group">
-							<label for="editBonus">Bonus Text</label>
-							<input type="text" id="editBonus" placeholder="$300 bonus on approved application">
-						</div>
 					</form>
 				</div>
 				<div class="modal-footer">

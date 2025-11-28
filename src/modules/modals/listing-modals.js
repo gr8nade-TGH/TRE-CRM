@@ -58,13 +58,13 @@ export function openAddListingModal(options) {
 
 export function closeAddListingModal(options) {
 	const { hideModal } = options;
-	
+
 	hideModal('addListingModal');
 }
 
 export async function createListing(options) {
 	const { SupabaseAPI, geocodeAddress, toast, closeAddListingModal, renderListings } = options;
-	
+
 	try {
 		// Debug: Check current user state
 		console.log('🔍 Current user state:', {
@@ -169,8 +169,8 @@ export async function createListing(options) {
 		// If there's a note, create it
 		if (noteContent && userEmail) {
 			const authorName = window.currentUser?.user_metadata?.name ||
-							   window.currentUser?.email ||
-							   'Unknown';
+				window.currentUser?.email ||
+				'Unknown';
 			const noteData = {
 				property_id: newProperty.id,
 				content: noteContent,
@@ -255,10 +255,48 @@ export async function openListingEditModal(property, options) {
 		document.getElementById('editRentMin').value = property.rent_range_min || 0;
 		document.getElementById('editRentMax').value = property.rent_range_max || 0;
 	}
-	document.getElementById('editBedsMin').value = property.beds_min || 0;
-	document.getElementById('editBedsMax').value = property.beds_max || 0;
-	document.getElementById('editBathsMin').value = property.baths_min || 0;
-	document.getElementById('editBathsMax').value = property.baths_max || 0;
+	// Calculate bed/bath ranges from floor plans (auto-calculated like rent)
+	try {
+		const floorPlans = await SupabaseAPI.getFloorPlans(property.id);
+		console.log('Floor plans for property:', floorPlans);
+
+		if (floorPlans && floorPlans.length > 0) {
+			const beds = floorPlans.map(fp => fp.beds).filter(b => b != null);
+			const baths = floorPlans.map(fp => fp.baths).filter(b => b != null);
+
+			if (beds.length > 0) {
+				const bedsMin = Math.min(...beds);
+				const bedsMax = Math.max(...beds);
+				document.getElementById('editBedsMin').value = bedsMin;
+				document.getElementById('editBedsMax').value = bedsMax;
+			} else {
+				document.getElementById('editBedsMin').value = property.beds_min || 0;
+				document.getElementById('editBedsMax').value = property.beds_max || 0;
+			}
+
+			if (baths.length > 0) {
+				const bathsMin = Math.min(...baths);
+				const bathsMax = Math.max(...baths);
+				document.getElementById('editBathsMin').value = bathsMin;
+				document.getElementById('editBathsMax').value = bathsMax;
+			} else {
+				document.getElementById('editBathsMin').value = property.baths_min || 0;
+				document.getElementById('editBathsMax').value = property.baths_max || 0;
+			}
+		} else {
+			// No floor plans - use existing property values
+			document.getElementById('editBedsMin').value = property.beds_min || 0;
+			document.getElementById('editBedsMax').value = property.beds_max || 0;
+			document.getElementById('editBathsMin').value = property.baths_min || 0;
+			document.getElementById('editBathsMax').value = property.baths_max || 0;
+		}
+	} catch (error) {
+		console.error('Error calculating bed/bath range:', error);
+		document.getElementById('editBedsMin').value = property.beds_min || 0;
+		document.getElementById('editBedsMax').value = property.beds_max || 0;
+		document.getElementById('editBathsMin').value = property.baths_min || 0;
+		document.getElementById('editBathsMax').value = property.baths_max || 0;
+	}
 
 	// Set commission field - use commission_pct, or fallback to max of escort/send
 	const commission = property.commission_pct || Math.max(property.escort_pct || 0, property.send_pct || 0);
@@ -269,6 +307,24 @@ export async function openListingEditModal(property, options) {
 	document.getElementById('editBonus').value = fullProperty.bonus_text || '';
 	document.getElementById('editIsPUMI').checked = fullProperty.is_pumi || fullProperty.isPUMI || false;
 	document.getElementById('editMarkForReview').checked = fullProperty.mark_for_review || fullProperty.markForReview || false;
+
+	// Populate policy checkboxes
+	document.getElementById('editAcceptsBrokenLeaseUnder1').checked = fullProperty.accepts_broken_lease_under_1 || false;
+	document.getElementById('editAcceptsBrokenLease1Year').checked = fullProperty.accepts_broken_lease_1_year || false;
+	document.getElementById('editAcceptsBrokenLease2Year').checked = fullProperty.accepts_broken_lease_2_year || false;
+	document.getElementById('editAcceptsBrokenLease3Plus').checked = fullProperty.accepts_broken_lease_3_plus || false;
+	document.getElementById('editAcceptsEvictionUnder1').checked = fullProperty.accepts_eviction_under_1 || false;
+	document.getElementById('editAcceptsEviction1Year').checked = fullProperty.accepts_eviction_1_year || false;
+	document.getElementById('editAcceptsEviction2Year').checked = fullProperty.accepts_eviction_2_year || false;
+	document.getElementById('editAcceptsEviction3Plus').checked = fullProperty.accepts_eviction_3_plus || false;
+	document.getElementById('editAcceptsMisdemeanor').checked = fullProperty.accepts_misdemeanor || false;
+	document.getElementById('editAcceptsFelony').checked = fullProperty.accepts_felony || false;
+	document.getElementById('editAcceptsBadCredit').checked = fullProperty.accepts_bad_credit || false;
+	document.getElementById('editSameDayMoveIn').checked = fullProperty.same_day_move_in || false;
+	document.getElementById('editPassportOnlyAccepted').checked = fullProperty.passport_only_accepted || false;
+	document.getElementById('editVisaRequired').checked = fullProperty.visa_required || false;
+	document.getElementById('editAcceptsSection8').checked = fullProperty.accepts_section_8 || false;
+	document.getElementById('editAcceptsUpTo3Pets').checked = fullProperty.accepts_up_to_3_pets || false;
 
 	// Fetch and display active specials
 	try {
@@ -359,20 +415,53 @@ export async function openListingEditModal(property, options) {
 		console.error('❌ Could not find editStreetAddress input element!');
 	}
 
+	// Initialize collapsible sections
+	initCollapsibleSections();
+
 	// Show the modal
 	showModal('listingEditModal');
 }
 
+// Initialize collapsible section handlers
+function initCollapsibleSections() {
+	const sectionHeaders = document.querySelectorAll('.section-header');
+
+	sectionHeaders.forEach(header => {
+		// Remove any existing listeners
+		const newHeader = header.cloneNode(true);
+		header.parentNode.replaceChild(newHeader, header);
+
+		// Add click handler
+		newHeader.addEventListener('click', (e) => {
+			e.preventDefault();
+			const sectionId = newHeader.getAttribute('data-section');
+			const content = document.getElementById(`section-${sectionId}`);
+
+			// Toggle collapsed state
+			newHeader.classList.toggle('collapsed');
+
+			// Toggle content visibility
+			if (newHeader.classList.contains('collapsed')) {
+				content.style.maxHeight = '0';
+				content.style.padding = '0 16px';
+			} else {
+				content.style.maxHeight = '1000px';
+				content.style.padding = '16px';
+			}
+		});
+	});
+}
+
 export function closeListingEditModal(options) {
 	const { hideModal } = options;
-	
+
 	hideModal('listingEditModal');
 	window.currentEditingProperty = null;
 }
 
 export async function deleteListing(options) {
 	const { SupabaseAPI, toast, closeListingEditModal, renderListings } = options;
-	
+
 	const property = window.currentEditingProperty;
 	if (!property) return;
 
@@ -449,14 +538,30 @@ export async function saveListingEdit(options) {
 			contact_email: document.getElementById('editContactEmail').value.trim(),
 			contact_phone: document.getElementById('editPhone').value.trim(),
 			office_hours: document.getElementById('editOfficeHours').value.trim(),
-			// Rent range is read-only, calculated from units - don't update it
-			bed_range: `${document.getElementById('editBedsMin').value || 0}-${document.getElementById('editBedsMax').value || 0}`,
-			bath_range: `${document.getElementById('editBathsMin').value || 0}-${document.getElementById('editBathsMax').value || 0}`,
+			// NOTE: Rent range, bed/bath ranges are auto-calculated from units/floor_plans - don't save them
+			// They will be calculated on-the-fly when properties are fetched
 			commission_pct: parseFloat(document.getElementById('editCommissionPct').value) || 0,
 			leasing_link: document.getElementById('editWebsite').value.trim(),
 			amenities: document.getElementById('editAmenities').value.split(',').map(a => a.trim()).filter(a => a),
 			is_pumi: document.getElementById('editIsPUMI').checked,
 			mark_for_review: document.getElementById('editMarkForReview').checked,
+			// Policy fields
+			accepts_broken_lease_under_1: document.getElementById('editAcceptsBrokenLeaseUnder1').checked,
+			accepts_broken_lease_1_year: document.getElementById('editAcceptsBrokenLease1Year').checked,
+			accepts_broken_lease_2_year: document.getElementById('editAcceptsBrokenLease2Year').checked,
+			accepts_broken_lease_3_plus: document.getElementById('editAcceptsBrokenLease3Plus').checked,
+			accepts_eviction_under_1: document.getElementById('editAcceptsEvictionUnder1').checked,
+			accepts_eviction_1_year: document.getElementById('editAcceptsEviction1Year').checked,
+			accepts_eviction_2_year: document.getElementById('editAcceptsEviction2Year').checked,
+			accepts_eviction_3_plus: document.getElementById('editAcceptsEviction3Plus').checked,
+			accepts_misdemeanor: document.getElementById('editAcceptsMisdemeanor').checked,
+			accepts_felony: document.getElementById('editAcceptsFelony').checked,
+			accepts_bad_credit: document.getElementById('editAcceptsBadCredit').checked,
+			same_day_move_in: document.getElementById('editSameDayMoveIn').checked,
+			passport_only_accepted: document.getElementById('editPassportOnlyAccepted').checked,
+			visa_required: document.getElementById('editVisaRequired').checked,
+			accepts_section_8: document.getElementById('editAcceptsSection8').checked,
+			accepts_up_to_3_pets: document.getElementById('editAcceptsUpTo3Pets').checked,
 			updated_at: new Date().toISOString()
 		};
 
@@ -465,8 +570,8 @@ export async function saveListingEdit(options) {
 		// Get current user info for activity logging
 		const userEmail = window.currentUser?.email || 'unknown';
 		const userName = window.currentUser?.user_metadata?.name ||
-						 window.currentUser?.email ||
-						 'Unknown User';
+			window.currentUser?.email ||
+			'Unknown User';
 
 		// Update in Supabase
 		await SupabaseAPI.updateProperty(property.id, formData, userEmail, userName);
