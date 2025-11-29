@@ -131,6 +131,7 @@ export class LeaseFormState {
             throw new Error(validation.errors.join(', '));
         }
 
+        const supabase = SupabaseAPI.getSupabase();
         const dataToSave = {
             lead_id: this.leadId,
             status: 'draft',
@@ -140,7 +141,7 @@ export class LeaseFormState {
 
         if (this.existingConfirmation) {
             // Update existing
-            const { data, error } = await SupabaseAPI.supabase
+            const { data, error } = await supabase
                 .from('lease_confirmations')
                 .update(dataToSave)
                 .eq('id', this.existingConfirmation.id)
@@ -152,7 +153,7 @@ export class LeaseFormState {
             return data;
         } else {
             // Create new
-            const { data, error } = await SupabaseAPI.supabase
+            const { data, error } = await supabase
                 .from('lease_confirmations')
                 .insert([dataToSave])
                 .select()
@@ -172,8 +173,10 @@ export class LeaseFormState {
         // First save as draft
         const savedData = await this.saveDraft();
 
+        const supabase = SupabaseAPI.getSupabase();
+
         // Then update status to pending_signature
-        const { data, error } = await SupabaseAPI.supabase
+        const { data, error } = await supabase
             .from('lease_confirmations')
             .update({
                 status: 'pending_signature',
@@ -186,7 +189,7 @@ export class LeaseFormState {
         if (error) throw error;
 
         // Log activity
-        await SupabaseAPI.supabase
+        await supabase
             .from('lead_activities')
             .insert([{
                 lead_id: this.leadId,

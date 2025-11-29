@@ -61,7 +61,8 @@ export class InteractivePDFForm {
 
             // Load existing confirmation if not provided
             if (!this.existingConfirmation) {
-                const { data: confirmations } = await SupabaseAPI.supabase
+                const supabase = SupabaseAPI.getSupabase();
+                const { data: confirmations } = await supabase
                     .from('lease_confirmations')
                     .select('*')
                     .eq('lead_id', this.leadId)
@@ -136,7 +137,8 @@ export class InteractivePDFForm {
         }
 
         // Get current user as locator
-        const { data: { user } } = await SupabaseAPI.supabase.auth.getUser();
+        const supabase = SupabaseAPI.getSupabase();
+        const { data: { user } } = await supabase.auth.getUser();
         if (user) {
             data.locator = user.user_metadata?.full_name || user.email || '';
             data.locatorContact = user.email || '';
