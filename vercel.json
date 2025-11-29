@@ -1,10 +1,6 @@
 {
   "functions": {
-    "api/pdf/generate-lease-confirmation.cjs": {
-      "memory": 3008,
-      "maxDuration": 60
-    },
-    "api/pdf/test-pdf.cjs": {
+    "api/pdf/*.cjs": {
       "memory": 3008,
       "maxDuration": 60
     }
