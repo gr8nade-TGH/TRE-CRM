@@ -15,9 +15,14 @@
 
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
-import { join } from 'path';
+import { join, dirname } from 'path';
+import { fileURLToPath } from 'url';
 import chromium from 'chrome-aws-lambda';
 import puppeteer from 'puppeteer-core';
+
+// Get __dirname equivalent in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -141,11 +146,34 @@ export default async function handler(req, res) {
 
 		console.log('Lease confirmation found:', leaseConfirmation.id);
 
-		// Read HTML template from api/pdf directory (Vercel serverless functions can only access files in their directory)
-		const templatePath = join(process.cwd(), 'api', 'pdf', 'lease-confirmation-template.html');
-		console.log('Template path:', templatePath);
-		const template = readFileSync(templatePath, 'utf-8');
-		console.log('Template loaded, length:', template.length);
+		// Read HTML template from same directory as this function
+		// Try multiple paths to find the template
+		let template;
+		let templatePath;
+
+		const possiblePaths = [
+			join(__dirname, 'lease-confirmation-template.html'),
+			join(process.cwd(), 'api', 'pdf', 'lease-confirmation-template.html'),
+			'./lease-confirmation-template.html'
+		];
+
+		console.log('Attempting to load template from possible paths:', possiblePaths);
+
+		for (const path of possiblePaths) {
+			try {
+				console.log('Trying path:', path);
+				template = readFileSync(path, 'utf-8');
+				templatePath = path;
+				console.log('✅ Template loaded successfully from:', path, 'Length:', template.length);
+				break;
+			} catch (err) {
+				console.log('❌ Failed to load from:', path, 'Error:', err.message);
+			}
+		}
+
+		if (!template) {
+			throw new Error('Could not find template file in any of the expected locations');
+		}
 
 		// Format data and populate template
 		const formattedData = formatDataForPDF(leaseConfirmation);
