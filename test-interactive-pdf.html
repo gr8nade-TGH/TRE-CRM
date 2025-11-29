@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Interactive PDF Form</title>
+    <link rel="stylesheet" href="/src/styles/interactive-pdf-form.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+        }
+    </style>
+</head>
+<body>
+    <div id="app"></div>
+
+    <script type="module">
+        import { InteractivePDFForm } from './src/components/interactive-pdf-form.js';
+
+        // Test with a sample lead ID
+        const testLeadId = 'test-lead-123';
+
+        // Initialize the form
+        const form = new InteractivePDFForm(testLeadId);
+        
+        // Mock the loadData method for testing
+        form.loadData = async function() {
+            this.leadData = {
+                id: testLeadId,
+                name: 'John & Jane Doe',
+                phone: '(210) 555-1234',
+                move_in_date: '2024-12-01',
+                property_id: 'test-property-123'
+            };
+
+            this.propertyData = {
+                id: 'test-property-123',
+                community_name: 'Luxury Apartments',
+                name: 'Luxury Apartments',
+                phone: '(210) 555-5678',
+                contact_email: 'manager@luxuryapts.com',
+                contact_name: 'Property Manager'
+            };
+
+            console.log('Test data loaded:', { leadData: this.leadData, propertyData: this.propertyData });
+        };
+
+        // Initialize
+        form.init().then(() => {
+            console.log('✅ Interactive PDF Form initialized successfully!');
+        }).catch(error => {
+            console.error('❌ Error initializing form:', error);
+        });
+    </script>
+</body>
+</html>
+
