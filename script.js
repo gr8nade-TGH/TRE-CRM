@@ -28,6 +28,7 @@ import { geocodeAddress } from './src/utils/geocoding.js';
 import { setupAllEventListeners } from './src/events/dom-event-listeners.js';
 import { createLeadTable as createLeadTableUtil } from './src/renders/lead-table.js';
 import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-modals.js';
+import './src/utils/lease-signature-handler.js'; // Initialize lease signature handler
 import { createDependencies } from './src/init/dependencies.js';
 import * as Leads from './src/modules/leads/index.js';
 import * as Listings from './src/modules/listings/index.js';

@@ -480,12 +480,28 @@ export async function getStepModalContent(lead, step, formatDate) {
 						`;
 					} else if (leaseConfirmation.status === 'pending_signature') {
 						actionButtonHTML = `
-							<button class="btn btn-primary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
-								View & Send
+							<button class="btn btn-secondary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
+								📄 Preview
+							</button>
+							<button class="btn btn-success" onclick="window.sendLeaseForSignature('${leaseConfirmation.id}', '${lead.id}')">
+								📧 Send for Signature
 							</button>
 						`;
 					} else if (leaseConfirmation.status === 'awaiting_signature') {
+						const signingUrl = leaseConfirmation.documenso_signing_url || '';
+						const sentDate = leaseConfirmation.sent_for_signature_at ? formatDate(leaseConfirmation.sent_for_signature_at) : 'Unknown';
+
+						statusHTML += `
+							<div class="modal-details"><strong>Sent:</strong> ${sentDate}</div>
+							${signingUrl ? `<div class="modal-details"><strong>Signing URL:</strong> <a href="${signingUrl}" target="_blank" style="color: #2c5282; text-decoration: underline;">Open Signing Page</a></div>` : ''}
+						`;
+
 						actionButtonHTML = `
+							${signingUrl ? `
+								<button class="btn btn-primary" onclick="window.open('${signingUrl}', '_blank')">
+									📝 Open Signing Page
+								</button>
+							` : ''}
 							<button class="btn btn-secondary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
 								View Details
 							</button>
