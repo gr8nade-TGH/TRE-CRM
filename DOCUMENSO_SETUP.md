@@ -4,6 +4,13 @@
 - **API Token Name:** TRE_DOCUMENSO
 - **API Key:** `api_rwt8w5uvjer73laz`
 
+## ✅ Webhook Created
+- **Webhook URL:** `https://tre-crm.vercel.app/api/webhooks/documenso`
+- **Webhook ID:** `cmjithd7o1mu4ad1wfc2aqhjn`
+- **Status:** Enabled
+- **Listening to:** 2 Events
+- **Secret Key:** `bayouW00DZ!2`
+
 ---
 
 ## 🔧 Webhook Configuration
