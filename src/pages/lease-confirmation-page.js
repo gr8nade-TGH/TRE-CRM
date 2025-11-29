@@ -56,13 +56,20 @@ export class LeaseConfirmationPage {
 	 * Render error message
 	 */
 	renderError(message) {
-		const container = document.getElementById('app');
+		// Try leaseConfirmationView first (for route-based rendering)
+		let container = document.getElementById('leaseConfirmationView');
+
+		// Fallback to app container (for standalone testing)
+		if (!container) {
+			container = document.getElementById('app');
+		}
+
 		if (container) {
 			container.innerHTML = `
 				<div style="padding: 40px; text-align: center;">
 					<h2 style="color: #e53e3e;">❌ Error</h2>
 					<p>${message}</p>
-					<button onclick="window.location.hash='#/documents'" 
+					<button onclick="window.location.hash='#/documents'"
 					        style="margin-top: 20px; padding: 10px 20px; background: #2c5282; color: white; border: none; border-radius: 6px; cursor: pointer;">
 						← Back to Documents
 					</button>

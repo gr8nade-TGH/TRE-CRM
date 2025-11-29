@@ -9,7 +9,8 @@
     "check-db": "node check-supabase-schema.js",
     "lint": "npx eslint script.js",
     "lint:fix": "npx eslint script.js --fix",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "backup": "pwsh -ExecutionPolicy Bypass -File ./scripts/create-backup.ps1 || powershell -ExecutionPolicy Bypass -File ./scripts/create-backup.ps1"
   },
   "keywords": [
     "crm",

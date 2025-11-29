@@ -128,10 +128,11 @@ function setupModalEventListeners(modal, lead, property, deps) {
 		}
 	});
 
-	// Fill & Send button
+	// Fill & Send button - Navigate to new interactive PDF form
 	const fillSendBtn = modal.querySelector('#fillSendLease');
 	fillSendBtn?.addEventListener('click', () => {
-		showLeaseForm(modal, lead, property, deps);
+		modal.remove();
+		window.location.hash = `#/lease-confirmation?leadId=${lead.id}`;
 	});
 
 	// View Confirmation button

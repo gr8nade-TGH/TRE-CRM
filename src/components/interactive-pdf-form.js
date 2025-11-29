@@ -152,9 +152,16 @@ export class InteractivePDFForm {
      * Render the form
      */
     render(formData) {
-        const container = document.getElementById('app');
+        // Try leaseConfirmationView first (for route-based rendering)
+        let container = document.getElementById('leaseConfirmationView');
+
+        // Fallback to app container (for standalone testing)
         if (!container) {
-            console.error('App container not found');
+            container = document.getElementById('app');
+        }
+
+        if (!container) {
+            console.error('Container not found (tried leaseConfirmationView and app)');
             return;
         }
 
