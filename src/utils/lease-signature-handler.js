@@ -1,11 +1,11 @@
 /**
  * Lease Signature Handler
- * 
+ *
  * Handles sending lease confirmations for signature via Documenso.
  * Provides global functions for UI interactions.
  */
 
-import { SupabaseAPI } from '../modules/supabase-api.js';
+import * as SupabaseAPI from '../api/supabase-api.js';
 
 /**
  * Send lease confirmation for signature
@@ -70,7 +70,7 @@ export async function sendLeaseForSignature(leaseConfirmationId, leadId) {
 
 	} catch (error) {
 		console.error('Error sending lease for signature:', error);
-		
+
 		alert(
 			'❌ Error Sending Lease\n\n' +
 			error.message + '\n\n' +
