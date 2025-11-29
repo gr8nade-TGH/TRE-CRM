@@ -83,9 +83,19 @@ export default async function handler(req, res) {
 
 		// Validate status
 		if (leaseConfirmation.status !== 'pending_signature') {
+			// Provide helpful error messages based on current status
+			let message = 'Lease confirmation must be in pending_signature status';
+			if (leaseConfirmation.status === 'awaiting_signature') {
+				message = 'This lease has already been sent for signature';
+			} else if (leaseConfirmation.status === 'signed') {
+				message = 'This lease has already been signed';
+			} else if (leaseConfirmation.status === 'draft') {
+				message = 'Please submit the lease confirmation before sending for signature';
+			}
+
 			return res.status(400).json({
 				error: 'Invalid status',
-				message: 'Lease confirmation must be in pending_signature status',
+				message: message,
 				currentStatus: leaseConfirmation.status
 			});
 		}
@@ -95,6 +105,16 @@ export default async function handler(req, res) {
 			leadId: leaseConfirmation.lead_id,
 			propertyId: leaseConfirmation.property_id
 		});
+
+		// Safety check: Prevent duplicate sends
+		if (leaseConfirmation.documenso_document_id) {
+			console.warn('Lease already has a Documenso document ID:', leaseConfirmation.documenso_document_id);
+			return res.status(400).json({
+				error: 'Already sent',
+				message: 'This lease has already been sent to Documenso',
+				documensoDocumentId: leaseConfirmation.documenso_document_id
+			});
+		}
 
 		// Step 2: Fetch property data for contact info
 		console.log('Step 2: Fetching property data...');

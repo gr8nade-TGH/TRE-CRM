@@ -34,7 +34,9 @@ export default async function handler(req, res) {
 			return res.status(400).json({ error: 'leaseConfirmationId is required' });
 		}
 
-		console.log('Fetching signed lease PDF for:', leaseConfirmationId);
+		console.log('=== View Signed PDF Request ===');
+		console.log('Lease Confirmation ID:', leaseConfirmationId);
+		console.log('Download mode:', download === 'true' ? 'download' : 'inline');
 
 		// Fetch lease confirmation from database
 		const { data: leaseConfirmation, error: fetchError } = await supabase
@@ -50,7 +52,7 @@ export default async function handler(req, res) {
 
 		// Check if document is signed
 		if (leaseConfirmation.status !== 'signed') {
-			return res.status(400).json({ 
+			return res.status(400).json({
 				error: 'Document not signed',
 				message: 'This lease confirmation has not been signed yet',
 				currentStatus: leaseConfirmation.status
@@ -66,8 +68,8 @@ export default async function handler(req, res) {
 				console.log('Redirecting to Documenso URL:', leaseConfirmation.documenso_pdf_url);
 				return res.redirect(leaseConfirmation.documenso_pdf_url);
 			}
-			
-			return res.status(404).json({ 
+
+			return res.status(404).json({
 				error: 'PDF not found',
 				message: 'Signed PDF is not available in storage'
 			});
@@ -82,14 +84,14 @@ export default async function handler(req, res) {
 
 		if (downloadError) {
 			console.error('Error downloading from storage:', downloadError);
-			
+
 			// Fallback to Documenso URL
 			if (leaseConfirmation.documenso_pdf_url) {
 				console.log('Fallback: Redirecting to Documenso URL');
 				return res.redirect(leaseConfirmation.documenso_pdf_url);
 			}
-			
-			return res.status(500).json({ 
+
+			return res.status(500).json({
 				error: 'Failed to download PDF',
 				details: downloadError.message
 			});
@@ -107,7 +109,7 @@ export default async function handler(req, res) {
 		// Set response headers
 		res.setHeader('Content-Type', 'application/pdf');
 		res.setHeader('Content-Length', buffer.length);
-		
+
 		if (download === 'true') {
 			res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
 		} else {

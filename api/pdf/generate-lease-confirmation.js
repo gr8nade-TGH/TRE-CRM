@@ -123,7 +123,9 @@ export default async function handler(req, res) {
 			return res.status(400).json({ error: 'leaseConfirmationId is required' });
 		}
 
-		console.log('Generating PDF for lease confirmation:', leaseConfirmationId);
+		console.log('=== PDF Generation Request ===');
+		console.log('Lease Confirmation ID:', leaseConfirmationId);
+		console.log('Preview mode:', preview || 'false');
 
 		// Fetch lease confirmation from database
 		const { data: leaseConfirmation, error: fetchError } = await supabase

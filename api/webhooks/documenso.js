@@ -73,6 +73,11 @@ export default async function handler(req, res) {
 			const signerEmail = event.data?.signerEmail || event.data?.recipient?.email;
 			const documentUrl = event.data?.documentUrl || event.data?.url;
 
+			if (!documentId) {
+				console.error('No document ID in webhook event');
+				return res.status(400).json({ error: 'Missing document ID' });
+			}
+
 			console.log('Document signed:', { documentId, signerName, signerEmail });
 
 			// Find lease confirmation by documenso_document_id
