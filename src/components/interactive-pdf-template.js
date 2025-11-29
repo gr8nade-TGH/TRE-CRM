@@ -244,16 +244,24 @@ export class InteractivePDFTemplate {
                             ${this.generateCheckbox('comm50', '50%', data.commission === '50')}
                             ${this.generateCheckbox('comm75', '75%', data.commission === '75')}
                             ${this.generateCheckbox('comm100', '100%', data.commission === '100')}
+                            ${this.generateCheckbox('commOther', 'Other %', data.commission === 'other')}
+                            ${this.generateCheckbox('commFlat', 'Flat Fee', data.commission === 'flat')}
                         </div>
                     </div>
                 </div>
 
                 <div class="pdf-row">
                     <div class="pdf-field">
-                        <label class="pdf-field-label">Other:</label>
-                        <input type="text" class="pdf-field-input" id="commissionOther"
-                               value="${data.commissionOther || ''}"
-                               placeholder="% or Flat Fee $">
+                        <label class="pdf-field-label">Other %:</label>
+                        <input type="number" class="pdf-field-input" id="commissionOtherPercent"
+                               value="${data.commissionOtherPercent || ''}"
+                               placeholder="0.00" step="0.01" min="0" max="100">
+                    </div>
+                    <div class="pdf-field">
+                        <label class="pdf-field-label">Flat Fee $:</label>
+                        <input type="number" class="pdf-field-input" id="commissionFlatAmount"
+                               value="${data.commissionFlatAmount || ''}"
+                               placeholder="0.00" step="0.01" min="0">
                     </div>
                 </div>
 

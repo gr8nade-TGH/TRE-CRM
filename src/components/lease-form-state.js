@@ -44,8 +44,9 @@ export class LeaseFormState {
             rent_with_concessions: this.getFieldValue('rentWithConcessions'),
 
             // Commission & Terms
-            commission: this.getCheckedValue(['comm25', 'comm50', 'comm75', 'comm100']),
-            commission_other: this.getFieldValue('commissionOther'),
+            commission: this.getCheckedValue(['comm25', 'comm50', 'comm75', 'comm100', 'commOther', 'commFlat']),
+            commission_other_percent: this.getFieldValue('commissionOtherPercent'),
+            commission_flat_amount: this.getFieldValue('commissionFlatAmount'),
             lease_term: this.getFieldValue('leaseTerm'),
             po_number: this.getFieldValue('poNumber'),
             actual_move_in_date: this.getFieldValue('actualMoveInDate'),
