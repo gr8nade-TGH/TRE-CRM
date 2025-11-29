@@ -98,6 +98,38 @@ export class LeaseFormState {
     }
 
     /**
+     * Clean form data for database insertion
+     * Converts empty strings to null for date and numeric fields
+     */
+    cleanFormData(data) {
+        const cleaned = { ...data };
+
+        // Date fields - convert empty strings to null
+        const dateFields = ['date', 'move_in_date', 'actual_move_in_date', 'signature_date'];
+        dateFields.forEach(field => {
+            if (cleaned[field] === '') {
+                cleaned[field] = null;
+            }
+        });
+
+        // Numeric fields - convert empty strings to null
+        const numericFields = [
+            'rent_amount',
+            'rent_with_concessions',
+            'commission_other_percent',
+            'commission_flat_amount',
+            'lease_term'
+        ];
+        numericFields.forEach(field => {
+            if (cleaned[field] === '') {
+                cleaned[field] = null;
+            }
+        });
+
+        return cleaned;
+    }
+
+    /**
      * Validate form data
      * @returns {Object} { isValid: boolean, errors: string[] }
      */
@@ -105,13 +137,11 @@ export class LeaseFormState {
         const errors = [];
         const data = this.collectFormData();
 
-        // Required fields - only validate essential fields for draft
-        if (!data.date) errors.push('Date is required');
-        if (!data.tenant_names) errors.push('Tenant name(s) is required');
-        // Property name is optional - can be filled in manually
+        // For draft, no fields are required - allow saving incomplete forms
+        // Validation will be enforced when submitting for signature
 
         return {
-            isValid: errors.length === 0,
+            isValid: true, // Always valid for draft
             errors: errors
         };
     }
@@ -128,11 +158,14 @@ export class LeaseFormState {
             throw new Error(validation.errors.join(', '));
         }
 
+        // Clean data - convert empty strings to null for dates and numbers
+        const cleanedData = this.cleanFormData(formData);
+
         const supabase = SupabaseAPI.getSupabase();
         const dataToSave = {
             lead_id: this.leadId,
             status: 'draft',
-            ...formData,
+            ...cleanedData,
             updated_at: new Date().toISOString()
         };
 
