@@ -1,28 +1,25 @@
 /**
  * PDF Generation Endpoint for Lease Confirmation
- * 
+ *
  * This serverless function generates a PDF from the lease confirmation data.
  * It uses Puppeteer to render the HTML template and convert it to PDF.
- * 
+ *
  * Query Parameters:
  * - leaseConfirmationId: The ID of the lease confirmation to generate PDF for
  * - preview: If true, returns PDF for preview; if false, returns for download
- * 
+ *
  * Environment Variables Required:
  * - VITE_SUPABASE_URL
  * - VITE_SUPABASE_ANON_KEY
  */
 
-import { createClient } from '@supabase/supabase-js';
-import { readFileSync } from 'fs';
-import { join, dirname } from 'path';
-import { fileURLToPath } from 'url';
-import chromium from '@sparticuz/chromium';
-import puppeteer from 'puppeteer-core';
+const { createClient } = require('@supabase/supabase-js');
+const { readFileSync } = require('fs');
+const { join } = require('path');
+const chromium = require('@sparticuz/chromium');
+const puppeteer = require('puppeteer-core');
 
-// Get __dirname equivalent in ES modules
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+// __dirname is automatically available in CommonJS
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -254,3 +251,4 @@ export default async function handler(req, res) {
 	}
 }
 
+module.exports = handler;

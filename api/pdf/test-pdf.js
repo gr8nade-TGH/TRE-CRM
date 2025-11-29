@@ -2,14 +2,14 @@
  * Simple test endpoint to debug PDF generation issues
  */
 
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
 	process.env.VITE_SUPABASE_URL,
 	process.env.VITE_SUPABASE_ANON_KEY
 );
 
-export default async function handler(req, res) {
+async function handler(req, res) {
 	try {
 		const { leaseConfirmationId } = req.query;
 
@@ -141,3 +141,4 @@ export default async function handler(req, res) {
 	}
 }
 
+module.exports = handler;
