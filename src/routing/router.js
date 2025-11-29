@@ -152,6 +152,21 @@ export function route(deps) {
 		show(document.getElementById('emailsView'));
 		setRoleLabel('emails');
 		renderEmails();
+	} else if (hash === '/lease-confirmation' || hash.startsWith('/lease-confirmation?')) {
+		state.currentPage = 'lease-confirmation';
+		show(document.getElementById('leaseConfirmationView'));
+		setRoleLabel('lease-confirmation');
+
+		// Initialize the Lease Confirmation page
+		(async () => {
+			try {
+				const { LeaseConfirmationPage } = await import('../pages/lease-confirmation-page.js');
+				const page = new LeaseConfirmationPage();
+				await page.init();
+			} catch (error) {
+				console.error('Error loading Lease Confirmation page:', error);
+			}
+		})();
 	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
 		// Leads page with optional query parameters
 		state.currentPage = 'leads';

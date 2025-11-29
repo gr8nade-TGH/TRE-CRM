@@ -1,0 +1,520 @@
+/* Lease Confirmation Form Styles */
+
+.lease-confirmation-container {
+    min-height: 100vh;
+    background: #f3f4f6;
+    padding: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.lease-confirmation-form {
+    max-width: 900px;
+    width: 100%;
+    background: white;
+    padding: 40px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Header Section */
+.lease-header {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    gap: 20px;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 3px solid #1f2937;
+}
+
+.lease-logo h2 {
+    font-size: 14px;
+    font-weight: bold;
+    color: #1f2937;
+    text-align: center;
+    margin: 0;
+    padding: 10px;
+}
+
+.lease-title {
+    text-align: center;
+}
+
+.lease-title h1 {
+    font-size: 24px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+    color: #1f2937;
+}
+
+.lease-subtitle {
+    font-size: 14px;
+    font-weight: 600;
+    margin: 4px 0;
+    color: #374151;
+}
+
+.lease-fax,
+.lease-office {
+    font-size: 13px;
+    margin: 2px 0;
+    color: #4b5563;
+}
+
+/* Accounting Box */
+.accounting-box {
+    border: 2px solid #1f2937;
+    padding: 12px;
+    background: #f9fafb;
+}
+
+.accounting-box h4 {
+    text-align: center;
+    font-size: 11px;
+    font-weight: bold;
+    margin: 0 0 10px 0;
+    color: #1f2937;
+}
+
+.accounting-fields {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.acc-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+}
+
+.acc-row label {
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 80px;
+    color: #374151;
+}
+
+.acc-row input[type="text"] {
+    flex: 1;
+    padding: 2px 4px;
+    border: none;
+    border-bottom: 1px solid #9ca3af;
+    background: transparent;
+    font-size: 11px;
+}
+
+.method-checkboxes {
+    display: flex;
+    gap: 8px;
+}
+
+.method-checkboxes label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 11px;
+    min-width: auto;
+}
+
+/* Form Sections */
+.form-section {
+    margin-bottom: 24px;
+}
+
+.form-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.form-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.form-group label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1f2937;
+    white-space: nowrap;
+}
+
+.form-group input[type="text"],
+.form-group input[type="tel"],
+.form-group input[type="email"],
+.form-group input[type="date"],
+.form-group input[type="number"],
+
+/* Split Cut Options */
+.split-cut-group {
+    flex: 1;
+}
+
+.split-options {
+    display: flex;
+    gap: 16px;
+}
+
+.checkbox-option {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.checkbox-option input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+/* Tenant Section */
+.tenant-section h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0 0 8px 0;
+    color: #1f2937;
+    display: inline;
+}
+
+/* Property Personnel Section */
+.property-personnel {
+    border: 2px solid #1f2937;
+    padding: 20px;
+    background: #fafafa;
+}
+
+.section-header-stars {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.section-header-stars .star {
+    font-size: 24px;
+    color: #1f2937;
+}
+
+.section-header-stars h3 {
+    font-size: 16px;
+    font-weight: bold;
+    margin: 0;
+    color: #1f2937;
+    letter-spacing: 1px;
+}
+
+.personnel-instructions {
+    text-align: center;
+    font-size: 13px;
+    margin: 0 0 16px 0;
+    color: #374151;
+}
+
+/* Yes/No Options */
+.yes-no-options {
+    display: flex;
+    gap: 16px;
+}
+
+.yes-no-options label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.yes-no-options input[type="radio"] {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+}
+
+/* Commission Section */
+.commission-section {
+    margin: 16px 0;
+    padding: 12px;
+    background: white;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.commission-label {
+    font-weight: 600;
+    font-size: 14px;
+    color: #1f2937;
+    margin-bottom: 8px;
+    display: block;
+}
+
+.commission-options {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.commission-options label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.commission-options input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.commission-other {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.commission-other label {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+    font-weight: normal;
+}
+
+.commission-other input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    cursor: pointer;
+}
+
+.commission-other input[type="number"] {
+    padding: 4px 8px;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+/* Escorted Group */
+.escorted-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+/* Signature Section */
+.signature-section {
+    margin-top: 24px;
+    padding: 20px;
+    background: #f9fafb;
+    border: 1px solid #d1d5db;
+    border-radius: 4px;
+}
+
+.signature-row {
+    display: grid;
+    grid-template-columns: 2fr 1fr 2fr;
+    gap: 20px;
+}
+
+.signature-field label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 8px;
+    border-bottom: 1px solid #1f2937;
+    padding-bottom: 4px;
+}
+
+.signature-field input {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    background: transparent;
+    font-size: 14px;
+}
+
+.signature-placeholder {
+    min-height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: white;
+    border: 2px dashed #9ca3af;
+    border-radius: 4px;
+    padding: 12px;
+}
+
+.signature-placeholder p {
+    margin: 0;
+    color: #6b7280;
+    font-size: 13px;
+    font-style: italic;
+    text-align: center;
+}
+
+.date-field {
+    display: flex;
+    flex-direction: column;
+}
+
+/* Footer Notes */
+.footer-notes {
+    background: #fef3c7;
+    padding: 16px;
+    border: 1px solid #fbbf24;
+    border-radius: 4px;
+    margin-top: 20px;
+}
+
+.note-text {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #78350f;
+    margin: 0 0 12px 0;
+}
+
+.return-instruction {
+    font-size: 12px;
+    font-weight: bold;
+    color: #78350f;
+    margin: 0;
+    text-align: center;
+}
+
+/* Thank You Banner */
+.thank-you-banner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    margin: 24px 0 12px 0;
+    padding: 16px;
+    border-top: 2px dashed #1f2937;
+    border-bottom: 2px dashed #1f2937;
+}
+
+.thank-you-banner .star {
+    font-size: 28px;
+    color: #1f2937;
+}
+
+.thank-you-banner h2 {
+    font-size: 20px;
+    font-weight: bold;
+    margin: 0;
+    color: #1f2937;
+    letter-spacing: 1px;
+}
+
+/* Company Footer */
+.company-footer {
+    text-align: center;
+    margin: 12px 0 24px 0;
+}
+
+.company-footer p {
+    font-size: 11px;
+    color: #4b5563;
+    margin: 0;
+}
+
+/* Form Actions */
+.form-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 2px solid #e5e7eb;
+}
+
+.form-actions .btn {
+    padding: 10px 24px;
+    font-size: 14px;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-secondary {
+    background: #6b7280;
+    color: white;
+    border: none;
+}
+
+.btn-secondary:hover {
+    background: #4b5563;
+}
+
+.btn-primary {
+    background: #3b82f6;
+    color: white;
+    border: none;
+}
+
+.btn-primary:hover {
+    background: #2563eb;
+}
+
+.btn-success {
+    background: #10b981;
+    color: white;
+    border: none;
+}
+
+.btn-success:hover {
+    background: #059669;
+}
+
+/* Print Styles */
+@media print {
+    .lease-confirmation-container {
+        background: white;
+        padding: 0;
+    }
+
+    .form-actions {
+        display: none;
+    }
+
+    .lease-confirmation-form {
+        box-shadow: none;
+        padding: 20px;
+    }
+}
+
+.form-group input[type="url"] {
+    flex: 1;
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid #1f2937;
+    font-size: 14px;
+    background: transparent;
+}
+
+.form-group input[type="text"]:focus,
+.form-group input[type="tel"]:focus,
+.form-group input[type="email"]:focus,
+.form-group input[type="date"]:focus,
+.form-group input[type="number"]:focus,
+.form-group input[type="url"]:focus {
+    outline: none;
+    border-bottom-color: #3b82f6;
+}
+
+input.full-width {
+    width: 100%;
+    padding: 6px 10px;
+    border: none;
+    border-bottom: 1px solid #1f2937;
+}
