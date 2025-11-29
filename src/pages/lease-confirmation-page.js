@@ -7,14 +7,183 @@ export class LeaseConfirmationPage {
 		this.propertyData = null;
 	}
 
-	async init() {
-		console.log('Initializing Lease Confirmation Page');
+	async init(leadId = null) {
+		console.log('Initializing Lease Confirmation Page', { leadId });
+
+		// Extract leadId from URL if not provided
+		if (!leadId) {
+			const hash = window.location.hash;
+			const urlParams = new URLSearchParams(hash.split('?')[1]);
+			leadId = urlParams.get('leadId');
+		}
+
+		this.leadId = leadId;
+
+		// Load lead and property data if leadId provided
+		if (leadId) {
+			await this.loadLeadData(leadId);
+		}
+
 		this.render();
 		this.attachEventListeners();
 
+		// Auto-populate fields
+		await this.populateFields();
+	}
+
+	async loadLeadData(leadId) {
+		try {
+			console.log('Loading lead data for:', leadId);
+
+			// Fetch lead data
+			const leadData = await SupabaseAPI.getLead(leadId);
+			console.log('Lead data loaded:', leadData);
+
+			if (!leadData) {
+				console.error('Lead not found:', leadId);
+				return;
+			}
+
+			this.leadData = leadData;
+
+			// Fetch property data if property_id exists
+			if (leadData.property_id) {
+				const propertyData = await SupabaseAPI.getProperty(leadData.property_id);
+				console.log('Property data loaded:', propertyData);
+				this.propertyData = propertyData;
+			}
+
+			// Check for existing lease confirmation
+			const { data: existingConfirmations } = await SupabaseAPI.supabase
+				.from('lease_confirmations')
+				.select('*')
+				.eq('lead_id', leadId)
+				.order('created_at', { ascending: false })
+				.limit(1);
+
+			if (existingConfirmations && existingConfirmations.length > 0) {
+				this.existingConfirmation = existingConfirmations[0];
+				console.log('Existing confirmation found:', this.existingConfirmation);
+			}
+		} catch (error) {
+			console.error('Error loading lead data:', error);
+		}
+	}
+
+	async populateFields() {
 		// Auto-populate today's date
 		const today = new Date().toISOString().split('T')[0];
-		document.getElementById('leaseDate').value = today;
+		const leaseDateField = document.getElementById('leaseDate');
+		if (leaseDateField) leaseDateField.value = today;
+
+		// If we have existing confirmation data, populate from that
+		if (this.existingConfirmation) {
+			this.populateFromExistingConfirmation();
+			return;
+		}
+
+		// Otherwise, populate from lead and property data
+		if (this.leadData) {
+			const tenantNamesField = document.getElementById('tenantNames');
+			const tenantPhoneField = document.getElementById('tenantPhone');
+			const moveInDateField = document.getElementById('moveInDate');
+
+			if (tenantNamesField) tenantNamesField.value = this.leadData.name || '';
+			if (tenantPhoneField) tenantPhoneField.value = this.leadData.phone || '';
+			if (moveInDateField && this.leadData.move_in_date) {
+				moveInDateField.value = this.leadData.move_in_date;
+			}
+		}
+
+		if (this.propertyData) {
+			const propertyNameField = document.getElementById('propertyName');
+			const propertyPhoneField = document.getElementById('propertyPhone');
+			const faxEmailField = document.getElementById('faxEmail');
+			const attnField = document.getElementById('attn');
+
+			if (propertyNameField) propertyNameField.value = this.propertyData.community_name || this.propertyData.name || '';
+			if (propertyPhoneField) propertyPhoneField.value = this.propertyData.contact_phone || '';
+			if (faxEmailField) faxEmailField.value = this.propertyData.contact_email || '';
+			if (attnField) attnField.value = this.propertyData.contact_name || '';
+		}
+
+		// Get current user for locator info
+		try {
+			const { data: { user } } = await SupabaseAPI.supabase.auth.getUser();
+			if (user) {
+				const locatorField = document.getElementById('locator');
+				const locatorContactField = document.getElementById('locatorContact');
+
+				// Fetch user profile for full name
+				const { data: profile } = await SupabaseAPI.supabase
+					.from('users')
+					.select('name, email, phone')
+					.eq('id', user.id)
+					.single();
+
+				if (profile) {
+					if (locatorField) locatorField.value = profile.name || '';
+					if (locatorContactField) locatorContactField.value = profile.phone || profile.email || '';
+				}
+			}
+		} catch (error) {
+			console.error('Error fetching user data:', error);
+		}
+	}
+
+	populateFromExistingConfirmation() {
+		const conf = this.existingConfirmation;
+
+		// Helper function to safely set field value
+		const setField = (id, value) => {
+			const field = document.getElementById(id);
+			if (field && value) field.value = value;
+		};
+
+		// Helper function to safely check checkbox
+		const checkBox = (name, value) => {
+			const checkbox = document.querySelector(`input[name="${name}"][value="${value}"]`);
+			if (checkbox) checkbox.checked = true;
+		};
+
+		// Populate all fields from existing confirmation
+		setField('leaseDate', conf.date);
+		setField('attn', conf.attn);
+		setField('locator', conf.locator);
+		setField('propertyName', conf.property_name);
+		setField('locatorContact', conf.locator_contact);
+		setField('propertyPhone', conf.property_phone);
+		setField('faxEmail', conf.fax_email);
+		setField('splitAgent', conf.split_agent);
+
+		if (conf.split_cut) checkBox('splitCut', conf.split_cut);
+
+		setField('tenantNames', conf.tenant_names);
+		setField('tenantPhone', conf.tenant_phone);
+		setField('moveInDate', conf.move_in_date);
+		setField('expectedUnit', conf.expected_unit);
+
+		if (conf.tenants_correct) checkBox('tenantsCorrect', conf.tenants_correct);
+		setField('tenantCorrections', conf.tenant_corrections);
+		setField('unitNumber', conf.unit_number);
+		setField('rentAmount', conf.rent_amount);
+		setField('rentWithConcessions', conf.rent_with_concessions);
+
+		if (conf.commission) checkBox('commission', conf.commission);
+		setField('commOtherPercent', conf.commission_other_percent);
+		setField('commFlatAmount', conf.commission_flat_amount);
+		setField('leaseTerm', conf.lease_term);
+		setField('poNumber', conf.po_number);
+		setField('actualMoveInDate', conf.actual_move_in_date);
+		setField('locatorOnApp', conf.locator_on_app);
+
+		if (conf.escorted) checkBox('escorted', conf.escorted);
+
+		setField('printedName', conf.printed_name);
+		setField('signatureDate', conf.signature_date);
+		setField('invoiceNumber', conf.invoice_number);
+		setField('payStatus', conf.pay_status);
+		setField('dbRefNumber', conf.db_ref_number);
 	}
 
 	render() {
@@ -354,23 +523,185 @@ export class LeaseConfirmationPage {
 
 	async submitForm() {
 		console.log('Submitting lease confirmation form...');
+
+		if (!this.leadId) {
+			alert('Error: No lead ID found. Please return to Documents page and try again.');
+			return;
+		}
+
 		const formData = this.collectFormData();
 
-		// TODO: Save to database and send to property
-		console.log('Form data:', formData);
+		try {
+			// Get current user
+			const { data: { user } } = await SupabaseAPI.supabase.auth.getUser();
 
-		alert('Lease confirmation submitted successfully!');
-		window.location.hash = '#documents';
+			// Prepare data for database
+			const dbData = {
+				lead_id: this.leadId,
+				property_id: this.leadData?.property_id || null,
+				date: formData.date || null,
+				attn: formData.attn || null,
+				locator: formData.locator || null,
+				property_name: formData.propertyName || null,
+				locator_contact: formData.locatorContact || null,
+				property_phone: formData.propertyPhone || null,
+				fax_email: formData.faxEmail || null,
+				split_agent: formData.splitAgent || null,
+				split_cut: formData.splitCut || null,
+				tenant_names: formData.tenantNames || null,
+				tenant_phone: formData.tenantPhone || null,
+				move_in_date: formData.moveInDate || null,
+				expected_unit: formData.expectedUnit || null,
+				tenants_correct: formData.tenantsCorrect || null,
+				tenant_corrections: formData.tenantCorrections || null,
+				unit_number: formData.unitNumber || null,
+				rent_amount: formData.rentAmount ? parseFloat(formData.rentAmount) : null,
+				rent_with_concessions: formData.rentWithConcessions ? parseFloat(formData.rentWithConcessions) : null,
+				commission: formData.commission || null,
+				commission_other_percent: formData.commissionOtherPercent ? parseFloat(formData.commissionOtherPercent) : null,
+				commission_flat_amount: formData.commissionFlatAmount ? parseFloat(formData.commissionFlatAmount) : null,
+				lease_term: formData.leaseTerm ? parseInt(formData.leaseTerm) : null,
+				po_number: formData.poNumber || null,
+				actual_move_in_date: formData.actualMoveInDate || null,
+				locator_on_app: formData.locatorOnApp || null,
+				escorted: formData.escorted || null,
+				printed_name: formData.printedName || null,
+				signature_date: formData.signatureDate || null,
+				invoice_number: formData.invoiceNumber || null,
+				pay_status: formData.payStatus || null,
+				db_ref_number: formData.dbRefNumber || null,
+				status: 'pending_signature',
+				submitted_at: new Date().toISOString(),
+				created_by: user?.id || null
+			};
+
+			// Check if we're updating existing or creating new
+			if (this.existingConfirmation) {
+				// Update existing
+				const { error } = await SupabaseAPI.supabase
+					.from('lease_confirmations')
+					.update(dbData)
+					.eq('id', this.existingConfirmation.id);
+
+				if (error) throw error;
+
+				console.log('Lease confirmation updated successfully');
+			} else {
+				// Create new
+				const { error } = await SupabaseAPI.supabase
+					.from('lease_confirmations')
+					.insert([dbData]);
+
+				if (error) throw error;
+
+				console.log('Lease confirmation created successfully');
+			}
+
+			// Log activity
+			await SupabaseAPI.logLeadActivity({
+				lead_id: this.leadId,
+				activity_type: 'lease_prepared',
+				description: 'Lease confirmation form prepared and ready to send',
+				metadata: {
+					property_id: this.leadData?.property_id,
+					property_name: formData.propertyName,
+					status: 'pending_signature'
+				}
+			});
+
+			alert('✅ Lease confirmation submitted successfully!\n\nYou can now send it for signature from the Documents page.');
+			window.location.hash = '#/documents';
+		} catch (error) {
+			console.error('Error submitting lease confirmation:', error);
+			alert('❌ Error submitting lease confirmation. Please try again.\n\n' + error.message);
+		}
 	}
 
 	async saveDraft() {
 		console.log('Saving draft...');
+
+		if (!this.leadId) {
+			alert('Error: No lead ID found. Please return to Documents page and try again.');
+			return;
+		}
+
 		const formData = this.collectFormData();
 
-		// TODO: Save draft to database
-		console.log('Draft data:', formData);
+		try {
+			// Get current user
+			const { data: { user } } = await SupabaseAPI.supabase.auth.getUser();
 
-		alert('Draft saved successfully!');
+			// Prepare data for database
+			const dbData = {
+				lead_id: this.leadId,
+				property_id: this.leadData?.property_id || null,
+				date: formData.date || null,
+				attn: formData.attn || null,
+				locator: formData.locator || null,
+				property_name: formData.propertyName || null,
+				locator_contact: formData.locatorContact || null,
+				property_phone: formData.propertyPhone || null,
+				fax_email: formData.faxEmail || null,
+				split_agent: formData.splitAgent || null,
+				split_cut: formData.splitCut || null,
+				tenant_names: formData.tenantNames || null,
+				tenant_phone: formData.tenantPhone || null,
+				move_in_date: formData.moveInDate || null,
+				expected_unit: formData.expectedUnit || null,
+				tenants_correct: formData.tenantsCorrect || null,
+				tenant_corrections: formData.tenantCorrections || null,
+				unit_number: formData.unitNumber || null,
+				rent_amount: formData.rentAmount ? parseFloat(formData.rentAmount) : null,
+				rent_with_concessions: formData.rentWithConcessions ? parseFloat(formData.rentWithConcessions) : null,
+				commission: formData.commission || null,
+				commission_other_percent: formData.commissionOtherPercent ? parseFloat(formData.commissionOtherPercent) : null,
+				commission_flat_amount: formData.commissionFlatAmount ? parseFloat(formData.commissionFlatAmount) : null,
+				lease_term: formData.leaseTerm ? parseInt(formData.leaseTerm) : null,
+				po_number: formData.poNumber || null,
+				actual_move_in_date: formData.actualMoveInDate || null,
+				locator_on_app: formData.locatorOnApp || null,
+				escorted: formData.escorted || null,
+				printed_name: formData.printedName || null,
+				signature_date: formData.signatureDate || null,
+				invoice_number: formData.invoiceNumber || null,
+				pay_status: formData.payStatus || null,
+				db_ref_number: formData.dbRefNumber || null,
+				status: 'draft',
+				created_by: user?.id || null
+			};
+
+			// Check if we're updating existing or creating new
+			if (this.existingConfirmation) {
+				// Update existing
+				const { error } = await SupabaseAPI.supabase
+					.from('lease_confirmations')
+					.update(dbData)
+					.eq('id', this.existingConfirmation.id);
+
+				if (error) throw error;
+
+				console.log('Draft updated successfully');
+				alert('✅ Draft saved successfully!');
+			} else {
+				// Create new
+				const { data, error } = await SupabaseAPI.supabase
+					.from('lease_confirmations')
+					.insert([dbData])
+					.select()
+					.single();
+
+				if (error) throw error;
+
+				// Store the new confirmation so subsequent saves update instead of create
+				this.existingConfirmation = data;
+
+				console.log('Draft created successfully');
+				alert('✅ Draft saved successfully!');
+			}
+		} catch (error) {
+			console.error('Error saving draft:', error);
+			alert('❌ Error saving draft. Please try again.\n\n' + error.message);
+		}
 	}
 
 	collectFormData() {

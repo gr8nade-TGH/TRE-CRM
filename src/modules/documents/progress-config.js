@@ -7,15 +7,16 @@
 
 /**
  * Progress steps configuration
- * Defines the 6-step workflow for lead document processing
+ * Defines the 7-step workflow for lead document processing
  *
  * Each step has:
- * - id: Step number (1-6)
+ * - id: Step number (1-7)
  * - label: Display label for the step
  * - key: Unique key for the step
  * - requiredActivity: Activity type that marks this step as complete
  * - optionalActivities: Activities that provide additional context for this step
  * - description: Human-readable description of what this step represents
+ * - requiresPropertyContact: If true, validates property contact info before allowing action
  *
  * Note: "Lead Responded" is an optional indicator that appears above "Smart Match Sent"
  * when a lead responds via Property Matcher. It doesn't block progress to the next step.
@@ -30,7 +31,8 @@ export const progressSteps = [
 		key: 'leadJoined',
 		requiredActivity: 'lead_created',
 		optionalActivities: ['welcome_email_sent'],
-		description: 'Lead submitted form or was manually added to CRM'
+		description: 'Lead submitted form or was manually added to CRM',
+		requiresPropertyContact: false
 	},
 	{
 		id: 2,
@@ -38,7 +40,8 @@ export const progressSteps = [
 		key: 'smartMatchSent',
 		requiredActivity: 'smart_match_sent',
 		optionalActivities: ['property_matcher_viewed', 'property_matcher_submitted', 'wants_more_options'],
-		description: 'Smart Match email sent with curated property recommendations'
+		description: 'Smart Match email sent with curated property recommendations',
+		requiresPropertyContact: false
 	},
 	{
 		id: 3,
@@ -46,7 +49,8 @@ export const progressSteps = [
 		key: 'guestCardSent',
 		requiredActivity: 'guest_card_sent',
 		optionalActivities: [],
-		description: 'Guest cards sent to property owners for selected properties'
+		description: 'Guest cards sent to property owners for selected properties',
+		requiresPropertyContact: false
 	},
 	{
 		id: 4,
@@ -54,23 +58,35 @@ export const progressSteps = [
 		key: 'propertySelected',
 		requiredActivity: 'property_selected',
 		optionalActivities: ['tour_scheduled', 'application_submitted'],
-		description: 'Lead selected a specific property to pursue'
+		description: 'Lead selected a specific property to pursue',
+		requiresPropertyContact: false
 	},
 	{
 		id: 5,
+		label: 'Prepare Lease',
+		key: 'prepareLease',
+		requiredActivity: 'lease_prepared',
+		optionalActivities: [],
+		description: 'Lease confirmation form prepared and ready to send',
+		requiresPropertyContact: true
+	},
+	{
+		id: 6,
 		label: 'Lease Sent',
 		key: 'leaseSent',
 		requiredActivity: 'lease_sent',
 		optionalActivities: ['lease_signed'],
-		description: 'Lease documents sent to lead for signature'
+		description: 'Lease confirmation sent to property contact for signature',
+		requiresPropertyContact: true
 	},
 	{
-		id: 6,
+		id: 7,
 		label: 'Lease Finalized',
 		key: 'leaseFinalized',
 		requiredActivity: 'lease_finalized',
 		optionalActivities: ['commission_processed'],
-		description: 'Lease fully executed and finalized - commission ready'
+		description: 'Lease fully executed and finalized - commission ready',
+		requiresPropertyContact: false
 	}
 ];
 

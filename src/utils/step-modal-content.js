@@ -398,7 +398,123 @@ export async function getStepModalContent(lead, step, formatDate) {
 			}
 		}
 
-		case 5: // Lease Sent
+		case 5: // Prepare Lease
+			try {
+				const leadData = await SupabaseAPI.getLead(lead.id);
+				const propertyId = leadData.property_id;
+
+				// Check if property is selected
+				if (!propertyId) {
+					return `
+						<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+						<div class="modal-warning">⚠️ No property selected</div>
+						<div class="modal-details"><em>Please complete Step 4 (Property Selected) before preparing lease</em></div>
+					`;
+				}
+
+				// Fetch property data
+				const property = await SupabaseAPI.getProperty(propertyId);
+
+				// Check if property contact info exists
+				const hasContactInfo = property.contact_name && property.contact_email;
+
+				// Check if lease confirmation exists
+				const { data: leaseConfirmations } = await SupabaseAPI.supabase
+					.from('lease_confirmations')
+					.select('*')
+					.eq('lead_id', lead.id)
+					.order('created_at', { ascending: false })
+					.limit(1);
+
+				const leaseConfirmation = leaseConfirmations?.[0];
+
+				// Build HTML based on status
+				let statusHTML = '';
+				let actionButtonHTML = '';
+
+				if (!hasContactInfo) {
+					statusHTML = `
+						<div class="modal-warning">⚠️ Property contact information missing</div>
+						<div class="modal-details"><em>Please add contact information for ${property.community_name || property.name} before preparing lease</em></div>
+						<div class="modal-details"><strong>Required:</strong> Contact Name and Email</div>
+					`;
+					actionButtonHTML = `
+						<button class="btn btn-primary" onclick="window.location.hash = '#/listings'">
+							Update Property Contact Info
+						</button>
+					`;
+				} else if (!leaseConfirmation) {
+					statusHTML = `
+						<div class="modal-details"><strong>Status:</strong> Not Started</div>
+						<div class="modal-details"><strong>Property:</strong> ${property.community_name || property.name}</div>
+						<div class="modal-details"><strong>Contact:</strong> ${property.contact_name} (${property.contact_email})</div>
+						<div class="modal-details"><em>Click below to prepare the lease confirmation form</em></div>
+					`;
+					actionButtonHTML = `
+						<button class="btn btn-primary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
+							Prepare Lease Confirmation
+						</button>
+					`;
+				} else {
+					const statusLabel = {
+						'draft': '📝 Draft Saved',
+						'pending_signature': '⏳ Ready to Send',
+						'awaiting_signature': '📤 Awaiting Signature',
+						'signed': '✅ Signed',
+						'error': '❌ Error'
+					}[leaseConfirmation.status] || leaseConfirmation.status;
+
+					statusHTML = `
+						<div class="modal-details"><strong>Status:</strong> ${statusLabel}</div>
+						<div class="modal-details"><strong>Property:</strong> ${property.community_name || property.name}</div>
+						<div class="modal-details"><strong>Contact:</strong> ${property.contact_name} (${property.contact_email})</div>
+						<div class="modal-details"><strong>Last Updated:</strong> ${formatDate(leaseConfirmation.updated_at)}</div>
+						${leaseConfirmation.submitted_at ? `<div class="modal-details"><strong>Submitted:</strong> ${formatDate(leaseConfirmation.submitted_at)}</div>` : ''}
+					`;
+
+					if (leaseConfirmation.status === 'draft') {
+						actionButtonHTML = `
+							<button class="btn btn-primary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
+								Continue Editing
+							</button>
+						`;
+					} else if (leaseConfirmation.status === 'pending_signature') {
+						actionButtonHTML = `
+							<button class="btn btn-primary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
+								View & Send
+							</button>
+						`;
+					} else if (leaseConfirmation.status === 'awaiting_signature') {
+						actionButtonHTML = `
+							<button class="btn btn-secondary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
+								View Details
+							</button>
+						`;
+					} else if (leaseConfirmation.status === 'signed') {
+						actionButtonHTML = `
+							<button class="btn btn-secondary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
+								View Signed Lease
+							</button>
+						`;
+					}
+				}
+
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					${statusHTML}
+					<div class="modal-actions" style="margin-top: 20px;">
+						${actionButtonHTML}
+					</div>
+				`;
+			} catch (error) {
+				console.error('Error fetching Prepare Lease details:', error);
+				return `
+					<div class="modal-details"><strong>Lead:</strong> ${lead.leadName || lead.name}</div>
+					<div class="modal-details"><em>Error loading lease preparation details. Please try again.</em></div>
+				`;
+			}
+
+		case 6: // Lease Sent
 			try {
 				const activities = await SupabaseAPI.getLeadActivities(lead.id);
 				const leaseSentActivity = activities.find(a => a.activity_type === 'lease_sent');
@@ -447,7 +563,7 @@ export async function getStepModalContent(lead, step, formatDate) {
 				`;
 			}
 
-		case 6: // Lease Finalized
+		case 7: // Lease Finalized
 			try {
 				const activities = await SupabaseAPI.getLeadActivities(lead.id);
 				const leaseFinalizedActivity = activities.find(a => a.activity_type === 'lease_finalized');
