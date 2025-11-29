@@ -468,6 +468,9 @@ export class LeaseConfirmationPage {
 						<!-- Form Actions -->
 						<div class="form-actions">
 							<button type="button" id="cancelLeaseForm" class="btn btn-secondary">Cancel</button>
+							<button type="button" id="previewPdfBtn" class="btn btn-info" style="display: none;">
+								📄 Preview PDF
+							</button>
 							<button type="button" id="saveLeaseForm" class="btn btn-primary">Save Draft</button>
 							<button type="submit" class="btn btn-success">Submit to Property</button>
 						</div>
@@ -495,6 +498,19 @@ export class LeaseConfirmationPage {
 		document.getElementById('saveLeaseForm').addEventListener('click', () => {
 			this.saveDraft();
 		});
+
+		// Preview PDF button
+		const previewBtn = document.getElementById('previewPdfBtn');
+		if (previewBtn) {
+			previewBtn.addEventListener('click', () => {
+				this.previewPDF();
+			});
+
+			// Show preview button if we have an existing confirmation
+			if (this.existingConfirmation) {
+				previewBtn.style.display = 'inline-block';
+			}
+		}
 
 		// Commission checkbox exclusivity
 		const commissionCheckboxes = document.querySelectorAll('input[name="commission"]');
@@ -701,6 +717,24 @@ export class LeaseConfirmationPage {
 		} catch (error) {
 			console.error('Error saving draft:', error);
 			alert('❌ Error saving draft. Please try again.\n\n' + error.message);
+		}
+	}
+
+	async previewPDF() {
+		console.log('Previewing PDF...');
+
+		if (!this.existingConfirmation) {
+			alert('⚠️ Please save the form as a draft first before previewing the PDF.');
+			return;
+		}
+
+		try {
+			// Open PDF in new tab
+			const pdfUrl = `/api/pdf/generate-lease-confirmation?leaseConfirmationId=${this.existingConfirmation.id}&preview=true`;
+			window.open(pdfUrl, '_blank');
+		} catch (error) {
+			console.error('Error previewing PDF:', error);
+			alert('❌ Error previewing PDF. Please try again.\n\n' + error.message);
 		}
 	}
 
