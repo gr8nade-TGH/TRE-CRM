@@ -141,9 +141,11 @@ export default async function handler(req, res) {
 
 		console.log('Lease confirmation found:', leaseConfirmation.id);
 
-		// Read HTML template
-		const templatePath = join(process.cwd(), 'src', 'templates', 'lease-confirmation-pdf.html');
+		// Read HTML template from api/pdf directory (Vercel serverless functions can only access files in their directory)
+		const templatePath = join(process.cwd(), 'api', 'pdf', 'lease-confirmation-template.html');
+		console.log('Template path:', templatePath);
 		const template = readFileSync(templatePath, 'utf-8');
+		console.log('Template loaded, length:', template.length);
 
 		// Format data and populate template
 		const formattedData = formatDataForPDF(leaseConfirmation);

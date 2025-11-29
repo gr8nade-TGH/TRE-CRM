@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Lease Confirmation</title>
+	<style>
+		* {
+			margin: 0;
+			padding: 0;
+			box-sizing: border-box;
+		}
+
+		body {
+			font-family: 'Arial', 'Helvetica', sans-serif;
+			font-size: 8.5pt;
+			line-height: 1.15;
+			color: #000;
+			background: #fff;
+			padding: 0;
+		}
+
+		.container {
+			max-width: 100%;
+			margin: 0 auto;
+			background: white;
+		}
+
+		/* Header */
+		.header {
+			display: flex;
+			justify-content: space-between;
+			align-items: flex-start;
+			margin-bottom: 12px;
+			padding-bottom: 8px;
+			border-bottom: 2px solid #2c5282;
+		}
+
+		.logo-section {
+			flex: 1;
+		}
+
+		.logo-section h2 {
+			font-size: 11pt;
+			font-weight: bold;
+			color: #2c5282;
+			margin-bottom: 2px;
+			line-height: 1.1;
+		}
+
+		.title-section {
+			flex: 1;
+			text-align: center;
+		}
+
+		.title-section h1 {
+			font-size: 16pt;
+			font-weight: bold;
+			color: #2c5282;
+			margin-bottom: 4px;
+		}
+
+		.subtitle {
+			font-size: 7pt;
+			color: #666;
+			margin-bottom: 2px;
+		}
+
+		.accounting-box {
+			flex: 1;
+			border: 1.5px solid #000;
+			padding: 6px;
+			font-size: 7pt;
+		}
+
+		.accounting-box h4 {
+			text-align: center;
+			margin-bottom: 4px;
+			font-size: 8pt;
+		}
+
+		.acc-row {
+			display: flex;
+			justify-content: space-between;
+			margin-bottom: 2px;
+		}
+
+		.acc-row label {
+			font-weight: bold;
+		}
+
+		/* Form Sections */
+		.section {
+			margin-bottom: 10px;
+		}
+
+		.section-title {
+			font-size: 9pt;
+			font-weight: bold;
+			color: #2c5282;
+			margin-bottom: 6px;
+			padding-bottom: 3px;
+			border-bottom: 1.5px solid #e2e8f0;
+		}
+
+		.row {
+			display: flex;
+			gap: 12px;
+			margin-bottom: 5px;
+		}
+
+		.field {
+			flex: 1;
+		}
+
+		.field-label {
+			font-weight: bold;
+			font-size: 8pt;
+			margin-bottom: 1px;
+			color: #333;
+		}
+
+		.field-value {
+			font-size: 8.5pt;
+			padding: 2px 0;
+			border-bottom: 1px solid #cbd5e0;
+			min-height: 16px;
+		}
+
+		.checkbox-group {
+			display: flex;
+			gap: 10px;
+			flex-wrap: wrap;
+		}
+
+		.checkbox-item {
+			display: flex;
+			align-items: center;
+			gap: 3px;
+			font-size: 8pt;
+		}
+
+		.checkbox {
+			width: 11px;
+			height: 11px;
+			border: 1px solid #000;
+			display: inline-block;
+		}
+
+		.checkbox.checked::after {
+			content: '✓';
+			font-size: 9pt;
+			font-weight: bold;
+		}
+
+		/* Signature Section */
+		.signature-section {
+			margin-top: 15px;
+			padding-top: 10px;
+			border-top: 1.5px solid #2c5282;
+		}
+
+		.signature-line {
+			border-bottom: 1px solid #000;
+			min-height: 30px;
+			margin-bottom: 3px;
+		}
+
+		/* Footer */
+		.footer {
+			margin-top: 12px;
+			padding-top: 8px;
+			border-top: 1px solid #cbd5e0;
+			font-size: 7pt;
+			color: #666;
+			text-align: center;
+		}
+
+		@media print {
+			body {
+				padding: 0;
+			}
+		}
+	</style>
+</head>
+
+<body>
+	<div class="container">
+		<!-- Header -->
+		<div class="header">
+			<div class="logo-section">
+				<h2>TEXAS RELOCATION EXPERTS</h2>
+			</div>
+			<div class="title-section">
+				<h1>LEASE CONFIRMATION</h1>
+				<p class="subtitle">Please complete & return within 48 hours after move-in</p>
+				<p class="subtitle">Fax: 210.348.8493 | SA Huebner Office</p>
+			</div>
+			<div class="accounting-box">
+				<h4>- - - ACCOUNTING USE - - -</h4>
+				<div class="acc-row">
+					<label>Invoice #:</label>
+					<span>{{invoiceNumber}}</span>
+				</div>
+				<div class="acc-row">
+					<label>Pay Status:</label>
+					<span>{{payStatus}}</span>
+				</div>
+				<div class="acc-row">
+					<label>DB Ref #:</label>
+					<span>{{dbRefNumber}}</span>
+				</div>
+			</div>
+		</div>
+
+		<!-- Basic Information -->
+		<div class="section">
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Date:</div>
+					<div class="field-value">{{date}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">ATTN:</div>
+					<div class="field-value">{{attn}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Locator:</div>
+					<div class="field-value">{{locator}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Property:</div>
+					<div class="field-value">{{propertyName}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Locator Contact:</div>
+					<div class="field-value">{{locatorContact}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Phone:</div>
+					<div class="field-value">{{propertyPhone}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Fax/Email:</div>
+					<div class="field-value">{{faxEmail}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Split Agent:</div>
+					<div class="field-value">{{splitAgent}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Split Cut:</div>
+					<div class="field-value">{{splitCut}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Tenant Information -->
+		<div class="section">
+			<div class="section-title">TENANT INFORMATION</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Tenant Name(s):</div>
+					<div class="field-value">{{tenantNames}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Tenant Phone:</div>
+					<div class="field-value">{{tenantPhone}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Move-in Date:</div>
+					<div class="field-value">{{moveInDate}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Expected Unit:</div>
+					<div class="field-value">{{expectedUnit}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Property Personnel Section -->
+		<div class="section">
+			<div class="section-title">PROPERTY PERSONNEL TO COMPLETE</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Are tenant names correct?</div>
+					<div class="checkbox-group">
+						<div class="checkbox-item">
+							<span class="checkbox {{tenantsCorrectYes}}"></span>
+							<span>Yes</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{tenantsCorrectNo}}"></span>
+							<span>No</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">If no, please list corrections:</div>
+					<div class="field-value">{{tenantCorrections}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Apartment/Unit Number:</div>
+					<div class="field-value">{{unitNumber}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Rent Amount:</div>
+					<div class="field-value">${{rentAmount}} per month</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Rent w/Concessions:</div>
+					<div class="field-value">${{rentWithConcessions}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Commission:</div>
+					<div class="checkbox-group">
+						<div class="checkbox-item">
+							<span class="checkbox {{comm25}}"></span>
+							<span>25%</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{comm50}}"></span>
+							<span>50%</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{comm75}}"></span>
+							<span>75%</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{comm100}}"></span>
+							<span>100%</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{commOther}}"></span>
+							<span>Other: {{commissionOtherPercent}}%</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{commFlat}}"></span>
+							<span>Flat Fee: ${{commissionFlatAmount}}</span>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Term of Lease (months):</div>
+					<div class="field-value">{{leaseTerm}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">PO# for invoice:</div>
+					<div class="field-value">{{poNumber}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Date tenant actually moved-in:</div>
+					<div class="field-value">{{actualMoveInDate}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Name of Locator on Application:</div>
+					<div class="field-value">{{locatorOnApp}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Escorted?</div>
+					<div class="checkbox-group">
+						<div class="checkbox-item">
+							<span class="checkbox {{escortedYes}}"></span>
+							<span>Yes</span>
+						</div>
+						<div class="checkbox-item">
+							<span class="checkbox {{escortedNo}}"></span>
+							<span>No</span>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Signature Section -->
+		<div class="signature-section">
+			<div class="section-title">SIGNATURE</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Signature:</div>
+					<div class="signature-line"></div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Printed Name:</div>
+					<div class="field-value">{{printedName}}</div>
+				</div>
+				<div class="field">
+					<div class="field-label">Date:</div>
+					<div class="field-value">{{signatureDate}}</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Footer -->
+		<div class="footer">
+			<p>Texas Relocation Experts | SA Huebner Office</p>
+			<p>Fax: 210.348.8493 | Email: info@tre-crm.com</p>
+			<p>This document was generated on {{generatedDate}}</p>
+		</div>
+	</div>
+</body>
+
+</html>
