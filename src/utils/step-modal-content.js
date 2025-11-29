@@ -507,9 +507,20 @@ export async function getStepModalContent(lead, step, formatDate) {
 							</button>
 						`;
 					} else if (leaseConfirmation.status === 'signed') {
+						const signedDate = leaseConfirmation.signed_at ? formatDate(leaseConfirmation.signed_at) : 'Unknown';
+						const signedBy = leaseConfirmation.signed_by_name || leaseConfirmation.signed_by_email || 'Unknown';
+
+						statusHTML += `
+							<div class="modal-details"><strong>Signed:</strong> ${signedDate}</div>
+							<div class="modal-details"><strong>Signed By:</strong> ${signedBy}</div>
+						`;
+
 						actionButtonHTML = `
-							<button class="btn btn-secondary" onclick="window.location.hash = '#/lease-confirmation?leadId=${lead.id}'">
-								View Signed Lease
+							<button class="btn btn-success" onclick="window.open('/api/pdf/view-signed-lease?leaseConfirmationId=${leaseConfirmation.id}', '_blank')">
+								📄 View Signed PDF
+							</button>
+							<button class="btn btn-secondary" onclick="window.open('/api/pdf/view-signed-lease?leaseConfirmationId=${leaseConfirmation.id}&download=true', '_blank')">
+								⬇️ Download PDF
 							</button>
 						`;
 					}
