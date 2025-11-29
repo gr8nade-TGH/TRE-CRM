@@ -158,54 +158,68 @@ export default async function handler(req, res) {
 		// Generate PDF using Puppeteer
 		console.log('Launching browser...');
 
-		const browser = await puppeteer.launch({
-			args: chromium.args,
-			defaultViewport: chromium.defaultViewport,
-			executablePath: await chromium.executablePath,
-			headless: chromium.headless,
-		});
+		let browser;
+		try {
+			browser = await puppeteer.launch({
+				args: chromium.args,
+				defaultViewport: chromium.defaultViewport,
+				executablePath: await chromium.executablePath,
+				headless: chromium.headless,
+			});
 
-		console.log('Browser launched, creating page...');
-		const page = await browser.newPage();
+			console.log('Browser launched, creating page...');
+			const page = await browser.newPage();
 
-		// Set content and wait for it to load
-		await page.setContent(html, {
-			waitUntil: 'networkidle0'
-		});
+			// Set content and wait for it to load
+			console.log('Setting page content...');
+			await page.setContent(html, {
+				waitUntil: 'networkidle0',
+				timeout: 30000
+			});
 
-		console.log('Generating PDF...');
+			console.log('Generating PDF...');
 
-		// Generate PDF - optimized for single page
-		const pdfBuffer = await page.pdf({
-			format: 'Letter',
-			printBackground: true,
-			margin: {
-				top: '0.3in',
-				right: '0.3in',
-				bottom: '0.3in',
-				left: '0.3in'
-			},
-			preferCSSPageSize: false,
-			scale: 0.95  // Slightly reduce scale to fit more content
-		});
+			// Generate PDF - optimized for single page
+			const pdfBuffer = await page.pdf({
+				format: 'Letter',
+				printBackground: true,
+				margin: {
+					top: '0.3in',
+					right: '0.3in',
+					bottom: '0.3in',
+					left: '0.3in'
+				},
+				preferCSSPageSize: false,
+				scale: 0.95  // Slightly reduce scale to fit more content
+			});
 
-		await browser.close();
-		console.log('PDF generated successfully');
+			await browser.close();
+			console.log('PDF generated successfully');
 
-		// Set response headers
-		const filename = `Lease_Confirmation_${leaseConfirmation.lead_id}_${Date.now()}.pdf`;
-		res.setHeader('Content-Type', 'application/pdf');
-		res.setHeader('Content-Disposition', preview === 'true' ? 'inline' : `attachment; filename="${filename}"`);
-		res.setHeader('Content-Length', pdfBuffer.length);
+			// Set response headers
+			const filename = `Lease_Confirmation_${leaseConfirmation.lead_id}_${Date.now()}.pdf`;
+			res.setHeader('Content-Type', 'application/pdf');
+			res.setHeader('Content-Disposition', preview === 'true' ? 'inline' : `attachment; filename="${filename}"`);
+			res.setHeader('Content-Length', pdfBuffer.length);
 
-		// Send PDF
-		return res.send(pdfBuffer);
+			// Send PDF
+			return res.send(pdfBuffer);
+
+		} catch (browserError) {
+			console.error('Browser/PDF generation error:', browserError);
+			if (browser) {
+				await browser.close().catch(e => console.error('Error closing browser:', e));
+			}
+			throw browserError;
+		}
 
 	} catch (error) {
 		console.error('PDF generation error:', error);
+		console.error('Error stack:', error.stack);
 		return res.status(500).json({
 			error: 'Internal server error',
-			details: error.message
+			message: error.message,
+			stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
 		});
 	}
 }
