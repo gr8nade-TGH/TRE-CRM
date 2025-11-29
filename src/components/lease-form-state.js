@@ -52,13 +52,9 @@ export class LeaseFormState {
             locator_on_app: this.getFieldValue('locatorOnApp'),
             escorted: this.getRadioValue('escorted'),
 
-            // Accounting
+            // Accounting (only fields that exist in database)
             invoice_number: this.getFieldValue('invoiceNumber'),
-            invoice_method: this.getFieldValue('invoiceMethod'),
             pay_status: this.getFieldValue('payStatus'),
-            received: this.getFieldValue('received'),
-            invoiced: this.getFieldValue('invoiced'),
-            accounting_notes: this.getFieldValue('accountingNotes'),
             db_ref_number: this.getFieldValue('dbRefNumber'),
         };
 
@@ -108,10 +104,10 @@ export class LeaseFormState {
         const errors = [];
         const data = this.collectFormData();
 
-        // Required fields
+        // Required fields - only validate essential fields for draft
         if (!data.date) errors.push('Date is required');
         if (!data.tenant_names) errors.push('Tenant name(s) is required');
-        if (!data.property_name) errors.push('Property name is required');
+        // Property name is optional - can be filled in manually
 
         return {
             isValid: errors.length === 0,

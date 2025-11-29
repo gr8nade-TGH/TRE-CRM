@@ -44,27 +44,11 @@ export class InteractivePDFTemplate {
                     <h4>- - - ACCOUNTING USE - - -</h4>
                     <div class="pdf-acc-row">
                         <label>Invoice #:</label>
-                        <input type="text" id="invoiceNumber" value="${data.invoiceNumber || ''}" readonly>
-                    </div>
-                    <div class="pdf-acc-row">
-                        <label>Method:</label>
-                        <input type="text" id="invoiceMethod" value="${data.invoiceMethod || ''}" placeholder="F/MP/MC/E">
+                        <input type="text" id="invoiceNumber" value="${data.invoiceNumber || ''}">
                     </div>
                     <div class="pdf-acc-row">
                         <label>Pay Status:</label>
                         <input type="text" id="payStatus" value="${data.payStatus || ''}" placeholder="PUMI/SP">
-                    </div>
-                    <div class="pdf-acc-row">
-                        <label>Received:</label>
-                        <input type="text" id="received" value="${data.received || ''}">
-                    </div>
-                    <div class="pdf-acc-row">
-                        <label>Invoiced:</label>
-                        <input type="text" id="invoiced" value="${data.invoiced || ''}">
-                    </div>
-                    <div class="pdf-acc-row">
-                        <label>Notes:</label>
-                        <input type="text" id="accountingNotes" value="${data.accountingNotes || ''}">
                     </div>
                     <div class="pdf-acc-row">
                         <label>DB Ref #:</label>

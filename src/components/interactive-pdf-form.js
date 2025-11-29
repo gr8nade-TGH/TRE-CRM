@@ -114,11 +114,7 @@ export class InteractivePDFForm {
                 locatorOnApp: this.existingConfirmation.locator_on_app,
                 escorted: this.existingConfirmation.escorted,
                 invoiceNumber: this.existingConfirmation.invoice_number,
-                invoiceMethod: this.existingConfirmation.invoice_method,
                 payStatus: this.existingConfirmation.pay_status,
-                received: this.existingConfirmation.received,
-                invoiced: this.existingConfirmation.invoiced,
-                accountingNotes: this.existingConfirmation.accounting_notes,
                 dbRefNumber: this.existingConfirmation.db_ref_number,
             };
         }
@@ -133,7 +129,8 @@ export class InteractivePDFForm {
         if (this.propertyData) {
             data.propertyName = this.propertyData.community_name || this.propertyData.name || '';
             data.propertyPhone = this.propertyData.phone || '';
-            data.locatorContact = this.propertyData.contact_email || '';
+            data.faxEmail = this.propertyData.contact_email || '';
+            data.attn = this.propertyData.contact_name || '';
         }
 
         // Get current user as locator
