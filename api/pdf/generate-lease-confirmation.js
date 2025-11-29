@@ -16,7 +16,7 @@
 const { createClient } = require('@supabase/supabase-js');
 const { readFileSync } = require('fs');
 const { join } = require('path');
-const chromium = require('@sparticuz/chromium');
+const chromium = require('@sparticuz/chromium-min');
 const puppeteer = require('puppeteer-core');
 
 // __dirname is automatically available in CommonJS
@@ -187,10 +187,13 @@ export default async function handler(req, res) {
 
 		let browser;
 		try {
+			// Use chromium-min with hosted binary to stay under 50MB limit
 			browser = await puppeteer.launch({
 				args: chromium.args,
 				defaultViewport: chromium.defaultViewport,
-				executablePath: await chromium.executablePath(),
+				executablePath: await chromium.executablePath(
+					'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar'
+				),
 				headless: chromium.headless,
 			});
 
