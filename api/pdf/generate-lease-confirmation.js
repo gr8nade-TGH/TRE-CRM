@@ -13,13 +13,17 @@
  * - VITE_SUPABASE_ANON_KEY
  */
 
-const { createClient } = require('@supabase/supabase-js');
-const { readFileSync } = require('fs');
-const { join } = require('path');
-const chromium = require('@sparticuz/chromium-min');
-const puppeteer = require('puppeteer-core');
+import { createClient } from '@supabase/supabase-js';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import chromium from '@sparticuz/chromium-min';
+import puppeteer from 'puppeteer-core';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
-// __dirname is automatically available in CommonJS
+// Get __dirname in ES modules
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -254,4 +258,4 @@ export default async function handler(req, res) {
 	}
 }
 
-module.exports = handler;
+export default handler;
