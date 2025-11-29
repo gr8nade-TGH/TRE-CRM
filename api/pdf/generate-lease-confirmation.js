@@ -17,7 +17,7 @@ import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import chromium from 'chrome-aws-lambda';
+import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 // Get __dirname equivalent in ES modules
@@ -193,7 +193,7 @@ export default async function handler(req, res) {
 			browser = await puppeteer.launch({
 				args: chromium.args,
 				defaultViewport: chromium.defaultViewport,
-				executablePath: await chromium.executablePath,
+				executablePath: await chromium.executablePath(),
 				headless: chromium.headless,
 			});
 

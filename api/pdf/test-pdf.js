@@ -33,9 +33,9 @@ export default async function handler(req, res) {
 
 		if (fetchError || !leaseConfirmation) {
 			console.error('Supabase fetch error:', fetchError);
-			return res.status(404).json({ 
+			return res.status(404).json({
 				error: 'Lease confirmation not found',
-				details: fetchError?.message 
+				details: fetchError?.message
 			});
 		}
 
@@ -46,10 +46,10 @@ export default async function handler(req, res) {
 		const fs = await import('fs');
 		const path = await import('path');
 		const { fileURLToPath } = await import('url');
-		
+
 		const __filename = fileURLToPath(import.meta.url);
 		const __dirname = path.dirname(__filename);
-		
+
 		console.log('✅ fs and path modules loaded');
 		console.log('__dirname:', __dirname);
 
@@ -92,14 +92,14 @@ export default async function handler(req, res) {
 			}
 		}
 
-		// Test 4: Can we import chrome-aws-lambda?
-		console.log('Test 4: Testing chrome-aws-lambda import...');
+		// Test 4: Can we import @sparticuz/chromium?
+		console.log('Test 4: Testing @sparticuz/chromium import...');
 		try {
-			const chromium = await import('chrome-aws-lambda');
-			console.log('✅ chrome-aws-lambda imported');
+			const chromium = await import('@sparticuz/chromium');
+			console.log('✅ @sparticuz/chromium imported');
 			console.log('Chromium args:', chromium.default.args);
 		} catch (err) {
-			console.log('❌ chrome-aws-lambda import failed:', err.message);
+			console.log('❌ @sparticuz/chromium import failed:', err.message);
 		}
 
 		// Test 5: Can we import puppeteer-core?
@@ -120,7 +120,7 @@ export default async function handler(req, res) {
 				templateFound: templateFound ? '✅ Found' : '❌ Not Found',
 				templatePath: templatePath,
 				templateLength: templateContent?.length || 0,
-				chromeAwsLambda: 'Check logs',
+				sparticuzChromium: 'Check logs',
 				puppeteerCore: 'Check logs'
 			},
 			leaseConfirmation: {
