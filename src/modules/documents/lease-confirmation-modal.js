@@ -1,11 +1,11 @@
 /**
  * Lease Confirmation Modal Module
- * Handles the modal display for lease confirmation status and form
- * 
+ * Handles the modal display for lease confirmation status
+ * Form functionality has been moved to Interactive PDF Form
+ *
  * @module documents/lease-confirmation-modal
  */
 
-import { createLeaseConfirmationForm, validateLeaseForm, getLeaseFormData } from './lease-confirmation-form.js';
 import { createLeaseConfirmationPreview } from './lease-confirmation-preview.js';
 
 /**
@@ -151,70 +151,7 @@ function setupModalEventListeners(modal, lead, property, deps) {
 }
 
 /**
- * Show the lease confirmation form
- * @param {HTMLElement} modal - Modal element
- * @param {Object} lead - Lead object
- * @param {Object} property - Property object
- * @param {Object} deps - Dependencies
- */
-function showLeaseForm(modal, lead, property, deps) {
-	const { SupabaseAPI, toast } = deps;
-
-	// Replace modal body with form
-	const modalBody = modal.querySelector('#leaseModalBody');
-	modalBody.innerHTML = createLeaseConfirmationForm(lead, property);
-
-	// Setup form event listeners
-	const cancelBtn = modal.querySelector('#cancelLeaseForm');
-	cancelBtn?.addEventListener('click', () => {
-		modal.remove();
-	});
-
-	const previewBtn = modal.querySelector('#previewLeaseForm');
-	previewBtn?.addEventListener('click', () => {
-		showPreview(modal, lead, property, deps);
-	});
-}
-
-/**
- * Show the preview of the lease confirmation
- * @param {HTMLElement} modal - Modal element
- * @param {Object} lead - Lead object
- * @param {Object} property - Property object
- * @param {Object} deps - Dependencies
- */
-function showPreview(modal, lead, property, deps) {
-	const { SupabaseAPI, toast } = deps;
-
-	// Validate form
-	const validation = validateLeaseForm();
-	if (!validation.isValid) {
-		toast(`Please fix the following errors:\n${validation.errors.join('\n')}`);
-		return;
-	}
-
-	// Get form data
-	const formData = getLeaseFormData();
-
-	// Replace modal body with preview
-	const modalBody = modal.querySelector('#leaseModalBody');
-	modalBody.innerHTML = createLeaseConfirmationPreview(formData, lead, property);
-
-	// Setup preview event listeners
-	const backBtn = modal.querySelector('#backToForm');
-	backBtn?.addEventListener('click', () => {
-		showLeaseForm(modal, lead, property, deps);
-	});
-
-	const sendBtn = modal.querySelector('#sendLeaseConfirmation');
-	sendBtn?.addEventListener('click', async () => {
-		await sendLeaseConfirmation(formData, lead, property, deps);
-		modal.remove();
-	});
-}
-
-/**
- * Send the lease confirmation
+ * Send the lease confirmation (LEGACY - kept for viewing old confirmations)
  * @param {Object} formData - Form data
  * @param {Object} lead - Lead object
  * @param {Object} property - Property object
