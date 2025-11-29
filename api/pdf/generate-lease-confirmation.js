@@ -175,16 +175,18 @@ export default async function handler(req, res) {
 
 		console.log('Generating PDF...');
 
-		// Generate PDF
+		// Generate PDF - optimized for single page
 		const pdfBuffer = await page.pdf({
 			format: 'Letter',
 			printBackground: true,
 			margin: {
-				top: '0.5in',
-				right: '0.5in',
-				bottom: '0.5in',
-				left: '0.5in'
-			}
+				top: '0.3in',
+				right: '0.3in',
+				bottom: '0.3in',
+				left: '0.3in'
+			},
+			preferCSSPageSize: false,
+			scale: 0.95  // Slightly reduce scale to fit more content
 		});
 
 		await browser.close();
