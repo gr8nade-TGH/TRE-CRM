@@ -1,4 +1,4 @@
-import { SupabaseAPI } from '../modules/supabase-api.js';
+import * as SupabaseAPI from '../api/supabase-api.js';
 
 export class LeaseConfirmationPage {
 	constructor() {
@@ -18,8 +18,8 @@ export class LeaseConfirmationPage {
 	}
 
 	render() {
-		const app = document.getElementById('app');
-		app.innerHTML = `
+		const container = document.getElementById('leaseConfirmationView');
+		container.innerHTML = `
 			<div class="lease-confirmation-container">
 				<div class="lease-confirmation-form">
 					<!-- Header -->
