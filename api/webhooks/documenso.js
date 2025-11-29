@@ -12,6 +12,7 @@
 
 import { createClient } from '@supabase/supabase-js';
 import crypto from 'crypto';
+import { downloadDocument } from '../lib/documenso-client.js';
 
 // Initialize Supabase client
 const supabase = createClient(
@@ -107,6 +108,66 @@ export default async function handler(req, res) {
 
 			console.log('Lease confirmation updated to signed');
 
+			// Download signed PDF from Documenso and upload to Supabase Storage
+			let supabaseStorageUrl = null;
+			try {
+				console.log('Downloading signed PDF from Documenso...');
+				const pdfBuffer = await downloadDocument(documentId);
+				console.log('PDF downloaded, size:', pdfBuffer.length, 'bytes');
+
+				// Generate unique filename
+				const timestamp = Date.now();
+				const filename = `lease_${leaseConfirmation.lead_id}_${timestamp}.pdf`;
+				const filePath = `${leaseConfirmation.lead_id}/${filename}`;
+
+				console.log('Uploading to Supabase Storage:', filePath);
+
+				// Upload to Supabase Storage
+				const { data: uploadData, error: uploadError } = await supabase.storage
+					.from('lease-documents')
+					.upload(filePath, pdfBuffer, {
+						contentType: 'application/pdf',
+						cacheControl: '3600',
+						upsert: false
+					});
+
+				if (uploadError) {
+					console.error('Error uploading to Supabase Storage:', uploadError);
+					throw uploadError;
+				}
+
+				console.log('PDF uploaded to Supabase Storage:', uploadData.path);
+
+				// Get public URL (even though bucket is private, we store the path)
+				const { data: urlData } = supabase.storage
+					.from('lease-documents')
+					.getPublicUrl(filePath);
+
+				supabaseStorageUrl = urlData.publicUrl;
+				console.log('Storage URL:', supabaseStorageUrl);
+
+				// Update lease confirmation with Supabase Storage URL
+				const { error: storageUpdateError } = await supabase
+					.from('lease_confirmations')
+					.update({
+						signed_pdf_url: supabaseStorageUrl,
+						signed_pdf_storage_path: filePath
+					})
+					.eq('id', leaseConfirmation.id);
+
+				if (storageUpdateError) {
+					console.error('Error updating storage URL:', storageUpdateError);
+					// Don't fail the webhook if this update fails
+				} else {
+					console.log('Lease confirmation updated with storage URL');
+				}
+
+			} catch (pdfError) {
+				console.error('Error downloading/uploading PDF:', pdfError);
+				// Don't fail the webhook if PDF download/upload fails
+				// The document is still marked as signed and we have the Documenso URL
+			}
+
 			// Log activity
 			const { error: activityError } = await supabase
 				.from('lead_activities')
@@ -130,8 +191,8 @@ export default async function handler(req, res) {
 
 			console.log('Activity logged successfully');
 
-			return res.status(200).json({ 
-				success: true, 
+			return res.status(200).json({
+				success: true,
 				message: 'Lease confirmation updated to signed',
 				leaseConfirmationId: leaseConfirmation.id
 			});
