@@ -174,14 +174,22 @@ async function handler(req, res) {
 		// Generate PDF using Browserless.io
 		console.log('Connecting to Browserless.io...');
 
+		// Check for Browserless token
+		const browserlessToken = process.env.BROWSERLESS_TOKEN;
+
+		if (!browserlessToken) {
+			throw new Error(
+				'BROWSERLESS_TOKEN environment variable is not set. ' +
+				'Please add it in Vercel Dashboard: Settings → Environment Variables. ' +
+				'Get your token from https://www.browserless.io/'
+			);
+		}
+
 		let browser;
 		try {
-			// Connect to Browserless.io
-			// Get API token from environment variable (you'll need to set this in Vercel)
-			const browserlessToken = process.env.BROWSERLESS_TOKEN || 'YOUR_TOKEN_HERE';
 			const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}`;
 
-			console.log('Connecting to Browserless...');
+			console.log('Connecting to Browserless with token:', browserlessToken.substring(0, 10) + '...');
 			browser = await puppeteer.connect({
 				browserWSEndpoint
 			});
