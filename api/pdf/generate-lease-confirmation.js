@@ -229,8 +229,9 @@ async function handler(req, res) {
 			res.setHeader('Content-Disposition', preview === 'true' ? 'inline' : `attachment; filename="${filename}"`);
 			res.setHeader('Content-Length', pdfBuffer.length);
 
-			// Send PDF
-			return res.send(pdfBuffer);
+			// Send PDF as binary data
+			res.status(200);
+			return res.end(pdfBuffer, 'binary');
 
 		} catch (browserError) {
 			console.error('❌ Browserless/PDF generation error:', browserError);
