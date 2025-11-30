@@ -16,7 +16,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import chromium from '@sparticuz/chromium-min';
+import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -194,10 +194,10 @@ async function handler(req, res) {
 
 		let browser;
 		try {
-			// Use chromium-min with hosted binary to stay under 50MB limit
-			const executablePath = await chromium.executablePath(
-				'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar'
-			);
+			// Use chromium-min - it will download the binary automatically
+			const executablePath = await chromium.executablePath();
+
+			console.log('Chromium executable path:', executablePath);
 
 			browser = await puppeteer.launch({
 				args: [

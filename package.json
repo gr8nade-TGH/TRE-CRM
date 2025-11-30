@@ -20,7 +20,7 @@
   "author": "TRE",
   "license": "ISC",
   "dependencies": {
-    "@sparticuz/chromium-min": "^119.0.2",
+    "@sparticuz/chromium": "^119.0.2",
     "@supabase/supabase-js": "^2.75.1",
     "@vercel/speed-insights": "^1.2.0",
     "pg": "^8.16.3",
