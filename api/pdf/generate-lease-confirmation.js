@@ -26,9 +26,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
 // Initialize Supabase client
+// Using hardcoded values since they're already public in index.html
 const supabase = createClient(
-	process.env.VITE_SUPABASE_URL,
-	process.env.VITE_SUPABASE_ANON_KEY
+	'https://mevirooooypfjbsrmzrk.supabase.co',
+	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTk3MTU1MDgsImV4cCI6MjA3NTI5MTUwOH0.FGez_nPoWZA5NKbJP54e5JsgJILrWB7rBUD4vx6iZZA'
 );
 
 /**
