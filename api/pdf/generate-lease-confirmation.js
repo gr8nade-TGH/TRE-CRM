@@ -122,6 +122,9 @@ async function handler(req, res) {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
+	// Set font config path for chromium
+	process.env.FONTCONFIG_PATH = '/tmp';
+
 	try {
 		const { leaseConfirmationId, preview } = req.query;
 
@@ -192,12 +195,23 @@ async function handler(req, res) {
 		let browser;
 		try {
 			// Use chromium-min with hosted binary to stay under 50MB limit
+			const executablePath = await chromium.executablePath(
+				'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar'
+			);
+
 			browser = await puppeteer.launch({
-				args: chromium.args,
+				args: [
+					...chromium.args,
+					'--disable-gpu',
+					'--disable-dev-shm-usage',
+					'--disable-setuid-sandbox',
+					'--no-first-run',
+					'--no-sandbox',
+					'--no-zygote',
+					'--single-process',
+				],
 				defaultViewport: chromium.defaultViewport,
-				executablePath: await chromium.executablePath(
-					'https://github.com/Sparticuz/chromium/releases/download/v119.0.2/chromium-v119.0.2-pack.tar'
-				),
+				executablePath,
 				headless: chromium.headless,
 			});
 
