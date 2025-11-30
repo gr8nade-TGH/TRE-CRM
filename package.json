@@ -20,11 +20,10 @@
   "author": "TRE",
   "license": "ISC",
   "dependencies": {
-    "@sparticuz/chromium": "^119.0.2",
     "@supabase/supabase-js": "^2.75.1",
     "@vercel/speed-insights": "^1.2.0",
     "pg": "^8.16.3",
-    "puppeteer-core": "^21.5.1",
+    "puppeteer-core": "^24.31.0",
     "resend": "^6.5.2"
   },
   "devDependencies": {

@@ -16,7 +16,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { readFileSync } from 'fs';
 import { join } from 'path';
-import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
@@ -24,6 +23,8 @@ import { dirname } from 'path';
 // Get __dirname in ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+
 
 // Initialize Supabase client with service role key to bypass RLS
 const supabase = createClient(
@@ -122,9 +123,6 @@ async function handler(req, res) {
 		return res.status(405).json({ error: 'Method not allowed' });
 	}
 
-	// Set font config path for chromium
-	process.env.FONTCONFIG_PATH = '/tmp';
-
 	try {
 		const { leaseConfirmationId, preview } = req.query;
 
@@ -150,33 +148,17 @@ async function handler(req, res) {
 
 		console.log('Lease confirmation found:', leaseConfirmation.id);
 
-		// Read HTML template from same directory as this function
-		// Try multiple paths to find the template
+		// Read HTML template
 		let template;
-		let templatePath;
+		const templatePath = join(__dirname, 'lease-confirmation-template.html');
 
-		const possiblePaths = [
-			join(__dirname, 'lease-confirmation-template.html'),
-			join(process.cwd(), 'api', 'pdf', 'lease-confirmation-template.html'),
-			'./lease-confirmation-template.html'
-		];
-
-		console.log('Attempting to load template from possible paths:', possiblePaths);
-
-		for (const path of possiblePaths) {
-			try {
-				console.log('Trying path:', path);
-				template = readFileSync(path, 'utf-8');
-				templatePath = path;
-				console.log('✅ Template loaded successfully from:', path, 'Length:', template.length);
-				break;
-			} catch (err) {
-				console.log('❌ Failed to load from:', path, 'Error:', err.message);
-			}
-		}
-
-		if (!template) {
-			throw new Error('Could not find template file in any of the expected locations');
+		try {
+			console.log('Loading template from:', templatePath);
+			template = readFileSync(templatePath, 'utf-8');
+			console.log('✅ Template loaded successfully, length:', template.length);
+		} catch (err) {
+			console.error('❌ Failed to load template:', err);
+			throw new Error('Could not find template file: ' + templatePath);
 		}
 
 		// Format data and populate template
@@ -189,33 +171,22 @@ async function handler(req, res) {
 			return res.send(html);
 		}
 
-		// Generate PDF using Puppeteer
-		console.log('Launching browser...');
+		// Generate PDF using Browserless.io
+		console.log('Connecting to Browserless.io...');
 
 		let browser;
 		try {
-			// Use chromium-min - it will download the binary automatically
-			const executablePath = await chromium.executablePath();
+			// Connect to Browserless.io
+			// Get API token from environment variable (you'll need to set this in Vercel)
+			const browserlessToken = process.env.BROWSERLESS_TOKEN || 'YOUR_TOKEN_HERE';
+			const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}`;
 
-			console.log('Chromium executable path:', executablePath);
-
-			browser = await puppeteer.launch({
-				args: [
-					...chromium.args,
-					'--disable-gpu',
-					'--disable-dev-shm-usage',
-					'--disable-setuid-sandbox',
-					'--no-first-run',
-					'--no-sandbox',
-					'--no-zygote',
-					'--single-process',
-				],
-				defaultViewport: chromium.defaultViewport,
-				executablePath,
-				headless: chromium.headless,
+			console.log('Connecting to Browserless...');
+			browser = await puppeteer.connect({
+				browserWSEndpoint
 			});
 
-			console.log('Browser launched, creating page...');
+			console.log('✅ Connected to Browserless, creating page...');
 			const page = await browser.newPage();
 
 			// Set content and wait for it to load
@@ -238,14 +209,14 @@ async function handler(req, res) {
 					left: '0.3in'
 				},
 				preferCSSPageSize: false,
-				scale: 0.95  // Slightly reduce scale to fit more content
+				scale: 0.95
 			});
 
-			await browser.close();
-			console.log('PDF generated successfully');
+			await browser.disconnect();
+			console.log('✅ PDF generated successfully');
 
 			// Set response headers
-			const filename = `Lease_Confirmation_${leaseConfirmation.lead_id}_${Date.now()}.pdf`;
+			const filename = `Lease_Confirmation_${leaseConfirmation.lead_id || 'draft'}_${Date.now()}.pdf`;
 			res.setHeader('Content-Type', 'application/pdf');
 			res.setHeader('Content-Disposition', preview === 'true' ? 'inline' : `attachment; filename="${filename}"`);
 			res.setHeader('Content-Length', pdfBuffer.length);
@@ -254,9 +225,9 @@ async function handler(req, res) {
 			return res.send(pdfBuffer);
 
 		} catch (browserError) {
-			console.error('Browser/PDF generation error:', browserError);
+			console.error('❌ Browserless/PDF generation error:', browserError);
 			if (browser) {
-				await browser.close().catch(e => console.error('Error closing browser:', e));
+				await browser.disconnect().catch(e => console.error('Error disconnecting browser:', e));
 			}
 			throw browserError;
 		}
