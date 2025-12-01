@@ -14,8 +14,8 @@
 
 		body {
 			font-family: 'Arial', 'Helvetica', sans-serif;
-			font-size: 8.5pt;
-			line-height: 1.15;
+			font-size: 9pt;
+			line-height: 1.3;
 			color: #000;
 			background: #fff;
 			padding: 0;
@@ -92,23 +92,23 @@
 
 		/* Form Sections */
 		.section {
-			margin-bottom: 10px;
+			margin-bottom: 12px;
 		}
 
 		.section-title {
-			font-size: 9pt;
+			font-size: 10pt;
 			font-weight: bold;
 			color: #2c5282;
-			margin-bottom: 6px;
-			padding-bottom: 3px;
+			margin-bottom: 8px;
+			padding-bottom: 4px;
 			text-align: center;
 			border-bottom: 1.5px solid #e2e8f0;
 		}
 
 		.row {
 			display: flex;
-			gap: 12px;
-			margin-bottom: 5px;
+			gap: 15px;
+			margin-bottom: 6px;
 		}
 
 		.field {
@@ -117,16 +117,16 @@
 
 		.field-label {
 			font-weight: bold;
-			font-size: 8pt;
-			margin-bottom: 1px;
+			font-size: 8.5pt;
+			margin-bottom: 2px;
 			color: #333;
 		}
 
 		.field-value {
-			font-size: 8.5pt;
-			padding: 2px 0;
+			font-size: 9pt;
+			padding: 3px 0;
 			border-bottom: 1px solid #cbd5e0;
-			min-height: 16px;
+			min-height: 18px;
 		}
 
 		.checkbox-group {
@@ -157,25 +157,26 @@
 
 		/* Signature Section */
 		.signature-section {
-			margin-top: 15px;
-			padding-top: 10px;
-			border-top: 1.5px solid #2c5282;
+			margin-top: 20px;
+			padding-top: 12px;
+			border-top: 2px solid #2c5282;
 		}
 
 		.signature-line {
-			border-bottom: 1px solid #000;
-			min-height: 30px;
-			margin-bottom: 3px;
+			border-bottom: 1.5px solid #000;
+			min-height: 40px;
+			margin-bottom: 5px;
 		}
 
 		/* Footer */
 		.footer {
-			margin-top: 12px;
-			padding-top: 8px;
+			margin-top: 15px;
+			padding-top: 10px;
 			border-top: 1px solid #cbd5e0;
-			font-size: 7pt;
-			color: #666;
-			text-align: center;
+			font-size: 7.5pt;
+			color: #333;
+			text-align: left;
+			line-height: 1.4;
 		}
 
 		@media print {
@@ -421,28 +422,36 @@
 
 			<div class="row">
 				<div class="field">
-					<div class="field-label">Signature:</div>
-					<div class="signature-line"></div>
+					<div class="field-label">Printed Name of Authorized Representative:</div>
+					<div class="field-value">{{printedName}}</div>
 				</div>
 			</div>
 
 			<div class="row">
 				<div class="field">
-					<div class="field-label">Printed Name:</div>
-					<div class="field-value">{{printedName}}</div>
-				</div>
-				<div class="field">
 					<div class="field-label">Date:</div>
 					<div class="field-value">{{signatureDate}}</div>
+				</div>
+			</div>
+
+			<div class="row">
+				<div class="field">
+					<div class="field-label">Signature of Authorized Representative:</div>
+					<div class="signature-line"></div>
 				</div>
 			</div>
 		</div>
 
 		<!-- Footer -->
 		<div class="footer">
-			<p>Texas Relocation Experts | SA Huebner Office</p>
-			<p>Fax: 210.348.8493 | Email: info@tre-crm.com</p>
-			<p>This document was generated on {{generatedDate}}</p>
+			<p style="font-weight: bold; margin-bottom: 4px;">Note to Management:</p>
+			<p style="margin-bottom: 3px;">This is not an invoice. An invoice will be generated after move-in confirmed.
+			</p>
+			<p style="margin-bottom: 3px;">By signature above, Management Company confirms Texas Relocation Experts is
+				listed on application.</p>
+			<p style="margin-bottom: 6px;">TX Relocation Experts is guaranteed commission if tenant stays ≥90 days from
+				move-in date.</p>
+			<p style="font-style: italic;">Please return via fax to 210.348.8493 within 48 hours after move-in.</p>
 		</div>
 	</div>
 </body>
