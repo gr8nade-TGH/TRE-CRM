@@ -386,7 +386,7 @@ export class InteractivePDFTemplate {
                     📄 Preview PDF
                 </button>
                 <button type="button" class="pdf-btn pdf-btn-success" id="submitBtn">
-                    ✅ Submit to Property
+                    📧 Send for Signature
                 </button>
             </div>
         `;

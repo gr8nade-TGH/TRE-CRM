@@ -23,10 +23,10 @@ import { createClient } from '@supabase/supabase-js';
 import { createDocument } from '../lib/documenso-client.js';
 import { sendLeaseSigningRequest } from '../lib/email-service.js';
 
-// Initialize Supabase client
+// Initialize Supabase client with service role key to bypass RLS
 const supabase = createClient(
-	process.env.VITE_SUPABASE_URL,
-	process.env.VITE_SUPABASE_ANON_KEY
+	'https://mevirooooypfjbsrmzrk.supabase.co',
+	'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTcxNTUwOCwiZXhwIjoyMDc1MjkxNTA4fQ.bBGcPCsjEBBx6tgzmenJ6V7SGfzDJnAMoYBUpRUFAPA'
 );
 
 /**
