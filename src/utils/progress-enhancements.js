@@ -138,13 +138,23 @@ export function calculateNotifications(lead, activities) {
 	}
 
 	// General: Check for any step that's been current for too long
+	// Only show on steps that require agent action (not Step 1 which is automatic)
 	const lastActivityDate = activities.length > 0
 		? new Date(Math.max(...activities.map(a => new Date(a.created_at))))
 		: new Date(lead.created_at);
 
 	const daysSinceActivity = Math.floor((now - lastActivityDate) / (1000 * 60 * 60 * 24));
 
-	if (daysSinceActivity >= 5 && lead.current_step < 7) {
+	// Only show stale notification if:
+	// 1. Not on Step 1 (Lead Joined is automatic)
+	// 2. Not already showing another notification for this step
+	// 3. Been inactive for 7+ days (not 5)
+	// 4. Lead is not closed/completed
+	if (daysSinceActivity >= 7 &&
+		lead.current_step > 1 &&
+		lead.current_step < 7 &&
+		!notifications[lead.current_step] &&
+		lead.health_status !== 'closed') {
 		notifications[lead.current_step] = {
 			type: 'action_required',
 			message: `No activity in ${daysSinceActivity} days - action required`
