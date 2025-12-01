@@ -284,17 +284,19 @@ export class InteractivePDFForm {
      * Handle submit button - Show confirmation modal first
      */
     async handleSubmit() {
-        // Get property email from form
-        const propertyEmail = document.getElementById('faxEmail')?.value || '';
+        // Get data from form fields
         const propertyName = document.getElementById('propertyName')?.value || '';
         const tenantNames = document.getElementById('tenantNames')?.value || '';
 
-        if (!propertyEmail) {
-            this.showError('❌ Please enter a property contact email before submitting.');
-            return;
+        // Try to get email from form field first
+        let propertyEmail = document.getElementById('faxEmail')?.value || '';
+
+        // If no email in form, try to get from property data
+        if (!propertyEmail && this.propertyData) {
+            propertyEmail = this.propertyData.contact_email || '';
         }
 
-        // Show confirmation modal
+        // Show confirmation modal (even if email is empty - user can enter it in modal)
         this.showSubmitConfirmationModal(propertyEmail, propertyName, tenantNames);
     }
 
@@ -340,16 +342,18 @@ export class InteractivePDFForm {
                     <strong style="color: #2c5282;">🏢 Property:</strong><br>
                     <span style="color: #333;">${propertyName || 'Not specified'}</span>
                 </div>
-                <div>
-                    <strong style="color: #2c5282;">✉️ Send to:</strong><br>
+                <div style="margin-bottom: 16px;">
+                    <label for="confirmEmailInput" style="display: block; margin-bottom: 6px;">
+                        <strong style="color: #2c5282;">✉️ Send to (Required):</strong>
+                    </label>
                     <input
                         type="email"
                         id="confirmEmailInput"
                         value="${propertyEmail}"
+                        required
                         style="
                             width: 100%;
                             padding: 10px;
-                            margin-top: 8px;
                             border: 2px solid #cbd5e0;
                             border-radius: 6px;
                             font-size: 14px;
@@ -357,6 +361,31 @@ export class InteractivePDFForm {
                         "
                         placeholder="property@example.com"
                     />
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 4px;">
+                        Property contact who will sign the document
+                    </small>
+                </div>
+                <div>
+                    <label for="confirmEmailCC" style="display: block; margin-bottom: 6px;">
+                        <strong style="color: #2c5282;">📎 CC (Optional):</strong>
+                    </label>
+                    <input
+                        type="email"
+                        id="confirmEmailCC"
+                        value=""
+                        style="
+                            width: 100%;
+                            padding: 10px;
+                            border: 2px solid #cbd5e0;
+                            border-radius: 6px;
+                            font-size: 14px;
+                            box-sizing: border-box;
+                        "
+                        placeholder="additional@example.com"
+                    />
+                    <small style="color: #718096; font-size: 12px; display: block; margin-top: 4px;">
+                        Additional recipient to receive a copy (optional)
+                    </small>
                 </div>
             </div>
             <div style="display: flex; gap: 12px; justify-content: flex-end;">
@@ -403,9 +432,27 @@ export class InteractivePDFForm {
 
         document.getElementById('confirmSubmitBtn').addEventListener('click', async () => {
             const confirmedEmail = document.getElementById('confirmEmailInput').value.trim();
+            const ccEmail = document.getElementById('confirmEmailCC').value.trim();
 
+            // Validate primary email
             if (!confirmedEmail) {
-                alert('Please enter an email address.');
+                alert('⚠️ Please enter a recipient email address.');
+                document.getElementById('confirmEmailInput').focus();
+                return;
+            }
+
+            // Basic email validation
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(confirmedEmail)) {
+                alert('⚠️ Please enter a valid email address.');
+                document.getElementById('confirmEmailInput').focus();
+                return;
+            }
+
+            // Validate CC email if provided
+            if (ccEmail && !emailRegex.test(ccEmail)) {
+                alert('⚠️ Please enter a valid CC email address or leave it blank.');
+                document.getElementById('confirmEmailCC').focus();
                 return;
             }
 
@@ -416,7 +463,7 @@ export class InteractivePDFForm {
             }
 
             modal.remove();
-            await this.submitToProperty();
+            await this.submitToProperty(confirmedEmail, ccEmail);
         });
 
         // Close on background click
@@ -430,7 +477,7 @@ export class InteractivePDFForm {
     /**
      * Actually submit to property (called after confirmation)
      */
-    async submitToProperty() {
+    async submitToProperty(recipientEmail, ccEmail = '') {
         try {
             this.showLoading('Preparing lease confirmation...');
 
@@ -440,14 +487,22 @@ export class InteractivePDFForm {
             this.showLoading('Sending for signature...');
 
             // Then, send to Documenso for signature
+            const requestBody = {
+                leaseConfirmationId: savedData.id,
+                recipientEmail: recipientEmail
+            };
+
+            // Add CC email if provided
+            if (ccEmail) {
+                requestBody.ccEmail = ccEmail;
+            }
+
             const response = await fetch('/api/documenso/send-for-signature', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    leaseConfirmationId: savedData.id
-                })
+                body: JSON.stringify(requestBody)
             });
 
             const result = await response.json();
@@ -457,7 +512,13 @@ export class InteractivePDFForm {
             }
 
             this.hideLoading();
-            this.showSuccess(`✅ Lease confirmation sent to ${result.data.recipientEmail} for signature!`);
+
+            // Show success message with CC info if applicable
+            let successMessage = `✅ Lease confirmation sent to ${result.data.recipientEmail} for signature!`;
+            if (ccEmail) {
+                successMessage += ` (CC: ${ccEmail})`;
+            }
+            this.showSuccess(successMessage);
 
             // Redirect to documents page after 3 seconds
             setTimeout(() => {

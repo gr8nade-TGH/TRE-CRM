@@ -11,10 +11,11 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * Send lease confirmation signing request email to property contact
- * 
+ *
  * @param {Object} params
  * @param {string} params.to - Recipient email
  * @param {string} params.toName - Recipient name
+ * @param {string} params.ccEmail - Optional CC email
  * @param {string} params.signingUrl - Documenso signing URL
  * @param {Object} params.leaseData - Lease confirmation data
  * @param {Object} params.agentData - Agent/locator data
@@ -23,11 +24,15 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendLeaseSigningRequest({
 	to,
 	toName,
+	ccEmail = null,
 	signingUrl,
 	leaseData,
 	agentData
 }) {
 	console.log('Sending lease signing request email to:', to);
+	if (ccEmail) {
+		console.log('CC:', ccEmail);
+	}
 
 	const subject = `Lease Confirmation Ready for Signature - ${leaseData.tenantName}`;
 
@@ -180,12 +185,20 @@ export async function sendLeaseSigningRequest({
 </html>
 	`;
 
-	const { data, error } = await resend.emails.send({
+	// Build email payload
+	const emailPayload = {
 		from: 'Texas Relocation Experts <noreply@tre-crm.com>',
 		to: [to],
 		subject: subject,
 		html: html
-	});
+	};
+
+	// Add CC if provided
+	if (ccEmail) {
+		emailPayload.cc = [ccEmail];
+	}
+
+	const { data, error } = await resend.emails.send(emailPayload);
 
 	if (error) {
 		console.error('Error sending email:', error);

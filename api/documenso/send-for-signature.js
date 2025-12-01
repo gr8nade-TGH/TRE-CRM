@@ -59,7 +59,7 @@ export default async function handler(req, res) {
 	}
 
 	try {
-		const { leaseConfirmationId } = req.body;
+		const { leaseConfirmationId, recipientEmail, ccEmail } = req.body;
 
 		if (!leaseConfirmationId) {
 			return res.status(400).json({ error: 'leaseConfirmationId is required' });
@@ -67,6 +67,8 @@ export default async function handler(req, res) {
 
 		console.log('=== Starting Send for Signature Workflow ===');
 		console.log('Lease Confirmation ID:', leaseConfirmationId);
+		console.log('Custom Recipient Email:', recipientEmail || 'Using property contact email');
+		console.log('CC Email:', ccEmail || 'None');
 
 		// Step 1: Fetch lease confirmation from database
 		console.log('Step 1: Fetching lease confirmation...');
@@ -129,17 +131,22 @@ export default async function handler(req, res) {
 			return res.status(404).json({ error: 'Property not found' });
 		}
 
-		// Validate property contact info
-		if (!property.contact_email || !property.contact_name) {
+		// Use custom recipient email if provided, otherwise use property contact email
+		const finalRecipientEmail = recipientEmail || property.contact_email;
+		const finalRecipientName = property.contact_name || 'Property Contact';
+
+		// Validate we have an email
+		if (!finalRecipientEmail) {
 			return res.status(400).json({
-				error: 'Missing property contact information',
-				message: 'Property must have contact_name and contact_email'
+				error: 'Missing recipient email',
+				message: 'Please provide a recipient email address'
 			});
 		}
 
-		console.log('Property contact:', {
-			name: property.contact_name,
-			email: property.contact_email
+		console.log('Recipient:', {
+			name: finalRecipientName,
+			email: finalRecipientEmail,
+			source: recipientEmail ? 'custom' : 'property_contact'
 		});
 
 		// Step 3: Fetch agent/locator data
@@ -167,19 +174,33 @@ export default async function handler(req, res) {
 		console.log('Step 5: Uploading to Documenso...');
 		const documentTitle = `Lease Confirmation - ${leaseConfirmation.tenant_names || 'Tenant'}`;
 
+		// Build recipients array - primary signer
+		const recipients = [{
+			email: finalRecipientEmail,
+			name: finalRecipientName,
+			role: 'SIGNER'
+		}];
+
+		// Add CC recipient if provided (as viewer, not signer)
+		if (ccEmail) {
+			recipients.push({
+				email: ccEmail,
+				name: 'CC Recipient',
+				role: 'CC'
+			});
+			console.log('Adding CC recipient:', ccEmail);
+		}
+
 		const documensoDoc = await createDocument({
 			title: documentTitle,
 			pdfBuffer: pdfBuffer,
-			recipients: [{
-				email: property.contact_email,
-				name: property.contact_name,
-				role: 'SIGNER'
-			}],
+			recipients: recipients,
 			metadata: {
 				leaseConfirmationId: leaseConfirmation.id,
 				leadId: leaseConfirmation.lead_id,
 				propertyId: leaseConfirmation.property_id,
-				source: 'TRE_CRM'
+				source: 'TRE_CRM',
+				ccEmail: ccEmail || null
 			}
 		});
 
@@ -207,8 +228,9 @@ export default async function handler(req, res) {
 				documenso_signing_url: signingUrl,
 				documenso_recipient_id: documensoDoc.recipients?.[0]?.id || null,
 				sent_for_signature_at: new Date().toISOString(),
-				recipient_email: property.contact_email,
-				recipient_name: property.contact_name
+				recipient_email: finalRecipientEmail,
+				recipient_name: finalRecipientName,
+				cc_email: ccEmail || null
 			})
 			.eq('id', leaseConfirmation.id);
 
@@ -221,17 +243,23 @@ export default async function handler(req, res) {
 
 		// Step 7: Log activity
 		console.log('Step 7: Logging activity...');
+		let activityDescription = `Lease confirmation sent to ${finalRecipientName} (${finalRecipientEmail}) for signature`;
+		if (ccEmail) {
+			activityDescription += ` with CC to ${ccEmail}`;
+		}
+
 		const { error: activityError } = await supabase
 			.from('lead_activities')
 			.insert({
 				lead_id: leaseConfirmation.lead_id,
 				activity_type: 'lease_sent',
-				description: `Lease confirmation sent to ${property.contact_name} (${property.contact_email}) for signature`,
+				description: activityDescription,
 				metadata: {
 					lease_confirmation_id: leaseConfirmation.id,
 					documenso_document_id: documensoDoc.id,
-					recipient_email: property.contact_email,
-					recipient_name: property.contact_name,
+					recipient_email: finalRecipientEmail,
+					recipient_name: finalRecipientName,
+					cc_email: ccEmail || null,
 					property_id: leaseConfirmation.property_id,
 					property_name: property.community_name || property.name
 				}
@@ -246,8 +274,9 @@ export default async function handler(req, res) {
 		console.log('Step 8: Sending email notification...');
 		try {
 			await sendLeaseSigningRequest({
-				to: property.contact_email,
-				toName: property.contact_name,
+				to: finalRecipientEmail,
+				toName: finalRecipientName,
+				ccEmail: ccEmail || null,
 				signingUrl: signingUrl,
 				leaseData: {
 					tenantName: leaseConfirmation.tenant_names,
@@ -259,6 +288,9 @@ export default async function handler(req, res) {
 				agentData: agentData
 			});
 			console.log('Email sent successfully');
+			if (ccEmail) {
+				console.log('CC email sent to:', ccEmail);
+			}
 		} catch (emailError) {
 			console.error('Error sending email:', emailError);
 			// Don't fail the request if email fails - document is already in Documenso
@@ -275,8 +307,9 @@ export default async function handler(req, res) {
 				leaseConfirmationId: leaseConfirmation.id,
 				documensoDocumentId: documensoDoc.id,
 				signingUrl: signingUrl,
-				recipientEmail: property.contact_email,
-				recipientName: property.contact_name,
+				recipientEmail: finalRecipientEmail,
+				recipientName: finalRecipientName,
+				ccEmail: ccEmail || null,
 				status: 'awaiting_signature'
 			}
 		});
