@@ -10,10 +10,11 @@
  * @param {Object} deps - Dependencies
  * @param {Array} deps.progressSteps - Array of progress step definitions
  * @param {Function} deps.formatDate - Date formatting function
+ * @param {Function} deps.formatDateShort - Short date formatting function (e.g., "Dec 1")
  * @returns {HTMLElement} The lead table DOM element
  */
 export function createLeadTable(lead, isExpanded = false, deps) {
-	const { progressSteps, formatDate } = deps;
+	const { progressSteps, formatDate, formatDateShort } = deps;
 
 	const progressPercentage = Math.round((lead.currentStep / progressSteps.length) * 100);
 	const currentStepName = progressSteps[lead.currentStep - 1]?.label || 'Unknown';
@@ -45,6 +46,15 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 	const hasWelcomeEmailSent = lead.welcomeEmailSent || false;  // Step 1 indicator
 	const hasLeadResponded = lead.leadResponded || false;        // Step 2 indicator
 	const hasLeaseSigned = lead.leaseSigned || false;            // Step 5 indicator
+
+	// Step completion timestamps (from lead.stepTimestamps object)
+	const stepTimestamps = lead.stepTimestamps || {};
+
+	// Blocker detection (from lead.stepBlockers object)
+	const stepBlockers = lead.stepBlockers || {};
+
+	// Notification badges (from lead.notifications object)
+	const notifications = lead.notifications || {};
 
 	const table = document.createElement('div');
 	table.className = 'lead-table-container';
@@ -109,6 +119,32 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 		const stepClass = step.id < lead.currentStep ? 'completed' :
 			step.id === lead.currentStep ? 'current' : 'pending';
 
+		// Get timestamp for this step (if completed)
+		const timestamp = stepTimestamps[step.id];
+		const timestampDisplay = timestamp && stepClass === 'completed'
+			? `<div class="step-timestamp">${formatDateShort ? formatDateShort(timestamp) : formatDate(timestamp)}</div>`
+			: '';
+
+		// Get blocker for this step (if any)
+		const blocker = stepBlockers[step.id];
+		const blockerIcon = blocker
+			? `<div class="step-blocker-icon" title="${blocker}">⚠️</div>`
+			: '';
+
+		// Get notification badge for this step (if any)
+		const notification = notifications[step.id];
+		let notificationBadge = '';
+		if (notification) {
+			const badgeIcons = {
+				'lead_responded': '🔔',
+				'highly_engaged': '🔥',
+				'stale': '⏰',
+				'action_required': '⚡'
+			};
+			const icon = badgeIcons[notification.type] || '🔔';
+			notificationBadge = `<div class="step-notification-badge" title="${notification.message}">${icon}</div>`;
+		}
+
 		// Optional indicators (appear above their parent step when achieved)
 
 		// Step 1: Welcome Email Sent indicator (clickable to view email)
@@ -138,15 +174,31 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 									</div>
 								` : '';
 
+		// Build tooltip text
+		let tooltipText = step.label;
+		if (stepClass === 'completed' && timestamp) {
+			tooltipText += ` - Completed ${formatDate(timestamp)}`;
+		} else if (stepClass === 'current') {
+			tooltipText += ' - In Progress';
+		} else if (blocker) {
+			tooltipText += ` - ${blocker}`;
+		} else if (stepClass === 'pending') {
+			tooltipText += ' - Not Started';
+		}
+
 		return `
 									<div class="progress-step ${stepClass}"
 										 data-lead-id="${lead.id}"
-										 data-step="${step.id}">
+										 data-step="${step.id}"
+										 title="${tooltipText}">
 										${welcomeEmailIndicator}
 										${leadRespondedIndicator}
 										${leaseSignedIndicator}
+										${notificationBadge}
+										${blockerIcon}
 										<div class="progress-step-dot ${stepClass}">${step.id}</div>
 										<div class="progress-step-label">${step.label}</div>
+										${timestampDisplay}
 									</div>
 								`;
 	}).join('')}

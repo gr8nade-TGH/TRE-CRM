@@ -30,6 +30,7 @@ import { createLeadTable as createLeadTableUtil } from './src/renders/lead-table
 import { showStepDetails as showStepDetailsUtil } from './src/renders/progress-modals.js';
 import './src/utils/lease-signature-handler.js'; // Initialize lease signature handler
 import { createDependencies } from './src/init/dependencies.js';
+import * as ProgressEnhancements from './src/utils/progress-enhancements.js';
 import * as Leads from './src/modules/leads/index.js';
 import * as Listings from './src/modules/listings/index.js';
 import { downloadCSVTemplate, importCSV } from './src/modules/listings/csv-import.js';
@@ -150,7 +151,8 @@ let api, renderLeads, renderSpecials;
 	function createLeadTable(lead, isExpanded = false) {
 		return createLeadTableUtil(lead, isExpanded, {
 			progressSteps,
-			formatDate
+			formatDate,
+			formatDateShort: ProgressEnhancements.formatDateShort
 		});
 	}
 
