@@ -530,6 +530,7 @@ async function savePreferredArea(leadId, polygon) {
 
 /**
  * Check for missing preference fields
+ * Handles both camelCase (from agent landing page) and snake_case (from lead modal)
  * @param {Object} preferences - Customer preferences object
  * @returns {Array<string>} Array of missing field names
  */
@@ -539,17 +540,26 @@ function checkMissingPreferences(preferences) {
 	}
 
 	const missingFields = [];
-	const requiredFields = {
-		bedrooms: 'Bedrooms',
-		bathrooms: 'Bathrooms',
-		price_range: 'Budget',
-		move_in_date: 'Move-in Date'
-	};
 
-	for (const [field, label] of Object.entries(requiredFields)) {
-		if (!preferences[field]) {
-			missingFields.push(label);
-		}
+	// Check for each required field - support both naming conventions
+	// Bedrooms
+	if (!preferences.bedrooms) {
+		missingFields.push('Bedrooms');
+	}
+
+	// Bathrooms
+	if (!preferences.bathrooms) {
+		missingFields.push('Bathrooms');
+	}
+
+	// Budget (priceRange or price_range)
+	if (!preferences.priceRange && !preferences.price_range) {
+		missingFields.push('Budget');
+	}
+
+	// Move-in Date (moveInDate or move_in_date)
+	if (!preferences.moveInDate && !preferences.move_in_date) {
+		missingFields.push('Move-in Date');
 	}
 
 	return missingFields;
