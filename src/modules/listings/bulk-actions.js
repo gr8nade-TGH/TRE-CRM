@@ -6,20 +6,20 @@ export function updateBulkActionsBar(options) {
 
 	// Look for unit checkboxes (the actual checkboxes in the listings table)
 	const selectedCount = document.querySelectorAll('.unit-checkbox:checked').length;
+	const bulkActionsBar = document.getElementById('bulkActionsBar');
 	const bulkActionsCount = document.getElementById('bulkActionsCount');
 	const buildShowcaseBtn = document.getElementById('buildShowcaseBtn');
 	const bulkMarkUnavailableBtn = document.getElementById('bulkMarkUnavailableBtn');
 	const bulkDeleteBtn = document.getElementById('bulkDeleteBtn');
 
+	// Show/hide the floating bulk actions bar
+	if (bulkActionsBar) {
+		bulkActionsBar.style.display = selectedCount > 0 ? 'block' : 'none';
+	}
+
 	// Update count display
 	if (bulkActionsCount) {
-		if (selectedCount > 0) {
-			bulkActionsCount.textContent = `${selectedCount} selected`;
-			bulkActionsCount.style.display = 'inline-flex';
-		} else {
-			bulkActionsCount.textContent = '';
-			bulkActionsCount.style.display = 'none';
-		}
+		bulkActionsCount.textContent = selectedCount > 0 ? `${selectedCount} selected` : '0 selected';
 	}
 
 	// Enable/disable buttons based on selection

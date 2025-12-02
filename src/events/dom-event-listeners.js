@@ -1589,6 +1589,28 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	// Helper function to update active filter count badge
+	function updateActiveFilterCount() {
+		const badge = document.getElementById('activeFilterCount');
+		if (!badge) return;
+
+		let count = 0;
+		if (state.listingsFilters.market && state.listingsFilters.market !== 'all') count++;
+		if (state.listingsFilters.minPrice) count++;
+		if (state.listingsFilters.maxPrice) count++;
+		if (state.listingsFilters.beds && state.listingsFilters.beds !== 'any') count++;
+		if (state.listingsFilters.commission && state.listingsFilters.commission !== 'all' && state.listingsFilters.commission !== '0') count++;
+		if (state.listingsFilters.amenities && state.listingsFilters.amenities !== 'all' && state.listingsFilters.amenities !== 'any') count++;
+		if (state.listingsFilters.pumiOnly) count++;
+
+		if (count > 0) {
+			badge.textContent = count;
+			badge.style.display = 'inline-flex';
+		} else {
+			badge.style.display = 'none';
+		}
+	}
+
 	// Listings Filter event listeners
 	const listingsSearchInputEl = document.getElementById('listingsSearchInput');
 	if (listingsSearchInputEl) {
@@ -1602,6 +1624,7 @@ export function setupAllEventListeners(deps) {
 	if (marketFilterEl) {
 		marketFilterEl.addEventListener('change', (e) => {
 			state.listingsFilters.market = e.target.value;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1610,6 +1633,7 @@ export function setupAllEventListeners(deps) {
 	if (minPriceEl) {
 		minPriceEl.addEventListener('input', (e) => {
 			state.listingsFilters.minPrice = e.target.value;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1618,6 +1642,7 @@ export function setupAllEventListeners(deps) {
 	if (maxPriceEl) {
 		maxPriceEl.addEventListener('input', (e) => {
 			state.listingsFilters.maxPrice = e.target.value;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1626,6 +1651,7 @@ export function setupAllEventListeners(deps) {
 	if (bedsFilterEl) {
 		bedsFilterEl.addEventListener('change', (e) => {
 			state.listingsFilters.beds = e.target.value;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1634,6 +1660,7 @@ export function setupAllEventListeners(deps) {
 	if (commissionFilterEl) {
 		commissionFilterEl.addEventListener('change', (e) => {
 			state.listingsFilters.commission = e.target.value;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1642,6 +1669,7 @@ export function setupAllEventListeners(deps) {
 	if (amenitiesFilterEl) {
 		amenitiesFilterEl.addEventListener('change', (e) => {
 			state.listingsFilters.amenities = e.target.value;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1650,6 +1678,7 @@ export function setupAllEventListeners(deps) {
 	if (pumiOnlyFilterEl) {
 		pumiOnlyFilterEl.addEventListener('change', (e) => {
 			state.listingsFilters.pumiOnly = e.target.checked;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1675,6 +1704,7 @@ export function setupAllEventListeners(deps) {
 			if (commissionFilterEl) commissionFilterEl.value = '0';
 			if (amenitiesFilterEl) amenitiesFilterEl.value = 'any';
 			if (pumiOnlyFilterEl) pumiOnlyFilterEl.checked = false;
+			updateActiveFilterCount();
 			renderListings();
 		});
 	}
@@ -1695,6 +1725,124 @@ export function setupAllEventListeners(deps) {
 
 			// Load customers for the selector
 			await loadCustomersForSelector(SupabaseAPI, state);
+		});
+	}
+
+	// View Mode Dropdown (new clean UI)
+	const viewModeSelect = document.getElementById('viewModeSelect');
+	if (viewModeSelect) {
+		viewModeSelect.addEventListener('change', async (e) => {
+			const mode = e.target.value;
+			// Trigger the hidden buttons for compatibility
+			if (mode === 'agent') {
+				document.getElementById('agentViewBtn')?.click();
+			} else if (mode === 'customer') {
+				document.getElementById('customerViewBtn')?.click();
+			}
+		});
+	}
+
+	// Filters Toggle Button
+	const filtersToggleBtn = document.getElementById('filtersToggleBtn');
+	const filterPanel = document.getElementById('filterPanel');
+	if (filtersToggleBtn && filterPanel) {
+		filtersToggleBtn.addEventListener('click', () => {
+			const isHidden = filterPanel.style.display === 'none' || !filterPanel.style.display;
+			filterPanel.style.display = isHidden ? 'block' : 'none';
+			filtersToggleBtn.classList.toggle('active', isHidden);
+		});
+	}
+
+	// Add Actions Dropdown
+	const addActionsDropdown = document.getElementById('addActionsDropdown');
+	const addActionsBtn = document.getElementById('addActionsBtn');
+	if (addActionsDropdown && addActionsBtn) {
+		addActionsBtn.addEventListener('click', (e) => {
+			e.stopPropagation();
+			addActionsDropdown.classList.toggle('open');
+		});
+
+		// Close dropdown when clicking outside
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.add-actions-dropdown')) {
+				addActionsDropdown.classList.remove('open');
+			}
+		});
+
+		// Handle menu item clicks
+		addActionsDropdown.querySelectorAll('.add-menu-item').forEach(item => {
+			item.addEventListener('click', () => {
+				const action = item.dataset.action;
+				addActionsDropdown.classList.remove('open');
+
+				// Trigger the corresponding hidden button
+				if (action === 'add-property') {
+					document.getElementById('addListingBtn')?.click();
+				} else if (action === 'contact-info') {
+					document.getElementById('addContactInfoBtn')?.click();
+				} else if (action === 'csv-template') {
+					document.getElementById('downloadCSVTemplateBtn')?.click();
+				} else if (action === 'upload-csv') {
+					document.getElementById('uploadCSVBtn')?.click();
+				}
+			});
+		});
+	}
+
+	// Clear Filters Button
+	const clearFiltersBtn = document.getElementById('clearFiltersBtn');
+	if (clearFiltersBtn) {
+		clearFiltersBtn.addEventListener('click', () => {
+			// Reset all filter inputs
+			const marketFilter = document.getElementById('marketFilter');
+			const minPrice = document.getElementById('minPrice');
+			const maxPrice = document.getElementById('maxPrice');
+			const bedsFilter = document.getElementById('bedsFilter');
+			const commissionFilter = document.getElementById('commissionFilter');
+			const amenitiesFilter = document.getElementById('amenitiesFilter');
+			const pumiOnlyFilter = document.getElementById('pumiOnlyFilter');
+			const listingsSearchInput = document.getElementById('listingsSearchInput');
+
+			if (marketFilter) marketFilter.value = 'all';
+			if (minPrice) minPrice.value = '';
+			if (maxPrice) maxPrice.value = '';
+			if (bedsFilter) bedsFilter.value = 'any';
+			if (commissionFilter) commissionFilter.value = 'all';
+			if (amenitiesFilter) amenitiesFilter.value = 'all';
+			if (pumiOnlyFilter) pumiOnlyFilter.checked = false;
+			if (listingsSearchInput) listingsSearchInput.value = '';
+
+			// Reset state
+			state.listingsFilters = {
+				search: '',
+				market: 'all',
+				minPrice: '',
+				maxPrice: '',
+				beds: 'any',
+				commission: 'all',
+				amenities: 'all',
+				pumiOnly: false
+			};
+
+			// Update filter count badge
+			updateActiveFilterCount();
+
+			// Re-render
+			renderListings();
+		});
+	}
+
+	// Bulk Actions Bar - Close button
+	const bulkCloseBtn = document.getElementById('bulkCloseBtn');
+	if (bulkCloseBtn) {
+		bulkCloseBtn.addEventListener('click', () => {
+			// Deselect all checkboxes
+			document.querySelectorAll('#listingsTable input[type="checkbox"]:checked').forEach(cb => {
+				cb.checked = false;
+			});
+			// Hide bulk actions bar
+			const bulkActionsBar = document.getElementById('bulkActionsBar');
+			if (bulkActionsBar) bulkActionsBar.style.display = 'none';
 		});
 	}
 
