@@ -138,7 +138,7 @@ export function addMarker(prop, matchScore = null) {
 
 	// Create custom dot marker element
 	const dotElement = document.createElement('div');
-	dotElement.className = 'custom-dot-marker';
+	dotElement.className = 'custom-dot-marker' + (isPUMI ? ' pumi-marker' : '');
 	dotElement.style.cssText = `
 		width: ${isPUMI ? '16px' : '12px'};
 		height: ${isPUMI ? '16px' : '12px'};
@@ -147,9 +147,6 @@ export function addMarker(prop, matchScore = null) {
 		border: 2px solid white;
 		box-shadow: ${isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
 		cursor: pointer;
-		transition: all 0.2s ease;
-		animation: ${isPUMI ? 'pumi-pulse 2s infinite' : 'none'};
-		position: relative;
 	`;
 
 	// Add match score indicator if provided (Customer View)

@@ -3011,28 +3011,30 @@ body {
 	}
 }
 
-/* Custom dot markers */
+/* Custom dot markers - NO transform to preserve mapbox positioning */
 .custom-dot-marker {
-	transition: all 0.2s ease;
+	transition: box-shadow 0.2s ease, filter 0.2s ease;
 }
 
 .custom-dot-marker:hover {
-	transform: scale(1.2);
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.4) !important;
+	filter: brightness(1.2);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5) !important;
 }
 
-/* PUMI pulse animation for map dots - fixed positioning */
+/* PUMI marker pulse animation - only affects box-shadow, not position */
+.pumi-marker {
+	animation: pumi-pulse 2s infinite;
+}
+
 @keyframes pumi-pulse {
-	0% {
+
+	0%,
+	100% {
 		box-shadow: 0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 
 	50% {
 		box-shadow: 0 0 20px rgba(34, 197, 94, 1), 0 0 35px rgba(34, 197, 94, 0.8), 0 2px 12px rgba(0, 0, 0, 0.4);
-	}
-
-	100% {
-		box-shadow: 0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0, 0, 0, 0.3);
 	}
 }
 
