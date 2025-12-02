@@ -7,7 +7,7 @@
 
 import { state } from '../../state/state.js';
 import { renderEmptyState, renderLoadingSkeleton, handleMissingPreferences, handleSmartMatchError } from '../../utils/edge-case-handlers.js';
-import { showPreferredArea, clearPreferredArea, startDrawing, startEditing, clearDrawing, cancelDrawing, getDrawnPolygon, finishDrawing } from './map-manager.js';
+import { showPreferredArea, clearPreferredArea, startDrawing, startEditing, clearDrawing, cancelDrawing, getDrawnPolygon, finishDrawing, initMapDraw } from './map-manager.js';
 
 /**
  * Shows a toast notification message
@@ -427,9 +427,9 @@ function setupPreferredAreaControls(customerData) {
 		newEditBtn.classList.add('active');
 	});
 
-	// Clear button - clear everything
+	// Clear button - cancel drawing and restore original polygon
 	newClearBtn.addEventListener('click', () => {
-		clearDrawing();
+		cancelDrawing(originalPolygon);
 		newDrawBtn.classList.remove('active');
 		newEditBtn.classList.remove('active');
 		newSaveBtn.style.display = 'none';

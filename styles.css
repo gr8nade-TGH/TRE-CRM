@@ -8131,6 +8131,19 @@ input[type="radio"] {
 	background: #bf0a30;
 	border-color: #bf0a30;
 	color: white;
+	animation: pulse-drawing 1.5s ease-in-out infinite;
+}
+
+@keyframes pulse-drawing {
+
+	0%,
+	100% {
+		box-shadow: 0 0 0 0 rgba(191, 10, 48, 0.4);
+	}
+
+	50% {
+		box-shadow: 0 0 0 6px rgba(191, 10, 48, 0);
+	}
 }
 
 .btn-preferred-area.clear:hover {

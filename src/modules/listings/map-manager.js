@@ -353,6 +353,13 @@ let currentDrawnPolygon = null;
 export function initMapDraw() {
 	if (!map || mapDraw) return;
 
+	// Wait for map style to be loaded before adding draw control
+	if (!map.isStyleLoaded()) {
+		console.log('🗺️ Waiting for map style to load before initializing Draw...');
+		map.once('style.load', () => initMapDraw());
+		return;
+	}
+
 	console.log('🗺️ Initializing Mapbox GL Draw on Listings map...');
 
 	mapDraw = new MapboxDraw({
