@@ -1831,9 +1831,10 @@ export function setupAllEventListeners(deps) {
 		});
 
 		// Remove active state when a customer is selected
-		if (customerSelector) {
-			customerSelector.addEventListener('change', () => {
-				if (customerSelector.value) {
+		const customerSelectorForSkip = document.getElementById('customerSelector');
+		if (customerSelectorForSkip) {
+			customerSelectorForSkip.addEventListener('change', () => {
+				if (customerSelectorForSkip.value) {
 					skipCustomerBtn.classList.remove('active');
 				}
 			});
