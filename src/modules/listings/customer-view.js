@@ -7,7 +7,7 @@
 
 import { state } from '../../state/state.js';
 import { renderEmptyState, renderLoadingSkeleton, handleMissingPreferences, handleSmartMatchError } from '../../utils/edge-case-handlers.js';
-import { showPreferredArea, clearPreferredArea } from './map-manager.js';
+import { showPreferredArea, clearPreferredArea, startDrawing, startEditing, clearDrawing, cancelDrawing, getDrawnPolygon, finishDrawing } from './map-manager.js';
 
 /**
  * Shows a toast notification message
@@ -187,8 +187,15 @@ export function clearCustomerSelection() {
 		missingDataWarning.style.display = 'none';
 	}
 
-	// Clear preferred area polygon from map
+	// Clear preferred area polygon from map and hide controls
 	clearPreferredArea();
+	clearDrawing();
+
+	// Hide preferred area controls
+	const controlsContainer = document.getElementById('preferredAreaControls');
+	if (controlsContainer) {
+		controlsContainer.style.display = 'none';
+	}
 }
 
 /**
@@ -355,6 +362,9 @@ export async function handleCustomerSelection(customerId, renderListings) {
 			clearPreferredArea();
 		}
 
+		// Show preferred area controls and set up button handlers
+		setupPreferredAreaControls(customerData);
+
 		// Re-render listings with match scores
 		renderListings();
 	} catch (error) {
@@ -364,6 +374,157 @@ export async function handleCustomerSelection(customerId, renderListings) {
 		}
 		// Clear selection on error
 		clearCustomerSelection();
+	}
+}
+
+/**
+ * Set up preferred area drawing controls
+ * @param {Object} customerData - The selected customer data
+ */
+function setupPreferredAreaControls(customerData) {
+	const controlsContainer = document.getElementById('preferredAreaControls');
+	const drawBtn = document.getElementById('drawPreferredAreaBtn');
+	const editBtn = document.getElementById('editPreferredAreaBtn');
+	const clearBtn = document.getElementById('clearPreferredAreaBtn');
+	const saveBtn = document.getElementById('savePreferredAreaBtn');
+
+	if (!controlsContainer) return;
+
+	// Show controls
+	controlsContainer.style.display = 'flex';
+
+	const hasExistingArea = !!customerData.preferences?.preferredArea;
+
+	// Show/hide edit button based on existing polygon
+	if (editBtn) {
+		editBtn.style.display = hasExistingArea ? 'flex' : 'none';
+	}
+
+	// Store original polygon for cancel operation
+	const originalPolygon = customerData.preferences?.preferredArea || null;
+
+	// Remove existing event listeners by cloning
+	const newDrawBtn = drawBtn.cloneNode(true);
+	const newEditBtn = editBtn.cloneNode(true);
+	const newClearBtn = clearBtn.cloneNode(true);
+	const newSaveBtn = saveBtn.cloneNode(true);
+
+	drawBtn.parentNode.replaceChild(newDrawBtn, drawBtn);
+	editBtn.parentNode.replaceChild(newEditBtn, editBtn);
+	clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+	saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
+	// Draw button - start drawing new polygon
+	newDrawBtn.addEventListener('click', () => {
+		startDrawing();
+		newDrawBtn.classList.add('active');
+		newSaveBtn.style.display = 'none'; // Will show when polygon is drawn
+	});
+
+	// Edit button - edit existing polygon
+	newEditBtn.addEventListener('click', () => {
+		startEditing(originalPolygon);
+		newEditBtn.classList.add('active');
+	});
+
+	// Clear button - clear everything
+	newClearBtn.addEventListener('click', () => {
+		clearDrawing();
+		newDrawBtn.classList.remove('active');
+		newEditBtn.classList.remove('active');
+		newSaveBtn.style.display = 'none';
+	});
+
+	// Save button - save the drawn polygon
+	newSaveBtn.addEventListener('click', async () => {
+		const polygon = finishDrawing();
+		if (polygon) {
+			await savePreferredArea(customerData.id, polygon);
+			// Update local state
+			if (customerData.preferences) {
+				customerData.preferences.preferredArea = polygon;
+			} else {
+				customerData.preferences = { preferredArea: polygon };
+			}
+			state.customerView.selectedCustomer = customerData;
+
+			// Clear draw mode and show the saved polygon
+			clearDrawing();
+			showPreferredArea(polygon);
+
+			// Show edit button now that we have a polygon
+			newEditBtn.style.display = 'flex';
+		}
+		newDrawBtn.classList.remove('active');
+		newEditBtn.classList.remove('active');
+		newSaveBtn.style.display = 'none';
+	});
+}
+
+/**
+ * Hide preferred area controls
+ */
+function hidePreferredAreaControls() {
+	const controlsContainer = document.getElementById('preferredAreaControls');
+	if (controlsContainer) {
+		controlsContainer.style.display = 'none';
+	}
+	// Clear any active drawing
+	clearDrawing();
+}
+
+/**
+ * Save preferred area polygon to Supabase
+ * @param {string} leadId - The lead ID
+ * @param {Object} polygon - GeoJSON geometry of the polygon
+ */
+async function savePreferredArea(leadId, polygon) {
+	try {
+		console.log('💾 Saving preferred area for lead:', leadId);
+
+		const { getSupabase } = await import('../../api/supabase-api.js');
+		const supabase = getSupabase();
+
+		// First get current preferences
+		const { data: lead, error: fetchError } = await supabase
+			.from('leads')
+			.select('preferences')
+			.eq('id', leadId)
+			.single();
+
+		if (fetchError) {
+			throw fetchError;
+		}
+
+		// Merge with existing preferences
+		const updatedPreferences = {
+			...(lead.preferences || {}),
+			preferredArea: polygon
+		};
+
+		// Update the lead
+		const { error: updateError } = await supabase
+			.from('leads')
+			.update({ preferences: updatedPreferences })
+			.eq('id', leadId);
+
+		if (updateError) {
+			throw updateError;
+		}
+
+		console.log('✅ Preferred area saved successfully');
+
+		if (window.showToast) {
+			window.showToast('Preferred area saved!', 'success');
+		}
+
+		return true;
+	} catch (error) {
+		console.error('❌ Error saving preferred area:', error);
+		if (window.showToast) {
+			window.showToast('Failed to save preferred area', 'error');
+		}
+		return false;
 	}
 }
 

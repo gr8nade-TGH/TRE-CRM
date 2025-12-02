@@ -63,6 +63,10 @@
 	<!-- Mapbox GL JS -->
 	<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
 	<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
+	<!-- Mapbox GL Draw for polygon drawing -->
+	<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css"
+		rel="stylesheet" />
 	<!-- Leaflet (keeping for now, will remove after Mapbox integration) -->
 	<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
 		integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -399,6 +403,30 @@
 								<option value="">-- Choose a customer --</option>
 								<!-- Options populated dynamically -->
 							</select>
+						</div>
+
+						<!-- Preferred Area Controls (shown only when customer is selected) -->
+						<div class="filter-group preferred-area-controls" id="preferredAreaControls"
+							style="display: none;">
+							<label>Preferred Area</label>
+							<div class="preferred-area-buttons">
+								<button type="button" class="btn-preferred-area" id="drawPreferredAreaBtn"
+									title="Draw preferred area on map">
+									✏️ Draw
+								</button>
+								<button type="button" class="btn-preferred-area" id="editPreferredAreaBtn"
+									title="Edit existing area" style="display: none;">
+									📝 Edit
+								</button>
+								<button type="button" class="btn-preferred-area clear" id="clearPreferredAreaBtn"
+									title="Clear preferred area">
+									🗑️ Clear
+								</button>
+								<button type="button" class="btn-preferred-area save" id="savePreferredAreaBtn"
+									title="Save preferred area" style="display: none;">
+									💾 Save
+								</button>
+							</div>
 						</div>
 
 						<!-- Missing Data Warning (shown when customer selected with incomplete preferences) -->

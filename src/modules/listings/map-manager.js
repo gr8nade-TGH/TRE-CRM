@@ -340,3 +340,244 @@ export function selectProperty(prop) {
 	});
 }
 
+// =====================================================
+// PREFERRED AREA DRAWING (for editing on Listings page)
+// =====================================================
+let mapDraw = null;
+let isDrawingMode = false;
+let currentDrawnPolygon = null;
+
+/**
+ * Initialize Mapbox GL Draw for editing preferred areas
+ */
+export function initMapDraw() {
+	if (!map || mapDraw) return;
+
+	console.log('🗺️ Initializing Mapbox GL Draw on Listings map...');
+
+	mapDraw = new MapboxDraw({
+		displayControlsDefault: false,
+		controls: {
+			polygon: false,
+			trash: false
+		},
+		defaultMode: 'simple_select',
+		styles: [
+			// Polygon fill
+			{
+				'id': 'gl-draw-polygon-fill',
+				'type': 'fill',
+				'filter': ['all', ['==', '$type', 'Polygon']],
+				'paint': {
+					'fill-color': '#bf0a30',
+					'fill-opacity': 0.25
+				}
+			},
+			// Polygon outline
+			{
+				'id': 'gl-draw-polygon-stroke',
+				'type': 'line',
+				'filter': ['all', ['==', '$type', 'Polygon']],
+				'paint': {
+					'line-color': '#bf0a30',
+					'line-width': 3
+				}
+			},
+			// Vertex points
+			{
+				'id': 'gl-draw-polygon-and-line-vertex-active',
+				'type': 'circle',
+				'filter': ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+				'paint': {
+					'circle-radius': 6,
+					'circle-color': '#bf0a30',
+					'circle-stroke-color': '#ffffff',
+					'circle-stroke-width': 2
+				}
+			},
+			// Midpoint vertices
+			{
+				'id': 'gl-draw-polygon-midpoint',
+				'type': 'circle',
+				'filter': ['all', ['==', 'meta', 'midpoint'], ['==', '$type', 'Point']],
+				'paint': {
+					'circle-radius': 4,
+					'circle-color': '#bf0a30',
+					'circle-stroke-color': '#ffffff',
+					'circle-stroke-width': 1
+				}
+			}
+		]
+	});
+
+	map.addControl(mapDraw);
+
+	// Handle polygon creation/update
+	map.on('draw.create', handleDrawUpdate);
+	map.on('draw.update', handleDrawUpdate);
+	map.on('draw.delete', () => {
+		currentDrawnPolygon = null;
+		updateDrawingUI(false);
+	});
+
+	console.log('✅ Mapbox GL Draw initialized');
+}
+
+/**
+ * Handle draw create/update events
+ */
+function handleDrawUpdate(e) {
+	const data = mapDraw.getAll();
+	if (data.features.length > 0) {
+		// Keep only the last drawn polygon
+		if (data.features.length > 1) {
+			const lastFeature = data.features[data.features.length - 1];
+			const toDelete = data.features.slice(0, -1).map(f => f.id);
+			toDelete.forEach(id => mapDraw.delete(id));
+			currentDrawnPolygon = lastFeature.geometry;
+		} else {
+			currentDrawnPolygon = data.features[0].geometry;
+		}
+		updateDrawingUI(true);
+		console.log('📍 Polygon drawn/updated:', currentDrawnPolygon);
+	}
+}
+
+/**
+ * Update the drawing UI based on state
+ */
+function updateDrawingUI(hasPolygon) {
+	const drawBtn = document.getElementById('drawPreferredAreaBtn');
+	const saveBtn = document.getElementById('savePreferredAreaBtn');
+
+	if (drawBtn) {
+		drawBtn.classList.toggle('active', isDrawingMode);
+	}
+
+	if (saveBtn) {
+		saveBtn.style.display = hasPolygon ? 'flex' : 'none';
+	}
+}
+
+/**
+ * Start drawing mode
+ */
+export function startDrawing() {
+	if (!mapDraw) {
+		initMapDraw();
+	}
+
+	// Clear existing display polygon (not draw polygon)
+	clearPreferredArea();
+
+	isDrawingMode = true;
+	mapDraw.changeMode('draw_polygon');
+	updateDrawingUI(false);
+
+	console.log('✏️ Drawing mode started');
+
+	if (window.showToast) {
+		window.showToast('Click on the map to draw the preferred area. Double-click to finish.', 'info', 5000);
+	}
+}
+
+/**
+ * Edit an existing polygon
+ * @param {Object} existingPolygon - Existing GeoJSON geometry to edit
+ */
+export function startEditing(existingPolygon) {
+	if (!mapDraw) {
+		initMapDraw();
+	}
+
+	// Clear existing display polygon
+	clearPreferredArea();
+
+	// Clear any existing drawings
+	mapDraw.deleteAll();
+
+	// Add the existing polygon to draw
+	if (existingPolygon) {
+		const featureId = mapDraw.add({
+			type: 'Feature',
+			geometry: existingPolygon,
+			properties: {}
+		});
+		currentDrawnPolygon = existingPolygon;
+
+		// Select the polygon for editing
+		mapDraw.changeMode('direct_select', { featureId: featureId[0] });
+		updateDrawingUI(true);
+
+		console.log('📝 Editing existing polygon');
+
+		if (window.showToast) {
+			window.showToast('Drag vertices to edit the area. Click Save when done.', 'info', 4000);
+		}
+	} else {
+		startDrawing();
+	}
+}
+
+/**
+ * Clear the drawing
+ */
+export function clearDrawing() {
+	if (mapDraw) {
+		mapDraw.deleteAll();
+	}
+	currentDrawnPolygon = null;
+	isDrawingMode = false;
+	updateDrawingUI(false);
+	clearPreferredArea();
+	console.log('🗑️ Drawing cleared');
+}
+
+/**
+ * Cancel drawing mode and restore existing polygon if any
+ * @param {Object} existingPolygon - Original polygon to restore
+ */
+export function cancelDrawing(existingPolygon) {
+	if (mapDraw) {
+		mapDraw.deleteAll();
+		mapDraw.changeMode('simple_select');
+	}
+	currentDrawnPolygon = null;
+	isDrawingMode = false;
+	updateDrawingUI(false);
+
+	// Restore the original polygon display if exists
+	if (existingPolygon) {
+		showPreferredArea(existingPolygon);
+	}
+}
+
+/**
+ * Get the currently drawn polygon
+ * @returns {Object|null} GeoJSON geometry of the drawn polygon
+ */
+export function getDrawnPolygon() {
+	return currentDrawnPolygon;
+}
+
+/**
+ * Check if drawing mode is active
+ * @returns {boolean}
+ */
+export function isInDrawingMode() {
+	return isDrawingMode;
+}
+
+/**
+ * Finish drawing and return the polygon
+ * @returns {Object|null} GeoJSON geometry of the drawn polygon
+ */
+export function finishDrawing() {
+	if (mapDraw) {
+		mapDraw.changeMode('simple_select');
+	}
+	isDrawingMode = false;
+	updateDrawingUI(!!currentDrawnPolygon);
+	return currentDrawnPolygon;
+}
+
