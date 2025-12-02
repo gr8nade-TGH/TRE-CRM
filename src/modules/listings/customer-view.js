@@ -7,6 +7,7 @@
 
 import { state } from '../../state/state.js';
 import { renderEmptyState, renderLoadingSkeleton, handleMissingPreferences, handleSmartMatchError } from '../../utils/edge-case-handlers.js';
+import { showPreferredArea, clearPreferredArea } from './map-manager.js';
 
 /**
  * Shows a toast notification message
@@ -185,6 +186,9 @@ export function clearCustomerSelection() {
 	if (missingDataWarning) {
 		missingDataWarning.style.display = 'none';
 	}
+
+	// Clear preferred area polygon from map
+	clearPreferredArea();
 }
 
 /**
@@ -340,6 +344,15 @@ export async function handleCustomerSelection(customerId, renderListings) {
 			if (missingDataWarning) {
 				missingDataWarning.style.display = 'none';
 			}
+		}
+
+		// Show preferred area polygon on map if customer has one
+		if (customerData.preferences?.preferredArea) {
+			console.log('🗺️ Customer has preferred area, displaying on map...');
+			showPreferredArea(customerData.preferences.preferredArea);
+		} else {
+			// Clear any existing preferred area
+			clearPreferredArea();
 		}
 
 		// Re-render listings with match scores

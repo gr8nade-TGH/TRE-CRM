@@ -197,6 +197,100 @@ export function addMarker(prop, matchScore = null) {
 	markers.push(markerGroup);
 }
 
+// Preferred area layer state
+const PREFERRED_AREA_SOURCE_ID = 'preferred-area-source';
+const PREFERRED_AREA_FILL_ID = 'preferred-area-fill';
+const PREFERRED_AREA_OUTLINE_ID = 'preferred-area-outline';
+
+/**
+ * Display a lead's preferred area polygon on the map
+ * @param {Object} preferredAreaGeoJSON - GeoJSON geometry object (Polygon type)
+ */
+export function showPreferredArea(preferredAreaGeoJSON) {
+	if (!map || !preferredAreaGeoJSON) {
+		console.warn('Cannot show preferred area: map or data not available');
+		return;
+	}
+
+	// Clear any existing preferred area
+	clearPreferredArea();
+
+	console.log('🗺️ Displaying preferred area on map:', preferredAreaGeoJSON);
+
+	// Wait for map style to be loaded
+	if (!map.isStyleLoaded()) {
+		map.once('style.load', () => showPreferredArea(preferredAreaGeoJSON));
+		return;
+	}
+
+	// Add the source
+	map.addSource(PREFERRED_AREA_SOURCE_ID, {
+		type: 'geojson',
+		data: {
+			type: 'Feature',
+			geometry: preferredAreaGeoJSON,
+			properties: {}
+		}
+	});
+
+	// Add fill layer
+	map.addLayer({
+		id: PREFERRED_AREA_FILL_ID,
+		type: 'fill',
+		source: PREFERRED_AREA_SOURCE_ID,
+		paint: {
+			'fill-color': '#bf0a30',
+			'fill-opacity': 0.15
+		}
+	});
+
+	// Add outline layer
+	map.addLayer({
+		id: PREFERRED_AREA_OUTLINE_ID,
+		type: 'line',
+		source: PREFERRED_AREA_SOURCE_ID,
+		paint: {
+			'line-color': '#bf0a30',
+			'line-width': 3,
+			'line-dasharray': [2, 2]
+		}
+	});
+
+	// Fit map to show the polygon
+	try {
+		const coordinates = preferredAreaGeoJSON.coordinates[0];
+		const bounds = coordinates.reduce((bounds, coord) => {
+			return bounds.extend(coord);
+		}, new mapboxgl.LngLatBounds(coordinates[0], coordinates[0]));
+
+		map.fitBounds(bounds, {
+			padding: 50,
+			maxZoom: 13
+		});
+	} catch (e) {
+		console.warn('Could not fit bounds to preferred area:', e);
+	}
+}
+
+/**
+ * Clear the preferred area polygon from the map
+ */
+export function clearPreferredArea() {
+	if (!map) return;
+
+	// Remove layers if they exist
+	if (map.getLayer(PREFERRED_AREA_FILL_ID)) {
+		map.removeLayer(PREFERRED_AREA_FILL_ID);
+	}
+	if (map.getLayer(PREFERRED_AREA_OUTLINE_ID)) {
+		map.removeLayer(PREFERRED_AREA_OUTLINE_ID);
+	}
+	// Remove source if it exists
+	if (map.getSource(PREFERRED_AREA_SOURCE_ID)) {
+		map.removeSource(PREFERRED_AREA_SOURCE_ID);
+	}
+}
+
 /**
  * Select a property on the map
  * Updates table selection and marker styles

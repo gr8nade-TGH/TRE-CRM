@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
-<!-- Version: 2024-12-02 - Professional Agent Landing Page Redesign -->
+<!-- Version: 2024-12-02 - Professional Agent Landing Page Redesign with Map Drawing -->
 
 <head>
 	<meta charset="UTF-8" />
@@ -9,6 +9,15 @@
 	<title>TRE - Agent Landing Page</title>
 	<link rel="stylesheet" href="styles.css" />
 	<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+	<!-- Mapbox GL JS for interactive map drawing -->
+	<script src="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/v3.0.1/mapbox-gl.css" rel="stylesheet" />
+
+	<!-- Mapbox GL Draw for polygon drawing -->
+	<script src="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.js"></script>
+	<link href="https://api.mapbox.com/mapbox-gl-js/plugins/mapbox-gl-draw/v1.4.3/mapbox-gl-draw.css"
+		rel="stylesheet" />
 	<style>
 		* {
 			margin: 0;
@@ -623,6 +632,139 @@
 				grid-template-columns: repeat(3, 1fr);
 			}
 		}
+
+		/* Map Drawing Styles */
+		.map-drawing-container {
+			margin-top: 20px;
+			border-radius: 12px;
+			overflow: hidden;
+			border: 2px solid #e2e8f0;
+			background: #f8fafc;
+		}
+
+		.map-drawing-header {
+			background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+			color: white;
+			padding: 15px 20px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+		}
+
+		.map-drawing-header h3 {
+			font-size: 1rem;
+			font-weight: 600;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.map-drawing-controls {
+			display: flex;
+			gap: 8px;
+		}
+
+		.map-control-btn {
+			background: rgba(255, 255, 255, 0.15);
+			border: 1px solid rgba(255, 255, 255, 0.3);
+			color: white;
+			padding: 6px 12px;
+			border-radius: 6px;
+			font-size: 0.85rem;
+			cursor: pointer;
+			transition: all 0.2s ease;
+			display: flex;
+			align-items: center;
+			gap: 5px;
+		}
+
+		.map-control-btn:hover {
+			background: rgba(255, 255, 255, 0.25);
+		}
+
+		.map-control-btn.active {
+			background: #bf0a30;
+			border-color: #bf0a30;
+		}
+
+		.map-control-btn.clear {
+			background: rgba(239, 68, 68, 0.2);
+			border-color: rgba(239, 68, 68, 0.5);
+		}
+
+		.map-control-btn.clear:hover {
+			background: rgba(239, 68, 68, 0.4);
+		}
+
+		#preferredAreaMap {
+			width: 100%;
+			height: 300px;
+		}
+
+		.map-drawing-footer {
+			background: #f1f5f9;
+			padding: 12px 20px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			font-size: 0.85rem;
+			color: #64748b;
+		}
+
+		.map-status {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.map-status-indicator {
+			width: 10px;
+			height: 10px;
+			border-radius: 50%;
+			background: #94a3b8;
+		}
+
+		.map-status-indicator.has-area {
+			background: #22c55e;
+			box-shadow: 0 0 8px rgba(34, 197, 94, 0.5);
+		}
+
+		.map-tip {
+			font-style: italic;
+		}
+
+		/* Hide default mapbox draw controls - we use custom ones */
+		.mapboxgl-ctrl-group {
+			display: none !important;
+		}
+
+		/* Style the drawn polygon */
+		.mapbox-gl-draw_polygon {
+			fill-opacity: 0.3 !important;
+		}
+
+		@media (max-width: 768px) {
+			#preferredAreaMap {
+				height: 250px;
+			}
+
+			.map-drawing-header {
+				flex-direction: column;
+				gap: 10px;
+				align-items: flex-start;
+			}
+
+			.map-drawing-controls {
+				width: 100%;
+				justify-content: flex-start;
+			}
+
+			.map-drawing-footer {
+				flex-direction: column;
+				gap: 8px;
+				align-items: flex-start;
+			}
+		}
 	</style>
 </head>
 
@@ -786,7 +928,7 @@
 							</div>
 						</div>
 						<div class="form-row">
-							<div class="form-group">
+							<div class="form-group" style="grid-column: 1 / -1;">
 								<label><span class="icon">💰</span> Budget *</label>
 								<select id="priceRange" name="priceRange" required>
 									<option value="">Select budget</option>
@@ -799,24 +941,40 @@
 									<option value="4000+">$4,000+</option>
 								</select>
 							</div>
-							<div class="form-group">
-								<label><span class="icon">📍</span> Preferred Area *</label>
-								<select id="areaOfTown" name="areaOfTown" required>
-									<option value="">Select area</option>
-									<option value="downtown">Downtown</option>
-									<option value="north-side">North Side</option>
-									<option value="south-side">South Side</option>
-									<option value="east-side">East Side</option>
-									<option value="west-side">West Side</option>
-									<option value="northwest">Northwest</option>
-									<option value="northeast">Northeast</option>
-									<option value="southwest">Southwest</option>
-									<option value="southeast">Southeast</option>
-									<option value="suburbs">Suburbs</option>
-									<option value="flexible">Flexible</option>
-								</select>
+						</div>
+
+						<!-- Interactive Map for Preferred Area -->
+						<div class="map-drawing-container">
+							<div class="map-drawing-header">
+								<h3>📍 Draw Your Preferred Area</h3>
+								<div class="map-drawing-controls">
+									<button type="button" class="map-control-btn" id="drawPolygonBtn" title="Draw area">
+										✏️ Draw
+									</button>
+									<button type="button" class="map-control-btn clear" id="clearDrawingBtn"
+										title="Clear drawing">
+										🗑️ Clear
+									</button>
+								</div>
+							</div>
+							<div id="preferredAreaMap"></div>
+							<div class="map-drawing-footer">
+								<div class="map-status">
+									<div class="map-status-indicator" id="mapStatusIndicator"></div>
+									<span id="mapStatusText">No area selected</span>
+								</div>
+								<span class="map-tip">💡 Click points on the map to draw your preferred
+									neighborhood</span>
 							</div>
 						</div>
+
+						<!-- Hidden input to store the GeoJSON polygon data -->
+						<input type="hidden" id="preferredAreaGeoJSON" name="preferredAreaGeoJSON" value="">
+						<!-- Keep dropdown as fallback (hidden) -->
+						<select id="areaOfTown" name="areaOfTown" style="display: none;">
+							<option value="map-drawn" selected>Map Drawn Area</option>
+							<option value="flexible">Flexible</option>
+						</select>
 					</div>
 
 					<!-- Step 3: Timeline & Details -->
@@ -1167,6 +1325,176 @@
 		updateFormStep();
 
 		// =====================================================
+		// MAP DRAWING FUNCTIONALITY
+		// =====================================================
+		let preferredAreaMap = null;
+		let mapDraw = null;
+		let drawnPolygon = null;
+
+		// Initialize Mapbox access token
+		mapboxgl.accessToken = 'pk.eyJ1IjoiZ3I4bmFkZSIsImEiOiJjbWdrNmJqcjgwcjlwMmpvbWg3eHBwamF5In0.639Vz3e1U5PCl5CwafE1hg';
+
+		function initPreferredAreaMap() {
+			// Only initialize if map container exists and is visible
+			const mapContainer = document.getElementById('preferredAreaMap');
+			if (!mapContainer || preferredAreaMap) return;
+
+			console.log('🗺️ Initializing preferred area map...');
+
+			preferredAreaMap = new mapboxgl.Map({
+				container: 'preferredAreaMap',
+				style: 'mapbox://styles/mapbox/streets-v12',
+				center: [-98.4936, 29.4241], // San Antonio center
+				zoom: 10
+			});
+
+			// Add navigation controls
+			preferredAreaMap.addControl(new mapboxgl.NavigationControl(), 'top-right');
+
+			// Initialize Mapbox GL Draw
+			mapDraw = new MapboxDraw({
+				displayControlsDefault: false,
+				controls: {
+					polygon: false, // We use custom button
+					trash: false
+				},
+				defaultMode: 'simple_select',
+				styles: [
+					// Polygon fill
+					{
+						'id': 'gl-draw-polygon-fill',
+						'type': 'fill',
+						'filter': ['all', ['==', '$type', 'Polygon']],
+						'paint': {
+							'fill-color': '#bf0a30',
+							'fill-opacity': 0.2
+						}
+					},
+					// Polygon outline
+					{
+						'id': 'gl-draw-polygon-stroke',
+						'type': 'line',
+						'filter': ['all', ['==', '$type', 'Polygon']],
+						'paint': {
+							'line-color': '#bf0a30',
+							'line-width': 3
+						}
+					},
+					// Vertex points
+					{
+						'id': 'gl-draw-polygon-and-line-vertex-active',
+						'type': 'circle',
+						'filter': ['all', ['==', 'meta', 'vertex'], ['==', '$type', 'Point']],
+						'paint': {
+							'circle-radius': 6,
+							'circle-color': '#bf0a30',
+							'circle-stroke-color': '#ffffff',
+							'circle-stroke-width': 2
+						}
+					},
+					// Midpoint vertices
+					{
+						'id': 'gl-draw-polygon-midpoint',
+						'type': 'circle',
+						'filter': ['all', ['==', 'meta', 'midpoint'], ['==', '$type', 'Point']],
+						'paint': {
+							'circle-radius': 4,
+							'circle-color': '#bf0a30',
+							'circle-stroke-color': '#ffffff',
+							'circle-stroke-width': 1
+						}
+					}
+				]
+			});
+
+			preferredAreaMap.addControl(mapDraw);
+
+			// Handle polygon creation
+			preferredAreaMap.on('draw.create', updatePolygonData);
+			preferredAreaMap.on('draw.update', updatePolygonData);
+			preferredAreaMap.on('draw.delete', () => {
+				drawnPolygon = null;
+				document.getElementById('preferredAreaGeoJSON').value = '';
+				updateMapStatus(false);
+			});
+
+			// Resize map when it becomes visible
+			preferredAreaMap.on('load', () => {
+				console.log('✅ Preferred area map loaded');
+				preferredAreaMap.resize();
+			});
+		}
+
+		function updatePolygonData(e) {
+			const data = mapDraw.getAll();
+			if (data.features.length > 0) {
+				// Keep only the last drawn polygon (delete previous ones)
+				if (data.features.length > 1) {
+					const lastFeature = data.features[data.features.length - 1];
+					const toDelete = data.features.slice(0, -1).map(f => f.id);
+					toDelete.forEach(id => mapDraw.delete(id));
+					drawnPolygon = lastFeature;
+				} else {
+					drawnPolygon = data.features[0];
+				}
+
+				// Store GeoJSON in hidden input
+				document.getElementById('preferredAreaGeoJSON').value = JSON.stringify(drawnPolygon.geometry);
+				updateMapStatus(true);
+				console.log('📍 Preferred area polygon saved:', drawnPolygon.geometry);
+			}
+		}
+
+		function updateMapStatus(hasArea) {
+			const indicator = document.getElementById('mapStatusIndicator');
+			const text = document.getElementById('mapStatusText');
+
+			if (hasArea) {
+				indicator.classList.add('has-area');
+				text.textContent = '✓ Area selected';
+				text.style.color = '#22c55e';
+			} else {
+				indicator.classList.remove('has-area');
+				text.textContent = 'No area selected';
+				text.style.color = '#64748b';
+			}
+		}
+
+		// Draw button handler
+		document.getElementById('drawPolygonBtn').addEventListener('click', () => {
+			if (mapDraw) {
+				mapDraw.changeMode('draw_polygon');
+				document.getElementById('drawPolygonBtn').classList.add('active');
+			}
+		});
+
+		// Clear button handler
+		document.getElementById('clearDrawingBtn').addEventListener('click', () => {
+			if (mapDraw) {
+				mapDraw.deleteAll();
+				drawnPolygon = null;
+				document.getElementById('preferredAreaGeoJSON').value = '';
+				updateMapStatus(false);
+				document.getElementById('drawPolygonBtn').classList.remove('active');
+			}
+		});
+
+		// Initialize map when step 2 becomes visible
+		const originalUpdateFormStep = updateFormStep;
+		updateFormStep = function () {
+			originalUpdateFormStep();
+			if (currentStep === 2) {
+				// Small delay to ensure DOM is ready
+				setTimeout(() => {
+					initPreferredAreaMap();
+					if (preferredAreaMap) {
+						preferredAreaMap.resize();
+					}
+				}, 100);
+			}
+		};
+
+		// =====================================================
 		// FORM SUBMISSION - FULL FUNCTIONALITY
 		// =====================================================
 		document.getElementById('leadForm').addEventListener('submit', async function (e) {
@@ -1183,16 +1511,30 @@
 
 			const formData = new FormData(this);
 
+			// Get the drawn polygon GeoJSON if available
+			const preferredAreaGeoJSON = formData.get('preferredAreaGeoJSON');
+			let preferredAreaData = null;
+			if (preferredAreaGeoJSON) {
+				try {
+					preferredAreaData = JSON.parse(preferredAreaGeoJSON);
+					console.log('📍 Preferred area polygon included:', preferredAreaData);
+				} catch (e) {
+					console.warn('⚠️ Could not parse preferred area GeoJSON:', e);
+				}
+			}
+
 			// Build preferences object (matches landing.html structure)
 			const preferences = {
 				bedrooms: formData.get('bedrooms'),
 				bathrooms: formData.get('bathrooms'),
 				priceRange: formData.get('priceRange'),
-				areaOfTown: formData.get('areaOfTown'),
+				areaOfTown: formData.get('areaOfTown') || (preferredAreaData ? 'map-drawn' : 'flexible'),
 				moveInDate: formData.get('moveInDate'),
 				creditHistory: formData.get('creditHistory'),
 				bestTimeToCall: formData.get('bestTime'),
-				comments: formData.get('comments')
+				comments: formData.get('comments'),
+				// Store the drawn polygon for use on the Listings page
+				preferredArea: preferredAreaData
 			};
 
 			// Lead data structure matching the main landing page
