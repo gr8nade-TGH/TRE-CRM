@@ -112,18 +112,34 @@ export function addMarker(prop, matchScore = null) {
 	const isSelected = selectedProperty && selectedProperty.id === prop.id;
 
 	// Create popup content with safe fallbacks
-	const rentMin = prop.rent_min || prop.rent_range_min || 0;
-	const rentMax = prop.rent_max || prop.rent_range_max || 0;
-	const bedsMin = prop.beds_min || 0;
-	const bedsMax = prop.beds_max || 0;
-	const bathsMin = prop.baths_min || 0;
-	const bathsMax = prop.baths_max || 0;
+	const rentMin = prop.rent_min || prop.rent_range_min || null;
+	const rentMax = prop.rent_max || prop.rent_range_max || null;
+	const bedsMin = prop.beds_min || null;
+	const bedsMax = prop.beds_max || null;
+	const bathsMin = prop.baths_min || null;
+	const bathsMax = prop.baths_max || null;
+
+	// Format rent range - show "N/A" if no data
+	const rentDisplay = (rentMin !== null || rentMax !== null)
+		? `$${(rentMin || 0).toLocaleString()} - $${(rentMax || 0).toLocaleString()}`
+		: 'Rent: N/A';
+
+	// Format beds/baths - show "N/A" if no data
+	const bedsDisplay = (bedsMin !== null || bedsMax !== null)
+		? `${bedsMin || '?'}-${bedsMax || '?'} bd`
+		: '';
+	const bathsDisplay = (bathsMin !== null || bathsMax !== null)
+		? `${bathsMin || '?'}-${bathsMax || '?'} ba`
+		: '';
+	const bedsBathsDisplay = (bedsDisplay || bathsDisplay)
+		? ` · ${[bedsDisplay, bathsDisplay].filter(Boolean).join(' / ')}`
+		: '';
 
 	const popupContent = `
 		<div class="mapbox-popup">
-			<strong>${prop.name || prop.community_name || 'Unknown'}</strong><br>
-			${prop.address || prop.street_address || ''}<br>
-			<span class="subtle">$${rentMin.toLocaleString()} - $${rentMax.toLocaleString()} · ${bedsMin}-${bedsMax} bd / ${bathsMin}-${bathsMax} ba</span>
+			<strong>${prop.community_name || prop.name || 'Unknown'}</strong><br>
+			${prop.street_address || prop.address || ''}<br>
+			<span class="subtle">${rentDisplay}${bedsBathsDisplay}</span>
 		</div>
 	`;
 
@@ -296,20 +312,34 @@ export function clearPreferredArea() {
 export function selectProperty(prop) {
 	selectedProperty = prop;
 
-	// Update table selection
+	// Update table selection - remove all previous selections
 	document.querySelectorAll('#listingsTbody tr').forEach(row => {
 		row.classList.remove('selected');
 	});
 
-	// Find and highlight the table row
-	const rows = document.querySelectorAll('#listingsTbody tr');
+	// Find and highlight the table row by property ID (most reliable)
+	const rows = document.querySelectorAll('#listingsTbody tr.property-row');
+	let found = false;
 	rows.forEach(row => {
-		const nameCell = row.querySelector('.lead-name');
-		if (nameCell && nameCell.textContent.trim() === prop.name) {
+		// Match by property ID first (most reliable)
+		if (row.dataset.propertyId === prop.id) {
 			row.classList.add('selected');
 			row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			found = true;
 		}
 	});
+
+	// Fallback: match by name if ID match failed
+	if (!found) {
+		const propName = prop.community_name || prop.name;
+		rows.forEach(row => {
+			const nameCell = row.querySelector('.lead-name strong');
+			if (nameCell && nameCell.textContent.trim() === propName) {
+				row.classList.add('selected');
+				row.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}
+		});
+	}
 
 	// Update map markers
 	markers.forEach(markerGroup => {
