@@ -77,8 +77,8 @@ export async function renderAgents(options) {
 		const stats = getAgentStats(agent.id);
 		// Generate landing page URL with agent slug (name-based)
 		const agentSlug = agent.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
-		// Use Vercel production URL for landing pages
-		const landingUrl = `https://tre-crm.vercel.app/landing/${agentSlug}`;
+		// Use Vercel production URL for agent landing pages (new design)
+		const landingUrl = `https://tre-crm.vercel.app/agent/${agentSlug}`;
 
 		const tr = document.createElement('tr');
 		tr.innerHTML = `
