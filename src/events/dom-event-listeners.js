@@ -1735,11 +1735,109 @@ export function setupAllEventListeners(deps) {
 			const mode = e.target.value;
 			// Trigger the hidden buttons for compatibility
 			if (mode === 'agent') {
-				document.getElementById('agentViewBtn')?.click();
+				// Agent View requires password
+				const password = prompt('Enter password to access Agent View:');
+				if (password === 'TRE2024') {
+					document.getElementById('agentViewBtn')?.click();
+				} else {
+					toast('Incorrect password', 'error');
+					// Reset dropdown to customer view
+					viewModeSelect.value = 'customer';
+				}
 			} else if (mode === 'customer') {
 				document.getElementById('customerViewBtn')?.click();
 			}
 		});
+	}
+
+	// Customer Search Input - filter customer dropdown
+	const customerSearchInput = document.getElementById('customerSearchInput');
+	const customerSelectorEl = document.getElementById('customerSelector');
+	if (customerSearchInput && customerSelectorEl) {
+		// Store all options for filtering
+		let allCustomerOptions = [];
+
+		// Observer to capture options when they're loaded
+		const observer = new MutationObserver(() => {
+			allCustomerOptions = Array.from(customerSelectorEl.options).map(opt => ({
+				value: opt.value,
+				text: opt.textContent,
+				html: opt.innerHTML
+			}));
+		});
+		observer.observe(customerSelectorEl, { childList: true });
+
+		customerSearchInput.addEventListener('input', (e) => {
+			const searchTerm = e.target.value.toLowerCase().trim();
+
+			// Clear and rebuild options
+			customerSelectorEl.innerHTML = '';
+
+			if (searchTerm === '') {
+				// Show all options
+				allCustomerOptions.forEach(opt => {
+					const option = document.createElement('option');
+					option.value = opt.value;
+					option.textContent = opt.text;
+					customerSelectorEl.appendChild(option);
+				});
+			} else {
+				// Add "Select Customer..." option first
+				const defaultOpt = document.createElement('option');
+				defaultOpt.value = '';
+				defaultOpt.textContent = 'Select Customer...';
+				customerSelectorEl.appendChild(defaultOpt);
+
+				// Filter and add matching options
+				allCustomerOptions.forEach(opt => {
+					if (opt.value && opt.text.toLowerCase().includes(searchTerm)) {
+						const option = document.createElement('option');
+						option.value = opt.value;
+						option.textContent = opt.text;
+						customerSelectorEl.appendChild(option);
+					}
+				});
+			}
+		});
+	}
+
+	// Skip Customer Button - browse without selecting
+	const skipCustomerBtn = document.getElementById('skipCustomerBtn');
+	if (skipCustomerBtn) {
+		skipCustomerBtn.addEventListener('click', async () => {
+			// Clear customer selection
+			const customerSelector = document.getElementById('customerSelector');
+			if (customerSelector) {
+				customerSelector.value = '';
+			}
+
+			// Clear customer search
+			const customerSearchInput = document.getElementById('customerSearchInput');
+			if (customerSearchInput) {
+				customerSearchInput.value = '';
+			}
+
+			// Import and clear customer selection
+			const { clearCustomerSelection } = await import('../modules/listings/customer-view.js');
+			clearCustomerSelection();
+
+			// Toggle button active state
+			skipCustomerBtn.classList.add('active');
+
+			// Re-render listings without customer filter
+			renderListings();
+
+			toast('Browsing all listings', 'info');
+		});
+
+		// Remove active state when a customer is selected
+		if (customerSelector) {
+			customerSelector.addEventListener('change', () => {
+				if (customerSelector.value) {
+					skipCustomerBtn.classList.remove('active');
+				}
+			});
+		}
 	}
 
 	// Filters Toggle Button

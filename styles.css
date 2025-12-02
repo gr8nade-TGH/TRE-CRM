@@ -533,6 +533,51 @@ body {
 	flex-shrink: 0;
 }
 
+.customer-search-input {
+	padding: 8px 12px;
+	font-size: 13px;
+	color: #1e293b;
+	background: white;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	min-width: 140px;
+	max-width: 160px;
+}
+
+.customer-search-input:focus {
+	outline: none;
+	border-color: var(--brand);
+	box-shadow: 0 0 0 3px rgba(21, 62, 122, 0.1);
+}
+
+.customer-search-input::placeholder {
+	color: #94a3b8;
+}
+
+.skip-customer-btn {
+	padding: 8px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: #64748b;
+	background: #f1f5f9;
+	border: 1px solid #e2e8f0;
+	border-radius: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.skip-customer-btn:hover {
+	background: #e2e8f0;
+	color: #475569;
+}
+
+.skip-customer-btn.active {
+	background: var(--brand);
+	color: white;
+	border-color: var(--brand);
+}
+
 .customer-select {
 	padding: 8px 12px;
 	font-size: 13px;

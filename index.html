@@ -373,22 +373,26 @@
 						<!-- View Mode Dropdown -->
 						<div class="filter-control view-mode-control">
 							<select id="viewModeSelect" class="view-mode-select">
-								<option value="agent">👤 Agent View</option>
 								<option value="customer">👥 Customer View</option>
+								<option value="agent">🔒 Agent View</option>
 							</select>
 							<!-- Hidden buttons for JS compatibility -->
-							<button id="agentViewBtn" class="view-mode-btn active" data-view="agent"
+							<button id="agentViewBtn" class="view-mode-btn" data-view="agent"
 								style="display:none;"></button>
-							<button id="customerViewBtn" class="view-mode-btn" data-view="customer"
+							<button id="customerViewBtn" class="view-mode-btn active" data-view="customer"
 								style="display:none;"></button>
 						</div>
 
 						<!-- Customer Selector (shown only in Customer View) -->
 						<div class="filter-control customer-selector-control" id="customerSelectorGroup"
-							style="display: none;">
+							style="display: flex;">
+							<input type="text" id="customerSearchInput" class="customer-search-input"
+								placeholder="Search customers...">
 							<select id="customerSelector" class="customer-select">
 								<option value="">Select Customer...</option>
 							</select>
+							<button id="skipCustomerBtn" class="skip-customer-btn"
+								title="Browse without selecting a customer">Skip</button>
 							<!-- Missing Data Warning Icon -->
 							<div class="missing-data-indicator" id="missingDataWarning" style="display: none;" title="">
 								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"

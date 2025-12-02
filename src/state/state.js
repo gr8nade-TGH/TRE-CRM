@@ -63,7 +63,7 @@ export const state = {
 
 	// Customer View state
 	customerView: {
-		isActive: false,
+		isActive: true, // Customer View is now the default
 		selectedCustomerId: null,
 		selectedCustomer: null,
 		matchScores: new Map(), // propertyId -> highest matchScore

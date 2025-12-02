@@ -106,8 +106,20 @@ export function route(deps) {
 		}
 
 		// Initialize map if not already done
-		setTimeout(() => {
+		setTimeout(async () => {
 			initMap();
+
+			// Customer View is the default - load customers for selector
+			if (state.customerView.isActive) {
+				try {
+					const { loadCustomersForSelector } = await import('../modules/listings/customer-view.js');
+					const { default: SupabaseAPI } = await import('../api/supabase-api.js');
+					await loadCustomersForSelector(SupabaseAPI, state);
+				} catch (error) {
+					console.error('Error loading customers for default Customer View:', error);
+				}
+			}
+
 			renderListings(autoSelectProperty);
 		}, 100);
 	} else if (hash === '/documents') {
