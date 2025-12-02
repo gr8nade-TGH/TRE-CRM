@@ -8239,31 +8239,20 @@ input[type="radio"] {
 	color: #d1d5db;
 }
 
+/* Compact gold match score badge */
 .match-score-badge {
 	display: inline-flex;
 	align-items: center;
-	gap: 6px;
-	padding: 4px 10px;
+	justify-content: center;
+	min-width: 28px;
+	padding: 2px 6px;
 	background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-	border-radius: 6px;
-	color: white;
-	font-size: 13px;
+	border-radius: 10px;
+	color: #1e293b;
+	font-size: 11px;
 	font-weight: 700;
-	margin-left: 8px;
-	box-shadow: 0 2px 4px rgba(251, 191, 36, 0.3);
-}
-
-.match-score-badge .stars {
-	display: flex;
-	gap: 1px;
-	font-size: 15px;
-	font-weight: 700;
-	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-	letter-spacing: 1px;
-}
-
-.match-score-badge .star {
-	font-size: 15px;
+	margin-left: 6px;
+	box-shadow: 0 1px 3px rgba(251, 191, 36, 0.4);
 }
 
 /* Hide commission in Customer View */

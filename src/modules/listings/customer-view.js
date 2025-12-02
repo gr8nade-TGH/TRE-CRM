@@ -781,20 +781,13 @@ export function scoreToStars(score) {
 }
 
 /**
- * Generate star rating HTML
+ * Generate match score badge HTML - compact gold badge with number
  * @param {number} score - Match score (0-100)
- * @returns {string} HTML string for star rating
+ * @returns {string} HTML string for match score badge
  */
 export function generateStarRating(score) {
-	const stars = scoreToStars(score);
-	const fullStars = '★'.repeat(stars);
-	const emptyStars = '☆'.repeat(5 - stars);
+	const roundedScore = Math.round(score);
 
-	return `
-		<span class="match-score-badge" title="Match Score: ${Math.round(score)}/100">
-			<span class="stars">${fullStars}${emptyStars}</span>
-			<span>${Math.round(score)}</span>
-		</span>
-	`;
+	return `<span class="match-score-badge" title="Match Score: ${roundedScore}/100">${roundedScore}</span>`;
 }
 
