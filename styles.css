@@ -4324,9 +4324,14 @@ body {
 	}
 }
 
-/* Email Preview Modal */
+/* Email Preview Modal - must be above progress-modal (z-index: 10000) */
 .email-preview-modal {
 	max-width: 800px;
+}
+
+/* Email Preview Modal overlay needs higher z-index to appear above progress modal */
+#emailPreviewModal {
+	z-index: 10001 !important;
 }
 
 .email-preview-modal h3 {
@@ -5491,13 +5496,23 @@ body {
 	box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
 }
 
-/* Welcome Email Indicator - Blue */
+/* Welcome Email Indicator - Blue (Sent) */
 .welcome-email-indicator .checkmark {
 	background: #3b82f6;
 }
 
 .welcome-email-indicator .label {
 	color: #3b82f6;
+}
+
+/* Welcome Email Opened - Green (indicates engagement!) */
+.welcome-email-indicator.opened .checkmark {
+	background: #10b981;
+}
+
+.welcome-email-indicator.opened .label {
+	color: #10b981;
+	font-weight: 600;
 }
 
 /* Lead Responded Indicator - Green */

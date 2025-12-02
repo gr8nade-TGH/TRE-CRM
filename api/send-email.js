@@ -224,13 +224,15 @@ export default async function handler(req, res) {
 				});
 			}
 
-			// 6. Update email log with success
+			// 6. Update email log with success (including rendered HTML content for preview)
 			await supabase
 				.from('email_logs')
 				.update({
 					status: 'sent',
 					resend_id: resendData.id,
 					sent_at: new Date().toISOString(),
+					html_content: htmlContent, // Store the rendered HTML for email preview
+					subject: subject, // Store the rendered subject (with variables replaced)
 					updated_at: new Date().toISOString()
 				})
 				.eq('id', emailLog.id);

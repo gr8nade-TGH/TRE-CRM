@@ -44,6 +44,7 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 
 	// Optional indicators (non-blocking achievements)
 	const hasWelcomeEmailSent = lead.welcomeEmailSent || false;  // Step 1 indicator
+	const hasWelcomeEmailOpened = lead.welcomeEmailOpened || false;  // Step 1 opened indicator
 	const hasLeadResponded = lead.leadResponded || false;        // Step 2 indicator
 	const hasLeaseSigned = lead.leaseSigned || false;            // Step 5 indicator
 
@@ -147,14 +148,17 @@ export function createLeadTable(lead, isExpanded = false, deps) {
 
 		// Optional indicators (appear above their parent step when achieved)
 
-		// Step 1: Welcome Email Sent indicator (clickable to view email)
+		// Step 1: Welcome Email indicator (clickable to view email)
+		// Shows "Opened" if the email was opened, otherwise "Sent"
+		const welcomeEmailLabel = hasWelcomeEmailOpened ? 'Welcome Email Opened' : 'Welcome Email Sent';
+		const welcomeEmailClass = hasWelcomeEmailOpened ? 'welcome-email-indicator opened' : 'welcome-email-indicator';
 		const welcomeEmailIndicator = (step.id === 1 && hasWelcomeEmailSent) ? `
-									<div class="optional-indicator welcome-email-indicator clickable"
+									<div class="optional-indicator ${welcomeEmailClass} clickable"
 										 title="Click to view welcome email"
 										 data-lead-id="${lead.id}"
 										 data-action="view-welcome-email">
 										<span class="checkmark">✓</span>
-										<span class="label">Welcome Email Sent</span>
+										<span class="label">${welcomeEmailLabel}</span>
 									</div>
 								` : '';
 

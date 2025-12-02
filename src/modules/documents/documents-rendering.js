@@ -118,6 +118,31 @@ export async function renderManagerDocuments(options) {
 			}
 		}
 
+		// OPTIMIZATION: Fetch welcome email opened status for all leads in one query
+		const emailOpenedMap = new Map(); // Map of leadId -> boolean (true if email was opened)
+		if (leadIds.length > 0) {
+			try {
+				const { data: emailLogs } = await SupabaseAPI.getSupabase()
+					.from('email_logs')
+					.select('id, metadata, opened_at')
+					.eq('template_id', 'welcome_lead')
+					.eq('status', 'sent')
+					.not('opened_at', 'is', null); // Only get emails that have been opened
+
+				// Map by lead_id from metadata
+				if (emailLogs) {
+					emailLogs.forEach(log => {
+						const leadId = log.metadata?.lead_id;
+						if (leadId && log.opened_at) {
+							emailOpenedMap.set(leadId, true);
+						}
+					});
+				}
+			} catch (error) {
+				console.error('Error fetching email opened status:', error);
+			}
+		}
+
 		// Fetch property data for leads that have a property selected
 		const propertyIds = [...new Set(result.items.map(l => l.property_id).filter(Boolean))];
 		const propertyMap = new Map();
@@ -167,6 +192,7 @@ export async function renderManagerDocuments(options) {
 				health_status: lead.health_status,
 				match_score: lead.smart_match_score,
 				welcomeEmailSent: leadActivities.has('welcome_email_sent'),  // Step 1 indicator
+				welcomeEmailOpened: emailOpenedMap.has(lead.id),             // Step 1 opened indicator
 				leadResponded: leadActivities.has('property_matcher_submitted'), // Step 2 indicator
 				leaseSigned: leadActivities.has('lease_signed'),             // Step 5 indicator
 				stepTimestamps: stepTimestamps,  // NEW: Timestamps for completed steps
@@ -302,6 +328,31 @@ export async function renderAgentDocuments(options) {
 			}
 		}
 
+		// OPTIMIZATION: Fetch welcome email opened status for all leads in one query
+		const emailOpenedMap = new Map(); // Map of leadId -> boolean (true if email was opened)
+		if (leadIds.length > 0) {
+			try {
+				const { data: emailLogs } = await SupabaseAPI.getSupabase()
+					.from('email_logs')
+					.select('id, metadata, opened_at')
+					.eq('template_id', 'welcome_lead')
+					.eq('status', 'sent')
+					.not('opened_at', 'is', null); // Only get emails that have been opened
+
+				// Map by lead_id from metadata
+				if (emailLogs) {
+					emailLogs.forEach(log => {
+						const leadId = log.metadata?.lead_id;
+						if (leadId && log.opened_at) {
+							emailOpenedMap.set(leadId, true);
+						}
+					});
+				}
+			} catch (error) {
+				console.error('Error fetching email opened status:', error);
+			}
+		}
+
 		// Fetch property data for leads that have a property selected
 		const propertyIds = [...new Set(result.items.map(l => l.property_id).filter(Boolean))];
 		const propertyMap = new Map();
@@ -351,6 +402,7 @@ export async function renderAgentDocuments(options) {
 				health_status: lead.health_status,
 				match_score: lead.smart_match_score,
 				welcomeEmailSent: leadActivities.has('welcome_email_sent'),  // Step 1 indicator
+				welcomeEmailOpened: emailOpenedMap.has(lead.id),             // Step 1 opened indicator
 				leadResponded: leadActivities.has('property_matcher_submitted'), // Step 2 indicator
 				leaseSigned: leadActivities.has('lease_signed'),             // Step 5 indicator
 				stepTimestamps: stepTimestamps,  // NEW: Timestamps for completed steps
