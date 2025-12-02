@@ -1737,7 +1737,7 @@ export function setupAllEventListeners(deps) {
 			if (mode === 'agent') {
 				// Agent View requires password
 				const password = prompt('Enter password to access Agent View:');
-				if (password === 'TRE2024') {
+				if (password === 'TRE2025') {
 					document.getElementById('agentViewBtn')?.click();
 				} else {
 					toast('Incorrect password', 'error');
@@ -1820,6 +1820,9 @@ export function setupAllEventListeners(deps) {
 			// Import and clear customer selection
 			const { clearCustomerSelection } = await import('../modules/listings/customer-view.js');
 			clearCustomerSelection();
+
+			// Set skipped flag so listings render without requiring customer selection
+			state.customerView.skipped = true;
 
 			// Toggle button active state
 			skipCustomerBtn.classList.add('active');

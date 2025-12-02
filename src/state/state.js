@@ -64,6 +64,7 @@ export const state = {
 	// Customer View state
 	customerView: {
 		isActive: true, // Customer View is now the default
+		skipped: false, // True when user clicks Skip to browse without selecting
 		selectedCustomerId: null,
 		selectedCustomer: null,
 		matchScores: new Map(), // propertyId -> highest matchScore

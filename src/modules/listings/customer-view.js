@@ -317,6 +317,7 @@ export async function handleCustomerSelection(customerId, renderListings) {
 		const customerData = JSON.parse(selectedOption.dataset.leadData);
 		state.customerView.selectedCustomerId = customerId;
 		state.customerView.selectedCustomer = customerData;
+		state.customerView.skipped = false; // Reset skipped flag when customer is selected
 
 		// Check for missing preferences
 		const missingFields = checkMissingPreferences(customerData.preferences);

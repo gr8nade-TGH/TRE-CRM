@@ -58,8 +58,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 		return;
 	}
 
-	// Customer View: Show prompt if no customer selected
-	if (state.customerView.isActive && !state.customerView.selectedCustomer) {
+	// Customer View: Show prompt if no customer selected (unless skipped)
+	if (state.customerView.isActive && !state.customerView.selectedCustomer && !state.customerView.skipped) {
 		tbody.innerHTML = `
 			<tr>
 				<td colspan="3" style="padding: 60px 20px; text-align: center;">
