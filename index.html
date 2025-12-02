@@ -405,30 +405,6 @@
 							</select>
 						</div>
 
-						<!-- Preferred Area Controls (shown only when customer is selected) -->
-						<div class="filter-group preferred-area-controls" id="preferredAreaControls"
-							style="display: none;">
-							<label>Preferred Area</label>
-							<div class="preferred-area-buttons">
-								<button type="button" class="btn-preferred-area" id="drawPreferredAreaBtn"
-									title="Draw preferred area on map">
-									✏️ Draw
-								</button>
-								<button type="button" class="btn-preferred-area" id="editPreferredAreaBtn"
-									title="Edit existing area" style="display: none;">
-									📝 Edit
-								</button>
-								<button type="button" class="btn-preferred-area clear" id="clearPreferredAreaBtn"
-									title="Clear preferred area">
-									🗑️ Clear
-								</button>
-								<button type="button" class="btn-preferred-area save" id="savePreferredAreaBtn"
-									title="Save preferred area" style="display: none;">
-									💾 Save
-								</button>
-							</div>
-						</div>
-
 						<!-- Missing Data Warning (shown when customer selected with incomplete preferences) -->
 						<div class="filter-group missing-data-warning" id="missingDataWarning" style="display: none;">
 							<div class="warning-badge">
@@ -622,6 +598,30 @@
 					</div>
 					<div class="mapwrap">
 						<div id="listingsMap" aria-label="Map of properties"></div>
+						<!-- Preferred Area Controls Overlay (shown only when customer is selected) -->
+						<div class="preferred-area-overlay" id="preferredAreaControls" style="display: none;">
+							<div class="preferred-area-header">
+								<span class="preferred-area-label">📍 Preferred Area</span>
+							</div>
+							<div class="preferred-area-buttons">
+								<button type="button" class="btn-preferred-area" id="drawPreferredAreaBtn"
+									title="Draw preferred area on map">
+									✏️ Draw
+								</button>
+								<button type="button" class="btn-preferred-area" id="editPreferredAreaBtn"
+									title="Edit existing area" style="display: none;">
+									📝 Edit
+								</button>
+								<button type="button" class="btn-preferred-area clear" id="clearPreferredAreaBtn"
+									title="Clear drawing">
+									🗑️ Clear
+								</button>
+								<button type="button" class="btn-preferred-area save" id="savePreferredAreaBtn"
+									title="Save preferred area" style="display: none;">
+									💾 Save
+								</button>
+							</div>
+						</div>
 					</div>
 				</div>
 			</section>

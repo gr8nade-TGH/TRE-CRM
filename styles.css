@@ -8096,9 +8096,30 @@ input[type="radio"] {
 	font-weight: 500;
 }
 
-/* Preferred Area Controls */
-.preferred-area-controls {
-	min-width: auto !important;
+/* Preferred Area Controls - Map Overlay */
+.preferred-area-overlay {
+	position: absolute;
+	top: 12px;
+	left: 12px;
+	z-index: 10;
+	background: rgba(17, 24, 39, 0.95);
+	backdrop-filter: blur(8px);
+	border-radius: 10px;
+	padding: 10px 14px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.preferred-area-header {
+	margin-bottom: 8px;
+}
+
+.preferred-area-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: #e5e7eb;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
 }
 
 .preferred-area-buttons {
@@ -8110,12 +8131,12 @@ input[type="radio"] {
 	display: flex;
 	align-items: center;
 	gap: 4px;
-	padding: 6px 12px;
+	padding: 8px 14px;
 	font-size: 12px;
 	font-weight: 600;
-	border: 1px solid #374151;
+	border: 1px solid rgba(255, 255, 255, 0.15);
 	border-radius: 6px;
-	background: #1f2937;
+	background: rgba(31, 41, 55, 0.8);
 	color: #e5e7eb;
 	cursor: pointer;
 	transition: all 0.15s ease;
@@ -8123,8 +8144,9 @@ input[type="radio"] {
 }
 
 .btn-preferred-area:hover {
-	background: #374151;
-	border-color: #4b5563;
+	background: rgba(55, 65, 81, 0.9);
+	border-color: rgba(255, 255, 255, 0.25);
+	transform: translateY(-1px);
 }
 
 .btn-preferred-area.active {
@@ -8138,22 +8160,22 @@ input[type="radio"] {
 
 	0%,
 	100% {
-		box-shadow: 0 0 0 0 rgba(191, 10, 48, 0.4);
+		box-shadow: 0 0 0 0 rgba(191, 10, 48, 0.5);
 	}
 
 	50% {
-		box-shadow: 0 0 0 6px rgba(191, 10, 48, 0);
+		box-shadow: 0 0 0 8px rgba(191, 10, 48, 0);
 	}
 }
 
 .btn-preferred-area.clear:hover {
-	background: #7f1d1d;
+	background: rgba(127, 29, 29, 0.9);
 	border-color: #991b1b;
 	color: #fecaca;
 }
 
 .btn-preferred-area.save {
-	background: #065f46;
+	background: rgba(6, 95, 70, 0.9);
 	border-color: #047857;
 	color: #d1fae5;
 }
@@ -8161,11 +8183,18 @@ input[type="radio"] {
 .btn-preferred-area.save:hover {
 	background: #047857;
 	border-color: #059669;
+	transform: translateY(-1px);
 }
 
 .btn-preferred-area.save:disabled {
 	opacity: 0.5;
 	cursor: not-allowed;
+	transform: none;
+}
+
+/* Ensure mapwrap is positioned for overlay */
+.mapwrap {
+	position: relative;
 }
 
 /* Missing Data Warning */
