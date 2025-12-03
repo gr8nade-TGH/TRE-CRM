@@ -553,7 +553,6 @@ export async function openBuildShowcaseModal(options) {
 	});
 
 	// Setup email preview toggle
-	// Setup email preview toggle
 	setupEmailPreviewToggle(getSelectedListings);
 
 	// Update email preview when bonus checkboxes change
@@ -565,6 +564,12 @@ export async function openBuildShowcaseModal(options) {
 	});
 
 	show(document.getElementById('buildShowcaseModal'));
+
+	// Always refresh email preview if it's visible (in case modal was reopened with new units)
+	const previewPanel = document.getElementById('showcaseEmailPreview');
+	if (previewPanel && previewPanel.style.display !== 'none') {
+		updateEmailPreview(getSelectedListings);
+	}
 }
 
 /**
