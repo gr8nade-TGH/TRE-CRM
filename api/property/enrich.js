@@ -14,7 +14,7 @@
 import { enrichProperty, checkConfiguration } from '../lib/ai-enrichment.js';
 
 export const config = {
-    maxDuration: 60  // Allow up to 60 seconds for scraping + AI
+    maxDuration: 300  // Pro plan max (5 min), with Fluid Compute can run up to 14 min for network-heavy ops
 };
 
 export default async function handler(req, res) {
