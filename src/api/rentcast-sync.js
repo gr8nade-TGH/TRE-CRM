@@ -169,12 +169,6 @@ function createPropertyFromListings(normalizedAddress, listings) {
         // Photos
         photos: allPhotos,
 
-        // Property type
-        property_type: first.propertyType || 'Apartment',
-
-        // Unit count for reference
-        unit_count: listings.length,
-
         // RentCast tracking - use first listing's ID as reference
         rentcast_id: first.id,
         data_source: 'rentcast',
@@ -232,17 +226,12 @@ function createFloorPlansAndUnits(propertyId, listings) {
             unit_number: unitNumber,
             rent: listing.price || 0,
             market_rent: listing.price || 0,
-            beds: beds,
-            baths: baths,
-            sqft: listing.squareFootage || null,
             available_from: listing.listedDate ? new Date(listing.listedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             is_available: listing.status === 'Active',
             status: listing.status === 'Active' ? 'available' : 'unavailable',
             is_active: listing.status === 'Active',
             is_test_data: false,
-            notes: listing.description ? listing.description.slice(0, 500) : null,
-            // Store RentCast listing ID for this specific unit
-            rentcast_listing_id: listing.id
+            notes: listing.description ? listing.description.slice(0, 500) : null
         });
 
         // Update floor plan aggregates
