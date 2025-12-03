@@ -193,8 +193,30 @@ function createFloorPlansAndUnits(propertyId, listings) {
     // Group by beds/baths combination
     const floorPlanMap = new Map();
 
-    listings.forEach((listing, index) => {
+    // Track used unit numbers to ensure uniqueness at property level
+    const usedUnitNumbers = new Set();
+    let autoUnitCounter = 1;
+
+    // Helper to get a unique unit number
+    function getUniqueUnitNumber(extracted) {
+        // If we have an extracted unit and it's not used yet, use it
+        if (extracted && !usedUnitNumbers.has(extracted)) {
+            usedUnitNumbers.add(extracted);
+            return extracted;
+        }
+        // Otherwise generate a unique one
+        while (usedUnitNumbers.has(`Unit ${autoUnitCounter}`)) {
+            autoUnitCounter++;
+        }
+        const unitNum = `Unit ${autoUnitCounter}`;
+        usedUnitNumbers.add(unitNum);
+        autoUnitCounter++;
+        return unitNum;
+    }
+
+    listings.forEach((listing) => {
         const beds = listing.bedrooms || 0;
+        // Round baths to avoid decimal issues (1.5 -> 1.5, but ensure it's valid)
         const baths = listing.bathrooms || 1;
         const key = `${beds}_${baths}`;
 
@@ -218,8 +240,8 @@ function createFloorPlansAndUnits(propertyId, listings) {
 
         const group = floorPlanMap.get(key);
 
-        // Use extracted unit number from address, or generate one
-        const unitNumber = listing._extractedUnit || `${index + 1}`;
+        // Get unique unit number for this listing
+        const unitNumber = getUniqueUnitNumber(listing._extractedUnit);
 
         group.units.push({
             property_id: propertyId,
@@ -314,11 +336,11 @@ export async function syncSanAntonio(onProgress = () => { }) {
         console.log(`[RentCast Sync] Fetched ${allListings.length} total listings`);
         onProgress(`Processing ${allListings.length} listings...`, 30, 100);
 
-        // Step 2: Delete existing RentCast data (NOT manual entries)
+        // Step 2: Delete ALL existing RentCast data (complete cleanup before fresh import)
         onProgress('Cleaning up old RentCast data...', 35, 100);
         const supabase = SupabaseAPI.getSupabase();
 
-        // First, get all rentcast property IDs so we can delete their units and floor plans
+        // Get all rentcast property IDs
         const { data: rentcastProps } = await supabase
             .from('properties')
             .select('id')
@@ -327,35 +349,28 @@ export async function syncSanAntonio(onProgress = () => { }) {
         const rentcastPropertyIds = rentcastProps?.map(p => p.id) || [];
         console.log(`[RentCast Sync] Found ${rentcastPropertyIds.length} existing RentCast properties to clean up`);
 
-        // Delete units belonging to rentcast properties
-        if (rentcastPropertyIds.length > 0) {
-            const { error: unitDeleteError } = await supabase
-                .from('units')
-                .delete()
-                .in('property_id', rentcastPropertyIds);
-            if (unitDeleteError) console.warn('Error deleting rentcast units:', unitDeleteError);
+        // Delete in batches of 100 to avoid query limits
+        const BATCH_SIZE = 100;
+        for (let i = 0; i < rentcastPropertyIds.length; i += BATCH_SIZE) {
+            const batch = rentcastPropertyIds.slice(i, i + BATCH_SIZE);
 
-            // Delete floor plans belonging to rentcast properties
-            const { error: fpDeleteError } = await supabase
-                .from('floor_plans')
-                .delete()
-                .in('property_id', rentcastPropertyIds);
-            if (fpDeleteError) console.warn('Error deleting rentcast floor plans:', fpDeleteError);
+            // Delete units first (child records)
+            await supabase.from('units').delete().in('property_id', batch);
+
+            // Delete floor plans
+            await supabase.from('floor_plans').delete().in('property_id', batch);
+
+            // Delete properties
+            await supabase.from('properties').delete().in('id', batch);
         }
 
-        // Also delete test data
+        // Also clean up any orphaned test data
         await supabase.from('units').delete().eq('is_test_data', true);
         await supabase.from('floor_plans').delete().eq('is_test_data', true);
+        await supabase.from('properties').delete().eq('is_test_data', true);
 
-        // Delete test properties AND rentcast properties (to refresh)
-        const { data: deletedProps, error: propDeleteError } = await supabase
-            .from('properties')
-            .delete()
-            .or('is_test_data.eq.true,data_source.eq.rentcast')
-            .select('id');
-        if (propDeleteError) console.warn('Error deleting properties:', propDeleteError);
-        results.deletedTestData = deletedProps?.length || 0;
-        console.log(`[RentCast Sync] Deleted ${results.deletedTestData} old properties`);
+        results.deletedTestData = rentcastPropertyIds.length;
+        console.log(`[RentCast Sync] Deleted ${results.deletedTestData} old RentCast properties with their floor plans and units`);
 
         // Step 3: Group listings by address
         onProgress('Grouping by property...', 40, 100);
