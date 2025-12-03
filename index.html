@@ -1608,6 +1608,29 @@
 						</div>
 					</div>
 
+					<!-- Sync Controls Card -->
+					<div class="rentcast-sync-card">
+						<div class="sync-header">
+							<h3>🔄 Sync Listings to Database</h3>
+							<p>Import rental listings from RentCast into TRE CRM. This will replace existing RentCast
+								data but preserve manual entries.</p>
+						</div>
+						<div class="sync-controls">
+							<div class="sync-market">
+								<label>Market:</label>
+								<span class="market-badge">🏙️ San Antonio, TX</span>
+							</div>
+							<button class="btn btn-success" id="syncSanAntonioBtn">🔄 Sync San Antonio Listings</button>
+						</div>
+						<div class="sync-progress-container" id="syncProgressContainer" style="display: none;">
+							<div class="sync-progress-bar-container">
+								<div class="sync-progress-bar" id="syncProgressBar" style="width: 0%;"></div>
+							</div>
+							<div class="sync-progress-text" id="syncProgressText">Starting sync...</div>
+						</div>
+						<div class="sync-results-container" id="syncResultsContainer" style="display: none;"></div>
+					</div>
+
 					<!-- Endpoint Categories -->
 					<div class="rentcast-endpoints">
 						<!-- Property Data -->
