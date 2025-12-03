@@ -2157,6 +2157,285 @@ body {
 	gap: 24px;
 }
 
+/* ============================================ */
+/* BUILD SHOWCASE MODAL - Enhanced Styles      */
+/* ============================================ */
+
+/* Property Group Container */
+.showcase-property-group {
+	background: #ffffff;
+	border: 1px solid #e2e8f0;
+	border-radius: 12px;
+	margin-bottom: 16px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.showcase-property-header {
+	background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+	padding: 16px 20px;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.showcase-property-info {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.showcase-property-name {
+	font-size: 16px;
+	font-weight: 600;
+	color: #1e293b;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.showcase-property-name .pumi-badge {
+	background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+	color: white;
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: 4px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.showcase-property-address {
+	font-size: 13px;
+	color: #64748b;
+	margin: 0;
+}
+
+.showcase-property-amenities {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 4px;
+}
+
+.amenity-pill {
+	background: #e0f2fe;
+	color: #0369a1;
+	font-size: 11px;
+	font-weight: 500;
+	padding: 3px 10px;
+	border-radius: 12px;
+}
+
+.showcase-special-badge {
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	color: #92400e;
+	font-size: 12px;
+	font-weight: 600;
+	padding: 6px 12px;
+	border-radius: 6px;
+	margin-top: 8px;
+	display: inline-block;
+}
+
+/* Units List */
+.showcase-units-list {
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+/* Individual Unit Card */
+.showcase-unit-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 12px 16px;
+	transition: all 0.2s ease;
+}
+
+.showcase-unit-card:hover {
+	background: #f1f5f9;
+	border-color: #cbd5e1;
+}
+
+.showcase-unit-main {
+	display: flex;
+	align-items: center;
+	gap: 24px;
+	flex: 1;
+}
+
+.showcase-unit-number {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	min-width: 60px;
+}
+
+.showcase-unit-number .unit-label {
+	font-size: 10px;
+	font-weight: 500;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.showcase-unit-number .unit-value {
+	font-size: 18px;
+	font-weight: 700;
+	color: #1e293b;
+}
+
+.showcase-unit-details {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+}
+
+.showcase-unit-specs {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 14px;
+	font-weight: 500;
+	color: #334155;
+}
+
+.showcase-unit-specs .spec-divider {
+	color: #cbd5e1;
+}
+
+.showcase-unit-meta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.showcase-unit-meta .unit-floor-plan {
+	font-size: 12px;
+	color: #64748b;
+}
+
+.showcase-unit-pricing {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	min-width: 120px;
+}
+
+.showcase-unit-pricing .unit-rent {
+	font-size: 18px;
+	font-weight: 700;
+	color: #059669;
+}
+
+.showcase-unit-pricing .rent-period {
+	font-size: 12px;
+	font-weight: 400;
+	color: #64748b;
+}
+
+.showcase-unit-pricing .unit-available {
+	font-size: 11px;
+	color: #64748b;
+}
+
+/* Remove Button */
+.showcase-unit-remove {
+	background: transparent;
+	border: none;
+	color: #94a3b8;
+	cursor: pointer;
+	padding: 8px;
+	border-radius: 6px;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.showcase-unit-remove:hover {
+	background: #fee2e2;
+	color: #dc2626;
+}
+
+/* Match Score Badge */
+.match-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.match-badge.match-high {
+	background: #dcfce7;
+	color: #166534;
+}
+
+.match-badge.match-medium {
+	background: #fef3c7;
+	color: #92400e;
+}
+
+.match-badge.match-low {
+	background: #fee2e2;
+	color: #dc2626;
+}
+
+.match-badge .match-stars {
+	color: #f59e0b;
+	font-size: 10px;
+	letter-spacing: 1px;
+}
+
+/* No units message */
+.no-units-message {
+	text-align: center;
+	padding: 40px;
+	color: #64748b;
+	font-size: 14px;
+}
+
+/* Build Showcase Modal specific overrides */
+#buildShowcaseModal .modal-body {
+	max-height: 60vh;
+	overflow-y: auto;
+	padding: 16px;
+}
+
+#buildShowcaseModal .listings-grid {
+	display: flex;
+	flex-direction: column;
+}
+
+#buildShowcaseModal .showcase-controls {
+	display: flex;
+	align-items: flex-start;
+	gap: 24px;
+	flex-wrap: wrap;
+}
+
+#buildShowcaseModal .control-group {
+	min-width: 200px;
+}
+
+#buildShowcaseModal .selection-count {
+	font-size: 13px;
+	color: #64748b;
+}
+
+#buildShowcaseModal .selection-count strong {
+	color: #1e293b;
+}
+
 .listing-card {
 	border: 1px solid #e4e7ec;
 	border-radius: 12px;

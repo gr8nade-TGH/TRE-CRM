@@ -574,12 +574,14 @@ export function setupAllEventListeners(deps) {
 				const leads = state.leads || [];
 				const lead = leads.find(l => l.id === leadId);
 				if (lead) {
-					leadNameEl.textContent = lead.name;
+					// Show first name only for cleaner UI
+					const firstName = lead.name.split(' ')[0];
+					leadNameEl.textContent = firstName;
 					// Enable button since properties are already selected
 					sendBtn.disabled = false;
 				}
 			} else {
-				leadNameEl.textContent = 'Lead';
+				leadNameEl.textContent = 'Customer';
 				sendBtn.disabled = true;
 			}
 		});

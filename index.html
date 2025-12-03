@@ -1706,29 +1706,27 @@
 		<div id="buildShowcaseModal" class="modal hidden">
 			<div class="modal-card">
 				<div class="modal-header">
-					<h3>Build Showcase</h3>
+					<h3>📦 Build Showcase</h3>
 					<button id="closeBuildShowcase" class="icon-btn" aria-label="Close">×</button>
 				</div>
 				<div class="modal-sticky-header">
 					<div class="showcase-controls">
-						<div class="control-group">
-							<label>Select Lead</label>
-							<select id="buildShowcaseLead" class="form-select">
-								<option value="">Choose a lead...</option>
+						<div class="control-group" style="flex: 1; max-width: 400px;">
+							<label>Send To Customer</label>
+							<select id="buildShowcaseLead" class="form-select" style="width: 100%;">
+								<option value="">🔍 Search for a customer...</option>
 							</select>
 						</div>
 						<div class="control-group">
 							<label class="checkbox-label">
-								<input type="checkbox" id="buildReferralBonus" class="bonus-checkbox"
-									style="display: none;">
+								<input type="checkbox" id="buildReferralBonus" class="bonus-checkbox">
 								<span class="checkmark"></span>
-								Include Referral Bonus
+								Include $200 Referral Bonus
 							</label>
 						</div>
 						<div class="control-group">
 							<label class="checkbox-label">
-								<input type="checkbox" id="buildMovingBonus" class="bonus-checkbox"
-									style="display: none;">
+								<input type="checkbox" id="buildMovingBonus" class="bonus-checkbox">
 								<span class="checkmark"></span>
 								Include Moving Bonus
 							</label>
@@ -1739,16 +1737,16 @@
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
 								<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
 							</svg>
-							Preview & Send Showcase to <span id="buildSendLeadName">Lead</span>
+							Send Showcase to <span id="buildSendLeadName">Customer</span>
 						</button>
-						<div class="selection-count">
-							<span id="buildSelectedCount">0</span> properties selected
+						<div class="selection-count" id="buildSelectedCount">
+							0 units selected
 						</div>
 					</div>
 				</div>
 				<div class="modal-body">
 					<div id="buildListingsGrid" class="listings-grid">
-						<!-- selected listings will be shown here -->
+						<!-- Selected units grouped by property will be shown here -->
 					</div>
 				</div>
 			</div>

@@ -491,17 +491,20 @@ export function closeShowcase(options) {
 export async function openBuildShowcaseModal(options) {
 	const { state, mockLeads, getSelectedListings, toast, show } = options;
 
-	const selectedListings = getSelectedListings();
-	if (selectedListings.length === 0) {
-		toast('Please select at least one listing', 'error');
+	const selectedData = getSelectedListings();
+	if (selectedData.totalUnits === 0) {
+		toast('Please select at least one unit', 'error');
 		return;
 	}
 
+	// Check if coming from Customer View with a selected customer
+	const preSelectedCustomer = state.customerView?.selectedCustomer || null;
+
 	// Populate lead dropdown with leads assigned to current agent
 	const leadSelect = document.getElementById('buildShowcaseLead');
-	leadSelect.innerHTML = '<option value="">Choose a lead...</option>';
+	leadSelect.innerHTML = '<option value="">🔍 Search for a customer...</option>';
 
-	// Get leads assigned to current agent (in real app, this would filter by agent)
+	// Get leads assigned to current agent
 	const agentLeads = mockLeads.filter(lead =>
 		lead.assigned_agent_id === state.agentId || state.role === 'manager'
 	);
@@ -509,43 +512,206 @@ export async function openBuildShowcaseModal(options) {
 	agentLeads.forEach(lead => {
 		const option = document.createElement('option');
 		option.value = lead.id;
-		option.textContent = `${lead.name} (${lead.email})`;
+		option.textContent = `${lead.name} (${lead.email || 'No email'})`;
+		option.dataset.email = lead.email || '';
+		option.dataset.preferences = JSON.stringify(lead.preferences || {});
+		// Pre-select if this is the customer from Customer View
+		if (preSelectedCustomer && lead.id === preSelectedCustomer.id) {
+			option.selected = true;
+		}
 		leadSelect.appendChild(option);
 	});
 
-	// Update selection count
-	document.getElementById('buildSelectedCount').textContent = selectedListings.length;
+	// Update selection count with proper grammar
+	const countEl = document.getElementById('buildSelectedCount');
+	const unitWord = selectedData.totalUnits === 1 ? 'unit' : 'units';
+	const propWord = selectedData.totalProperties === 1 ? 'property' : 'properties';
+	countEl.innerHTML = `<strong>${selectedData.totalUnits}</strong> ${unitWord} from <strong>${selectedData.totalProperties}</strong> ${propWord}`;
 
-	// Populate listings grid with selected properties (same format as Top Listing Options)
+	// Update send button with customer name if pre-selected
+	updateSendButtonLabel(preSelectedCustomer);
+
+	// Populate listings grid with new grouped structure
 	const listingsGrid = document.getElementById('buildListingsGrid');
-	listingsGrid.innerHTML = selectedListings.map(prop => {
+	listingsGrid.innerHTML = renderShowcaseUnits(selectedData);
+
+	// Add remove button event listeners
+	listingsGrid.querySelectorAll('.showcase-unit-remove').forEach(btn => {
+		btn.addEventListener('click', (e) => {
+			const unitId = e.target.closest('.showcase-unit-remove').dataset.unitId;
+			removeUnitFromShowcase(unitId, getSelectedListings, countEl);
+		});
+	});
+
+	show(document.getElementById('buildShowcaseModal'));
+}
+
+/**
+ * Update the send button label with customer name
+ */
+function updateSendButtonLabel(customer) {
+	const nameSpan = document.getElementById('buildSendLeadName');
+	if (customer && customer.name) {
+		nameSpan.textContent = customer.name.split(' ')[0]; // First name only
+		document.getElementById('sendBuildShowcase').disabled = false;
+	} else {
+		nameSpan.textContent = 'Customer';
+	}
+}
+
+/**
+ * Render showcase units grouped by property
+ */
+function renderShowcaseUnits(selectedData) {
+	if (!selectedData.grouped || selectedData.grouped.length === 0) {
+		return '<p class="no-units-message">No units selected</p>';
+	}
+
+	return selectedData.grouped.map(({ property, units, highestScore }) => {
+		// Property header
+		const amenitiesList = (property.amenities || []).slice(0, 4);
+		const hasSpecials = property.activeSpecials && property.activeSpecials.length > 0;
+		const matchBadge = highestScore > 0 ? generateMatchBadge(highestScore) : '';
+
 		return `
-			<div class="listing-card" data-property-id="${prop.id}">
-				<div class="listing-image">
-					<img src="${prop.image_url || 'https://via.placeholder.com/300x200?text=Property+Image'}" alt="${prop.name}" />
-					<div class="commission-badge">${Math.max(prop.escort_pct, prop.send_pct)}% Commission</div>
+			<div class="showcase-property-group" data-property-id="${property.id}">
+				<div class="showcase-property-header">
+					<div class="showcase-property-info">
+						<h4 class="showcase-property-name">
+							${property.is_pumi ? '<span class="pumi-badge">PUMI</span>' : ''}
+							${property.name}
+							${matchBadge}
+						</h4>
+						<p class="showcase-property-address">${property.address || ''} ${property.city ? `• ${property.city}` : ''} ${property.neighborhood ? `• ${property.neighborhood}` : ''}</p>
+						${amenitiesList.length > 0 ? `
+							<div class="showcase-property-amenities">
+								${amenitiesList.map(a => `<span class="amenity-pill">${a}</span>`).join('')}
+							</div>
+						` : ''}
+						${hasSpecials ? `
+							<div class="showcase-special-badge">
+								🎉 Special: ${property.activeSpecials[0].description || 'Special Offer Available'}
+							</div>
+						` : ''}
+					</div>
 				</div>
-				<div class="listing-content">
-					<h4>${prop.name}</h4>
-					<div class="listing-rating">
-						<span class="stars">★★★★★</span>
-						<span class="rating-number">4.2</span>
-					</div>
-					<p class="listing-price">$${prop.rent_min} - $${prop.rent_max}/mo</p>
-					<p class="listing-details">${prop.beds_min}-${prop.beds_max} bd • ${prop.baths_min}-${prop.baths_max} ba • ${prop.sqft_min}-${prop.sqft_max} sqft</p>
-					<div class="listing-amenities">
-						${prop.amenities.slice(0, 2).map(amenity => `<span class="amenity-tag">${amenity}</span>`).join('')}
-					</div>
-					<div class="listing-selection">
-						<span>Selected Property</span>
-						<input type="checkbox" class="listing-check" checked disabled>
-					</div>
+				<div class="showcase-units-list">
+					${units.map(unit => renderShowcaseUnit(unit)).join('')}
 				</div>
 			</div>
 		`;
 	}).join('');
+}
 
-	show(document.getElementById('buildShowcaseModal'));
+/**
+ * Render a single unit card
+ */
+function renderShowcaseUnit(unit) {
+	const rent = unit.rent ? `$${unit.rent.toLocaleString()}` : 'Call for pricing';
+	const beds = unit.beds !== null ? `${unit.beds}bd` : '—';
+	const baths = unit.baths !== null ? `${unit.baths}ba` : '—';
+	const sqft = unit.sqft ? `${unit.sqft.toLocaleString()} sqft` : '—';
+
+	// Format available date
+	let availableText = 'Available Now';
+	if (unit.availableDate) {
+		const availDate = new Date(unit.availableDate);
+		const today = new Date();
+		const diffDays = Math.ceil((availDate - today) / (1000 * 60 * 60 * 24));
+		if (diffDays <= 0) {
+			availableText = 'Available Now';
+		} else if (diffDays <= 7) {
+			availableText = `Available in ${diffDays} days`;
+		} else {
+			availableText = `Available ${availDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}`;
+		}
+	}
+
+	const unitMatchBadge = unit.matchScore ? generateMatchBadge(unit.matchScore) : '';
+
+	return `
+		<div class="showcase-unit-card" data-unit-id="${unit.id}">
+			<div class="showcase-unit-main">
+				<div class="showcase-unit-number">
+					<span class="unit-label">Unit</span>
+					<span class="unit-value">${unit.unit_number || 'TBD'}</span>
+				</div>
+				<div class="showcase-unit-details">
+					<div class="showcase-unit-specs">
+						<span class="spec">${beds}</span>
+						<span class="spec-divider">•</span>
+						<span class="spec">${baths}</span>
+						<span class="spec-divider">•</span>
+						<span class="spec">${sqft}</span>
+					</div>
+					<div class="showcase-unit-meta">
+						<span class="unit-floor-plan">${unit.floorPlanName}</span>
+						${unitMatchBadge}
+					</div>
+				</div>
+				<div class="showcase-unit-pricing">
+					<span class="unit-rent">${rent}<span class="rent-period">/mo</span></span>
+					<span class="unit-available">${availableText}</span>
+				</div>
+			</div>
+			<button class="showcase-unit-remove" data-unit-id="${unit.id}" title="Remove from showcase">
+				<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<path d="M18 6L6 18M6 6l12 12"/>
+				</svg>
+			</button>
+		</div>
+	`;
+}
+
+/**
+ * Generate a match score badge
+ */
+function generateMatchBadge(score) {
+	const percentage = Math.round(score * 100);
+	let colorClass = 'match-low';
+	if (percentage >= 80) colorClass = 'match-high';
+	else if (percentage >= 60) colorClass = 'match-medium';
+
+	const stars = Math.round((percentage / 100) * 5);
+	const starIcons = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+
+	return `<span class="match-badge ${colorClass}" title="${percentage}% match"><span class="match-stars">${starIcons}</span></span>`;
+}
+
+/**
+ * Remove a unit from the showcase
+ */
+function removeUnitFromShowcase(unitId, getSelectedListings, countEl) {
+	// Uncheck the unit checkbox in the background
+	const checkbox = document.querySelector(`.unit-checkbox[data-unit-id="${unitId}"]`);
+	if (checkbox) {
+		checkbox.checked = false;
+		// Trigger change event to update bulk actions bar
+		checkbox.dispatchEvent(new Event('change', { bubbles: true }));
+	}
+
+	// Remove from modal UI
+	const unitCard = document.querySelector(`.showcase-unit-card[data-unit-id="${unitId}"]`);
+	if (unitCard) {
+		const propertyGroup = unitCard.closest('.showcase-property-group');
+		unitCard.remove();
+
+		// If no more units in property group, remove the group
+		if (propertyGroup && propertyGroup.querySelectorAll('.showcase-unit-card').length === 0) {
+			propertyGroup.remove();
+		}
+	}
+
+	// Update count
+	const newData = getSelectedListings();
+	if (newData.totalUnits === 0) {
+		countEl.innerHTML = 'No units selected';
+		document.getElementById('sendBuildShowcase').disabled = true;
+	} else {
+		const unitWord = newData.totalUnits === 1 ? 'unit' : 'units';
+		const propWord = newData.totalProperties === 1 ? 'property' : 'properties';
+		countEl.innerHTML = `<strong>${newData.totalUnits}</strong> ${unitWord} from <strong>${newData.totalProperties}</strong> ${propWord}`;
+	}
 }
 
 export function closeBuildShowcase(options) {
@@ -554,34 +720,98 @@ export function closeBuildShowcase(options) {
 	hide(document.getElementById('buildShowcaseModal'));
 }
 
+/**
+ * Get selected units grouped by property for Build Showcase
+ * Returns { properties: [...], units: [...], totalUnits: number }
+ */
 export function getSelectedListings(options) {
 	// Use real listings from state if available, fallback to mockProperties
 	const properties = window.state?.listings || options?.mockProperties || [];
+	const unitScores = window.state?.customerView?.unitScores || new Map();
 
-	// Get selected unit checkboxes
+	// Get selected unit checkboxes with their data
 	const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
 	const selectedUnitIds = Array.from(checkboxes).map(cb => cb.dataset.unitId);
 
 	console.log('🔍 getSelectedListings - Unit IDs:', selectedUnitIds);
 	console.log('🔍 getSelectedListings - Properties count:', properties.length);
 
-	// Find properties that have selected units
-	const selectedProperties = [];
-	const addedPropertyIds = new Set();
+	// Build a map of properties with their selected units
+	const propertyMap = new Map(); // propertyId -> { property, units: [] }
 
 	for (const unitId of selectedUnitIds) {
 		// Find the property that contains this unit
-		const property = properties.find(prop =>
-			prop.units && prop.units.some(unit => unit.id === unitId)
-		);
+		for (const property of properties) {
+			if (!property.units) continue;
 
-		if (property && !addedPropertyIds.has(property.id)) {
-			selectedProperties.push(property);
-			addedPropertyIds.add(property.id);
+			const unit = property.units.find(u => u.id === unitId);
+			if (unit) {
+				// Get unit's floor plan data
+				const floorPlan = unit.floor_plan || {};
+
+				// Get match score if available
+				const scoreData = unitScores.get(unitId) || {};
+
+				// Build enriched unit data
+				const enrichedUnit = {
+					...unit,
+					propertyId: property.id,
+					propertyName: property.community_name || property.name,
+					floorPlanName: floorPlan.name || 'Unknown',
+					beds: floorPlan.beds ?? floorPlan.bedrooms ?? null,
+					baths: floorPlan.baths ?? floorPlan.bathrooms ?? null,
+					sqft: floorPlan.sqft ?? floorPlan.square_feet ?? null,
+					rent: unit.rent || floorPlan.starting_at || floorPlan.market_rent || null,
+					availableDate: unit.available_from || unit.available_date,
+					matchScore: scoreData.score || null
+				};
+
+				if (!propertyMap.has(property.id)) {
+					propertyMap.set(property.id, {
+						property: {
+							id: property.id,
+							name: property.community_name || property.name,
+							address: property.street_address || property.address,
+							city: property.city,
+							neighborhood: property.neighborhood,
+							amenities: property.amenities || [],
+							photos: property.photos || [],
+							image_url: property.image_url,
+							is_pumi: property.is_pumi || property.isPUMI,
+							activeSpecials: property.activeSpecials || []
+						},
+						units: [],
+						highestScore: 0
+					});
+				}
+
+				const propData = propertyMap.get(property.id);
+				propData.units.push(enrichedUnit);
+				if (enrichedUnit.matchScore && enrichedUnit.matchScore > propData.highestScore) {
+					propData.highestScore = enrichedUnit.matchScore;
+				}
+				break; // Found the property, move to next unit
+			}
 		}
 	}
 
-	console.log('🔍 getSelectedListings - Found properties:', selectedProperties.length);
-	return selectedProperties;
+	// Convert to array and sort by highest match score (if available)
+	const result = Array.from(propertyMap.values());
+	result.sort((a, b) => b.highestScore - a.highestScore);
+
+	// Also return flat list of all selected units for easy counting
+	const allUnits = result.flatMap(r => r.units);
+
+	console.log('🔍 getSelectedListings - Found properties:', result.length, 'units:', allUnits.length);
+
+	return {
+		grouped: result,           // Properties with their units grouped
+		units: allUnits,           // Flat list of all units
+		totalUnits: allUnits.length,
+		totalProperties: result.length,
+		// Legacy support - return first property for old code
+		properties: result.map(r => r.property),
+		length: result.length      // For backward compatibility with old checks
+	};
 }
 
