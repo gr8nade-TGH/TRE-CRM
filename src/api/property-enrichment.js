@@ -28,41 +28,57 @@ export async function checkEnrichmentStatus() {
 
 /**
  * Request AI enrichment for a property
- * @param {Object} property - Property data to enrich
+ * @param {Object} property - Property data to enrich (with all existing fields for analysis)
  * @param {Function} onProgress - Progress callback
- * @returns {Promise<Object>} Enrichment results with suggestions
+ * @returns {Promise<Object>} Enrichment results with suggestions and verifications
  */
-export async function enrichProperty(property, onProgress = () => {}) {
+export async function enrichProperty(property, onProgress = () => { }) {
     try {
-        onProgress('Connecting to AI service...', 10);
-        
+        onProgress('Analyzing property data...', 5);
+
+        // Send full property data so AI knows what's missing vs existing
+        const requestData = {
+            property_id: property.id,
+            // Address info
+            address: property.address,
+            street_address: property.street_address,
+            city: property.city,
+            state: property.state,
+            zip_code: property.zip_code,
+            lat: property.lat || property.map_lat,
+            lng: property.lng || property.map_lng,
+            // Existing data for verification
+            community_name: property.community_name,
+            name: property.name,
+            contact_phone: property.contact_phone,
+            contact_email: property.contact_email,
+            contact_name: property.contact_name,
+            amenities: property.amenities,
+            leasing_link: property.leasing_link,
+            management_company: property.management_company
+        };
+
+        onProgress('Searching property listings...', 15);
+
         const response = await fetch(`${BASE_URL}/enrich`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
             },
-            body: JSON.stringify({
-                property_id: property.id,
-                address: property.street_address || property.address,
-                city: property.city,
-                state: property.state,
-                zip_code: property.zip_code,
-                lat: property.lat || property.map_lat,
-                lng: property.lng || property.map_lng
-            })
+            body: JSON.stringify(requestData)
         });
-        
-        onProgress('Processing response...', 90);
-        
+
+        onProgress('AI analyzing results...', 80);
+
         const result = await response.json();
-        
+
         if (!response.ok) {
             throw new Error(result.message || result.error || 'Enrichment failed');
         }
-        
+
         onProgress('Complete!', 100);
         return result;
-        
+
     } catch (error) {
         console.error('[Property Enrichment] Request failed:', error);
         throw error;
@@ -79,10 +95,10 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
     // Import Supabase API dynamically to avoid circular dependencies
     const { getSupabase } = await import('./supabase-api.js');
     const supabase = getSupabase();
-    
+
     // Build update object from accepted suggestions
     const updates = {};
-    
+
     for (const [field, suggestion] of Object.entries(suggestions)) {
         if (suggestion.accepted) {
             // Map suggestion fields to database columns
@@ -109,26 +125,26 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
             }
         }
     }
-    
+
     if (Object.keys(updates).length === 0) {
         return { success: true, message: 'No changes to apply' };
     }
-    
+
     // Mark as enriched
     updates.enrichment_status = 'enriched';
     updates.enriched_at = new Date().toISOString();
-    
+
     const { data, error } = await supabase
         .from('properties')
         .update(updates)
         .eq('id', propertyId)
         .select()
         .single();
-    
+
     if (error) {
         throw new Error(`Failed to apply suggestions: ${error.message}`);
     }
-    
+
     return { success: true, property: data };
 }
 
@@ -140,19 +156,19 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
 export async function markAsReviewed(propertyId) {
     const { getSupabase } = await import('./supabase-api.js');
     const supabase = getSupabase();
-    
+
     const { error } = await supabase
         .from('properties')
-        .update({ 
+        .update({
             enrichment_status: 'reviewed',
             enriched_at: new Date().toISOString()
         })
         .eq('id', propertyId);
-    
+
     if (error) {
         throw new Error(`Failed to mark as reviewed: ${error.message}`);
     }
-    
+
     return { success: true };
 }
 

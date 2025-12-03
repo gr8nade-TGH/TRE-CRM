@@ -45,36 +45,74 @@ export default async function handler(req, res) {
     }
 
     try {
-        const { property_id, address, city, state, zip_code, lat, lng } = req.body;
+        // Accept full property object with all existing data
+        const {
+            property_id,
+            address,
+            street_address,
+            city,
+            state,
+            zip_code,
+            lat,
+            lng,
+            // Existing data for verification
+            community_name,
+            name,
+            contact_phone,
+            contact_email,
+            contact_name,
+            amenities,
+            leasing_link,
+            management_company
+        } = req.body;
+
+        const propertyAddress = street_address || address;
 
         // Validate required fields
-        if (!address) {
-            return res.status(400).json({ 
-                error: 'Missing required field: address' 
+        if (!propertyAddress) {
+            return res.status(400).json({
+                error: 'Missing required field: address or street_address'
             });
         }
 
-        console.log(`[AI Enrichment] Request for property ${property_id}: ${address}`);
+        console.log(`[AI Enrichment] Request for property ${property_id}: ${propertyAddress}`);
 
-        // Call enrichment service
+        // Call enrichment service with full property data
         const results = await enrichProperty({
             id: property_id,
-            address: address,
+            address: propertyAddress,
+            street_address: propertyAddress,
             city: city || 'San Antonio',
             state: state || 'TX',
             zip_code: zip_code || '',
-            coordinates: lat && lng ? { lat, lng } : null
+            coordinates: lat && lng ? { lat, lng } : null,
+            // Pass existing data for smart analysis
+            community_name,
+            name,
+            contact_phone,
+            contact_email,
+            contact_name,
+            amenities,
+            leasing_link,
+            management_company
         });
 
-        // Check if we found anything useful
+        // Count suggestions and verifications
         const suggestionCount = Object.keys(results.suggestions || {}).length;
-        
+        const verificationCount = Object.keys(results.verifications || {}).length;
+
         return res.status(200).json({
             success: true,
             property_id,
             address: results.address,
+            // Analysis of what was missing vs existing
+            data_analysis: results.dataAnalysis,
+            // New data found for missing fields
             suggestions: results.suggestions,
             suggestion_count: suggestionCount,
+            // Verification results for existing data
+            verifications: results.verifications,
+            verification_count: verificationCount,
             sources_checked: results.sources_checked,
             errors: results.errors,
             has_screenshot: !!results.screenshot,

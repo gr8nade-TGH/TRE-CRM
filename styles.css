@@ -10355,6 +10355,68 @@ input[type="radio"] {
 	color: #94a3b8;
 }
 
+.enrichment-reason {
+	font-size: 11px;
+	color: #64748b;
+	font-style: italic;
+	margin-top: 4px;
+}
+
+.enrichment-analysis-summary {
+	display: flex;
+	gap: 16px;
+	padding: 10px 14px;
+	background: #f8fafc;
+	border-radius: 8px;
+	margin-bottom: 16px;
+	font-size: 13px;
+}
+
+.enrichment-analysis-summary .analysis-stat {
+	color: #64748b;
+}
+
+.enrichment-analysis-summary .analysis-stat.found {
+	color: #16a34a;
+	font-weight: 500;
+}
+
+.verification-item {
+	background: #fffbeb;
+	border-color: #fcd34d;
+}
+
+.enrichment-verification-compare {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 13px;
+}
+
+.enrichment-verification-compare .current-value {
+	color: #dc2626;
+	text-decoration: line-through;
+	opacity: 0.7;
+}
+
+.enrichment-verification-compare .suggested-value {
+	color: #16a34a;
+	font-weight: 500;
+}
+
+.enrichment-verification-compare .label {
+	font-size: 11px;
+	color: #94a3b8;
+	margin-right: 4px;
+}
+
+.no-suggestions {
+	color: #94a3b8;
+	font-style: italic;
+	padding: 12px;
+	text-align: center;
+}
+
 .enrichment-screenshot {
 	margin-top: 16px;
 }

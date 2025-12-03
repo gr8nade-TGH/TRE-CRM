@@ -133,7 +133,7 @@ function updateProgress(message, progress) {
 }
 
 /**
- * Display enrichment suggestions
+ * Display enrichment suggestions and verifications
  */
 function displaySuggestions(result) {
     document.getElementById('enrichmentProgress').classList.add('hidden');
@@ -142,37 +142,95 @@ function displaySuggestions(result) {
     currentSuggestions = result.suggestions;
 
     const container = document.getElementById('enrichmentSuggestions');
+
+    // Show data analysis summary
+    const analysis = result.data_analysis || {};
+    const missingCount = analysis.missing?.length || 0;
+    const foundCount = Object.keys(result.suggestions || {}).length;
+
     container.innerHTML = `
-        <h4>📋 Suggested Updates</h4>
+        <div class="enrichment-analysis-summary">
+            <span class="analysis-stat">📊 Missing: ${missingCount} fields</span>
+            <span class="analysis-stat found">✅ Found: ${foundCount} matches</span>
+        </div>
+        <h4>📋 New Data Found</h4>
         <p class="enrichment-hint">Select which suggestions to apply:</p>
     `;
 
-    for (const [field, suggestion] of Object.entries(result.suggestions)) {
-        const fieldLabel = getFieldLabel(field);
-        const displayValue = Array.isArray(suggestion.value)
-            ? suggestion.value.join(', ')
-            : suggestion.value;
+    // Display suggestions for missing fields
+    if (Object.keys(result.suggestions || {}).length > 0) {
+        for (const [field, suggestion] of Object.entries(result.suggestions)) {
+            const fieldLabel = getFieldLabel(field);
+            const displayValue = Array.isArray(suggestion.value)
+                ? suggestion.value.join(', ')
+                : suggestion.value;
 
-        const confidenceClass = suggestion.confidence >= 0.8 ? 'high' :
-            suggestion.confidence >= 0.6 ? 'medium' : 'low';
+            const confidenceClass = suggestion.confidence >= 0.8 ? 'high' :
+                suggestion.confidence >= 0.6 ? 'medium' : 'low';
 
-        container.innerHTML += `
-            <div class="enrichment-suggestion-item">
-                <label class="enrichment-checkbox-label">
-                    <input type="checkbox" 
-                           class="enrichment-checkbox" 
-                           data-field="${field}" 
-                           ${suggestion.confidence >= 0.7 ? 'checked' : ''}
-                           onchange="window.updateEnrichmentApplyBtn()">
-                    <span class="enrichment-field-name">${fieldLabel}</span>
-                </label>
-                <div class="enrichment-suggestion-value">${displayValue}</div>
-                <div class="enrichment-confidence ${confidenceClass}">
-                    ${Math.round(suggestion.confidence * 100)}% confidence
-                    <span class="enrichment-source">via ${suggestion.source}</span>
+            container.innerHTML += `
+                <div class="enrichment-suggestion-item">
+                    <label class="enrichment-checkbox-label">
+                        <input type="checkbox"
+                               class="enrichment-checkbox"
+                               data-field="${field}"
+                               data-type="suggestion"
+                               ${suggestion.confidence >= 0.7 ? 'checked' : ''}
+                               onchange="window.updateEnrichmentApplyBtn()">
+                        <span class="enrichment-field-name">${fieldLabel}</span>
+                    </label>
+                    <div class="enrichment-suggestion-value">${displayValue}</div>
+                    <div class="enrichment-confidence ${confidenceClass}">
+                        ${Math.round(suggestion.confidence * 100)}% confidence
+                        <span class="enrichment-source">via ${suggestion.source}</span>
+                    </div>
+                    ${suggestion.reason ? `<div class="enrichment-reason">${suggestion.reason}</div>` : ''}
                 </div>
-            </div>
+            `;
+        }
+    } else {
+        container.innerHTML += `<p class="no-suggestions">No new data found for missing fields.</p>`;
+    }
+
+    // Display verifications for existing data that may be outdated
+    if (result.verifications && Object.keys(result.verifications).length > 0) {
+        container.innerHTML += `
+            <h4 style="margin-top: 20px;">⚠️ Data Verification</h4>
+            <p class="enrichment-hint">Existing data that may need updating:</p>
         `;
+
+        for (const [field, verification] of Object.entries(result.verifications)) {
+            const fieldLabel = getFieldLabel(field);
+            container.innerHTML += `
+                <div class="enrichment-suggestion-item verification-item">
+                    <label class="enrichment-checkbox-label">
+                        <input type="checkbox"
+                               class="enrichment-checkbox"
+                               data-field="${field}"
+                               data-type="verification"
+                               onchange="window.updateEnrichmentApplyBtn()">
+                        <span class="enrichment-field-name">${fieldLabel}</span>
+                    </label>
+                    <div class="enrichment-verification-compare">
+                        <div class="current-value">
+                            <span class="label">Current:</span> ${verification.current}
+                        </div>
+                        <div class="suggested-value">
+                            <span class="label">Found:</span> ${verification.suggested}
+                        </div>
+                    </div>
+                    <div class="enrichment-reason">${verification.reason}</div>
+                </div>
+            `;
+
+            // Add to suggestions so it can be applied
+            currentSuggestions[field] = {
+                value: verification.suggested,
+                confidence: 0.7,
+                source: verification.source,
+                isVerification: true
+            };
+        }
     }
 
     // Show screenshot if available
