@@ -179,6 +179,11 @@ export function route(deps) {
 				console.error('Error loading Lease Confirmation page:', error);
 			}
 		})();
+	} else if (hash === '/rentcast-api') {
+		state.currentPage = 'rentcast-api';
+		show(document.getElementById('rentcastApiView'));
+		setRoleLabel('rentcast-api');
+		// RentCast API page is static reference - no special initialization needed
 	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
 		// Leads page with optional query parameters
 		state.currentPage = 'leads';

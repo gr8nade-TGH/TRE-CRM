@@ -1151,6 +1151,8 @@ export function setupAllEventListeners(deps) {
 				} else if (action === 'map-settings') {
 					// Future: Navigate to map settings page
 					toast('Map Settings coming soon!', 'info');
+				} else if (action === 'rentcast-api') {
+					window.location.hash = '#/rentcast-api';
 				}
 
 				manageDropdown.classList.add('hidden');

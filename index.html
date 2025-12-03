@@ -156,6 +156,17 @@
 							</svg>
 							Map Settings
 						</a>
+						<a href="#" class="manage-dropdown-item" data-action="rentcast-api">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+								<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+								<line x1="12" y1="6" x2="16" y2="6"></line>
+								<line x1="12" y1="10" x2="16" y2="10"></line>
+								<line x1="8" y1="14" x2="16" y2="14"></line>
+							</svg>
+							RentCast API Feeds
+						</a>
 					</div>
 				</div>
 				<button id="profileBtn" class="btn btn-secondary btn-sm" title="Profile Settings">
@@ -1547,6 +1558,607 @@
 								</button>
 							</div>
 						</form>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/rentcast-api -->
+			<section id="rentcastApiView" class="route-view hidden">
+				<div class="rentcast-api-page">
+					<div class="rentcast-header">
+						<div class="rentcast-title-row">
+							<h1>📡 RentCast API Reference</h1>
+							<a href="https://developers.rentcast.io/reference/introduction" target="_blank"
+								class="btn btn-primary btn-sm">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+									stroke-width="2">
+									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+									<polyline points="15 3 21 3 21 9"></polyline>
+									<line x1="10" y1="14" x2="21" y2="3"></line>
+								</svg>
+								Open Docs
+							</a>
+						</div>
+						<p class="rentcast-subtitle">Developer reference for RentCast property data API integration</p>
+					</div>
+
+					<!-- API Status Card -->
+					<div class="rentcast-status-card">
+						<div class="status-item">
+							<span class="status-label">API Status</span>
+							<span class="status-value" id="rentcastApiStatus">
+								<span class="status-dot pending"></span>
+								Not Connected
+							</span>
+						</div>
+						<div class="status-item">
+							<span class="status-label">API Key</span>
+							<span class="status-value" id="rentcastApiKey">Not configured</span>
+						</div>
+						<div class="status-item">
+							<span class="status-label">Monthly Quota</span>
+							<span class="status-value" id="rentcastQuota">-- / 50 requests</span>
+						</div>
+						<div class="status-item">
+							<button class="btn btn-secondary btn-sm" id="configureRentcastBtn">Configure API
+								Key</button>
+						</div>
+					</div>
+
+					<!-- Endpoint Categories -->
+					<div class="rentcast-endpoints">
+						<!-- Property Data -->
+						<div class="endpoint-category">
+							<div class="category-header">
+								<span class="category-icon">🏠</span>
+								<div class="category-info">
+									<h2>Property Data</h2>
+									<p>Access 140M+ property records with structural attributes, features, and owner
+										details</p>
+								</div>
+							</div>
+							<div class="endpoint-list">
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/properties</code>
+									<span class="endpoint-desc">Search property records by address, city, zip, or geo
+										area</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/properties/{id}</code>
+									<span class="endpoint-desc">Get single property record by ID</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/properties/random</code>
+									<span class="endpoint-desc">Get random property records for testing</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+							</div>
+							<details class="schema-details">
+								<summary>📋 Response Schema</summary>
+								<div class="schema-content">
+									<table class="schema-table">
+										<thead>
+											<tr>
+												<th>Field</th>
+												<th>Type</th>
+												<th>Description</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td><code>id</code></td>
+												<td>String</td>
+												<td>Unique RentCast property identifier</td>
+											</tr>
+											<tr>
+												<td><code>formattedAddress</code></td>
+												<td>String</td>
+												<td>Full property address</td>
+											</tr>
+											<tr>
+												<td><code>addressLine1</code></td>
+												<td>String</td>
+												<td>Street address</td>
+											</tr>
+											<tr>
+												<td><code>city</code></td>
+												<td>String</td>
+												<td>City name</td>
+											</tr>
+											<tr>
+												<td><code>state</code></td>
+												<td>String</td>
+												<td>2-char state abbreviation</td>
+											</tr>
+											<tr>
+												<td><code>zipCode</code></td>
+												<td>String</td>
+												<td>5-digit zip code</td>
+											</tr>
+											<tr>
+												<td><code>county</code></td>
+												<td>String</td>
+												<td>County name</td>
+											</tr>
+											<tr>
+												<td><code>latitude</code></td>
+												<td>Number</td>
+												<td>Geo latitude</td>
+											</tr>
+											<tr>
+												<td><code>longitude</code></td>
+												<td>Number</td>
+												<td>Geo longitude</td>
+											</tr>
+											<tr>
+												<td><code>propertyType</code></td>
+												<td>Enum</td>
+												<td>Single Family, Condo, Apartment, etc.</td>
+											</tr>
+											<tr>
+												<td><code>bedrooms</code></td>
+												<td>Number</td>
+												<td>Number of bedrooms (0 = studio)</td>
+											</tr>
+											<tr>
+												<td><code>bathrooms</code></td>
+												<td>Number</td>
+												<td>Number of bathrooms</td>
+											</tr>
+											<tr>
+												<td><code>squareFootage</code></td>
+												<td>Number</td>
+												<td>Living area in sq.ft.</td>
+											</tr>
+											<tr>
+												<td><code>lotSize</code></td>
+												<td>Number</td>
+												<td>Lot size in sq.ft.</td>
+											</tr>
+											<tr>
+												<td><code>yearBuilt</code></td>
+												<td>Number</td>
+												<td>Year constructed</td>
+											</tr>
+											<tr>
+												<td><code>lastSaleDate</code></td>
+												<td>Date</td>
+												<td>Last sale date (ISO 8601)</td>
+											</tr>
+											<tr>
+												<td><code>lastSalePrice</code></td>
+												<td>Number</td>
+												<td>Last sale price</td>
+											</tr>
+											<tr>
+												<td><code>features</code></td>
+												<td>Object</td>
+												<td>Pool, garage, heating, cooling, etc.</td>
+											</tr>
+											<tr>
+												<td><code>taxAssessments</code></td>
+												<td>Object</td>
+												<td>Tax assessment by year</td>
+											</tr>
+											<tr>
+												<td><code>owner</code></td>
+												<td>Object</td>
+												<td>Owner names, mailing address</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</details>
+						</div>
+
+						<!-- Rental Listings -->
+						<div class="endpoint-category highlight">
+							<div class="category-header">
+								<span class="category-icon">🏢</span>
+								<div class="category-info">
+									<h2>Rental Listings</h2>
+									<p>Active rental listings - <strong>PRIMARY USE CASE for TRE CRM</strong></p>
+								</div>
+								<span class="primary-badge">Primary</span>
+							</div>
+							<div class="endpoint-list">
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/listings/rental/long-term</code>
+									<span class="endpoint-desc">Search active rental listings by city, zip, or geo
+										area</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/listings/rental/long-term/{id}</code>
+									<span class="endpoint-desc">Get single rental listing by ID</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+							</div>
+							<details class="schema-details" open>
+								<summary>📋 Response Schema (Rental Listings)</summary>
+								<div class="schema-content">
+									<table class="schema-table">
+										<thead>
+											<tr>
+												<th>Field</th>
+												<th>Type</th>
+												<th>TRE Mapping</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr class="mapped">
+												<td><code>id</code></td>
+												<td>String</td>
+												<td>→ properties.external_id</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>formattedAddress</code></td>
+												<td>String</td>
+												<td>→ properties.address</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>city</code></td>
+												<td>String</td>
+												<td>→ properties.city</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>state</code></td>
+												<td>String</td>
+												<td>→ properties.state</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>zipCode</code></td>
+												<td>String</td>
+												<td>→ properties.zip_code</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>latitude</code></td>
+												<td>Number</td>
+												<td>→ properties.latitude</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>longitude</code></td>
+												<td>Number</td>
+												<td>→ properties.longitude</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>propertyType</code></td>
+												<td>Enum</td>
+												<td>→ properties.property_type</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>bedrooms</code></td>
+												<td>Number</td>
+												<td>→ units.beds</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>bathrooms</code></td>
+												<td>Number</td>
+												<td>→ units.baths</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>squareFootage</code></td>
+												<td>Number</td>
+												<td>→ units.sqft</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>price</code></td>
+												<td>Number</td>
+												<td>→ units.rent</td>
+											</tr>
+											<tr class="mapped">
+												<td><code>status</code></td>
+												<td>Enum</td>
+												<td>→ units.availability_status</td>
+											</tr>
+											<tr>
+												<td><code>listedDate</code></td>
+												<td>Date</td>
+												<td>→ properties.created_at</td>
+											</tr>
+											<tr>
+												<td><code>daysOnMarket</code></td>
+												<td>Number</td>
+												<td>→ computed field</td>
+											</tr>
+											<tr>
+												<td><code>listingAgent</code></td>
+												<td>Object</td>
+												<td>→ properties.contact_*</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</details>
+						</div>
+
+						<!-- Rent Estimates -->
+						<div class="endpoint-category">
+							<div class="category-header">
+								<span class="category-icon">💰</span>
+								<div class="category-info">
+									<h2>Rent Estimates (AVM)</h2>
+									<p>Automated rent valuations based on property characteristics and comparables</p>
+								</div>
+							</div>
+							<div class="endpoint-list">
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/avm/rent/long-term</code>
+									<span class="endpoint-desc">Get rent estimate for a specific property</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+							</div>
+							<details class="schema-details">
+								<summary>📋 Response Schema</summary>
+								<div class="schema-content">
+									<table class="schema-table">
+										<thead>
+											<tr>
+												<th>Field</th>
+												<th>Type</th>
+												<th>Description</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td><code>rent</code></td>
+												<td>Number</td>
+												<td>Estimated monthly rent</td>
+											</tr>
+											<tr>
+												<td><code>rentRangeLow</code></td>
+												<td>Number</td>
+												<td>Lower bound (85% confidence)</td>
+											</tr>
+											<tr>
+												<td><code>rentRangeHigh</code></td>
+												<td>Number</td>
+												<td>Upper bound (85% confidence)</td>
+											</tr>
+											<tr>
+												<td><code>comparables</code></td>
+												<td>Array</td>
+												<td>Similar properties used for estimate</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</details>
+						</div>
+
+						<!-- Market Data -->
+						<div class="endpoint-category">
+							<div class="category-header">
+								<span class="category-icon">📊</span>
+								<div class="category-info">
+									<h2>Market Data</h2>
+									<p>Aggregate market statistics, price trends, and rent trends by zip code</p>
+								</div>
+							</div>
+							<div class="endpoint-list">
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/markets</code>
+									<span class="endpoint-desc">Get market statistics for a zip code</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+							</div>
+							<details class="schema-details">
+								<summary>📋 Response Schema</summary>
+								<div class="schema-content">
+									<table class="schema-table">
+										<thead>
+											<tr>
+												<th>Field</th>
+												<th>Type</th>
+												<th>Description</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr>
+												<td><code>rentalData.averageRent</code></td>
+												<td>Number</td>
+												<td>Average rent in zip</td>
+											</tr>
+											<tr>
+												<td><code>rentalData.medianRent</code></td>
+												<td>Number</td>
+												<td>Median rent in zip</td>
+											</tr>
+											<tr>
+												<td><code>rentalData.dataByBedrooms</code></td>
+												<td>Array</td>
+												<td>Stats by bedroom count</td>
+											</tr>
+											<tr>
+												<td><code>rentalData.dataByPropertyType</code></td>
+												<td>Array</td>
+												<td>Stats by property type</td>
+											</tr>
+											<tr>
+												<td><code>rentalData.history</code></td>
+												<td>Object</td>
+												<td>Historical monthly data</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</details>
+						</div>
+
+						<!-- Sale Listings -->
+						<div class="endpoint-category dimmed">
+							<div class="category-header">
+								<span class="category-icon">🏷️</span>
+								<div class="category-info">
+									<h2>Sale Listings</h2>
+									<p>Active sale listings (not primary use case for rental CRM)</p>
+								</div>
+								<span class="secondary-badge">Secondary</span>
+							</div>
+							<div class="endpoint-list">
+								<div class="endpoint-item">
+									<div class="endpoint-method get">GET</div>
+									<code class="endpoint-path">/v1/listings/sale</code>
+									<span class="endpoint-desc">Search sale listings</span>
+									<span class="endpoint-cost">1 credit</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Integration Gameplan -->
+					<div class="rentcast-gameplan">
+						<h2>🎯 Integration Gameplan</h2>
+						<div class="gameplan-phases">
+							<div class="phase">
+								<div class="phase-header">
+									<span class="phase-number">1</span>
+									<h3>API Configuration</h3>
+								</div>
+								<ul>
+									<li>Store RentCast API key securely in Supabase vault or env vars</li>
+									<li>Create server-side proxy to protect API key (Vercel Edge Function)</li>
+									<li>Implement rate limiting and quota tracking</li>
+								</ul>
+							</div>
+							<div class="phase">
+								<div class="phase-header">
+									<span class="phase-number">2</span>
+									<h3>Data Layer</h3>
+								</div>
+								<ul>
+									<li>Create <code>rentcast_cache</code> table for storing fetched listings</li>
+									<li>Design sync strategy: on-demand vs scheduled refresh</li>
+									<li>Map RentCast fields to existing properties/units schema</li>
+								</ul>
+							</div>
+							<div class="phase">
+								<div class="phase-header">
+									<span class="phase-number">3</span>
+									<h3>Listings Integration</h3>
+								</div>
+								<ul>
+									<li>Add "Import from RentCast" button to Listings page</li>
+									<li>Search rentals by market (San Antonio, Austin, etc.)</li>
+									<li>Merge with existing manual listings (internal + external)</li>
+								</ul>
+							</div>
+							<div class="phase">
+								<div class="phase-header">
+									<span class="phase-number">4</span>
+									<h3>Smart Match Enhancement</h3>
+								</div>
+								<ul>
+									<li>Use RentCast rent estimates to validate pricing</li>
+									<li>Show market comparables in Showcase emails</li>
+									<li>Add market trends to customer recommendations</li>
+								</ul>
+							</div>
+						</div>
+					</div>
+
+					<!-- Query Parameters Reference -->
+					<div class="rentcast-params">
+						<h2>🔧 Common Query Parameters</h2>
+						<table class="params-table">
+							<thead>
+								<tr>
+									<th>Parameter</th>
+									<th>Type</th>
+									<th>Description</th>
+									<th>Example</th>
+								</tr>
+							</thead>
+							<tbody>
+								<tr>
+									<td><code>address</code></td>
+									<td>String</td>
+									<td>Full street address</td>
+									<td>5500 Grand Lake Dr, San Antonio, TX</td>
+								</tr>
+								<tr>
+									<td><code>city</code></td>
+									<td>String</td>
+									<td>City name</td>
+									<td>San Antonio</td>
+								</tr>
+								<tr>
+									<td><code>state</code></td>
+									<td>String</td>
+									<td>State abbreviation</td>
+									<td>TX</td>
+								</tr>
+								<tr>
+									<td><code>zipCode</code></td>
+									<td>String</td>
+									<td>5-digit zip</td>
+									<td>78244</td>
+								</tr>
+								<tr>
+									<td><code>latitude</code></td>
+									<td>Number</td>
+									<td>Center lat for radius search</td>
+									<td>29.4241</td>
+								</tr>
+								<tr>
+									<td><code>longitude</code></td>
+									<td>Number</td>
+									<td>Center lon for radius search</td>
+									<td>-98.4936</td>
+								</tr>
+								<tr>
+									<td><code>radius</code></td>
+									<td>Number</td>
+									<td>Radius in miles</td>
+									<td>5</td>
+								</tr>
+								<tr>
+									<td><code>propertyType</code></td>
+									<td>String</td>
+									<td>Filter by type</td>
+									<td>Apartment</td>
+								</tr>
+								<tr>
+									<td><code>bedrooms</code></td>
+									<td>Number</td>
+									<td>Filter by bedrooms</td>
+									<td>2</td>
+								</tr>
+								<tr>
+									<td><code>bathrooms</code></td>
+									<td>Number</td>
+									<td>Filter by bathrooms</td>
+									<td>2</td>
+								</tr>
+								<tr>
+									<td><code>status</code></td>
+									<td>String</td>
+									<td>Listing status</td>
+									<td>Active</td>
+								</tr>
+								<tr>
+									<td><code>limit</code></td>
+									<td>Number</td>
+									<td>Results per page (max 500)</td>
+									<td>100</td>
+								</tr>
+								<tr>
+									<td><code>offset</code></td>
+									<td>Number</td>
+									<td>Pagination offset</td>
+									<td>0</td>
+								</tr>
+							</tbody>
+						</table>
 					</div>
 				</div>
 			</section>
