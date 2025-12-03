@@ -927,13 +927,24 @@ function renderShowcaseUnit(unit) {
  * Generate a match score badge
  */
 function generateMatchBadge(score) {
-	const percentage = Math.round(score * 100);
+	// Handle different score formats (0-1 decimal or 0-100 percentage)
+	let percentage = score;
+	if (score <= 1 && score > 0) {
+		percentage = Math.round(score * 100);
+	} else {
+		percentage = Math.round(score);
+	}
+
+	// Clamp to valid range
+	percentage = Math.max(0, Math.min(100, percentage));
+
 	let colorClass = 'match-low';
 	if (percentage >= 80) colorClass = 'match-high';
 	else if (percentage >= 60) colorClass = 'match-medium';
 
-	const stars = Math.round((percentage / 100) * 5);
-	const starIcons = '★'.repeat(stars) + '☆'.repeat(5 - stars);
+	const stars = Math.max(0, Math.min(5, Math.round((percentage / 100) * 5)));
+	const emptyStars = 5 - stars;
+	const starIcons = '★'.repeat(stars) + '☆'.repeat(emptyStars);
 
 	return `<span class="match-badge ${colorClass}" title="${percentage}% match"><span class="match-stars">${starIcons}</span></span>`;
 }
