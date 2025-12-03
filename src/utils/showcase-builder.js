@@ -1,7 +1,7 @@
 // Showcase Builder Utilities
 // Functions for building and sending property showcases to leads
 
-import { show, hide } from '../modules/modals/modal-utils.js';
+import { show, hide } from './helpers.js';
 
 // Store pending showcase data for confirmation flow
 let pendingShowcaseData = null;
