@@ -33,36 +33,98 @@ function generateFloorPlanName(beds, baths) {
 }
 
 /**
- * Group listings by address to create properties
+ * Normalize an address by removing unit numbers
+ * This ensures all units at the same street address are grouped together
+ * @param {string} address - Full address potentially with unit number
+ * @returns {string} Normalized address without unit number
+ */
+function normalizeAddressForGrouping(address) {
+    if (!address) return '';
+
+    // Patterns to match and remove unit/apartment designators
+    // Examples: "Unit 123", "Apt 4B", "#201", "Suite 5", "Unit A3", etc.
+    const unitPatterns = [
+        /,?\s*(Unit|Apt|Apartment|Suite|Ste|#)\s*[A-Za-z0-9-]+/gi,
+        /,?\s*#\s*[A-Za-z0-9-]+/gi,
+    ];
+
+    let normalized = address;
+    unitPatterns.forEach(pattern => {
+        normalized = normalized.replace(pattern, '');
+    });
+
+    // Clean up extra commas and spaces
+    normalized = normalized.replace(/,\s*,/g, ',').replace(/\s+/g, ' ').trim();
+
+    return normalized;
+}
+
+/**
+ * Extract unit number from address or listing
+ * @param {Object} listing - RentCast listing object
+ * @returns {string|null} Unit number or null
+ */
+function extractUnitNumber(listing) {
+    // First try addressLine2 (often contains unit)
+    if (listing.addressLine2) {
+        return listing.addressLine2.replace(/^(Unit|Apt|Apartment|Suite|Ste|#)\s*/i, '').trim();
+    }
+
+    // Try to extract from formattedAddress
+    const address = listing.formattedAddress || '';
+    const unitMatch = address.match(/(?:Unit|Apt|Apartment|Suite|Ste|#)\s*([A-Za-z0-9-]+)/i);
+    if (unitMatch) {
+        return unitMatch[1];
+    }
+
+    return null;
+}
+
+/**
+ * Group listings by NORMALIZED address to create properties
+ * This groups all units at the same street address together
  * @param {Array} listings - RentCast listings array
- * @returns {Map} Map of address → listings array
+ * @returns {Map} Map of normalized address → listings array
  */
 function groupListingsByAddress(listings) {
     const groups = new Map();
 
     listings.forEach(listing => {
-        const address = listing.formattedAddress || listing.addressLine1;
-        if (!address) return;
+        const rawAddress = listing.formattedAddress || listing.addressLine1;
+        if (!rawAddress) return;
 
-        if (!groups.has(address)) {
-            groups.set(address, []);
+        // Normalize address to group units together
+        const normalizedAddress = normalizeAddressForGrouping(rawAddress);
+
+        // Store original unit number in the listing for later
+        listing._extractedUnit = extractUnitNumber(listing);
+
+        if (!groups.has(normalizedAddress)) {
+            groups.set(normalizedAddress, []);
         }
-        groups.get(address).push(listing);
+        groups.get(normalizedAddress).push(listing);
     });
+
+    console.log(`[RentCast Sync] Grouped ${listings.length} listings into ${groups.size} unique properties`);
 
     return groups;
 }
 
 /**
  * Transform grouped listings into property data
- * @param {string} address - Property address
+ * @param {string} normalizedAddress - Normalized property address (without unit numbers)
  * @param {Array} listings - All listings at this address
  * @returns {Object} Property object ready for database
  */
-function createPropertyFromListings(address, listings) {
+function createPropertyFromListings(normalizedAddress, listings) {
     const first = listings[0];
 
-    // Calculate aggregates
+    // Get street address from addressLine1 (without unit), falling back to normalized address
+    const streetAddress = first.addressLine1
+        ? normalizeAddressForGrouping(first.addressLine1).split(',')[0]
+        : normalizedAddress.split(',')[0];
+
+    // Calculate aggregates from ALL listings (units) at this property
     const rents = listings.map(l => l.price).filter(p => p > 0);
     const beds = listings.map(l => l.bedrooms).filter(b => b !== null);
     const baths = listings.map(l => l.bathrooms).filter(b => b !== null);
@@ -71,12 +133,16 @@ function createPropertyFromListings(address, listings) {
     // Collect all photos from all listings
     const allPhotos = listings.flatMap(l => l.photos || []).filter(Boolean).slice(0, 10);
 
+    // Build full address for display (street, city, state zip)
+    const fullAddress = `${streetAddress}, ${first.city || 'San Antonio'}, ${first.state || 'TX'} ${first.zipCode || ''}`.trim();
+
     return {
-        id: generatePropertyId(address),
-        name: address,
-        community_name: first.propertyName || address.split(',')[0],
-        street_address: first.addressLine1 || address.split(',')[0],
-        address: first.addressLine1 || address,
+        id: generatePropertyId(normalizedAddress),
+        name: fullAddress,
+        // Use property name from RentCast if available, otherwise use street address
+        community_name: first.propertyName || streetAddress,
+        street_address: streetAddress,
+        address: streetAddress,
         city: first.city || 'San Antonio',
         state: first.state || 'TX',
         zip_code: first.zipCode,
@@ -88,7 +154,7 @@ function createPropertyFromListings(address, listings) {
         lat: first.latitude,
         lng: first.longitude,
 
-        // Aggregated ranges
+        // Aggregated ranges from ALL units
         rent_min: rents.length ? Math.min(...rents) : null,
         rent_max: rents.length ? Math.max(...rents) : null,
         rent_range_min: rents.length ? Math.min(...rents) : null,
@@ -106,7 +172,10 @@ function createPropertyFromListings(address, listings) {
         // Property type
         property_type: first.propertyType || 'Apartment',
 
-        // RentCast tracking
+        // Unit count for reference
+        unit_count: listings.length,
+
+        // RentCast tracking - use first listing's ID as reference
         rentcast_id: first.id,
         data_source: 'rentcast',
         last_refreshed_at: new Date().toISOString(),
@@ -154,17 +223,26 @@ function createFloorPlansAndUnits(propertyId, listings) {
         }
 
         const group = floorPlanMap.get(key);
+
+        // Use extracted unit number from address, or generate one
+        const unitNumber = listing._extractedUnit || `${index + 1}`;
+
         group.units.push({
             property_id: propertyId,
-            unit_number: `Unit ${index + 1}`,
+            unit_number: unitNumber,
             rent: listing.price || 0,
             market_rent: listing.price || 0,
+            beds: beds,
+            baths: baths,
+            sqft: listing.squareFootage || null,
             available_from: listing.listedDate ? new Date(listing.listedDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
             is_available: listing.status === 'Active',
             status: listing.status === 'Active' ? 'available' : 'unavailable',
             is_active: listing.status === 'Active',
             is_test_data: false,
-            notes: listing.description ? listing.description.slice(0, 500) : null
+            notes: listing.description ? listing.description.slice(0, 500) : null,
+            // Store RentCast listing ID for this specific unit
+            rentcast_listing_id: listing.id
         });
 
         // Update floor plan aggregates
