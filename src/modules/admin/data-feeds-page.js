@@ -1,8 +1,8 @@
 /**
  * Data Feeds Dashboard Page Module
- * 
+ *
  * Manages external data sources and AI feature toggles.
- * 
+ *
  * @module admin/data-feeds-page
  */
 
@@ -25,8 +25,11 @@ export async function initializeDataFeedsPage() {
     // Set up event listeners
     setupEventListeners();
 
-    // Check RentCast status
-    await checkRentcastStatus();
+    // Check all service statuses in parallel
+    await Promise.all([
+        checkRentcastStatus(),
+        checkAIEnrichmentStatus()
+    ]);
 
     console.log('✅ Data Feeds Dashboard initialized');
 }
@@ -56,9 +59,9 @@ function setupEventListeners() {
         aiAuditToggle.addEventListener('change', async (e) => {
             try {
                 await updateAppSetting('ai_audit_enabled', e.target.checked);
-                toast(e.target.checked 
-                    ? '✅ AI Audit enabled - badges will now appear on listings' 
-                    : '⏸️ AI Audit disabled - badges will show "Coming Soon"', 
+                toast(e.target.checked
+                    ? '✅ AI Audit enabled - badges will now appear on listings'
+                    : '⏸️ AI Audit disabled - badges will show "Coming Soon"',
                     'success'
                 );
             } catch (error) {
@@ -102,6 +105,64 @@ async function checkRentcastStatus() {
         console.error('Error checking RentCast status:', error);
         statusBadge.textContent = 'Error';
         statusBadge.className = 'badge badge-error';
+    }
+}
+
+/**
+ * Check AI Enrichment services status (OpenAI, Browserless, SerpApi)
+ */
+async function checkAIEnrichmentStatus() {
+    const openaiStatusBadge = document.getElementById('openaiStatusBadge');
+    const browserlessStatusBadge = document.getElementById('browserlessStatusBadge');
+    const serpapiStatusBadge = document.getElementById('serpapiStatusBadge');
+
+    if (!openaiStatusBadge || !browserlessStatusBadge || !serpapiStatusBadge) return;
+
+    try {
+        // Call the API to check configuration status
+        const response = await fetch('/api/property/status');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        const data = await response.json();
+        const config = data.configuration || {};
+
+        // Update OpenAI status
+        if (config.openai) {
+            openaiStatusBadge.textContent = 'Connected';
+            openaiStatusBadge.className = 'badge badge-success';
+        } else {
+            openaiStatusBadge.textContent = 'Not Configured';
+            openaiStatusBadge.className = 'badge badge-inactive';
+        }
+
+        // Update Browserless status
+        if (config.browserless) {
+            browserlessStatusBadge.textContent = 'Connected';
+            browserlessStatusBadge.className = 'badge badge-success';
+        } else {
+            browserlessStatusBadge.textContent = 'Not Configured';
+            browserlessStatusBadge.className = 'badge badge-inactive';
+        }
+
+        // Update SerpApi status
+        if (config.serpapi) {
+            serpapiStatusBadge.textContent = 'Connected';
+            serpapiStatusBadge.className = 'badge badge-success';
+        } else {
+            serpapiStatusBadge.textContent = 'Not Configured';
+            serpapiStatusBadge.className = 'badge badge-warning';
+        }
+    } catch (error) {
+        console.error('Error checking AI enrichment status:', error);
+        // Set all to error state
+        [openaiStatusBadge, browserlessStatusBadge, serpapiStatusBadge].forEach(badge => {
+            if (badge) {
+                badge.textContent = 'Error';
+                badge.className = 'badge badge-error';
+            }
+        });
     }
 }
 

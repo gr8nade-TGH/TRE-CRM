@@ -2,10 +2,11 @@
  * AI Property Enrichment Service - PRO Edition 2025
  *
  * Best practices implementation:
- * 1. Use Serper.dev API for Google searches (fast, reliable, structured)
- * 2. Smart scraping: fetch first, Browserless for JS-heavy sites
- * 3. Target property's own website (skip aggregators)
- * 4. AI extraction with OpenAI GPT-4o-mini
+ * 1. Use SerpApi.com for Google searches (7+ years established, 50+ APIs)
+ * 2. Use Google Local API for direct business data (phone, website, hours)
+ * 3. Smart scraping: fetch first, Browserless for JS-heavy sites
+ * 4. Target property's own website (skip aggregators)
+ * 5. AI extraction with OpenAI GPT-4o-mini
  *
  * @module lib/ai-enrichment
  */
@@ -14,7 +15,7 @@ import puppeteer from 'puppeteer-core';
 
 // Configuration
 const OPENAI_API_BASE = 'https://api.openai.com/v1';
-const SERPER_API_URL = 'https://google.serper.dev/search';
+const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
 
 // User agents - 2024/2025 Chrome versions
 const USER_AGENTS = [
@@ -66,18 +67,18 @@ const PREFERRED_DOMAINS = [
 export function checkConfiguration() {
     const openaiKey = process.env.OPENAI_API_KEY;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
-    const serperApiKey = process.env.SERPER_API_KEY;
+    const serpApiKey = process.env.SERP_API_KEY;
 
     return {
         configured: !!(openaiKey && browserlessToken),
         openai: !!openaiKey,
         browserless: !!browserlessToken,
-        serper: !!serperApiKey,
+        serpapi: !!serpApiKey,
         openaiPreview: openaiKey ? `${openaiKey.slice(0, 8)}...` : null,
         browserlessPreview: browserlessToken ? `${browserlessToken.slice(0, 8)}...` : null,
-        serperPreview: serperApiKey ? `${serperApiKey.slice(0, 8)}...` : null,
-        // Serper is optional but recommended for reliability
-        recommendation: !serperApiKey ? 'Add SERPER_API_KEY for faster, more reliable Google searches' : null
+        serpapiPreview: serpApiKey ? `${serpApiKey.slice(0, 8)}...` : null,
+        // SerpApi is optional but recommended for reliability
+        recommendation: !serpApiKey ? 'Add SERP_API_KEY for faster, more reliable Google searches via SerpApi.com' : null
     };
 }
 
@@ -96,44 +97,98 @@ function randomDelay(min = 500, max = 2000) {
 }
 
 /**
- * Search Google using Serper.dev API (fast, reliable, structured results)
+ * Search Google using SerpApi.com (7+ years established, reliable)
  * @param {string} query - Search query
- * @param {string} serperApiKey - Serper API key
+ * @param {string} serpApiKey - SerpApi API key
  * @returns {Promise<Object>} Search results with organic links
  */
-async function serperSearch(query, serperApiKey) {
-    console.log(`[AI Enrichment] Serper search: "${query}"`);
+async function serpApiSearch(query, serpApiKey) {
+    console.log(`[AI Enrichment] SerpApi search: "${query}"`);
     try {
-        const response = await fetch(SERPER_API_URL, {
-            method: 'POST',
-            headers: {
-                'X-API-KEY': serperApiKey,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                q: query,
-                num: 10,
-                gl: 'us',
-                hl: 'en'
-            })
+        const params = new URLSearchParams({
+            engine: 'google',
+            q: query,
+            num: '10',
+            gl: 'us',
+            hl: 'en',
+            api_key: serpApiKey
         });
 
+        const response = await fetch(`${SERPAPI_BASE_URL}?${params.toString()}`);
+
         if (!response.ok) {
-            throw new Error(`Serper API error: ${response.status}`);
+            throw new Error(`SerpApi error: ${response.status}`);
         }
 
         const data = await response.json();
-        console.log(`[AI Enrichment] Serper returned ${data.organic?.length || 0} results`);
+        console.log(`[AI Enrichment] SerpApi returned ${data.organic_results?.length || 0} organic results`);
 
         return {
             success: true,
-            organic: data.organic || [],
-            knowledgeGraph: data.knowledgeGraph || null,
-            answerBox: data.answerBox || null
+            organic: (data.organic_results || []).map(r => ({
+                title: r.title,
+                link: r.link,
+                snippet: r.snippet
+            })),
+            knowledgeGraph: data.knowledge_graph || null,
+            answerBox: data.answer_box || null
         };
     } catch (error) {
-        console.log(`[AI Enrichment] Serper search failed: ${error.message}`);
+        console.log(`[AI Enrichment] SerpApi search failed: ${error.message}`);
         return { success: false, error: error.message, organic: [] };
+    }
+}
+
+/**
+ * Search Google Local using SerpApi.com for direct business data
+ * This is perfect for apartment properties - returns phone, website, address, hours
+ * @param {string} query - Search query (property name + city)
+ * @param {string} location - Location string (e.g., "Austin, Texas")
+ * @param {string} serpApiKey - SerpApi API key
+ * @returns {Promise<Object>} Local business results
+ */
+async function serpApiLocalSearch(query, location, serpApiKey) {
+    console.log(`[AI Enrichment] SerpApi Local search: "${query}" in "${location}"`);
+    try {
+        const params = new URLSearchParams({
+            engine: 'google_local',
+            q: query,
+            location: location,
+            hl: 'en',
+            gl: 'us',
+            api_key: serpApiKey
+        });
+
+        const response = await fetch(`${SERPAPI_BASE_URL}?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error(`SerpApi Local error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        const localResults = data.local_results || [];
+        console.log(`[AI Enrichment] SerpApi Local returned ${localResults.length} local results`);
+
+        // Extract structured business data from local results
+        return {
+            success: true,
+            localResults: localResults.map(r => ({
+                title: r.title,
+                rating: r.rating,
+                reviews: r.reviews,
+                type: r.type,
+                address: r.address,
+                phone: r.phone,
+                website: r.website || (r.links?.website),
+                hours: r.hours,
+                thumbnail: r.thumbnail,
+                placeId: r.place_id,
+                gpsCoordinates: r.gps_coordinates
+            }))
+        };
+    } catch (error) {
+        console.log(`[AI Enrichment] SerpApi Local search failed: ${error.message}`);
+        return { success: false, error: error.message, localResults: [] };
     }
 }
 
@@ -419,14 +474,14 @@ function analyzePropertyData(property) {
 }
 
 /**
- * Find property name and website from Serper search results
- * Uses structured data from Serper API (no scraping needed)
- * @param {Array} organicResults - Serper organic search results
- * @param {Object} knowledgeGraph - Serper knowledge graph data
+ * Find property name and website from SerpApi search results
+ * Uses structured data from SerpApi (no scraping needed)
+ * @param {Array} organicResults - SerpApi organic search results
+ * @param {Object} knowledgeGraph - SerpApi knowledge graph data
  * @param {string} address - Property address for matching
  * @returns {Object} Property name and website URL
  */
-function findPropertyFromSerperResults(organicResults, knowledgeGraph, address) {
+function findPropertyFromSerpApiResults(organicResults, knowledgeGraph, address) {
     let propertyName = null;
     let websiteUrl = null;
     let confidence = 0;
@@ -519,9 +574,10 @@ Respond with JSON only:
 
 /**
  * Main enrichment function - PRO multi-step approach
- * Step 1: Serper API for Google search (fast, reliable, structured)
- * Step 2: Scrape property's own website for accurate data
- * Step 3: AI extraction of structured information
+ * Step 1: SerpApi Google Local for direct business data (phone, website, hours)
+ * Step 2: SerpApi Google Search for property name and website
+ * Step 3: Scrape property's own website for accurate data
+ * Step 4: AI extraction of structured information
  *
  * @param {Object} property - Property data to enrich
  * @param {Object} options - Enrichment options
@@ -530,7 +586,7 @@ Respond with JSON only:
 export async function enrichProperty(property, options = {}) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
-    const serperApiKey = process.env.SERPER_API_KEY;
+    const serpApiKey = process.env.SERP_API_KEY;
 
     if (!openaiKey || !browserlessToken) {
         throw new Error('AI enrichment not configured. Add OPENAI_API_KEY and BROWSERLESS_TOKEN to environment.');
@@ -541,9 +597,10 @@ export async function enrichProperty(property, options = {}) {
     const state = property.state || 'TX';
     const zip_code = property.zip_code || '';
     const fullAddress = `${address}, ${city}, ${state} ${zip_code}`;
+    const locationString = `${city}, ${state}`;
 
     console.log(`[AI Enrichment] Starting PRO enrichment for: ${fullAddress}`);
-    console.log(`[AI Enrichment] Serper API: ${serperApiKey ? 'configured' : 'not configured (will use fallback)'}`);
+    console.log(`[AI Enrichment] SerpApi: ${serpApiKey ? 'configured' : 'not configured (will use fallback)'}`);
 
     const dataAnalysis = analyzePropertyData(property);
     console.log(`[AI Enrichment] Missing fields: ${dataAnalysis.missing.join(', ')}`);
@@ -560,38 +617,82 @@ export async function enrichProperty(property, options = {}) {
     };
 
     // ============================================================
-    // STEP 1: Search for property name and website
-    // Use Serper API if available (fast, reliable), otherwise scrape Google
+    // STEP 1: Search for property using SerpApi
+    // First try Google Local API (direct business data), then Google Search
     // ============================================================
     console.log('[AI Enrichment] Step 1: Searching for property...');
 
     const searchQuery = `${fullAddress} apartments leasing office`;
-    let searchExtract = { property_name: null, website_url: null, confidence: 0 };
+    let searchExtract = { property_name: null, website_url: null, confidence: 0, phone: null };
 
-    if (serperApiKey) {
-        // Use Serper API (recommended - fast, structured, reliable)
-        console.log('[AI Enrichment] Using Serper API for search...');
-        const serperResults = await serperSearch(searchQuery, serperApiKey);
+    if (serpApiKey) {
+        // Try Google Local API first (best for business data like phone, website)
+        console.log('[AI Enrichment] Using SerpApi Google Local for business data...');
+        const localQuery = property.name || `apartments ${address}`;
+        const localResults = await serpApiLocalSearch(localQuery, locationString, serpApiKey);
         results.sources_checked.push({
-            source: 'serper_api',
-            query: searchQuery,
-            success: serperResults.success,
-            resultsCount: serperResults.organic?.length || 0
+            source: 'serpapi_local',
+            query: localQuery,
+            location: locationString,
+            success: localResults.success,
+            resultsCount: localResults.localResults?.length || 0
         });
 
-        if (serperResults.success) {
-            searchExtract = findPropertyFromSerperResults(
-                serperResults.organic,
-                serperResults.knowledgeGraph,
+        // Check if we found a matching local result
+        if (localResults.success && localResults.localResults.length > 0) {
+            const bestMatch = localResults.localResults[0];
+            console.log(`[AI Enrichment] Google Local found: ${bestMatch.title}`);
+
+            // Extract data from local result
+            if (bestMatch.phone && dataAnalysis.missing.includes('contact_phone')) {
+                results.suggestions.contact_phone = {
+                    value: bestMatch.phone,
+                    confidence: 0.9,
+                    source: 'serpapi_local',
+                    reason: 'Found via Google Local business data'
+                };
+                searchExtract.phone = bestMatch.phone;
+            }
+            if (bestMatch.website) {
+                searchExtract.website_url = bestMatch.website;
+            }
+            if (bestMatch.title && !bestMatch.title.toLowerCase().includes('apartments.com')) {
+                searchExtract.property_name = bestMatch.title;
+                searchExtract.confidence = 0.9;
+            }
+        }
+
+        // Also do a regular Google search for more context
+        console.log('[AI Enrichment] Using SerpApi Google Search...');
+        const serpApiResults = await serpApiSearch(searchQuery, serpApiKey);
+        results.sources_checked.push({
+            source: 'serpapi_search',
+            query: searchQuery,
+            success: serpApiResults.success,
+            resultsCount: serpApiResults.organic?.length || 0
+        });
+
+        if (serpApiResults.success) {
+            const searchData = findPropertyFromSerpApiResults(
+                serpApiResults.organic,
+                serpApiResults.knowledgeGraph,
                 fullAddress
             );
-            console.log(`[AI Enrichment] Serper found: ${searchExtract.property_name}, website: ${searchExtract.website_url}`);
+            // Use search results if we don't have data from local
+            if (!searchExtract.property_name && searchData.property_name) {
+                searchExtract.property_name = searchData.property_name;
+                searchExtract.confidence = searchData.confidence;
+            }
+            if (!searchExtract.website_url && searchData.website_url) {
+                searchExtract.website_url = searchData.website_url;
+            }
+            console.log(`[AI Enrichment] SerpApi found: ${searchExtract.property_name}, website: ${searchExtract.website_url}`);
         } else {
-            results.errors.push(`Serper search failed: ${serperResults.error}`);
+            results.errors.push(`SerpApi search failed: ${serpApiResults.error}`);
         }
     } else {
         // Fallback: Scrape Google directly (slower, less reliable)
-        console.log('[AI Enrichment] Serper not configured, falling back to Google scrape...');
+        console.log('[AI Enrichment] SerpApi not configured, falling back to Google scrape...');
         const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
         const googleData = await scrapePage(googleUrl, browserlessToken);
         results.sources_checked.push({ source: 'google_scrape', url: googleUrl, success: googleData.success });
@@ -611,7 +712,7 @@ export async function enrichProperty(property, options = {}) {
         results.suggestions.name = {
             value: searchExtract.property_name,
             confidence: searchExtract.confidence || 0.8,
-            source: serperApiKey ? 'serper_api' : 'google',
+            source: serpApiKey ? 'serpapi' : 'google',
             reason: 'Found via Google search'
         };
     }
