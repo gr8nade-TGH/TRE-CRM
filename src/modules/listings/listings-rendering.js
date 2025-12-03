@@ -247,6 +247,9 @@ export async function renderListings(options, autoSelectProperty = null) {
 			generateStarRating = customerViewModule.generateStarRating;
 		}
 
+		// Store listings in state for other functions (like Build Showcase)
+		state.listings = filtered;
+
 		tbody.innerHTML = '';
 		console.log('Rendering', filtered.length, 'filtered properties');
 		filtered.forEach((prop, index) => {
