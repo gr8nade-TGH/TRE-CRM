@@ -34,7 +34,7 @@ export async function checkEnrichmentStatus() {
  */
 export async function enrichProperty(property, onProgress = () => { }) {
     try {
-        onProgress('Analyzing property data...', 5);
+        onProgress('📊 Analyzing existing property data...', 5);
 
         // Send full property data so AI knows what's missing vs existing
         const requestData = {
@@ -58,9 +58,11 @@ export async function enrichProperty(property, onProgress = () => { }) {
             management_company: property.management_company
         };
 
-        onProgress('Searching property listings...', 15);
+        // Simulate progress steps during the API call
+        onProgress('🔍 Searching Google for property info...', 15);
 
-        const response = await fetch(`${BASE_URL}/enrich`, {
+        // Start the API request
+        const fetchPromise = fetch(`${BASE_URL}/enrich`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -68,7 +70,27 @@ export async function enrichProperty(property, onProgress = () => { }) {
             body: JSON.stringify(requestData)
         });
 
-        onProgress('AI analyzing results...', 80);
+        // Show progress steps while waiting
+        const progressSteps = [
+            { message: '🌐 Connecting to property websites...', progress: 30, delay: 3000 },
+            { message: '📄 Scraping listing details...', progress: 45, delay: 6000 },
+            { message: '🏢 Extracting property name & amenities...', progress: 60, delay: 10000 },
+            { message: '📞 Finding contact information...', progress: 70, delay: 14000 },
+            { message: '🤖 AI analyzing & verifying data...', progress: 85, delay: 18000 }
+        ];
+
+        // Set up progress timers
+        const timers = progressSteps.map(step =>
+            setTimeout(() => onProgress(step.message, step.progress), step.delay)
+        );
+
+        // Wait for response
+        const response = await fetchPromise;
+
+        // Clear timers
+        timers.forEach(t => clearTimeout(t));
+
+        onProgress('📦 Processing results...', 90);
 
         // Get response text first to handle non-JSON errors
         const responseText = await response.text();
@@ -85,7 +107,7 @@ export async function enrichProperty(property, onProgress = () => { }) {
             throw new Error(result.message || result.error || 'Enrichment failed');
         }
 
-        onProgress('Complete!', 100);
+        onProgress('✅ Complete!', 100);
         return result;
 
     } catch (error) {

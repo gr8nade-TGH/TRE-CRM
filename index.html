@@ -156,16 +156,13 @@
 							</svg>
 							Map Settings
 						</a>
-						<a href="#" class="manage-dropdown-item" data-action="rentcast-api">
+						<a href="#" class="manage-dropdown-item" data-action="data-feeds">
 							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
 								stroke-width="2">
-								<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-								<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-								<line x1="12" y1="6" x2="16" y2="6"></line>
-								<line x1="12" y1="10" x2="16" y2="10"></line>
-								<line x1="8" y1="14" x2="16" y2="14"></line>
+								<path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+								<circle cx="12" cy="12" r="2"></circle>
 							</svg>
-							RentCast API Feeds
+							Data Feed Dashboard
 						</a>
 					</div>
 				</div>
@@ -1558,6 +1555,77 @@
 								</button>
 							</div>
 						</form>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/data-feeds -->
+			<section id="dataFeedsView" class="route-view hidden">
+				<div class="data-feeds-page mission-control-active">
+					<div class="mc-header">
+						<h1>📡 Data Feed Dashboard</h1>
+						<p class="mc-subtitle">Manage external data sources and AI features</p>
+					</div>
+
+					<div class="mc-grid" style="gap: 24px; margin-top: 24px;">
+						<!-- AI Audit Toggle Panel -->
+						<div class="mc-control-panel">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path
+											d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h1a7 7 0 0 1 7 7h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1v1a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-1H2a1 1 0 0 1-1-1v-3a1 1 0 0 1 1-1h1a7 7 0 0 1 7-7h1V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z">
+										</path>
+										<circle cx="8" cy="14" r="2"></circle>
+										<circle cx="16" cy="14" r="2"></circle>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>AI Property Audit</h2>
+									<p class="mc-panel-description">Auto-enrich property data using web scraping and AI
+									</p>
+								</div>
+							</div>
+							<div class="mc-control-grid">
+								<div class="mc-toggle-control">
+									<label class="mc-toggle-label">
+										<span>Enable AI Audit</span>
+										<span class="mc-toggle-hint">When enabled, the 🤖 AI Audit badge appears on
+											listings needing data</span>
+									</label>
+									<label class="mc-toggle-switch">
+										<input type="checkbox" id="aiAuditToggle">
+										<span class="mc-toggle-slider"></span>
+									</label>
+								</div>
+							</div>
+						</div>
+
+						<!-- RentCast API Panel -->
+						<div class="mc-control-panel">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+										<path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>RentCast API</h2>
+									<p class="mc-panel-description">Sync rental listings from RentCast</p>
+								</div>
+							</div>
+							<div class="mc-control-grid">
+								<div style="display: flex; gap: 12px; align-items: center;">
+									<span id="rentcastStatusBadge" class="badge badge-inactive">Checking...</span>
+									<button id="openRentcastPageBtn" class="btn btn-secondary btn-sm">
+										Open API Console →
+									</button>
+								</div>
+							</div>
+						</div>
 					</div>
 				</div>
 			</section>

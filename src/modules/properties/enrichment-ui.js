@@ -9,11 +9,13 @@
 
 import { enrichProperty, applyEnrichmentSuggestions, markAsReviewed, checkEnrichmentStatus } from '../../api/property-enrichment.js';
 import { toast } from '../../utils/helpers.js';
+import { getAppSetting } from '../../api/supabase-api.js';
 
 // State
 let currentProperty = null;
 let currentSuggestions = null;
 let enrichmentModal = null;
+let isProcessing = false;
 
 /**
  * Initialize the enrichment UI
@@ -84,8 +86,22 @@ function createEnrichmentModal() {
 export async function openEnrichmentModal(property) {
     initEnrichmentUI();
 
+    // Check if AI Audit is enabled
+    try {
+        const aiAuditEnabled = await getAppSetting('ai_audit_enabled');
+        if (aiAuditEnabled !== true && aiAuditEnabled !== 'true') {
+            toast('🚧 AI Audit - Coming Soon!', 'info');
+            return;
+        }
+    } catch (e) {
+        // If setting doesn't exist, treat as disabled
+        toast('🚧 AI Audit - Coming Soon!', 'info');
+        return;
+    }
+
     currentProperty = property;
     currentSuggestions = null;
+    isProcessing = true;
 
     // Show modal
     enrichmentModal.classList.remove('hidden');
@@ -109,6 +125,8 @@ export async function openEnrichmentModal(property) {
             updateProgress(message, progress);
         });
 
+        isProcessing = false;
+
         if (result.success && result.suggestion_count > 0) {
             displaySuggestions(result);
         } else if (result.errors && result.errors.length > 0) {
@@ -118,6 +136,7 @@ export async function openEnrichmentModal(property) {
         }
 
     } catch (error) {
+        isProcessing = false;
         showError(error.message);
     }
 }

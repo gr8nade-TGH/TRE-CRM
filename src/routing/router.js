@@ -179,6 +179,19 @@ export function route(deps) {
 				console.error('Error loading Lease Confirmation page:', error);
 			}
 		})();
+	} else if (hash === '/data-feeds') {
+		state.currentPage = 'data-feeds';
+		show(document.getElementById('dataFeedsView'));
+		setRoleLabel('data-feeds');
+		// Initialize Data Feeds page
+		(async () => {
+			try {
+				const { initializeDataFeedsPage } = await import('../modules/admin/data-feeds-page.js');
+				await initializeDataFeedsPage();
+			} catch (error) {
+				console.error('Error loading Data Feeds page:', error);
+			}
+		})();
 	} else if (hash === '/rentcast-api') {
 		state.currentPage = 'rentcast-api';
 		show(document.getElementById('rentcastApiView'));

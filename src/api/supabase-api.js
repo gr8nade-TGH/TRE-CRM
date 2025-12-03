@@ -3337,3 +3337,79 @@ export async function getPropertyMatcherResponses(leadId) {
     }
 }
 
+// ============================================
+// APP SETTINGS
+// ============================================
+
+/**
+ * Get an app setting value
+ * @param {string} settingId - The setting ID (e.g., 'ai_audit_enabled')
+ * @returns {Promise<any>} The setting value
+ */
+export async function getAppSetting(settingId) {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('id', settingId)
+        .single();
+
+    if (error) {
+        console.error('Error fetching app setting:', settingId, error);
+        return null;
+    }
+
+    return data?.value;
+}
+
+/**
+ * Update an app setting value
+ * @param {string} settingId - The setting ID
+ * @param {any} value - The new value (will be stored as JSONB)
+ * @returns {Promise<boolean>} Success status
+ */
+export async function updateAppSetting(settingId, value) {
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('app_settings')
+        .upsert({
+            id: settingId,
+            value: value,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'id' });
+
+    if (error) {
+        console.error('Error updating app setting:', settingId, error);
+        throw error;
+    }
+
+    return true;
+}
+
+/**
+ * Get all app settings
+ * @returns {Promise<Object>} Map of setting ID to value
+ */
+export async function getAllAppSettings() {
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('*');
+
+    if (error) {
+        console.error('Error fetching app settings:', error);
+        return {};
+    }
+
+    // Convert to map
+    const settings = {};
+    (data || []).forEach(s => {
+        settings[s.id] = s.value;
+    });
+
+    return settings;
+}
+

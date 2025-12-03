@@ -300,7 +300,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
 					${!state.customerView.isActive && commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
-					${needsEnrichment ? `<span class="needs-review-badge" data-property-id="${prop.id}" title="Click to find property name with AI"><span class="badge-icon">🔍</span> Needs Name</span>` : ''}
+					${needsEnrichment ? `<span class="needs-review-badge" data-property-id="${prop.id}" title="Click to run AI audit on this property"><span class="badge-icon">🤖</span> AI Audit</span>` : ''}
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
 				<div class="subtle mono">${address}</div>
