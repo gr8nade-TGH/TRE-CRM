@@ -1050,12 +1050,23 @@ function generateMatchBadge(score) {
 /**
  * Generate match highlights showing WHY a unit is a good match for the customer
  * Returns an array of match factors with icons
+ *
+ * Note: Some factors are internal-only (PUMI, commission) and should NOT be shown to leads
  */
 function generateMatchHighlights(unit, property, customerPrefs) {
 	if (!customerPrefs) return [];
 
 	const highlights = [];
 	const prefs = typeof customerPrefs === 'string' ? JSON.parse(customerPrefs) : customerPrefs;
+
+	// 🎉 SPECIALS - Very valuable! Show first if property has active specials
+	const hasSpecials = property.activeSpecials && property.activeSpecials.length > 0;
+	if (hasSpecials) {
+		const specialDesc = property.activeSpecials[0].description || 'Special Offer';
+		// Truncate if too long
+		const shortDesc = specialDesc.length > 20 ? specialDesc.substring(0, 18) + '...' : specialDesc;
+		highlights.push({ icon: '🎉', text: shortDesc, type: 'special' });
+	}
 
 	// Budget match check
 	const unitRent = unit.rent || 0;
@@ -1093,8 +1104,29 @@ function generateMatchHighlights(unit, property, customerPrefs) {
 		}
 	}
 
+	// Available Now - great for urgency
+	if (unit.availableDate) {
+		const availDate = new Date(unit.availableDate);
+		const today = new Date();
+		const diffDays = Math.ceil((availDate - today) / (1000 * 60 * 60 * 24));
+		if (diffDays <= 0) {
+			highlights.push({ icon: '✅', text: 'Available now', type: 'available' });
+		} else if (diffDays <= 14) {
+			highlights.push({ icon: '📅', text: `Ready in ${diffDays}d`, type: 'available' });
+		}
+	}
+
+	// Move-in date match (if customer specified a date)
+	if (prefs.moveInDate || prefs.move_in_date) {
+		const wantedDate = new Date(prefs.moveInDate || prefs.move_in_date);
+		const availDate = unit.availableDate ? new Date(unit.availableDate) : new Date();
+		if (availDate <= wantedDate) {
+			highlights.push({ icon: '📅', text: 'Fits timeline', type: 'movein' });
+		}
+	}
+
 	// Pet friendly match
-	if ((prefs.petFriendly || prefs.pets) && property.pet_friendly) {
+	if ((prefs.petFriendly || prefs.pets || prefs.hasPets || prefs.has_pets) && property.pet_friendly) {
 		highlights.push({ icon: '🐾', text: 'Pet friendly', type: 'pets' });
 	}
 
@@ -1108,46 +1140,45 @@ function generateMatchHighlights(unit, property, customerPrefs) {
 		highlights.push({ icon: '📍', text: `${wantedArea} area`, type: 'location' });
 	}
 
-	// Move-in date match
-	if (prefs.moveInDate || prefs.move_in_date) {
-		const wantedDate = new Date(prefs.moveInDate || prefs.move_in_date);
-		const availDate = unit.availableDate ? new Date(unit.availableDate) : new Date();
-		if (availDate <= wantedDate) {
-			highlights.push({ icon: '📅', text: 'Available in time', type: 'movein' });
-		}
-	}
-
-	// Amenity matches - check if property has amenities customer wants
+	// Amenity matches - check if property has amenities
 	const propAmenities = (property.amenities || []).map(a => a.toLowerCase());
-	const wantedAmenities = prefs.amenities || [];
 
-	// Common amenity checks
-	if (propAmenities.includes('pool') || propAmenities.some(a => a.includes('pool'))) {
+	// Common amenity checks (only add a few to avoid clutter)
+	let amenityCount = 0;
+	if (amenityCount < 2 && (propAmenities.includes('pool') || propAmenities.some(a => a.includes('pool')))) {
 		highlights.push({ icon: '🏊', text: 'Pool', type: 'amenity' });
+		amenityCount++;
 	}
-	if (propAmenities.includes('gym') || propAmenities.some(a => a.includes('gym') || a.includes('fitness'))) {
+	if (amenityCount < 2 && (propAmenities.includes('gym') || propAmenities.some(a => a.includes('gym') || a.includes('fitness')))) {
 		highlights.push({ icon: '💪', text: 'Gym', type: 'amenity' });
+		amenityCount++;
 	}
-	if (propAmenities.some(a => a.includes('laundry') || a.includes('w/d') || a.includes('washer'))) {
+	if (amenityCount < 2 && propAmenities.some(a => a.includes('laundry') || a.includes('w/d') || a.includes('washer'))) {
 		highlights.push({ icon: '🧺', text: 'In-unit W/D', type: 'amenity' });
+		amenityCount++;
 	}
-	if (propAmenities.some(a => a.includes('parking') || a.includes('garage'))) {
+	if (amenityCount < 2 && propAmenities.some(a => a.includes('parking') || a.includes('garage'))) {
 		highlights.push({ icon: '🚗', text: 'Parking', type: 'amenity' });
+		amenityCount++;
 	}
-	if (propAmenities.some(a => a.includes('concierge'))) {
+	if (amenityCount < 2 && propAmenities.some(a => a.includes('concierge'))) {
 		highlights.push({ icon: '🛎️', text: 'Concierge', type: 'amenity' });
+		amenityCount++;
+	}
+	if (amenityCount < 2 && propAmenities.some(a => a.includes('rooftop') || a.includes('deck') || a.includes('terrace'))) {
+		highlights.push({ icon: '🌇', text: 'Rooftop', type: 'amenity' });
+		amenityCount++;
 	}
 
-	// PUMI bonus
-	if (property.is_pumi) {
-		highlights.push({ icon: '⭐', text: 'Premium partner', type: 'pumi' });
-	}
+	// Note: PUMI and commission are INTERNAL ONLY - not shown to customers
+	// They affect the score but shouldn't be visible in customer-facing UI
 
-	// Limit to most relevant highlights (budget, beds, and 3-4 others)
-	const priorityOrder = ['budget', 'beds', 'baths', 'location', 'movein', 'pets', 'amenity', 'pumi'];
+	// Sort by priority and limit
+	// Specials and budget first, then preference matches, then amenities
+	const priorityOrder = ['special', 'budget', 'beds', 'baths', 'available', 'movein', 'location', 'pets', 'amenity'];
 	highlights.sort((a, b) => priorityOrder.indexOf(a.type) - priorityOrder.indexOf(b.type));
 
-	return highlights.slice(0, 5); // Max 5 highlights
+	return highlights.slice(0, 6); // Max 6 highlights
 }
 
 /**
