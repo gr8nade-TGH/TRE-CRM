@@ -928,9 +928,15 @@ function renderShowcaseUnits(selectedData, customerPrefs = null) {
 		const hasSpecials = property.activeSpecials && property.activeSpecials.length > 0;
 		const matchBadge = highestScore > 0 ? generateMatchBadge(highestScore) : '';
 
+		// Property image - use actual image or placeholder
+		const propertyImage = property.image_url || property.imageUrl || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=120&h=120&fit=crop&auto=format';
+
 		return `
 			<div class="showcase-property-group" data-property-id="${property.id}">
 				<div class="showcase-property-header">
+					<div class="showcase-property-image">
+						<img src="${propertyImage}" alt="${property.name}" onerror="this.src='https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=120&h=120&fit=crop&auto=format'">
+					</div>
 					<div class="showcase-property-info">
 						<h4 class="showcase-property-name">
 							${property.is_pumi ? '<span class="pumi-badge">PUMI</span>' : ''}
