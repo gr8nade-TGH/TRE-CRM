@@ -1,49 +1,35 @@
 /**
  * Serverless Function: RentCast API Status Check
- * 
+ *
  * Returns API connection status, key validity, and usage info.
  * Used by the RentCast API Reference page to show connection status.
  */
 
-export const config = {
-    runtime: 'edge',
-};
+export default async function handler(req, res) {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
-export default async function handler(request) {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-        return new Response(null, {
-            status: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type',
-            },
-        });
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
     }
 
     const RENTCAST_API_KEY = process.env.RENTCAST_API_KEY;
 
     if (!RENTCAST_API_KEY) {
-        return new Response(JSON.stringify({ 
+        return res.status(200).json({
             connected: false,
             configured: false,
-            message: 'API key not configured',
+            message: 'API key not configured - add RENTCAST_API_KEY to Vercel env vars',
             keyPreview: null
-        }), {
-            status: 200,
-            headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            },
         });
     }
 
     try {
         // Make a minimal test request to verify the key works
-        // Using a small limit to minimize quota usage
         const testUrl = 'https://api.rentcast.io/v1/listings/rental/long-term?city=Austin&state=TX&limit=1';
-        
+
         const response = await fetch(testUrl, {
             method: 'GET',
             headers: {
@@ -57,7 +43,7 @@ export default async function handler(request) {
         const limit = response.headers.get('X-RateLimit-Limit');
 
         if (response.ok) {
-            return new Response(JSON.stringify({ 
+            return res.status(200).json({
                 connected: true,
                 configured: true,
                 message: 'Connected to RentCast API',
@@ -67,43 +53,25 @@ export default async function handler(request) {
                     limit: limit ? parseInt(limit) : null
                 },
                 timestamp: new Date().toISOString()
-            }), {
-                status: 200,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                },
             });
         } else {
             const errorText = await response.text();
-            return new Response(JSON.stringify({ 
+            return res.status(200).json({
                 connected: false,
                 configured: true,
-                message: `API key invalid or expired: ${response.status}`,
+                message: `API error: ${response.status}`,
                 error: errorText,
                 keyPreview: RENTCAST_API_KEY.slice(0, 8) + '...'
-            }), {
-                status: 200,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                },
             });
         }
 
     } catch (error) {
-        return new Response(JSON.stringify({ 
+        return res.status(200).json({
             connected: false,
             configured: true,
             message: 'Failed to connect to RentCast',
             error: error.message,
-            keyPreview: RENTCAST_API_KEY.slice(0, 8) + '...'
-        }), {
-            status: 200,
-            headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            },
+            keyPreview: RENTCAST_API_KEY ? RENTCAST_API_KEY.slice(0, 8) + '...' : null
         });
     }
 }

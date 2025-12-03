@@ -1,8 +1,8 @@
 /**
  * Serverless Function: RentCast API Proxy - Listings
- * 
+ *
  * Proxies requests to RentCast API to keep API key secure on server-side.
- * 
+ *
  * Query Parameters (passed through to RentCast):
  * - city: City name (e.g., "San Antonio")
  * - state: State code (e.g., "TX")
@@ -13,55 +13,37 @@
  * - status: "Active", "Inactive"
  * - limit: Results per page (max 500)
  * - offset: Pagination offset
- * 
+ *
  * @see https://developers.rentcast.io/reference/rental-listings
  */
 
-export const config = {
-    runtime: 'edge',
-};
+export default async function handler(req, res) {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-export default async function handler(request) {
-    // Handle CORS preflight
-    if (request.method === 'OPTIONS') {
-        return new Response(null, {
-            status: 200,
-            headers: {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'GET, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-            },
-        });
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
     }
 
-    // Only allow GET requests
-    if (request.method !== 'GET') {
-        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
-            status: 405,
-            headers: { 'Content-Type': 'application/json' },
-        });
+    if (req.method !== 'GET') {
+        return res.status(405).json({ error: 'Method not allowed' });
     }
 
     const RENTCAST_API_KEY = process.env.RENTCAST_API_KEY;
 
     if (!RENTCAST_API_KEY) {
-        return new Response(JSON.stringify({ 
+        return res.status(500).json({
             error: 'RentCast API key not configured',
             hint: 'Add RENTCAST_API_KEY to Vercel environment variables'
-        }), {
-            status: 500,
-            headers: { 'Content-Type': 'application/json' },
         });
     }
 
     try {
-        // Get query parameters from incoming request
-        const url = new URL(request.url);
-        const searchParams = url.searchParams;
-
         // Build RentCast API URL
         const rentcastUrl = new URL('https://api.rentcast.io/v1/listings/rental/long-term');
-        
+
         // Pass through allowed query parameters
         const allowedParams = [
             'city', 'state', 'zipCode', 'address', 'latitude', 'longitude', 'radius',
@@ -70,13 +52,13 @@ export default async function handler(request) {
         ];
 
         for (const param of allowedParams) {
-            if (searchParams.has(param)) {
-                rentcastUrl.searchParams.set(param, searchParams.get(param));
+            if (req.query[param]) {
+                rentcastUrl.searchParams.set(param, req.query[param]);
             }
         }
 
         // Default limit if not specified
-        if (!searchParams.has('limit')) {
+        if (!req.query.limit) {
             rentcastUrl.searchParams.set('limit', '50');
         }
 
@@ -94,17 +76,11 @@ export default async function handler(request) {
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`[RentCast] API Error: ${response.status} - ${errorText}`);
-            
-            return new Response(JSON.stringify({ 
+
+            return res.status(response.status).json({
                 error: 'RentCast API error',
                 status: response.status,
                 message: errorText
-            }), {
-                status: response.status,
-                headers: { 
-                    'Content-Type': 'application/json',
-                    'Access-Control-Allow-Origin': '*',
-                },
             });
         }
 
@@ -119,27 +95,15 @@ export default async function handler(request) {
             timestamp: new Date().toISOString()
         };
 
-        return new Response(JSON.stringify(result), {
-            status: 200,
-            headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Cache-Control': 'public, max-age=300', // Cache for 5 minutes
-            },
-        });
+        res.setHeader('Cache-Control', 'public, max-age=300');
+        return res.status(200).json(result);
 
     } catch (error) {
         console.error('[RentCast] Proxy error:', error);
-        
-        return new Response(JSON.stringify({ 
+
+        return res.status(500).json({
             error: 'Failed to fetch from RentCast',
             message: error.message
-        }), {
-            status: 500,
-            headers: { 
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-            },
         });
     }
 }
