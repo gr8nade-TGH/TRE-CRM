@@ -509,27 +509,25 @@ export async function openBuildShowcaseModal(options) {
 	// Check if coming from Customer View with a selected customer
 	const preSelectedCustomer = state.customerView?.selectedCustomer || null;
 
-	// Populate lead dropdown with leads assigned to current agent
-	const leadSelect = document.getElementById('buildShowcaseLead');
-	leadSelect.innerHTML = '<option value="">🔍 Search for a customer...</option>';
-
 	// Get leads assigned to current agent
 	const agentLeads = mockLeads.filter(lead =>
 		lead.assigned_agent_id === state.agentId || state.role === 'manager'
 	);
 
+	// Populate hidden lead dropdown (for data storage)
+	const leadSelect = document.getElementById('buildShowcaseLead');
+	leadSelect.innerHTML = '<option value="">Choose customer...</option>';
 	agentLeads.forEach(lead => {
 		const option = document.createElement('option');
 		option.value = lead.id;
 		option.textContent = `${lead.name} (${lead.email || 'No email'})`;
 		option.dataset.email = lead.email || '';
 		option.dataset.preferences = JSON.stringify(lead.preferences || {});
-		// Pre-select if this is the customer from Customer View
-		if (preSelectedCustomer && lead.id === preSelectedCustomer.id) {
-			option.selected = true;
-		}
 		leadSelect.appendChild(option);
 	});
+
+	// Setup customer search autocomplete
+	setupShowcaseCustomerSearch(agentLeads, preSelectedCustomer);
 
 	// Update selection count with proper grammar
 	const countEl = document.getElementById('buildSelectedCount');
@@ -549,10 +547,263 @@ export async function openBuildShowcaseModal(options) {
 		btn.addEventListener('click', (e) => {
 			const unitId = e.target.closest('.showcase-unit-remove').dataset.unitId;
 			removeUnitFromShowcase(unitId, getSelectedListings, countEl);
+			// Update email preview if visible
+			updateEmailPreview(getSelectedListings);
 		});
 	});
 
+	// Setup email preview toggle
+	// Setup email preview toggle
+	setupEmailPreviewToggle(getSelectedListings);
+
+	// Update email preview when bonus checkboxes change
+	['buildReferralBonus', 'buildMovingBonus'].forEach(id => {
+		const checkbox = document.getElementById(id);
+		if (checkbox) {
+			checkbox.addEventListener('change', () => updateEmailPreview(getSelectedListings));
+		}
+	});
+
 	show(document.getElementById('buildShowcaseModal'));
+}
+
+/**
+ * Setup email preview toggle button
+ */
+function setupEmailPreviewToggle(getSelectedListings) {
+	const toggleBtn = document.getElementById('toggleEmailPreview');
+	const previewPanel = document.getElementById('showcaseEmailPreview');
+	const closeBtn = document.getElementById('closeEmailPreviewPanel');
+
+	if (!toggleBtn || !previewPanel) return;
+
+	toggleBtn.addEventListener('click', () => {
+		const isVisible = previewPanel.style.display !== 'none';
+		previewPanel.style.display = isVisible ? 'none' : 'flex';
+		toggleBtn.classList.toggle('active', !isVisible);
+
+		if (!isVisible) {
+			updateEmailPreview(getSelectedListings);
+		}
+	});
+
+	if (closeBtn) {
+		closeBtn.addEventListener('click', () => {
+			previewPanel.style.display = 'none';
+			toggleBtn.classList.remove('active');
+		});
+	}
+
+	// Listen for customer selection changes
+	document.addEventListener('showcaseCustomerSelected', () => {
+		if (previewPanel.style.display !== 'none') {
+			updateEmailPreview(getSelectedListings);
+		}
+	});
+}
+
+/**
+ * Update email preview content
+ */
+function updateEmailPreview(getSelectedListings) {
+	const previewContent = document.getElementById('showcaseEmailPreviewContent');
+	const searchInput = document.getElementById('showcaseCustomerSearchInput');
+	const includeReferral = document.getElementById('buildReferralBonus')?.checked;
+	const includeMoving = document.getElementById('buildMovingBonus')?.checked;
+
+	if (!previewContent) return;
+
+	const selectedData = getSelectedListings();
+	const customerName = searchInput?.value?.split(' ')[0] || 'there';
+	const units = selectedData.units || [];
+
+	// Build bonus text
+	let bonusHtml = '';
+	if (includeReferral || includeMoving) {
+		bonusHtml = '<div style="margin: 16px 0; padding: 12px; background: #fef3c7; border-radius: 8px;"><strong>🎁 Special Perks:</strong><ul style="margin: 8px 0 0 20px; padding: 0;">';
+		if (includeReferral) bonusHtml += '<li>$200 referral bonus for recommending friends</li>';
+		if (includeMoving) bonusHtml += '<li>Moving bonus to help with relocation costs</li>';
+		bonusHtml += '</ul></div>';
+	}
+
+	// Build unit cards
+	const unitCardsHtml = units.map(unit => `
+		<div class="email-unit-card">
+			<h3>${unit.propertyName || 'Property'} - Unit ${unit.unit_number || 'TBD'}</h3>
+			<p><strong>Floor Plan:</strong> ${unit.floorPlanName || 'N/A'}</p>
+			<p><strong>Rent:</strong> ${unit.rent ? '$' + unit.rent.toLocaleString() + '/mo' : 'Call for pricing'}</p>
+			<p><strong>Size:</strong> ${unit.beds ?? '?'}bd / ${unit.baths ?? '?'}ba${unit.sqft ? ' / ' + unit.sqft.toLocaleString() + ' sqft' : ''}</p>
+		</div>
+	`).join('');
+
+	previewContent.innerHTML = `
+		<div class="email-preview-wrapper">
+			<div class="email-preview-header">
+				<strong>To:</strong> ${searchInput?.value || 'Select a customer'}<br>
+				<strong>Subject:</strong> Top options hand picked for you
+			</div>
+			<div class="email-preview-body">
+				<h2>🏠 Top Property Options for You</h2>
+				<p>Hi ${customerName},</p>
+				<p>I've hand-picked these units based on your preferences:</p>
+				${bonusHtml}
+				${unitCardsHtml || '<p style="color: #94a3b8;">No units selected</p>'}
+				<p>Click the button below to view your personalized property showcase and schedule tours:</p>
+				<a href="#" class="email-cta-btn">View Your Property Showcase →</a>
+				<p style="margin-top: 24px; color: #64748b;">Best regards,<br>Your TRE Agent</p>
+			</div>
+		</div>
+	`;
+}
+
+/**
+ * Setup customer search autocomplete for the showcase modal
+ */
+function setupShowcaseCustomerSearch(customers, preSelected) {
+	const searchInput = document.getElementById('showcaseCustomerSearchInput');
+	const searchResults = document.getElementById('showcaseCustomerSearchResults');
+	const leadSelect = document.getElementById('buildShowcaseLead');
+	const sendBtn = document.getElementById('sendBuildShowcase');
+	const leadNameSpan = document.getElementById('buildSendLeadName');
+
+	if (!searchInput || !searchResults) return;
+
+	// Pre-populate if customer was selected in Customer View
+	if (preSelected) {
+		searchInput.value = preSelected.name;
+		searchInput.classList.add('has-selection');
+		searchInput.dataset.selectedId = preSelected.id;
+		leadSelect.value = preSelected.id;
+		sendBtn.disabled = false;
+		leadNameSpan.textContent = preSelected.name.split(' ')[0];
+	} else {
+		searchInput.value = '';
+		searchInput.classList.remove('has-selection');
+		delete searchInput.dataset.selectedId;
+	}
+
+	// Show hint on focus
+	searchInput.addEventListener('focus', () => {
+		const searchTerm = searchInput.value.trim().toLowerCase();
+		if (searchTerm.length >= 1 && !searchInput.dataset.selectedId) {
+			showResults(searchTerm);
+		} else if (!searchInput.dataset.selectedId) {
+			searchResults.innerHTML = `
+				<div class="customer-search-no-results">
+					Type to search ${customers.length} customers...
+				</div>
+			`;
+			searchResults.classList.add('show');
+		}
+	});
+
+	// Search as user types
+	searchInput.addEventListener('input', (e) => {
+		const searchTerm = e.target.value.trim().toLowerCase();
+
+		// Clear selection if user is typing
+		if (searchInput.dataset.selectedId) {
+			delete searchInput.dataset.selectedId;
+			searchInput.classList.remove('has-selection');
+			leadSelect.value = '';
+			sendBtn.disabled = true;
+			leadNameSpan.textContent = 'Customer';
+		}
+
+		if (searchTerm.length >= 1) {
+			showResults(searchTerm);
+		} else {
+			searchResults.classList.remove('show');
+		}
+	});
+
+	function showResults(searchTerm) {
+		const matches = customers.filter(c =>
+			c.name.toLowerCase().includes(searchTerm) ||
+			(c.email && c.email.toLowerCase().includes(searchTerm))
+		);
+
+		if (matches.length === 0) {
+			searchResults.innerHTML = `
+				<div class="customer-search-no-results">No customers found</div>
+			`;
+		} else {
+			searchResults.innerHTML = matches.slice(0, 8).map(c => `
+				<div class="customer-search-result-item" data-id="${c.id}" data-name="${c.name}">
+					<div class="customer-result-name">${highlightMatch(c.name, searchTerm)}</div>
+					${c.email ? `<div class="customer-result-email">${c.email}</div>` : ''}
+				</div>
+			`).join('');
+
+			// Add click handlers
+			searchResults.querySelectorAll('.customer-search-result-item').forEach(item => {
+				item.addEventListener('click', () => selectCustomer(item.dataset.id, item.dataset.name));
+			});
+		}
+		searchResults.classList.add('show');
+	}
+
+	function highlightMatch(text, searchTerm) {
+		const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+		return text.replace(regex, '<strong>$1</strong>');
+	}
+
+	function selectCustomer(id, name) {
+		searchInput.value = name;
+		searchInput.classList.add('has-selection');
+		searchInput.dataset.selectedId = id;
+		searchResults.classList.remove('show');
+		leadSelect.value = id;
+		sendBtn.disabled = false;
+		leadNameSpan.textContent = name.split(' ')[0];
+
+		// Update email preview if visible
+		const previewPanel = document.getElementById('showcaseEmailPreview');
+		if (previewPanel && previewPanel.style.display !== 'none') {
+			// Get getSelectedListings from the modal's scope - we need to trigger refresh
+			const event = new CustomEvent('showcaseCustomerSelected');
+			document.dispatchEvent(event);
+		}
+	}
+
+	// Keyboard navigation
+	searchInput.addEventListener('keydown', (e) => {
+		const items = searchResults.querySelectorAll('.customer-search-result-item');
+		const currentIndex = Array.from(items).findIndex(item => item.classList.contains('selected'));
+
+		if (e.key === 'ArrowDown') {
+			e.preventDefault();
+			if (items.length > 0) {
+				items[currentIndex]?.classList.remove('selected');
+				const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+				items[nextIndex].classList.add('selected');
+			}
+		} else if (e.key === 'ArrowUp') {
+			e.preventDefault();
+			if (items.length > 0) {
+				items[currentIndex]?.classList.remove('selected');
+				const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+				items[prevIndex].classList.add('selected');
+			}
+		} else if (e.key === 'Enter') {
+			e.preventDefault();
+			const selectedItem = searchResults.querySelector('.customer-search-result-item.selected');
+			if (selectedItem) {
+				selectCustomer(selectedItem.dataset.id, selectedItem.dataset.name);
+			} else if (items.length === 1) {
+				selectCustomer(items[0].dataset.id, items[0].dataset.name);
+			}
+		} else if (e.key === 'Escape') {
+			searchResults.classList.remove('show');
+		}
+	});
+
+	// Close results when clicking outside
+	document.addEventListener('click', function closeHandler(e) {
+		if (!e.target.closest('.showcase-customer-search-container')) {
+			searchResults.classList.remove('show');
+		}
+	});
 }
 
 /**
