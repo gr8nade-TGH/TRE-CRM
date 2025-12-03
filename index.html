@@ -1776,6 +1776,54 @@
 				</div>
 			</div>
 		</div>
+		<!-- Showcase Send Confirmation Modal -->
+		<div id="showcaseSendConfirmModal" class="modal hidden">
+			<div class="modal-card modal-sm">
+				<div class="modal-header">
+					<h3>📤 Confirm Send</h3>
+					<button id="closeShowcaseSendConfirm" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="showcaseSendConfirmContent">
+						<!-- Confirmation content will be injected here -->
+					</div>
+				</div>
+				<div class="modal-footer">
+					<button id="cancelShowcaseSend" class="btn btn-secondary">Cancel</button>
+					<button id="confirmShowcaseSend" class="btn btn-primary">
+						<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+							stroke-width="2">
+							<path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+						</svg>
+						Send Now
+					</button>
+				</div>
+			</div>
+		</div>
+		<!-- Showcase Success Modal -->
+		<div id="showcaseSuccessModal" class="modal hidden">
+			<div class="modal-card modal-sm">
+				<div class="modal-body" style="text-align: center; padding: 32px;">
+					<div style="font-size: 48px; margin-bottom: 16px;">✅</div>
+					<h3 style="margin: 0 0 8px 0;">Showcase Sent!</h3>
+					<p id="showcaseSuccessMessage" style="color: #64748b; margin: 0 0 24px 0;">
+						<!-- Success message will be injected here -->
+					</p>
+					<div style="display: flex; gap: 12px; justify-content: center;">
+						<button id="closeShowcaseSuccess" class="btn btn-secondary">Close</button>
+						<button id="viewShowcaseLanding" class="btn btn-primary">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+								<polyline points="15 3 21 3 21 9" />
+								<line x1="10" y1="14" x2="21" y2="3" />
+							</svg>
+							View Landing Page
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
 		<div id="historyModal" class="modal hidden">
 			<div class="modal-card">
 				<div class="modal-header">

@@ -21,7 +21,7 @@ import * as SupabaseAPI from './src/api/supabase-api.js';
 import { createAPI } from './src/api/api-wrapper.js';
 import { getStepModalContent as getStepModalContentUtil } from './src/utils/step-modal-content.js';
 import { sortTable as sortTableUtil } from './src/utils/table-sorting.js';
-import { sendBuildShowcase as sendBuildShowcaseUtil } from './src/utils/showcase-builder.js';
+import { sendBuildShowcase as sendBuildShowcaseUtil, confirmAndSendShowcase, cancelShowcaseSend as cancelShowcaseSendUtil } from './src/utils/showcase-builder.js';
 import { getCurrentStepFromActivities as getCurrentStepUtil, getHealthMessages as getHealthMessagesUtil } from './src/utils/lead-health.js';
 import { openAgentDrawer as openAgentDrawerUtil, saveAgentChanges as saveAgentChangesUtil } from './src/utils/agent-drawer.js';
 import { geocodeAddress } from './src/utils/geocoding.js';
@@ -723,6 +723,14 @@ let api, renderLeads, renderSpecials;
 		});
 	}
 
+	async function confirmShowcaseSend() {
+		await confirmAndSendShowcase();
+	}
+
+	function cancelShowcaseSend() {
+		cancelShowcaseSendUtil();
+	}
+
 	async function sendShowcase() {
 		await Showcases.sendShowcase({
 			state, api, realAgents, mockProperties, toast,
@@ -805,7 +813,8 @@ let api, renderLeads, renderSpecials;
 			bulkMarkAsUnavailable, bulkDeleteListings, updateLeadBulkActionsBar, bulkSendSmartMatch,
 			downloadCSVTemplate, importCSV,
 			submitBugReport, saveBugChanges, addBugFlags, showBugDetails, handleBugFieldChange,
-			sendBuildShowcase, sendShowcase, closeBuildShowcase, updateSelectionSummary,
+			sendBuildShowcase, confirmShowcaseSend, cancelShowcaseSend,
+			sendShowcase, closeBuildShowcase, updateSelectionSummary,
 			openEmailPreview, previewLandingPage, openHistory,
 			sendShowcaseEmail, openHistoryDocumentDetails,
 			showEmailPreview, showTemplatePreview, sendTestEmail

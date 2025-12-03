@@ -1,8 +1,13 @@
 // Showcase Builder Utilities
 // Functions for building and sending property showcases to leads
 
+import { show, hide } from '../modules/modals/modal-utils.js';
+
+// Store pending showcase data for confirmation flow
+let pendingShowcaseData = null;
+
 /**
- * Send a built showcase to a lead
+ * Show confirmation modal before sending showcase
  * @param {Object} deps - Dependencies object
  * @returns {Promise<void>}
  */
@@ -18,8 +23,8 @@ export async function sendBuildShowcase(deps) {
 
 	const leadId = document.getElementById('buildShowcaseLead').value;
 	const selectedData = getSelectedListings();
-	const includeReferralBonus = document.getElementById('buildReferralBonus').checked;
-	const includeMovingBonus = document.getElementById('buildMovingBonus').checked;
+	const includeReferralBonus = document.getElementById('buildReferralBonus')?.checked || false;
+	const includeMovingBonus = document.getElementById('buildMovingBonus')?.checked || false;
 
 	if (!leadId) {
 		toast('Please select a customer', 'error');
@@ -29,7 +34,6 @@ export async function sendBuildShowcase(deps) {
 	// Handle new object format or legacy array format
 	const totalUnits = selectedData.totalUnits ?? selectedData.length ?? 0;
 	const units = selectedData.units || selectedData;
-	const properties = selectedData.properties || selectedData;
 
 	if (totalUnits === 0) {
 		toast('Please select at least one unit', 'error');
@@ -42,6 +46,78 @@ export async function sendBuildShowcase(deps) {
 		toast('Customer not found', 'error');
 		return;
 	}
+
+	// Store data for confirmation
+	pendingShowcaseData = {
+		lead,
+		units,
+		totalUnits,
+		includeReferralBonus,
+		includeMovingBonus,
+		deps
+	};
+
+	// Show confirmation modal
+	showSendConfirmation(lead, units, totalUnits, includeReferralBonus, includeMovingBonus);
+}
+
+/**
+ * Show the send confirmation modal
+ */
+function showSendConfirmation(lead, units, totalUnits, includeReferralBonus, includeMovingBonus) {
+	const confirmModal = document.getElementById('showcaseSendConfirmModal');
+	const confirmContent = document.getElementById('showcaseSendConfirmContent');
+
+	if (!confirmModal || !confirmContent) return;
+
+	// Build confirmation content
+	const bonuses = [];
+	if (includeReferralBonus) bonuses.push('Referral Bonus');
+	if (includeMovingBonus) bonuses.push('Moving Bonus');
+
+	// Get unique properties
+	const propertyNames = [...new Set(units.map(u => u.propertyName || 'Unknown Property'))];
+
+	confirmContent.innerHTML = `
+		<div class="confirm-summary">
+			<div class="confirm-row">
+				<span class="confirm-label">📧 Sending to:</span>
+				<span class="confirm-value"><strong>${lead.name}</strong> (${lead.email || 'No email'})</span>
+			</div>
+			<div class="confirm-row">
+				<span class="confirm-label">🏠 Units:</span>
+				<span class="confirm-value"><strong>${totalUnits}</strong> unit${totalUnits !== 1 ? 's' : ''} from ${propertyNames.length} propert${propertyNames.length !== 1 ? 'ies' : 'y'}</span>
+			</div>
+			<div class="confirm-row">
+				<span class="confirm-label">📍 Properties:</span>
+				<span class="confirm-value">${propertyNames.slice(0, 3).join(', ')}${propertyNames.length > 3 ? ` +${propertyNames.length - 3} more` : ''}</span>
+			</div>
+			${bonuses.length > 0 ? `
+				<div class="confirm-row">
+					<span class="confirm-label">🎁 Bonuses:</span>
+					<span class="confirm-value">${bonuses.join(', ')}</span>
+				</div>
+			` : ''}
+		</div>
+		<p style="margin-top: 16px; color: #64748b; font-size: 13px;">
+			The customer will receive an email with a link to view their personalized property showcase.
+		</p>
+	`;
+
+	show(confirmModal);
+}
+
+/**
+ * Actually send the showcase after confirmation
+ */
+export async function confirmAndSendShowcase() {
+	if (!pendingShowcaseData) return;
+
+	const { lead, units, totalUnits, includeReferralBonus, includeMovingBonus, deps } = pendingShowcaseData;
+	const { state, api, toast, closeBuildShowcase, updateBuildShowcaseButton } = deps;
+
+	// Hide confirmation modal
+	hide(document.getElementById('showcaseSendConfirmModal'));
 
 	// Generate unique showcase ID for tracking
 	const showcaseId = `showcase_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -103,16 +179,53 @@ export async function sendBuildShowcase(deps) {
 			landing_url: landingUrl
 		});
 
-		toast(`Showcase email sent to ${lead.name}! They can view their personalized matches at the provided link.`);
+		// Close build showcase modal
 		closeBuildShowcase();
 
 		// Clear selections
 		document.querySelectorAll('.unit-checkbox:checked').forEach(cb => cb.checked = false);
 		updateBuildShowcaseButton();
 
+		// Show success modal
+		showSuccessModal(lead, totalUnits, landingUrl);
+
+		// Clear pending data
+		pendingShowcaseData = null;
+
 	} catch (error) {
 		console.error('Error sending showcase email:', error);
 		toast('Error sending email. Please try again.');
 	}
+}
+
+/**
+ * Show success modal after sending
+ */
+function showSuccessModal(lead, totalUnits, landingUrl) {
+	const successModal = document.getElementById('showcaseSuccessModal');
+	const successMessage = document.getElementById('showcaseSuccessMessage');
+	const viewBtn = document.getElementById('viewShowcaseLanding');
+
+	if (!successModal) return;
+
+	if (successMessage) {
+		successMessage.textContent = `${lead.name} will receive an email with ${totalUnits} unit${totalUnits !== 1 ? 's' : ''} to explore.`;
+	}
+
+	if (viewBtn) {
+		viewBtn.onclick = () => {
+			window.open(landingUrl, '_blank');
+		};
+	}
+
+	show(successModal);
+}
+
+/**
+ * Cancel the pending showcase send
+ */
+export function cancelShowcaseSend() {
+	pendingShowcaseData = null;
+	hide(document.getElementById('showcaseSendConfirmModal'));
 }
 

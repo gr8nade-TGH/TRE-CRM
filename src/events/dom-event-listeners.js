@@ -161,6 +161,8 @@ export function setupAllEventListeners(deps) {
 
 		// Showcase functions
 		sendBuildShowcase,
+		confirmShowcaseSend,
+		cancelShowcaseSend,
 		sendShowcase,
 		closeBuildShowcase,
 		updateSelectionSummary,
@@ -560,6 +562,30 @@ export function setupAllEventListeners(deps) {
 	const sendBuildShowcaseEl = document.getElementById('sendBuildShowcase');
 	if (sendBuildShowcaseEl) {
 		sendBuildShowcaseEl.addEventListener('click', sendBuildShowcase);
+	}
+
+	// Showcase send confirmation modal handlers
+	const confirmShowcaseSendEl = document.getElementById('confirmShowcaseSend');
+	if (confirmShowcaseSendEl) {
+		confirmShowcaseSendEl.addEventListener('click', confirmShowcaseSend);
+	}
+
+	const cancelShowcaseSendEl = document.getElementById('cancelShowcaseSend');
+	if (cancelShowcaseSendEl) {
+		cancelShowcaseSendEl.addEventListener('click', cancelShowcaseSend);
+	}
+
+	const closeShowcaseSendConfirmEl = document.getElementById('closeShowcaseSendConfirm');
+	if (closeShowcaseSendConfirmEl) {
+		closeShowcaseSendConfirmEl.addEventListener('click', cancelShowcaseSend);
+	}
+
+	// Showcase success modal handlers
+	const closeShowcaseSuccessEl = document.getElementById('closeShowcaseSuccess');
+	if (closeShowcaseSuccessEl) {
+		closeShowcaseSuccessEl.addEventListener('click', () => {
+			hide(document.getElementById('showcaseSuccessModal'));
+		});
 	}
 
 	// Lead selection dropdown for build showcase

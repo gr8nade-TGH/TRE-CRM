@@ -1975,6 +1975,10 @@ body {
 	overflow: hidden;
 }
 
+.modal-card.modal-sm {
+	width: 480px;
+}
+
 /* Wider showcase modals */
 #showcaseModal .modal-card,
 #buildShowcaseModal .modal-card,
@@ -2656,6 +2660,38 @@ body {
 .listing-card:hover {
 	transform: translateY(-4px);
 	box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* Confirmation Summary */
+.confirm-summary {
+	background: #f8fafc;
+	border: 1px solid #e2e8f0;
+	border-radius: 8px;
+	padding: 16px;
+}
+
+.confirm-row {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 8px 0;
+	border-bottom: 1px solid #e2e8f0;
+}
+
+.confirm-row:last-child {
+	border-bottom: none;
+}
+
+.confirm-label {
+	flex: 0 0 100px;
+	font-size: 13px;
+	color: #64748b;
+}
+
+.confirm-value {
+	flex: 1;
+	font-size: 14px;
+	color: #1e293b;
 }
 
 .listing-image {
