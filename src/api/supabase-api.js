@@ -1743,28 +1743,46 @@ export async function getBatchFloorPlans(propertyIds) {
 
     const supabase = getSupabase();
 
-    const { data, error } = await supabase
-        .from('floor_plans')
-        .select('*')
-        .in('property_id', propertyIds)
-        .order('beds')
-        .order('baths');
-
-    if (error) {
-        console.error('Error fetching batch floor plans:', error);
-        return {};
-    }
-
-    // Group floor plans by property_id
+    // Initialize result map
     const floorPlansMap = {};
     propertyIds.forEach(id => floorPlansMap[id] = []);
 
-    if (data) {
-        data.forEach(floorPlan => {
-            if (!floorPlansMap[floorPlan.property_id]) {
-                floorPlansMap[floorPlan.property_id] = [];
+    // Batch queries to avoid Supabase URL length limits
+    const BATCH_SIZE = 50;
+    const batches = [];
+    for (let i = 0; i < propertyIds.length; i += BATCH_SIZE) {
+        batches.push(propertyIds.slice(i, i + BATCH_SIZE));
+    }
+
+    // Execute batches in parallel (max 5 concurrent)
+    const MAX_CONCURRENT = 5;
+    for (let i = 0; i < batches.length; i += MAX_CONCURRENT) {
+        const concurrentBatches = batches.slice(i, i + MAX_CONCURRENT);
+
+        const results = await Promise.all(concurrentBatches.map(async (batch) => {
+            const { data, error } = await supabase
+                .from('floor_plans')
+                .select('*')
+                .in('property_id', batch)
+                .order('beds')
+                .order('baths');
+
+            if (error) {
+                console.error('Error fetching batch floor plans:', error);
+                return [];
             }
-            floorPlansMap[floorPlan.property_id].push(floorPlan);
+
+            return data || [];
+        }));
+
+        // Merge results into floorPlansMap
+        results.flat().forEach(floorPlan => {
+            if (floorPlan && floorPlan.property_id) {
+                if (!floorPlansMap[floorPlan.property_id]) {
+                    floorPlansMap[floorPlan.property_id] = [];
+                }
+                floorPlansMap[floorPlan.property_id].push(floorPlan);
+            }
         });
     }
 
@@ -1786,38 +1804,57 @@ export async function getBatchUnits(propertyIds, { isActive = null } = {}) {
 
     const supabase = getSupabase();
 
-    let query = supabase
-        .from('units')
-        .select(`
-            *,
-            floor_plan:floor_plans(*)
-        `)
-        .in('property_id', propertyIds);
-
-    // Soft delete filter
-    if (isActive !== null) {
-        query = query.eq('is_active', isActive);
-    }
-
-    query = query.order('unit_number');
-
-    const { data, error } = await query;
-
-    if (error) {
-        console.error('Error fetching batch units:', error);
-        return {};
-    }
-
-    // Group units by property_id
+    // Initialize result map
     const unitsMap = {};
     propertyIds.forEach(id => unitsMap[id] = []);
 
-    if (data) {
-        data.forEach(unit => {
-            if (!unitsMap[unit.property_id]) {
-                unitsMap[unit.property_id] = [];
+    // Batch queries to avoid Supabase URL length limits
+    // With ~50 char property IDs, 50 per batch keeps URL reasonable
+    const BATCH_SIZE = 50;
+    const batches = [];
+    for (let i = 0; i < propertyIds.length; i += BATCH_SIZE) {
+        batches.push(propertyIds.slice(i, i + BATCH_SIZE));
+    }
+
+    // Execute batches in parallel (max 5 concurrent to avoid rate limits)
+    const MAX_CONCURRENT = 5;
+    for (let i = 0; i < batches.length; i += MAX_CONCURRENT) {
+        const concurrentBatches = batches.slice(i, i + MAX_CONCURRENT);
+
+        const results = await Promise.all(concurrentBatches.map(async (batch) => {
+            let query = supabase
+                .from('units')
+                .select(`
+                    *,
+                    floor_plan:floor_plans(*)
+                `)
+                .in('property_id', batch);
+
+            // Soft delete filter
+            if (isActive !== null) {
+                query = query.eq('is_active', isActive);
             }
-            unitsMap[unit.property_id].push(unit);
+
+            query = query.order('unit_number');
+
+            const { data, error } = await query;
+
+            if (error) {
+                console.error('Error fetching batch units:', error);
+                return [];
+            }
+
+            return data || [];
+        }));
+
+        // Merge results into unitsMap
+        results.flat().forEach(unit => {
+            if (unit && unit.property_id) {
+                if (!unitsMap[unit.property_id]) {
+                    unitsMap[unit.property_id] = [];
+                }
+                unitsMap[unit.property_id].push(unit);
+            }
         });
     }
 
