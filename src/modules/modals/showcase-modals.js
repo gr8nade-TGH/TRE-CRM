@@ -668,6 +668,16 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 
 	if (!searchInput || !searchResults) return;
 
+	// Create or get email display element
+	let emailDisplay = document.getElementById('selectedCustomerEmail');
+	if (!emailDisplay) {
+		emailDisplay = document.createElement('div');
+		emailDisplay.id = 'selectedCustomerEmail';
+		emailDisplay.className = 'selected-customer-email';
+		emailDisplay.style.cssText = 'font-size: 12px; color: #6b7280; margin-top: 4px; display: none;';
+		searchInput.parentNode.appendChild(emailDisplay);
+	}
+
 	// Pre-populate if customer was selected in Customer View
 	if (preSelected) {
 		searchInput.value = preSelected.name;
@@ -676,10 +686,16 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 		leadSelect.value = preSelected.id;
 		sendBtn.disabled = false;
 		leadNameSpan.textContent = preSelected.name.split(' ')[0];
+		// Show email
+		if (preSelected.email) {
+			emailDisplay.textContent = `📧 ${preSelected.email}`;
+			emailDisplay.style.display = 'block';
+		}
 	} else {
 		searchInput.value = '';
 		searchInput.classList.remove('has-selection');
 		delete searchInput.dataset.selectedId;
+		emailDisplay.style.display = 'none';
 	}
 
 	// Show hint on focus
@@ -708,6 +724,7 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 			leadSelect.value = '';
 			sendBtn.disabled = true;
 			leadNameSpan.textContent = 'Customer';
+			emailDisplay.style.display = 'none';
 		}
 
 		if (searchTerm.length >= 1) {
@@ -729,7 +746,7 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 			`;
 		} else {
 			searchResults.innerHTML = matches.slice(0, 8).map(c => `
-				<div class="customer-search-result-item" data-id="${c.id}" data-name="${c.name}">
+				<div class="customer-search-result-item" data-id="${c.id}" data-name="${c.name}" data-email="${c.email || ''}">
 					<div class="customer-result-name">${highlightMatch(c.name, searchTerm)}</div>
 					${c.email ? `<div class="customer-result-email">${c.email}</div>` : ''}
 				</div>
@@ -737,7 +754,7 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 
 			// Add click handlers
 			searchResults.querySelectorAll('.customer-search-result-item').forEach(item => {
-				item.addEventListener('click', () => selectCustomer(item.dataset.id, item.dataset.name));
+				item.addEventListener('click', () => selectCustomer(item.dataset.id, item.dataset.name, item.dataset.email));
 			});
 		}
 		searchResults.classList.add('show');
@@ -748,7 +765,7 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 		return text.replace(regex, '<strong>$1</strong>');
 	}
 
-	function selectCustomer(id, name) {
+	function selectCustomer(id, name, email) {
 		searchInput.value = name;
 		searchInput.classList.add('has-selection');
 		searchInput.dataset.selectedId = id;
@@ -756,6 +773,14 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 		leadSelect.value = id;
 		sendBtn.disabled = false;
 		leadNameSpan.textContent = name.split(' ')[0];
+
+		// Show email below the input
+		if (email) {
+			emailDisplay.textContent = `📧 ${email}`;
+			emailDisplay.style.display = 'block';
+		} else {
+			emailDisplay.style.display = 'none';
+		}
 
 		// Update email preview if visible
 		const previewPanel = document.getElementById('showcaseEmailPreview');
@@ -789,9 +814,9 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 			e.preventDefault();
 			const selectedItem = searchResults.querySelector('.customer-search-result-item.selected');
 			if (selectedItem) {
-				selectCustomer(selectedItem.dataset.id, selectedItem.dataset.name);
+				selectCustomer(selectedItem.dataset.id, selectedItem.dataset.name, selectedItem.dataset.email);
 			} else if (items.length === 1) {
-				selectCustomer(items[0].dataset.id, items[0].dataset.name);
+				selectCustomer(items[0].dataset.id, items[0].dataset.name, items[0].dataset.email);
 			}
 		} else if (e.key === 'Escape') {
 			searchResults.classList.remove('show');
@@ -924,7 +949,7 @@ function renderShowcaseUnit(unit) {
 }
 
 /**
- * Generate a match score badge
+ * Generate a match score badge (gold badge with number, same as listings page)
  */
 function generateMatchBadge(score) {
 	// Handle different score formats (0-1 decimal or 0-100 percentage)
@@ -938,15 +963,7 @@ function generateMatchBadge(score) {
 	// Clamp to valid range
 	percentage = Math.max(0, Math.min(100, percentage));
 
-	let colorClass = 'match-low';
-	if (percentage >= 80) colorClass = 'match-high';
-	else if (percentage >= 60) colorClass = 'match-medium';
-
-	const stars = Math.max(0, Math.min(5, Math.round((percentage / 100) * 5)));
-	const emptyStars = 5 - stars;
-	const starIcons = '★'.repeat(stars) + '☆'.repeat(emptyStars);
-
-	return `<span class="match-badge ${colorClass}" title="${percentage}% match"><span class="match-stars">${starIcons}</span></span>`;
+	return `<span class="match-score-badge" title="Match Score: ${percentage}/100">${percentage}</span>`;
 }
 
 /**
