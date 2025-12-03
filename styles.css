@@ -2326,6 +2326,35 @@ body {
 	color: #64748b;
 }
 
+/* Match Highlights - shows WHY unit matches customer preferences */
+.match-highlights {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 4px;
+	margin-top: 6px;
+}
+
+.match-highlight-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 3px;
+	padding: 2px 8px;
+	background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+	border: 1px solid #a7f3d0;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 500;
+	color: #047857;
+	white-space: nowrap;
+}
+
+.match-highlight-pill[title*="budget"],
+.match-highlight-pill[title*="Under"] {
+	background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+	border-color: #fcd34d;
+	color: #92400e;
+}
+
 .showcase-unit-pricing {
 	display: flex;
 	flex-direction: column;

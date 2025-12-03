@@ -538,9 +538,10 @@ export async function openBuildShowcaseModal(options) {
 	// Update send button with customer name if pre-selected
 	updateSendButtonLabel(preSelectedCustomer);
 
-	// Populate listings grid with new grouped structure
+	// Populate listings grid with new grouped structure (pass customer preferences if available)
 	const listingsGrid = document.getElementById('buildListingsGrid');
-	listingsGrid.innerHTML = renderShowcaseUnits(selectedData);
+	const customerPrefs = preSelectedCustomer?.preferences || null;
+	listingsGrid.innerHTML = renderShowcaseUnits(selectedData, customerPrefs);
 
 	// Add remove button event listeners
 	listingsGrid.querySelectorAll('.showcase-unit-remove').forEach(btn => {
@@ -599,12 +600,52 @@ function setupEmailPreviewToggle(getSelectedListings) {
 		});
 	}
 
-	// Listen for customer selection changes
+	// Listen for customer selection changes - update both email preview and unit highlights
 	document.addEventListener('showcaseCustomerSelected', () => {
+		// Refresh email preview if visible
 		if (previewPanel.style.display !== 'none') {
 			updateEmailPreview(getSelectedListings);
 		}
+		// Also refresh the units display to show match highlights
+		refreshShowcaseUnitsWithHighlights(getSelectedListings);
 	});
+}
+
+/**
+ * Refresh the units display with customer-specific highlights
+ */
+function refreshShowcaseUnitsWithHighlights(getSelectedListings) {
+	const listingsGrid = document.getElementById('buildListingsGrid');
+	const leadSelect = document.getElementById('buildShowcaseLead');
+
+	if (!listingsGrid || !leadSelect?.value) return;
+
+	// Get customer preferences
+	const selectedOption = leadSelect.querySelector(`option[value="${leadSelect.value}"]`);
+	let customerPrefs = null;
+	if (selectedOption?.dataset?.preferences) {
+		try {
+			customerPrefs = JSON.parse(selectedOption.dataset.preferences);
+		} catch (e) {
+			console.log('Could not parse customer preferences');
+		}
+	}
+
+	// Get current selection data and re-render with highlights
+	const selectedData = getSelectedListings();
+	if (selectedData && selectedData.grouped) {
+		listingsGrid.innerHTML = renderShowcaseUnits(selectedData, customerPrefs);
+
+		// Re-attach remove button listeners
+		listingsGrid.querySelectorAll('.showcase-unit-remove').forEach(btn => {
+			btn.addEventListener('click', (e) => {
+				const unitId = e.target.closest('.showcase-unit-remove').dataset.unitId;
+				const countEl = document.getElementById('buildSelectedCount');
+				removeUnitFromShowcase(unitId, getSelectedListings, countEl);
+				updateEmailPreview(getSelectedListings);
+			});
+		});
+	}
 }
 
 /**
@@ -613,6 +654,7 @@ function setupEmailPreviewToggle(getSelectedListings) {
 function updateEmailPreview(getSelectedListings) {
 	const previewContent = document.getElementById('showcaseEmailPreviewContent');
 	const searchInput = document.getElementById('showcaseCustomerSearchInput');
+	const leadSelect = document.getElementById('buildShowcaseLead');
 	const includeReferral = document.getElementById('buildReferralBonus')?.checked;
 	const includeMoving = document.getElementById('buildMovingBonus')?.checked;
 
@@ -621,6 +663,20 @@ function updateEmailPreview(getSelectedListings) {
 	const selectedData = getSelectedListings();
 	const customerName = searchInput?.value?.split(' ')[0] || 'there';
 	const units = selectedData.units || [];
+	const grouped = selectedData.grouped || [];
+
+	// Get customer preferences from selected lead
+	let customerPrefs = null;
+	if (leadSelect?.value) {
+		const selectedOption = leadSelect.querySelector(`option[value="${leadSelect.value}"]`);
+		if (selectedOption?.dataset?.preferences) {
+			try {
+				customerPrefs = JSON.parse(selectedOption.dataset.preferences);
+			} catch (e) {
+				console.log('Could not parse customer preferences');
+			}
+		}
+	}
 
 	// Build bonus text
 	let bonusHtml = '';
@@ -631,15 +687,26 @@ function updateEmailPreview(getSelectedListings) {
 		bonusHtml += '</ul></div>';
 	}
 
-	// Build unit cards
-	const unitCardsHtml = units.map(unit => `
-		<div class="email-unit-card">
-			<h3>${unit.propertyName || 'Property'} - Unit ${unit.unit_number || 'TBD'}</h3>
-			<p><strong>Floor Plan:</strong> ${unit.floorPlanName || 'N/A'}</p>
-			<p><strong>Rent:</strong> ${unit.rent ? '$' + unit.rent.toLocaleString() + '/mo' : 'Call for pricing'}</p>
-			<p><strong>Size:</strong> ${unit.beds ?? '?'}bd / ${unit.baths ?? '?'}ba${unit.sqft ? ' / ' + unit.sqft.toLocaleString() + ' sqft' : ''}</p>
-		</div>
-	`).join('');
+	// Build unit cards with match highlights
+	const unitCardsHtml = grouped.flatMap(({ property, units: groupUnits }) =>
+		groupUnits.map(unit => {
+			// Generate highlights for email preview too
+			const highlights = customerPrefs ? generateMatchHighlights(unit, property, customerPrefs) : [];
+			const highlightPills = highlights.slice(0, 3).map(h =>
+				`<span style="display: inline-block; background: #ecfdf5; border: 1px solid #a7f3d0; border-radius: 10px; padding: 2px 8px; font-size: 10px; color: #047857; margin-right: 4px;">${h.icon} ${h.text}</span>`
+			).join('');
+
+			return `
+				<div class="email-unit-card">
+					<h3>${unit.propertyName || property?.name || 'Property'} - Unit ${unit.unit_number || 'TBD'}</h3>
+					<p><strong>Floor Plan:</strong> ${unit.floorPlanName || 'N/A'}</p>
+					<p><strong>Rent:</strong> ${unit.rent ? '$' + unit.rent.toLocaleString() + '/mo' : 'Call for pricing'}</p>
+					<p><strong>Size:</strong> ${unit.beds ?? '?'}bd / ${unit.baths ?? '?'}ba${unit.sqft ? ' / ' + unit.sqft.toLocaleString() + ' sqft' : ''}</p>
+					${highlightPills ? `<div style="margin-top: 8px;">${highlightPills}</div>` : ''}
+				</div>
+			`;
+		})
+	).join('');
 
 	previewContent.innerHTML = `
 		<div class="email-preview-wrapper">
@@ -787,13 +854,11 @@ function setupShowcaseCustomerSearch(customers, preSelected) {
 			emailDisplay.style.display = 'none';
 		}
 
-		// Update email preview if visible
-		const previewPanel = document.getElementById('showcaseEmailPreview');
-		if (previewPanel && previewPanel.style.display !== 'none') {
-			// Get getSelectedListings from the modal's scope - we need to trigger refresh
-			const event = new CustomEvent('showcaseCustomerSelected');
-			document.dispatchEvent(event);
-		}
+		// Dispatch event to trigger updates (email preview and unit highlights)
+		const event = new CustomEvent('showcaseCustomerSelected', {
+			detail: { customerId: id, customerName: name, email: email }
+		});
+		document.dispatchEvent(event);
 	}
 
 	// Keyboard navigation
@@ -852,7 +917,7 @@ function updateSendButtonLabel(customer) {
 /**
  * Render showcase units grouped by property
  */
-function renderShowcaseUnits(selectedData) {
+function renderShowcaseUnits(selectedData, customerPrefs = null) {
 	if (!selectedData.grouped || selectedData.grouped.length === 0) {
 		return '<p class="no-units-message">No units selected</p>';
 	}
@@ -886,7 +951,7 @@ function renderShowcaseUnits(selectedData) {
 					</div>
 				</div>
 				<div class="showcase-units-list">
-					${units.map(unit => renderShowcaseUnit(unit)).join('')}
+					${units.map(unit => renderShowcaseUnit(unit, property, customerPrefs)).join('')}
 				</div>
 			</div>
 		`;
@@ -896,7 +961,7 @@ function renderShowcaseUnits(selectedData) {
 /**
  * Render a single unit card
  */
-function renderShowcaseUnit(unit) {
+function renderShowcaseUnit(unit, property = null, customerPrefs = null) {
 	const rent = unit.rent ? `$${unit.rent.toLocaleString()}` : 'Call for pricing';
 	const beds = unit.beds !== null ? `${unit.beds}bd` : '—';
 	const baths = unit.baths !== null ? `${unit.baths}ba` : '—';
@@ -919,6 +984,10 @@ function renderShowcaseUnit(unit) {
 
 	const unitMatchBadge = unit.matchScore ? generateMatchBadge(unit.matchScore) : '';
 
+	// Generate match highlights if we have customer preferences
+	const highlights = customerPrefs ? generateMatchHighlights(unit, property || {}, customerPrefs) : [];
+	const highlightsHtml = renderMatchHighlights(highlights);
+
 	return `
 		<div class="showcase-unit-card" data-unit-id="${unit.id}">
 			<div class="showcase-unit-main">
@@ -938,6 +1007,7 @@ function renderShowcaseUnit(unit) {
 						<span class="unit-floor-plan">${unit.floorPlanName}</span>
 						${unitMatchBadge}
 					</div>
+					${highlightsHtml}
 				</div>
 				<div class="showcase-unit-pricing">
 					<span class="unit-rent">${rent}<span class="rent-period">/mo</span></span>
@@ -969,6 +1039,122 @@ function generateMatchBadge(score) {
 	percentage = Math.max(0, Math.min(100, percentage));
 
 	return `<span class="match-score-badge" title="Match Score: ${percentage}/100">${percentage}</span>`;
+}
+
+/**
+ * Generate match highlights showing WHY a unit is a good match for the customer
+ * Returns an array of match factors with icons
+ */
+function generateMatchHighlights(unit, property, customerPrefs) {
+	if (!customerPrefs) return [];
+
+	const highlights = [];
+	const prefs = typeof customerPrefs === 'string' ? JSON.parse(customerPrefs) : customerPrefs;
+
+	// Budget match check
+	const unitRent = unit.rent || 0;
+	if (prefs.priceRange || prefs.price_range) {
+		const priceRange = prefs.priceRange || prefs.price_range;
+		let min, max;
+		if (typeof priceRange === 'object') {
+			min = priceRange.min;
+			max = priceRange.max;
+		} else if (typeof priceRange === 'string' && priceRange.includes('-')) {
+			[min, max] = priceRange.split('-').map(p => parseInt(p.replace(/\D/g, '')));
+		}
+		if (min && max && unitRent >= min && unitRent <= max) {
+			highlights.push({ icon: '💰', text: 'Within budget', type: 'budget' });
+		} else if (min && max && unitRent < min) {
+			highlights.push({ icon: '💰', text: 'Under budget!', type: 'budget' });
+		}
+	}
+
+	// Bedroom match
+	const unitBeds = unit.beds;
+	if (prefs.bedrooms !== undefined || prefs.beds !== undefined) {
+		const wantedBeds = parseInt(prefs.bedrooms || prefs.beds);
+		if (!isNaN(wantedBeds) && unitBeds === wantedBeds) {
+			highlights.push({ icon: '🛏️', text: `${unitBeds} bed${unitBeds !== 1 ? 's' : ''} (wanted)`, type: 'beds' });
+		}
+	}
+
+	// Bathroom match
+	const unitBaths = unit.baths;
+	if (prefs.bathrooms !== undefined || prefs.baths !== undefined) {
+		const wantedBaths = parseFloat(prefs.bathrooms || prefs.baths);
+		if (!isNaN(wantedBaths) && unitBaths >= wantedBaths) {
+			highlights.push({ icon: '🚿', text: `${unitBaths} bath${unitBaths > 1 ? 's' : ''}`, type: 'baths' });
+		}
+	}
+
+	// Pet friendly match
+	if ((prefs.petFriendly || prefs.pets) && property.pet_friendly) {
+		highlights.push({ icon: '🐾', text: 'Pet friendly', type: 'pets' });
+	}
+
+	// Location/Area match
+	const wantedArea = prefs.areaOfTown || prefs.area_of_town || prefs.neighborhood;
+	const propCity = property.city || '';
+	const propNeighborhood = property.neighborhood || '';
+	if (wantedArea && (propCity.toLowerCase().includes(wantedArea.toLowerCase()) ||
+		propNeighborhood.toLowerCase().includes(wantedArea.toLowerCase()) ||
+		wantedArea.toLowerCase().includes(propCity.toLowerCase()))) {
+		highlights.push({ icon: '📍', text: `${wantedArea} area`, type: 'location' });
+	}
+
+	// Move-in date match
+	if (prefs.moveInDate || prefs.move_in_date) {
+		const wantedDate = new Date(prefs.moveInDate || prefs.move_in_date);
+		const availDate = unit.availableDate ? new Date(unit.availableDate) : new Date();
+		if (availDate <= wantedDate) {
+			highlights.push({ icon: '📅', text: 'Available in time', type: 'movein' });
+		}
+	}
+
+	// Amenity matches - check if property has amenities customer wants
+	const propAmenities = (property.amenities || []).map(a => a.toLowerCase());
+	const wantedAmenities = prefs.amenities || [];
+
+	// Common amenity checks
+	if (propAmenities.includes('pool') || propAmenities.some(a => a.includes('pool'))) {
+		highlights.push({ icon: '🏊', text: 'Pool', type: 'amenity' });
+	}
+	if (propAmenities.includes('gym') || propAmenities.some(a => a.includes('gym') || a.includes('fitness'))) {
+		highlights.push({ icon: '💪', text: 'Gym', type: 'amenity' });
+	}
+	if (propAmenities.some(a => a.includes('laundry') || a.includes('w/d') || a.includes('washer'))) {
+		highlights.push({ icon: '🧺', text: 'In-unit W/D', type: 'amenity' });
+	}
+	if (propAmenities.some(a => a.includes('parking') || a.includes('garage'))) {
+		highlights.push({ icon: '🚗', text: 'Parking', type: 'amenity' });
+	}
+	if (propAmenities.some(a => a.includes('concierge'))) {
+		highlights.push({ icon: '🛎️', text: 'Concierge', type: 'amenity' });
+	}
+
+	// PUMI bonus
+	if (property.is_pumi) {
+		highlights.push({ icon: '⭐', text: 'Premium partner', type: 'pumi' });
+	}
+
+	// Limit to most relevant highlights (budget, beds, and 3-4 others)
+	const priorityOrder = ['budget', 'beds', 'baths', 'location', 'movein', 'pets', 'amenity', 'pumi'];
+	highlights.sort((a, b) => priorityOrder.indexOf(a.type) - priorityOrder.indexOf(b.type));
+
+	return highlights.slice(0, 5); // Max 5 highlights
+}
+
+/**
+ * Render match highlights as pills
+ */
+function renderMatchHighlights(highlights) {
+	if (!highlights || highlights.length === 0) return '';
+
+	return `
+		<div class="match-highlights">
+			${highlights.map(h => `<span class="match-highlight-pill" title="${h.text}">${h.icon} ${h.text}</span>`).join('')}
+		</div>
+	`;
 }
 
 /**
