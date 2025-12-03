@@ -103,6 +103,9 @@ function createPropertyFromListings(address, listings) {
         // Photos
         photos: allPhotos,
 
+        // Property type
+        property_type: first.propertyType || 'Apartment',
+
         // RentCast tracking
         rentcast_id: first.id,
         data_source: 'rentcast',
@@ -208,10 +211,12 @@ export async function syncSanAntonio(onProgress = () => { }) {
         let hasMore = true;
 
         while (hasMore) {
+            // Filter for apartments/multi-family only (not single family homes)
             const response = await RentCastAPI.getListings({
                 city: 'San Antonio',
                 state: 'TX',
                 status: 'Active',
+                propertyType: 'Apartment',
                 limit: limit,
                 offset: offset
             });
