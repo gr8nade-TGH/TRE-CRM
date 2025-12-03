@@ -150,10 +150,15 @@ export function toggleViewMode(viewMode, renderListings) {
 		customerSelectorGroup.style.display = isCustomerView ? 'flex' : 'none';
 	}
 
-	// Hide/show commission filter
+	// Hide/show internal-only filters (Commission and PUMI are business priorities, not customer-relevant)
 	const commissionFilterGroup = document.getElementById('commissionFilterGroup');
 	if (commissionFilterGroup) {
 		commissionFilterGroup.style.display = isCustomerView ? 'none' : 'flex';
+	}
+
+	const pumiFilterGroup = document.getElementById('pumiFilterGroup');
+	if (pumiFilterGroup) {
+		pumiFilterGroup.style.display = isCustomerView ? 'none' : 'flex';
 	}
 
 	// Add/remove customer-view class to body for CSS targeting
