@@ -41,20 +41,25 @@ function generateFloorPlanName(beds, baths) {
 function normalizeAddressForGrouping(address) {
     if (!address) return '';
 
-    // Patterns to match and remove unit/apartment designators
-    // Examples: "Unit 123", "Apt 4B", "#201", "Suite 5", "Unit A3", etc.
-    const unitPatterns = [
-        /,?\s*(Unit|Apt|Apartment|Suite|Ste|#)\s*[A-Za-z0-9-]+/gi,
-        /,?\s*#\s*[A-Za-z0-9-]+/gi,
-    ];
-
+    // Multiple passes to catch all unit designators
     let normalized = address;
-    unitPatterns.forEach(pattern => {
-        normalized = normalized.replace(pattern, '');
-    });
 
-    // Clean up extra commas and spaces
-    normalized = normalized.replace(/,\s*,/g, ',').replace(/\s+/g, ' ').trim();
+    // Pattern 1: Unit/Apt/Suite followed by alphanumeric (with optional comma/space before)
+    // Matches: ", Unit B25", " Apt 4B", ", Suite 5", " Unit A3", "#201", etc.
+    normalized = normalized.replace(/[,\s]*(Unit|Apt|Apartment|Suite|Ste)\s*[#]?\s*[A-Za-z0-9-]+/gi, '');
+
+    // Pattern 2: Standalone # followed by unit number
+    normalized = normalized.replace(/[,\s]*#\s*[A-Za-z0-9-]+/gi, '');
+
+    // Pattern 3: Just a dash followed by unit number at end of street (e.g., "123 Main St-4B")
+    normalized = normalized.replace(/-[A-Za-z]?\d+[A-Za-z]?(?=,|\s|$)/g, '');
+
+    // Clean up extra commas, spaces, and leading/trailing punctuation
+    normalized = normalized
+        .replace(/,\s*,/g, ',')     // Double commas
+        .replace(/\s+/g, ' ')        // Multiple spaces
+        .replace(/,\s*$/, '')        // Trailing comma
+        .trim();
 
     return normalized;
 }
@@ -155,14 +160,15 @@ function createPropertyFromListings(normalizedAddress, listings) {
         lng: first.longitude,
 
         // Aggregated ranges from ALL units
+        // Note: baths_min/max are INTEGER columns, so floor/ceil the values
         rent_min: rents.length ? Math.min(...rents) : null,
         rent_max: rents.length ? Math.max(...rents) : null,
         rent_range_min: rents.length ? Math.min(...rents) : null,
         rent_range_max: rents.length ? Math.max(...rents) : null,
         beds_min: beds.length ? Math.min(...beds) : null,
         beds_max: beds.length ? Math.max(...beds) : null,
-        baths_min: baths.length ? Math.min(...baths) : null,
-        baths_max: baths.length ? Math.max(...baths) : null,
+        baths_min: baths.length ? Math.floor(Math.min(...baths)) : null,
+        baths_max: baths.length ? Math.ceil(Math.max(...baths)) : null,
         sqft_min: sqfts.length ? Math.min(...sqfts) : null,
         sqft_max: sqfts.length ? Math.max(...sqfts) : null,
 
