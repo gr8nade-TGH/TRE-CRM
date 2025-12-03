@@ -1,10 +1,11 @@
 /**
- * AI Property Enrichment Service
+ * AI Property Enrichment Service - PRO Edition 2025
  *
- * Smart multi-step enrichment:
- * 1. Google Search to find property name + official website
- * 2. Scrape property's own website (most accurate data)
- * 3. Use AI to extract structured information
+ * Best practices implementation:
+ * 1. Use Serper.dev API for Google searches (fast, reliable, structured)
+ * 2. Smart scraping: fetch first, Browserless for JS-heavy sites
+ * 3. Target property's own website (skip aggregators)
+ * 4. AI extraction with OpenAI GPT-4o-mini
  *
  * @module lib/ai-enrichment
  */
@@ -13,25 +14,25 @@ import puppeteer from 'puppeteer-core';
 
 // Configuration
 const OPENAI_API_BASE = 'https://api.openai.com/v1';
+const SERPER_API_URL = 'https://google.serper.dev/search';
 
-// User agent for simple fetch requests
-const FETCH_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
-
-// Rotating user agents for Browserless
+// User agents - 2024/2025 Chrome versions
 const USER_AGENTS = [
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 ];
 
-// Random viewport sizes
+// Realistic viewport sizes
 const VIEWPORTS = [
     { width: 1920, height: 1080 },
     { width: 1536, height: 864 },
-    { width: 1440, height: 900 }
+    { width: 1440, height: 900 },
+    { width: 1366, height: 768 }
 ];
 
-// All enrichable fields with their database column mappings
+// All enrichable fields
 const ENRICHABLE_FIELDS = {
     name: { dbColumn: 'name', priority: 1, description: 'Property/community name' },
     contact_phone: { dbColumn: 'contact_phone', priority: 2, description: 'Leasing office phone' },
@@ -42,11 +43,20 @@ const ENRICHABLE_FIELDS = {
     management_company: { dbColumn: 'management_company', priority: 7, description: 'Management company' }
 };
 
-// Domains to skip (aggregators that block/are unreliable)
+// Domains to skip (aggregators that block scrapers or have stale data)
 const SKIP_DOMAINS = [
     'apartments.com', 'zillow.com', 'realtor.com', 'trulia.com',
     'redfin.com', 'facebook.com', 'yelp.com', 'bbb.org',
-    'yellowpages.com', 'manta.com', 'mapquest.com'
+    'yellowpages.com', 'manta.com', 'mapquest.com', 'google.com',
+    'apartmentguide.com', 'rent.com', 'hotpads.com', 'zumper.com',
+    'padmapper.com', 'forrent.com', 'rentcafe.com'
+];
+
+// Preferred domains (property websites, management companies)
+const PREFERRED_DOMAINS = [
+    '.com', '.net', '.org', // Generic TLDs (likely official sites)
+    'greystar.com', 'lincolnapts.com', 'maac.com', 'nfrp.com',
+    'equityapartments.com', 'avalonbay.com', 'udr.com', 'camden.com'
 ];
 
 /**
@@ -56,13 +66,18 @@ const SKIP_DOMAINS = [
 export function checkConfiguration() {
     const openaiKey = process.env.OPENAI_API_KEY;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
+    const serperApiKey = process.env.SERPER_API_KEY;
 
     return {
         configured: !!(openaiKey && browserlessToken),
         openai: !!openaiKey,
         browserless: !!browserlessToken,
+        serper: !!serperApiKey,
         openaiPreview: openaiKey ? `${openaiKey.slice(0, 8)}...` : null,
-        browserlessPreview: browserlessToken ? `${browserlessToken.slice(0, 8)}...` : null
+        browserlessPreview: browserlessToken ? `${browserlessToken.slice(0, 8)}...` : null,
+        serperPreview: serperApiKey ? `${serperApiKey.slice(0, 8)}...` : null,
+        // Serper is optional but recommended for reliability
+        recommendation: !serperApiKey ? 'Add SERPER_API_KEY for faster, more reliable Google searches' : null
     };
 }
 
@@ -81,6 +96,48 @@ function randomDelay(min = 500, max = 2000) {
 }
 
 /**
+ * Search Google using Serper.dev API (fast, reliable, structured results)
+ * @param {string} query - Search query
+ * @param {string} serperApiKey - Serper API key
+ * @returns {Promise<Object>} Search results with organic links
+ */
+async function serperSearch(query, serperApiKey) {
+    console.log(`[AI Enrichment] Serper search: "${query}"`);
+    try {
+        const response = await fetch(SERPER_API_URL, {
+            method: 'POST',
+            headers: {
+                'X-API-KEY': serperApiKey,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                q: query,
+                num: 10,
+                gl: 'us',
+                hl: 'en'
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Serper API error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`[AI Enrichment] Serper returned ${data.organic?.length || 0} results`);
+
+        return {
+            success: true,
+            organic: data.organic || [],
+            knowledgeGraph: data.knowledgeGraph || null,
+            answerBox: data.answerBox || null
+        };
+    } catch (error) {
+        console.log(`[AI Enrichment] Serper search failed: ${error.message}`);
+        return { success: false, error: error.message, organic: [] };
+    }
+}
+
+/**
  * Simple fetch-based scrape for property websites (fast, no browser needed)
  * @param {string} url - URL to scrape
  * @returns {Promise<Object>} Page content
@@ -93,9 +150,12 @@ async function simpleFetch(url) {
 
         const response = await fetch(url, {
             headers: {
-                'User-Agent': FETCH_USER_AGENT,
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9'
+                'User-Agent': randomChoice(USER_AGENTS),
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.9',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache'
             },
             signal: controller.signal
         });
@@ -109,20 +169,28 @@ async function simpleFetch(url) {
         const textContent = html
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '') // Remove scripts
             .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')   // Remove styles
+            .replace(/<noscript[^>]*>[\s\S]*?<\/noscript>/gi, '') // Remove noscript
             .replace(/<[^>]+>/g, ' ')                          // Remove HTML tags
+            .replace(/&nbsp;/g, ' ')                           // Replace nbsp
             .replace(/\s+/g, ' ')                              // Normalize whitespace
             .trim()
-            .slice(0, 15000);
+            .slice(0, 20000);
 
         // Extract title
         const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
         const title = titleMatch ? titleMatch[1].trim() : '';
 
+        // Extract meta description
+        const descMatch = html.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']+)["']/i);
+        const description = descMatch ? descMatch[1].trim() : '';
+
         return {
             success: true,
             url,
             title,
+            description,
             content: textContent,
+            contentLength: textContent.length,
             method: 'fetch',
             scrapedAt: new Date().toISOString()
         };
@@ -134,6 +202,7 @@ async function simpleFetch(url) {
 
 /**
  * Scrape using Browserless.io (for JS-heavy sites)
+ * Uses stealth mode, blocks unnecessary resources, randomizes fingerprint
  * @param {string} url - URL to scrape
  * @param {string} browserlessToken - Browserless API token
  * @returns {Promise<Object>} Page content and metadata
@@ -146,6 +215,7 @@ async function browserlessScrape(url, browserlessToken) {
     const viewport = randomChoice(VIEWPORTS);
 
     try {
+        // Use stealth mode and block ads via Browserless params
         const browserWSEndpoint = `wss://chrome.browserless.io?token=${browserlessToken}&stealth&blockAds`;
         browser = await puppeteer.connect({ browserWSEndpoint });
 
@@ -154,34 +224,67 @@ async function browserlessScrape(url, browserlessToken) {
         await page.setUserAgent(userAgent);
         await page.setExtraHTTPHeaders({
             'Accept-Language': 'en-US,en;q=0.9',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+            'Cache-Control': 'no-cache'
         });
 
-        // Stealth settings
+        // Block unnecessary resources (images, fonts, stylesheets) for faster loading
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            const resourceType = request.resourceType();
+            const blockedTypes = ['image', 'stylesheet', 'font', 'media'];
+            if (blockedTypes.includes(resourceType)) {
+                request.abort();
+            } else {
+                request.continue();
+            }
+        });
+
+        // Enhanced stealth settings
         await page.evaluateOnNewDocument(() => {
+            // Hide webdriver
             Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+            // Fake plugins
             Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+            // Fake chrome runtime
             window.chrome = { runtime: {} };
+            // Override permissions query
+            const originalQuery = window.navigator.permissions.query;
+            window.navigator.permissions.query = (parameters) =>
+                parameters.name === 'notifications'
+                    ? Promise.resolve({ state: Notification.permission })
+                    : originalQuery(parameters);
         });
 
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
 
-        // Wait for content to load (use setTimeout instead of deprecated waitForTimeout)
+        // Random delay to appear human
         await new Promise(r => setTimeout(r, randomDelay(1500, 3000)));
 
+        // Extract content
         const content = await page.evaluate(() => {
-            document.querySelectorAll('script, style, nav, footer, header').forEach(el => el.remove());
-            const main = document.querySelector('main, [role="main"], .content, article') || document.body;
-            return main.innerText.slice(0, 15000);
+            // Remove non-content elements
+            document.querySelectorAll('script, style, nav, footer, header, aside, [role="banner"], [role="navigation"]').forEach(el => el.remove());
+            // Find main content area
+            const main = document.querySelector('main, [role="main"], .content, article, .main-content') || document.body;
+            return main.innerText.slice(0, 20000);
         });
 
         const title = await page.title();
+
+        // Try to get meta description
+        const description = await page.evaluate(() => {
+            const meta = document.querySelector('meta[name="description"]');
+            return meta ? meta.getAttribute('content') : '';
+        });
 
         return {
             success: true,
             url,
             title,
+            description,
             content,
+            contentLength: content.length,
             method: 'browserless',
             scrapedAt: new Date().toISOString()
         };
@@ -316,20 +419,82 @@ function analyzePropertyData(property) {
 }
 
 /**
- * Use AI to extract property name and website from Google search results
- * @param {string} content - Scraped Google search results
+ * Find property name and website from Serper search results
+ * Uses structured data from Serper API (no scraping needed)
+ * @param {Array} organicResults - Serper organic search results
+ * @param {Object} knowledgeGraph - Serper knowledge graph data
+ * @param {string} address - Property address for matching
+ * @returns {Object} Property name and website URL
+ */
+function findPropertyFromSerperResults(organicResults, knowledgeGraph, address) {
+    let propertyName = null;
+    let websiteUrl = null;
+    let confidence = 0;
+
+    // Check knowledge graph first (most reliable)
+    if (knowledgeGraph) {
+        if (knowledgeGraph.title && !knowledgeGraph.title.toLowerCase().includes('apartments.com')) {
+            propertyName = knowledgeGraph.title;
+            confidence = 0.95;
+        }
+        if (knowledgeGraph.website) {
+            const isSkip = SKIP_DOMAINS.some(d => knowledgeGraph.website.includes(d));
+            if (!isSkip) {
+                websiteUrl = knowledgeGraph.website;
+            }
+        }
+    }
+
+    // Search organic results for property website
+    for (const result of organicResults || []) {
+        const link = result.link || '';
+        const title = result.title || '';
+
+        // Skip aggregator domains
+        const isSkip = SKIP_DOMAINS.some(d => link.includes(d));
+        if (isSkip) continue;
+
+        // Found a non-aggregator result
+        if (!websiteUrl) {
+            websiteUrl = link;
+        }
+
+        // Try to extract property name from title
+        if (!propertyName && title) {
+            // Clean up title (remove " | Apartments" etc)
+            const cleanTitle = title
+                .replace(/\s*[\|\-–]\s*(Apartments?|Homes?|Living|Leasing|Contact|Apply).*$/i, '')
+                .replace(/\s*[\|\-–]\s*[A-Z]{2}\s*$/i, '') // Remove state abbreviations
+                .trim();
+
+            if (cleanTitle && cleanTitle.length > 3 && cleanTitle.length < 60) {
+                propertyName = cleanTitle;
+                confidence = 0.85;
+            }
+        }
+
+        // If we have both, we're done
+        if (propertyName && websiteUrl) break;
+    }
+
+    return { property_name: propertyName, website_url: websiteUrl, confidence };
+}
+
+/**
+ * Use AI to extract property name and website from search content (fallback)
+ * @param {string} content - Scraped search results content
  * @param {string} address - Property address
  * @param {string} apiKey - OpenAI API key
  * @returns {Promise<Object>} Property name and website URL
  */
-async function extractPropertyFromGoogle(content, address, apiKey) {
-    const prompt = `From these Google search results, find the apartment complex at this address: "${address}"
+async function extractPropertyFromContent(content, address, apiKey) {
+    const prompt = `From this webpage content, find the apartment complex at: "${address}"
 
 Extract:
 1. The official property/apartment name (NOT the address)
 2. The property's own website URL (NOT aggregator sites like apartments.com, zillow, etc)
 
-Search results:
+Content:
 ${content.slice(0, 8000)}
 
 Respond with JSON only:
@@ -347,14 +512,14 @@ Respond with JSON only:
         );
         return result;
     } catch (error) {
-        console.error('[AI Enrichment] Google extraction error:', error.message);
+        console.error('[AI Enrichment] Content extraction error:', error.message);
         return { property_name: null, website_url: null, confidence: 0 };
     }
 }
 
 /**
- * Main enrichment function - smart multi-step approach
- * Step 1: Google search to find property name + official website
+ * Main enrichment function - PRO multi-step approach
+ * Step 1: Serper API for Google search (fast, reliable, structured)
  * Step 2: Scrape property's own website for accurate data
  * Step 3: AI extraction of structured information
  *
@@ -365,6 +530,7 @@ Respond with JSON only:
 export async function enrichProperty(property, options = {}) {
     const openaiKey = process.env.OPENAI_API_KEY;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
+    const serperApiKey = process.env.SERPER_API_KEY;
 
     if (!openaiKey || !browserlessToken) {
         throw new Error('AI enrichment not configured. Add OPENAI_API_KEY and BROWSERLESS_TOKEN to environment.');
@@ -376,7 +542,8 @@ export async function enrichProperty(property, options = {}) {
     const zip_code = property.zip_code || '';
     const fullAddress = `${address}, ${city}, ${state} ${zip_code}`;
 
-    console.log(`[AI Enrichment] Starting smart enrichment for: ${fullAddress}`);
+    console.log(`[AI Enrichment] Starting PRO enrichment for: ${fullAddress}`);
+    console.log(`[AI Enrichment] Serper API: ${serperApiKey ? 'configured' : 'not configured (will use fallback)'}`);
 
     const dataAnalysis = analyzePropertyData(property);
     console.log(`[AI Enrichment] Missing fields: ${dataAnalysis.missing.join(', ')}`);
@@ -393,32 +560,58 @@ export async function enrichProperty(property, options = {}) {
     };
 
     // ============================================================
-    // STEP 1: Google Search to find property name and website
+    // STEP 1: Search for property name and website
+    // Use Serper API if available (fast, reliable), otherwise scrape Google
     // ============================================================
-    console.log('[AI Enrichment] Step 1: Google search for property...');
+    console.log('[AI Enrichment] Step 1: Searching for property...');
 
-    const googleQuery = `${fullAddress} apartments leasing office`;
-    const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(googleQuery)}`;
+    const searchQuery = `${fullAddress} apartments leasing office`;
+    let searchExtract = { property_name: null, website_url: null, confidence: 0 };
 
-    const googleData = await scrapePage(googleUrl, browserlessToken);
-    results.sources_checked.push({ source: 'google', url: googleUrl, success: googleData.success });
+    if (serperApiKey) {
+        // Use Serper API (recommended - fast, structured, reliable)
+        console.log('[AI Enrichment] Using Serper API for search...');
+        const serperResults = await serperSearch(searchQuery, serperApiKey);
+        results.sources_checked.push({
+            source: 'serper_api',
+            query: searchQuery,
+            success: serperResults.success,
+            resultsCount: serperResults.organic?.length || 0
+        });
 
-    if (!googleData.success) {
-        results.errors.push(`Google search failed: ${googleData.error}`);
-        results.completed_at = new Date().toISOString();
-        return results;
+        if (serperResults.success) {
+            searchExtract = findPropertyFromSerperResults(
+                serperResults.organic,
+                serperResults.knowledgeGraph,
+                fullAddress
+            );
+            console.log(`[AI Enrichment] Serper found: ${searchExtract.property_name}, website: ${searchExtract.website_url}`);
+        } else {
+            results.errors.push(`Serper search failed: ${serperResults.error}`);
+        }
+    } else {
+        // Fallback: Scrape Google directly (slower, less reliable)
+        console.log('[AI Enrichment] Serper not configured, falling back to Google scrape...');
+        const googleUrl = `https://www.google.com/search?q=${encodeURIComponent(searchQuery)}`;
+        const googleData = await scrapePage(googleUrl, browserlessToken);
+        results.sources_checked.push({ source: 'google_scrape', url: googleUrl, success: googleData.success });
+
+        if (googleData.success) {
+            searchExtract = await extractPropertyFromContent(googleData.content, fullAddress, openaiKey);
+            console.log(`[AI Enrichment] Google scrape found: ${searchExtract.property_name}, website: ${searchExtract.website_url}`);
+        } else {
+            results.errors.push(`Google search failed: ${googleData.error}`);
+            results.completed_at = new Date().toISOString();
+            return results;
+        }
     }
 
-    // Use AI to extract property name and website from Google results
-    const googleExtract = await extractPropertyFromGoogle(googleData.content, fullAddress, openaiKey);
-    console.log(`[AI Enrichment] Found property: ${googleExtract.property_name}, website: ${googleExtract.website_url}`);
-
     // Save property name suggestion if found
-    if (googleExtract.property_name && dataAnalysis.missing.includes('name')) {
+    if (searchExtract.property_name && dataAnalysis.missing.includes('name')) {
         results.suggestions.name = {
-            value: googleExtract.property_name,
-            confidence: googleExtract.confidence || 0.8,
-            source: 'google',
+            value: searchExtract.property_name,
+            confidence: searchExtract.confidence || 0.8,
+            source: serperApiKey ? 'serper_api' : 'google',
             reason: 'Found via Google search'
         };
     }
@@ -428,30 +621,30 @@ export async function enrichProperty(property, options = {}) {
     // ============================================================
     let propertyWebsiteData = null;
 
-    if (googleExtract.website_url) {
-        console.log(`[AI Enrichment] Step 2: Scraping property website: ${googleExtract.website_url}`);
+    if (searchExtract.website_url) {
+        console.log(`[AI Enrichment] Step 2: Scraping property website: ${searchExtract.website_url}`);
 
         // Check if it's a skip domain
-        const isSkipDomain = SKIP_DOMAINS.some(d => googleExtract.website_url.includes(d));
+        const isSkipDomain = SKIP_DOMAINS.some(d => searchExtract.website_url.includes(d));
 
         if (!isSkipDomain) {
-            propertyWebsiteData = await scrapePage(googleExtract.website_url, browserlessToken);
+            propertyWebsiteData = await scrapePage(searchExtract.website_url, browserlessToken);
             results.sources_checked.push({
                 source: 'property_website',
-                url: googleExtract.website_url,
+                url: searchExtract.website_url,
                 success: propertyWebsiteData.success
             });
 
             if (propertyWebsiteData.success && dataAnalysis.missing.includes('leasing_link')) {
                 results.suggestions.leasing_link = {
-                    value: googleExtract.website_url,
+                    value: searchExtract.website_url,
                     confidence: 0.95,
-                    source: 'google',
+                    source: 'property_website',
                     reason: 'Property official website'
                 };
             }
         } else {
-            console.log(`[AI Enrichment] Skipping aggregator domain: ${googleExtract.website_url}`);
+            console.log(`[AI Enrichment] Skipping aggregator domain: ${searchExtract.website_url}`);
         }
     }
 
@@ -460,13 +653,21 @@ export async function enrichProperty(property, options = {}) {
     // ============================================================
     console.log('[AI Enrichment] Step 3: AI extraction of property details...');
 
-    // Use property website content if available, otherwise use Google results
+    // Use property website content if available
     const contentToAnalyze = propertyWebsiteData?.success
         ? propertyWebsiteData.content
-        : googleData.content;
+        : null;
     const contentSource = propertyWebsiteData?.success
         ? 'property_website'
-        : 'google';
+        : 'search';
+
+    // If no content to analyze, we're done
+    if (!contentToAnalyze) {
+        console.log('[AI Enrichment] No property website content to analyze, skipping AI extraction');
+        results.completed_at = new Date().toISOString();
+        console.log(`[AI Enrichment] Complete. Found ${Object.keys(results.suggestions).length} suggestions.`);
+        return results;
+    }
 
     const missingFieldsList = dataAnalysis.missing
         .filter(f => f !== 'name' || !results.suggestions.name) // Skip name if already found
@@ -495,14 +696,14 @@ Respond with JSON:
 }`;
 
     const userPrompt = `Property: ${fullAddress}
-${googleExtract.property_name ? `Known Name: ${googleExtract.property_name}` : ''}
+${searchExtract.property_name ? `Known Name: ${searchExtract.property_name}` : ''}
 
 Find these MISSING fields:
 ${missingFieldsList || 'None'}
 
 Content from ${contentSource}:
 ---
-${contentToAnalyze?.slice(0, 10000) || 'No content'}
+${contentToAnalyze.slice(0, 12000)}
 ---
 
 Return JSON only.`;
