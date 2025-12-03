@@ -123,9 +123,12 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[AI Enrichment] Handler error:', error);
+        // Ensure we always return valid JSON
         return res.status(500).json({
+            success: false,
             error: 'Enrichment failed',
-            message: error.message
+            message: error.message || 'Unknown error occurred',
+            stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
         });
     }
 }

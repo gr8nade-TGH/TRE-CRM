@@ -70,7 +70,16 @@ export async function enrichProperty(property, onProgress = () => { }) {
 
         onProgress('AI analyzing results...', 80);
 
-        const result = await response.json();
+        // Get response text first to handle non-JSON errors
+        const responseText = await response.text();
+
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (parseError) {
+            console.error('[Property Enrichment] Response not JSON:', responseText.slice(0, 200));
+            throw new Error(`Server returned invalid response: ${responseText.slice(0, 100)}...`);
+        }
 
         if (!response.ok) {
             throw new Error(result.message || result.error || 'Enrichment failed');

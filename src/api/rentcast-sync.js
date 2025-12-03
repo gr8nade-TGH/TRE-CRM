@@ -314,23 +314,38 @@ export async function syncSanAntonio(onProgress = () => { }) {
         console.log(`[RentCast Sync] Fetched ${allListings.length} total listings`);
         onProgress(`Processing ${allListings.length} listings...`, 30, 100);
 
-        // Step 2: Delete existing test data (NOT manual entries)
-        onProgress('Cleaning up test data...', 35, 100);
+        // Step 2: Delete existing RentCast data (NOT manual entries)
+        onProgress('Cleaning up old RentCast data...', 35, 100);
         const supabase = SupabaseAPI.getSupabase();
 
-        // Delete test units
-        const { error: unitDeleteError } = await supabase
-            .from('units')
-            .delete()
-            .eq('is_test_data', true);
-        if (unitDeleteError) console.warn('Error deleting test units:', unitDeleteError);
+        // First, get all rentcast property IDs so we can delete their units and floor plans
+        const { data: rentcastProps } = await supabase
+            .from('properties')
+            .select('id')
+            .eq('data_source', 'rentcast');
 
-        // Delete test floor plans
-        const { error: fpDeleteError } = await supabase
-            .from('floor_plans')
-            .delete()
-            .eq('is_test_data', true);
-        if (fpDeleteError) console.warn('Error deleting test floor plans:', fpDeleteError);
+        const rentcastPropertyIds = rentcastProps?.map(p => p.id) || [];
+        console.log(`[RentCast Sync] Found ${rentcastPropertyIds.length} existing RentCast properties to clean up`);
+
+        // Delete units belonging to rentcast properties
+        if (rentcastPropertyIds.length > 0) {
+            const { error: unitDeleteError } = await supabase
+                .from('units')
+                .delete()
+                .in('property_id', rentcastPropertyIds);
+            if (unitDeleteError) console.warn('Error deleting rentcast units:', unitDeleteError);
+
+            // Delete floor plans belonging to rentcast properties
+            const { error: fpDeleteError } = await supabase
+                .from('floor_plans')
+                .delete()
+                .in('property_id', rentcastPropertyIds);
+            if (fpDeleteError) console.warn('Error deleting rentcast floor plans:', fpDeleteError);
+        }
+
+        // Also delete test data
+        await supabase.from('units').delete().eq('is_test_data', true);
+        await supabase.from('floor_plans').delete().eq('is_test_data', true);
 
         // Delete test properties AND rentcast properties (to refresh)
         const { data: deletedProps, error: propDeleteError } = await supabase
@@ -340,6 +355,7 @@ export async function syncSanAntonio(onProgress = () => { }) {
             .select('id');
         if (propDeleteError) console.warn('Error deleting properties:', propDeleteError);
         results.deletedTestData = deletedProps?.length || 0;
+        console.log(`[RentCast Sync] Deleted ${results.deletedTestData} old properties`);
 
         // Step 3: Group listings by address
         onProgress('Grouping by property...', 40, 100);
