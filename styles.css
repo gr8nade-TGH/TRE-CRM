@@ -9583,6 +9583,13 @@ input[type="radio"] {
 	gap: 4px;
 }
 
+.status-item.status-actions {
+	flex-direction: row;
+	align-items: center;
+	gap: 8px;
+	margin-left: auto;
+}
+
 .status-label {
 	font-size: 11px;
 	font-weight: 600;

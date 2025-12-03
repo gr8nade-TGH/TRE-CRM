@@ -183,7 +183,15 @@ export function route(deps) {
 		state.currentPage = 'rentcast-api';
 		show(document.getElementById('rentcastApiView'));
 		setRoleLabel('rentcast-api');
-		// RentCast API page is static reference - no special initialization needed
+		// Initialize RentCast API page
+		(async () => {
+			try {
+				const { initializeRentCastPage } = await import('../modules/admin/rentcast-page.js');
+				await initializeRentCastPage();
+			} catch (error) {
+				console.error('Error loading RentCast API page:', error);
+			}
+		})();
 	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
 		// Leads page with optional query parameters
 		state.currentPage = 'leads';
