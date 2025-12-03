@@ -555,11 +555,15 @@ export function closeBuildShowcase(options) {
 }
 
 export function getSelectedListings(options) {
-	const { mockProperties } = options;
+	// Use real listings from state if available, fallback to mockProperties
+	const properties = window.state?.listings || options?.mockProperties || [];
 
 	// Get selected unit checkboxes
 	const checkboxes = document.querySelectorAll('.unit-checkbox:checked');
 	const selectedUnitIds = Array.from(checkboxes).map(cb => cb.dataset.unitId);
+
+	console.log('🔍 getSelectedListings - Unit IDs:', selectedUnitIds);
+	console.log('🔍 getSelectedListings - Properties count:', properties.length);
 
 	// Find properties that have selected units
 	const selectedProperties = [];
@@ -567,7 +571,7 @@ export function getSelectedListings(options) {
 
 	for (const unitId of selectedUnitIds) {
 		// Find the property that contains this unit
-		const property = mockProperties.find(prop =>
+		const property = properties.find(prop =>
 			prop.units && prop.units.some(unit => unit.id === unitId)
 		);
 
@@ -577,6 +581,7 @@ export function getSelectedListings(options) {
 		}
 	}
 
+	console.log('🔍 getSelectedListings - Found properties:', selectedProperties.length);
 	return selectedProperties;
 }
 
