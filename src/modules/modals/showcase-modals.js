@@ -491,8 +491,17 @@ export function closeShowcase(options) {
 export async function openBuildShowcaseModal(options) {
 	const { state, mockLeads, getSelectedListings, toast, show } = options;
 
-	const selectedData = getSelectedListings();
-	if (selectedData.totalUnits === 0) {
+	let selectedData;
+	try {
+		selectedData = getSelectedListings();
+		console.log('🔍 Build Showcase - selectedData:', selectedData);
+	} catch (err) {
+		console.error('🔍 Build Showcase - Error calling getSelectedListings:', err);
+		toast('Error getting selected units', 'error');
+		return;
+	}
+
+	if (!selectedData || selectedData.totalUnits === 0) {
 		toast('Please select at least one unit', 'error');
 		return;
 	}
