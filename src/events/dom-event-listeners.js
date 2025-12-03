@@ -1750,53 +1750,157 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
-	// Customer Search Input - filter customer dropdown
+	// Customer Search Autocomplete
 	const customerSearchInput = document.getElementById('customerSearchInput');
+	const customerSearchResults = document.getElementById('customerSearchResults');
 	const customerSelectorEl = document.getElementById('customerSelector');
-	if (customerSearchInput && customerSelectorEl) {
-		// Store all options for filtering
-		let allCustomerOptions = [];
 
-		// Observer to capture options when they're loaded
-		const observer = new MutationObserver(() => {
-			allCustomerOptions = Array.from(customerSelectorEl.options).map(opt => ({
-				value: opt.value,
-				text: opt.textContent,
-				html: opt.innerHTML
-			}));
+	if (customerSearchInput && customerSearchResults) {
+		// Store all customers for search (loaded from hidden select)
+		let allCustomers = [];
+		let selectedCustomerId = null;
+
+		// Observer to capture customers when they're loaded into the hidden select
+		if (customerSelectorEl) {
+			const observer = new MutationObserver(() => {
+				allCustomers = Array.from(customerSelectorEl.options)
+					.filter(opt => opt.value) // Skip empty "Select Customer..." option
+					.map(opt => ({
+						id: opt.value,
+						name: opt.textContent,
+						email: opt.dataset?.email || ''
+					}));
+				console.log(`📋 Customer autocomplete loaded ${allCustomers.length} customers`);
+			});
+			observer.observe(customerSelectorEl, { childList: true });
+		}
+
+		// Show results on focus if there's text or show prompt
+		customerSearchInput.addEventListener('focus', () => {
+			const searchTerm = customerSearchInput.value.trim().toLowerCase();
+			if (searchTerm.length >= 1) {
+				showSearchResults(searchTerm);
+			} else if (!selectedCustomerId && allCustomers.length > 0) {
+				// Show hint to start typing
+				customerSearchResults.innerHTML = `
+					<div class="customer-search-no-results">
+						Type to search ${allCustomers.length} customers...
+					</div>
+				`;
+				customerSearchResults.classList.add('show');
+			}
 		});
-		observer.observe(customerSelectorEl, { childList: true });
 
+		// Search as user types
 		customerSearchInput.addEventListener('input', (e) => {
-			const searchTerm = e.target.value.toLowerCase().trim();
+			const searchTerm = e.target.value.trim().toLowerCase();
 
-			// Clear and rebuild options
-			customerSelectorEl.innerHTML = '';
+			// Clear selection if user is typing
+			if (selectedCustomerId && customerSearchInput.value !== customerSearchInput.dataset.selectedName) {
+				selectedCustomerId = null;
+				customerSearchInput.classList.remove('has-selection');
+				customerSelectorEl.value = '';
+			}
 
-			if (searchTerm === '') {
-				// Show all options
-				allCustomerOptions.forEach(opt => {
-					const option = document.createElement('option');
-					option.value = opt.value;
-					option.textContent = opt.text;
-					customerSelectorEl.appendChild(option);
-				});
+			if (searchTerm.length >= 1) {
+				showSearchResults(searchTerm);
 			} else {
-				// Add "Select Customer..." option first
-				const defaultOpt = document.createElement('option');
-				defaultOpt.value = '';
-				defaultOpt.textContent = 'Select Customer...';
-				customerSelectorEl.appendChild(defaultOpt);
+				customerSearchResults.classList.remove('show');
+			}
+		});
 
-				// Filter and add matching options
-				allCustomerOptions.forEach(opt => {
-					if (opt.value && opt.text.toLowerCase().includes(searchTerm)) {
-						const option = document.createElement('option');
-						option.value = opt.value;
-						option.textContent = opt.text;
-						customerSelectorEl.appendChild(option);
-					}
+		function showSearchResults(searchTerm) {
+			const matches = allCustomers.filter(c =>
+				c.name.toLowerCase().includes(searchTerm) ||
+				c.email.toLowerCase().includes(searchTerm)
+			);
+
+			if (matches.length === 0) {
+				customerSearchResults.innerHTML = `
+					<div class="customer-search-no-results">
+						No customers found for "${searchTerm}"
+					</div>
+				`;
+			} else {
+				customerSearchResults.innerHTML = matches.slice(0, 10).map(c => `
+					<div class="customer-search-result-item" data-id="${c.id}" data-name="${c.name}">
+						<div class="customer-result-name">${highlightMatch(c.name, searchTerm)}</div>
+						${c.email ? `<div class="customer-result-email">${highlightMatch(c.email, searchTerm)}</div>` : ''}
+					</div>
+				`).join('');
+
+				// Add click handlers to results
+				customerSearchResults.querySelectorAll('.customer-search-result-item').forEach(item => {
+					item.addEventListener('click', () => selectCustomer(item.dataset.id, item.dataset.name));
 				});
+			}
+			customerSearchResults.classList.add('show');
+		}
+
+		function highlightMatch(text, searchTerm) {
+			const regex = new RegExp(`(${searchTerm.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+			return text.replace(regex, '<strong>$1</strong>');
+		}
+
+		async function selectCustomer(id, name) {
+			selectedCustomerId = id;
+			customerSearchInput.value = name;
+			customerSearchInput.dataset.selectedName = name;
+			customerSearchInput.classList.add('has-selection');
+			customerSearchResults.classList.remove('show');
+
+			// Update hidden select for compatibility
+			customerSelectorEl.value = id;
+
+			// Remove skip active state
+			const skipBtn = document.getElementById('skipCustomerBtn');
+			if (skipBtn) skipBtn.classList.remove('active');
+
+			// Trigger customer selection
+			const { handleCustomerSelection } = await import('../modules/listings/customer-view.js');
+			await handleCustomerSelection(id, renderListings);
+		}
+
+		// Hide results when clicking outside
+		document.addEventListener('click', (e) => {
+			if (!e.target.closest('.customer-search-container')) {
+				customerSearchResults.classList.remove('show');
+			}
+		});
+
+		// Keyboard navigation
+		customerSearchInput.addEventListener('keydown', (e) => {
+			const items = customerSearchResults.querySelectorAll('.customer-search-result-item');
+			const currentIndex = Array.from(items).findIndex(item => item.classList.contains('selected'));
+
+			if (e.key === 'ArrowDown') {
+				e.preventDefault();
+				if (items.length > 0) {
+					items[currentIndex]?.classList.remove('selected');
+					const nextIndex = currentIndex < items.length - 1 ? currentIndex + 1 : 0;
+					items[nextIndex].classList.add('selected');
+					items[nextIndex].scrollIntoView({ block: 'nearest' });
+				}
+			} else if (e.key === 'ArrowUp') {
+				e.preventDefault();
+				if (items.length > 0) {
+					items[currentIndex]?.classList.remove('selected');
+					const prevIndex = currentIndex > 0 ? currentIndex - 1 : items.length - 1;
+					items[prevIndex].classList.add('selected');
+					items[prevIndex].scrollIntoView({ block: 'nearest' });
+				}
+			} else if (e.key === 'Enter') {
+				e.preventDefault();
+				const selectedItem = customerSearchResults.querySelector('.customer-search-result-item.selected');
+				if (selectedItem) {
+					selectCustomer(selectedItem.dataset.id, selectedItem.dataset.name);
+				} else if (items.length === 1) {
+					// Auto-select if only one result
+					selectCustomer(items[0].dataset.id, items[0].dataset.name);
+				}
+			} else if (e.key === 'Escape') {
+				customerSearchResults.classList.remove('show');
+				customerSearchInput.blur();
 			}
 		});
 	}
@@ -1805,16 +1909,24 @@ export function setupAllEventListeners(deps) {
 	const skipCustomerBtn = document.getElementById('skipCustomerBtn');
 	if (skipCustomerBtn) {
 		skipCustomerBtn.addEventListener('click', async () => {
-			// Clear customer selection
+			// Clear customer selection (hidden select)
 			const customerSelector = document.getElementById('customerSelector');
 			if (customerSelector) {
 				customerSelector.value = '';
 			}
 
-			// Clear customer search
-			const customerSearchInput = document.getElementById('customerSearchInput');
-			if (customerSearchInput) {
-				customerSearchInput.value = '';
+			// Clear customer search input and selection state
+			const searchInput = document.getElementById('customerSearchInput');
+			if (searchInput) {
+				searchInput.value = '';
+				searchInput.classList.remove('has-selection');
+				delete searchInput.dataset.selectedName;
+			}
+
+			// Hide search results
+			const searchResults = document.getElementById('customerSearchResults');
+			if (searchResults) {
+				searchResults.classList.remove('show');
 			}
 
 			// Import and clear customer selection
@@ -1832,16 +1944,6 @@ export function setupAllEventListeners(deps) {
 
 			toast('Browsing all listings', 'info');
 		});
-
-		// Remove active state when a customer is selected
-		const customerSelectorForSkip = document.getElementById('customerSelector');
-		if (customerSelectorForSkip) {
-			customerSelectorForSkip.addEventListener('change', () => {
-				if (customerSelectorForSkip.value) {
-					skipCustomerBtn.classList.remove('active');
-				}
-			});
-		}
 	}
 
 	// Filters Toggle Button
@@ -1945,15 +2047,6 @@ export function setupAllEventListeners(deps) {
 			// Hide bulk actions bar
 			const bulkActionsBar = document.getElementById('bulkActionsBar');
 			if (bulkActionsBar) bulkActionsBar.style.display = 'none';
-		});
-	}
-
-	// Customer Selector
-	const customerSelector = document.getElementById('customerSelector');
-	if (customerSelector) {
-		customerSelector.addEventListener('change', async (e) => {
-			const { handleCustomerSelection } = await import('../modules/listings/customer-view.js');
-			await handleCustomerSelection(e.target.value, renderListings);
 		});
 	}
 

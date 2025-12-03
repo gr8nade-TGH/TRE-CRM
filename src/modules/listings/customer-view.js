@@ -259,7 +259,8 @@ export async function loadCustomersForSelector(SupabaseAPI, currentState) {
 				leads.forEach(lead => {
 					const option = document.createElement('option');
 					option.value = lead.id;
-					option.textContent = `${lead.name}${lead.email ? ` (${lead.email})` : ''}`;
+					option.textContent = lead.name || 'Unnamed Lead';
+					option.dataset.email = lead.email || '';
 					option.dataset.leadData = JSON.stringify(lead);
 					customerSelector.appendChild(option);
 				});

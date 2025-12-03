@@ -383,14 +383,18 @@
 								style="display:none;"></button>
 						</div>
 
-						<!-- Customer Selector (shown only in Customer View) -->
+						<!-- Customer Search (shown only in Customer View) -->
 						<div class="filter-control customer-selector-control" id="customerSelectorGroup"
 							style="display: flex;">
-							<input type="text" id="customerSearchInput" class="customer-search-input"
-								placeholder="Search customers...">
-							<select id="customerSelector" class="customer-select">
-								<option value="">Select Customer...</option>
-							</select>
+							<div class="customer-search-container">
+								<input type="text" id="customerSearchInput" class="customer-search-input"
+									placeholder="🔍 Search customers..." autocomplete="off">
+								<div id="customerSearchResults" class="customer-search-results"></div>
+								<!-- Hidden select for compatibility -->
+								<select id="customerSelector" class="customer-select" style="display: none;">
+									<option value="">Select Customer...</option>
+								</select>
+							</div>
 							<button id="skipCustomerBtn" class="skip-customer-btn"
 								title="Browse without selecting a customer">Skip</button>
 							<!-- Missing Data Warning Icon -->

@@ -533,15 +533,22 @@ body {
 	flex-shrink: 0;
 }
 
+/* Customer Search Container - Autocomplete Style */
+.customer-search-container {
+	position: relative;
+	flex: 1;
+	min-width: 200px;
+	max-width: 280px;
+}
+
 .customer-search-input {
+	width: 100%;
 	padding: 8px 12px;
 	font-size: 13px;
 	color: #1e293b;
 	background: white;
 	border: 1px solid #e2e8f0;
 	border-radius: 6px;
-	min-width: 140px;
-	max-width: 160px;
 }
 
 .customer-search-input:focus {
@@ -552,6 +559,95 @@ body {
 
 .customer-search-input::placeholder {
 	color: #94a3b8;
+}
+
+.customer-search-input.has-selection {
+	background: #f0f9ff;
+	border-color: var(--brand);
+	font-weight: 500;
+}
+
+/* Search Results Dropdown */
+.customer-search-results {
+	position: absolute;
+	top: 100%;
+	left: 0;
+	right: 0;
+	background: white;
+	border: 1px solid #e2e8f0;
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	max-height: 280px;
+	overflow-y: auto;
+	z-index: 1000;
+	display: none;
+}
+
+.customer-search-results.show {
+	display: block;
+}
+
+.customer-search-result-item {
+	padding: 10px 12px;
+	cursor: pointer;
+	border-bottom: 1px solid #f1f5f9;
+	transition: background 0.15s ease;
+}
+
+.customer-search-result-item:last-child {
+	border-bottom: none;
+	border-radius: 0 0 8px 8px;
+}
+
+.customer-search-result-item:hover {
+	background: #f8fafc;
+}
+
+.customer-search-result-item.selected {
+	background: #eff6ff;
+}
+
+.customer-result-name {
+	font-weight: 500;
+	color: #1e293b;
+	font-size: 13px;
+}
+
+.customer-result-email {
+	font-size: 11px;
+	color: #64748b;
+	margin-top: 2px;
+}
+
+.customer-search-no-results {
+	padding: 12px;
+	text-align: center;
+	color: #64748b;
+	font-size: 13px;
+}
+
+.customer-search-clear {
+	position: absolute;
+	right: 8px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	color: #94a3b8;
+	cursor: pointer;
+	padding: 4px;
+	display: none;
+	font-size: 14px;
+}
+
+.customer-search-clear:hover {
+	color: #64748b;
+}
+
+.customer-search-input.has-selection+.customer-search-results+.customer-select+.customer-search-clear,
+.customer-search-container:has(.customer-search-input.has-selection) .customer-search-clear {
+	display: block;
 }
 
 .skip-customer-btn {
