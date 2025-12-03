@@ -1,0 +1,94 @@
+/**
+ * Serverless Function: AI Property Enrichment
+ * 
+ * Accepts a property's address and uses AI + web scraping to find:
+ * - Property name
+ * - Amenities
+ * - Contact information
+ * - Leasing URL
+ * - Management company
+ * 
+ * @endpoint POST /api/property/enrich
+ */
+
+import { enrichProperty, checkConfiguration } from '../lib/ai-enrichment.js';
+
+export const config = {
+    maxDuration: 60  // Allow up to 60 seconds for scraping + AI
+};
+
+export default async function handler(req, res) {
+    // CORS headers
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+    if (req.method === 'OPTIONS') {
+        return res.status(200).end();
+    }
+
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method not allowed' });
+    }
+
+    // Check configuration first
+    const configStatus = checkConfiguration();
+    if (!configStatus.configured) {
+        return res.status(503).json({
+            error: 'AI enrichment not configured',
+            missing: {
+                openai: !configStatus.openai,
+                browserless: !configStatus.browserless
+            },
+            message: 'Add OPENAI_API_KEY to Vercel environment variables'
+        });
+    }
+
+    try {
+        const { property_id, address, city, state, zip_code, lat, lng } = req.body;
+
+        // Validate required fields
+        if (!address) {
+            return res.status(400).json({ 
+                error: 'Missing required field: address' 
+            });
+        }
+
+        console.log(`[AI Enrichment] Request for property ${property_id}: ${address}`);
+
+        // Call enrichment service
+        const results = await enrichProperty({
+            id: property_id,
+            address: address,
+            city: city || 'San Antonio',
+            state: state || 'TX',
+            zip_code: zip_code || '',
+            coordinates: lat && lng ? { lat, lng } : null
+        });
+
+        // Check if we found anything useful
+        const suggestionCount = Object.keys(results.suggestions || {}).length;
+        
+        return res.status(200).json({
+            success: true,
+            property_id,
+            address: results.address,
+            suggestions: results.suggestions,
+            suggestion_count: suggestionCount,
+            sources_checked: results.sources_checked,
+            errors: results.errors,
+            has_screenshot: !!results.screenshot,
+            screenshot: results.screenshot || null,
+            processing_time_ms: new Date(results.completed_at) - new Date(results.started_at),
+            timestamp: new Date().toISOString()
+        });
+
+    } catch (error) {
+        console.error('[AI Enrichment] Handler error:', error);
+        return res.status(500).json({
+            error: 'Enrichment failed',
+            message: error.message
+        });
+    }
+}
+

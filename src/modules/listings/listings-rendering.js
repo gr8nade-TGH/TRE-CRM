@@ -276,6 +276,11 @@ export async function renderListings(options, autoSelectProperty = null) {
 			const hasUnits = prop.units && prop.units.length > 0;
 			const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
 
+			// Check if property needs AI enrichment (name is same as address or missing)
+			const needsEnrichment = prop.data_source === 'rentcast' &&
+				(!communityName || communityName === address || communityName.includes(address.split(',')[0])) &&
+				prop.enrichment_status !== 'enriched' && prop.enrichment_status !== 'reviewed';
+
 			// Get match score if in Customer View
 			const matchScore = state.customerView.isActive ? state.customerView.matchScores.get(prop.id) : null;
 			let matchScoreBadge = '';
@@ -295,6 +300,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
 					${!state.customerView.isActive && commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}
+					${needsEnrichment ? `<span class="needs-review-badge" data-property-id="${prop.id}" title="Click to find property name with AI"><span class="badge-icon">🔍</span> Needs Name</span>` : ''}
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
 				<div class="subtle mono">${address}</div>
@@ -376,6 +382,23 @@ export async function renderListings(options, autoSelectProperty = null) {
 					const propertyId = e.currentTarget.dataset.propertyId;
 					const propertyName = e.currentTarget.dataset.propertyName;
 					openActivityLogModal(propertyId, 'property', propertyName);
+				});
+			}
+
+			// Add "Needs Review" badge click handler for AI enrichment
+			const needsReviewBadge = tr.querySelector('.needs-review-badge');
+			if (needsReviewBadge) {
+				needsReviewBadge.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					console.log('=== NEEDS REVIEW BADGE CLICKED ===');
+					console.log('Property:', prop);
+					try {
+						const { openEnrichmentModal } = await import('../properties/enrichment-ui.js');
+						await openEnrichmentModal(prop);
+					} catch (error) {
+						console.error('Error opening enrichment modal:', error);
+						toast('Failed to open AI enrichment: ' + error.message, 'error');
+					}
 				});
 			}
 

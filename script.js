@@ -790,6 +790,13 @@ let api, renderLeads, renderSpecials;
 			}
 		});
 
+		// Global function for AI enrichment modal to trigger refresh
+		window.refreshListingsPage = () => {
+			if (state.currentPage === 'listings') {
+				renderListings();
+			}
+		};
+
 		// Create and inject all dependencies
 		const deps = createDependencies({
 			state, realAgents, realUsers, api, mockClosedLeads, SupabaseAPI,
