@@ -244,10 +244,72 @@ export async function markAsReviewed(propertyId) {
     return { success: true };
 }
 
+/**
+ * Deep search for missing fields using Browserless
+ * Scrapes property website subpages (contact, about, apply, etc.)
+ * @param {Object} property - Property with leasing_link
+ * @param {Array<string>} missingFields - Fields still missing
+ * @param {Function} onProgress - Progress callback
+ * @returns {Promise<Object>} Additional suggestions found
+ */
+export async function deepSearchProperty(property, missingFields, onProgress = () => { }) {
+    try {
+        onProgress('🔍 Starting deep search...', 10);
+
+        const leasingUrl = property.leasing_link || property.website;
+        if (!leasingUrl) {
+            throw new Error('No leasing URL available for deep search');
+        }
+
+        onProgress('📄 Scanning contact page...', 25);
+
+        const response = await fetch(`${BASE_URL}/deep-search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                property_id: property.id,
+                leasing_url: leasingUrl,
+                address: property.street_address || property.address,
+                city: property.city,
+                state: property.state,
+                missing_fields: missingFields
+            })
+        });
+
+        onProgress('🔎 Scanning about page...', 50);
+
+        // Simulate progress while waiting
+        await new Promise(r => setTimeout(r, 2000));
+        onProgress('📞 Looking for contact info...', 75);
+
+        const responseText = await response.text();
+        let result;
+        try {
+            result = JSON.parse(responseText);
+        } catch (e) {
+            throw new Error(`Invalid response: ${responseText.slice(0, 100)}`);
+        }
+
+        if (!response.ok) {
+            throw new Error(result.message || result.error || 'Deep search failed');
+        }
+
+        onProgress('✅ Deep search complete!', 100);
+        return result;
+
+    } catch (error) {
+        console.error('[Deep Search] Request failed:', error);
+        throw error;
+    }
+}
+
 export default {
     checkEnrichmentStatus,
     enrichProperty,
     applyEnrichmentSuggestions,
-    markAsReviewed
+    markAsReviewed,
+    deepSearchProperty
 };
 

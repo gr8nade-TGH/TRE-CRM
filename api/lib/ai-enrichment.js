@@ -1248,9 +1248,174 @@ Return ONLY the description text, no quotes or formatting.`;
     return results;
 }
 
+// ============================================================
+// DEEP SEARCH: Scrape subpages for missing contact info
+// ============================================================
+
+/**
+ * Common subpages to check for contact information
+ */
+const CONTACT_SUBPAGES = [
+    '/contact',
+    '/contact-us',
+    '/about',
+    '/about-us',
+    '/apply',
+    '/leasing',
+    '/schedule-tour',
+    '/schedule-a-tour',
+    '/team',
+    '/staff'
+];
+
+/**
+ * Deep search property website subpages for missing information
+ * @param {Object} options - Search options
+ * @returns {Promise<Object>} Found suggestions
+ */
+export async function deepSearchProperty(options) {
+    const { id, leasing_url, address, city, state, missing_fields } = options;
+
+    const openaiKey = process.env.OPENAI_API_KEY;
+    const browserlessToken = process.env.BROWSERLESS_TOKEN;
+
+    if (!openaiKey || !browserlessToken) {
+        throw new Error('Deep search not configured. Add OPENAI_API_KEY and BROWSERLESS_TOKEN.');
+    }
+
+    const results = {
+        started_at: new Date().toISOString(),
+        suggestions: {},
+        pages_scraped: [],
+        errors: []
+    };
+
+    console.log(`[Deep Search] Starting for ${leasing_url}`);
+    console.log(`[Deep Search] Looking for: ${missing_fields.join(', ')}`);
+
+    // Parse the base URL
+    let baseUrl;
+    try {
+        baseUrl = new URL(leasing_url);
+    } catch (e) {
+        results.errors.push(`Invalid URL: ${leasing_url}`);
+        results.completed_at = new Date().toISOString();
+        return results;
+    }
+
+    // Build list of URLs to scrape
+    const urlsToScrape = CONTACT_SUBPAGES.map(path => `${baseUrl.origin}${path}`);
+
+    // Scrape each subpage
+    for (const url of urlsToScrape) {
+        // Stop if we found all missing fields
+        const stillMissing = missing_fields.filter(f => !results.suggestions[f]);
+        if (stillMissing.length === 0) {
+            console.log('[Deep Search] All missing fields found, stopping search');
+            break;
+        }
+
+        console.log(`[Deep Search] Scraping: ${url}`);
+
+        try {
+            const pageData = await browserlessScrape(url, browserlessToken);
+
+            results.pages_scraped.push({
+                url,
+                success: pageData.success,
+                content_length: pageData.success ? pageData.content?.length : 0
+            });
+
+            if (pageData.success && pageData.content?.length > 200) {
+                // Extract contact info from this page
+                const extraction = await extractContactInfo(
+                    pageData.content,
+                    stillMissing,
+                    address,
+                    openaiKey
+                );
+
+                // Merge any found suggestions
+                if (extraction.extracted) {
+                    for (const [field, value] of Object.entries(extraction.extracted)) {
+                        if (isValidValue(value) && stillMissing.includes(field) && !results.suggestions[field]) {
+                            results.suggestions[field] = {
+                                value,
+                                confidence: 0.85,
+                                source: 'deep_search',
+                                reason: `Found on ${new URL(url).pathname}`
+                            };
+                        }
+                    }
+                }
+            }
+        } catch (error) {
+            console.error(`[Deep Search] Error scraping ${url}:`, error.message);
+            results.pages_scraped.push({ url, success: false, error: error.message });
+        }
+    }
+
+    results.completed_at = new Date().toISOString();
+    console.log(`[Deep Search] Complete. Found ${Object.keys(results.suggestions).length} additional fields.`);
+    return results;
+}
+
+/**
+ * Extract contact information from page content
+ */
+async function extractContactInfo(content, missingFields, address, openaiKey) {
+    const truncatedContent = content.slice(0, 12000);
+
+    const systemPrompt = `You are extracting contact information from a property website.
+Look for: ${missingFields.join(', ')}
+
+Return ONLY valid JSON:
+{
+  "extracted": {
+    "contact_phone": "(XXX) XXX-XXXX or null",
+    "contact_email": "email@domain.com or null",
+    "contact_name": "Person's name or null"
+  }
+}
+
+Rules:
+- Only extract actual contact info, not placeholder text
+- Phone must be a real phone number format
+- Email must be a valid email address
+- Contact name should be a real person's name (not "Leasing Office")
+- Return null if not found or uncertain`;
+
+    try {
+        const response = await fetch(`${OPENAI_API_BASE}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${openaiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: `Property: ${address}\n\nPage content:\n${truncatedContent}` }
+                ],
+                temperature: 0.1,
+                max_tokens: 500,
+                response_format: { type: "json_object" }
+            })
+        });
+
+        const data = await response.json();
+        return JSON.parse(data.choices?.[0]?.message?.content || '{}');
+    } catch (error) {
+        console.error('[Deep Search] AI extraction error:', error.message);
+        return { extracted: {} };
+    }
+}
+
 export default {
     checkConfiguration,
     enrichProperty,
-    analyzePropertyData
+    analyzePropertyData,
+    deepSearchProperty
 };
 

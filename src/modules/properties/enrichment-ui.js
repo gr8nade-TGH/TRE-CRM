@@ -7,13 +7,15 @@
  * @module properties/enrichment-ui
  */
 
-import { enrichProperty, applyEnrichmentSuggestions, markAsReviewed, checkEnrichmentStatus } from '../../api/property-enrichment.js';
+import { enrichProperty, applyEnrichmentSuggestions, markAsReviewed, checkEnrichmentStatus, deepSearchProperty } from '../../api/property-enrichment.js';
 import { toast } from '../../utils/helpers.js';
 import { getAppSetting } from '../../api/supabase-api.js';
 
 // State
 let currentProperty = null;
 let currentSuggestions = null;
+let currentMissingFields = null;
+let currentLeasingUrl = null;
 let enrichmentModal = null;
 let isProcessing = false;
 
@@ -224,6 +226,17 @@ function displaySuggestions(result) {
     const missingCount = analysis.missing?.length || 0;
     const foundCount = Object.keys(result.suggestions || {}).length;
 
+    // Track missing fields and leasing URL for potential deep search
+    const foundFields = Object.keys(result.suggestions || {});
+    currentMissingFields = (analysis.missing || []).filter(f => !foundFields.includes(f));
+    currentLeasingUrl = result.suggestions?.leasing_link?.value || currentProperty?.leasing_link;
+
+    // Check if deep search might help (contact fields are usually on subpages)
+    const contactFieldsMissing = currentMissingFields.filter(f =>
+        ['contact_email', 'contact_name', 'contact_phone'].includes(f)
+    );
+    const canDeepSearch = contactFieldsMissing.length > 0 && currentLeasingUrl;
+
     container.innerHTML = `
         <div class="enrichment-analysis-summary">
             <span class="analysis-stat">📊 Missing: ${missingCount} fields</span>
@@ -232,6 +245,24 @@ function displaySuggestions(result) {
         <h4>📋 New Data Found</h4>
         <p class="enrichment-hint">Select which suggestions to apply:</p>
     `;
+
+    // Show deep search option if contact fields are still missing
+    if (canDeepSearch) {
+        container.innerHTML += `
+            <div class="deep-search-section">
+                <div class="deep-search-prompt">
+                    <span class="deep-search-icon">🔍</span>
+                    <div class="deep-search-text">
+                        <strong>Still missing:</strong> ${contactFieldsMissing.map(f => getFieldLabel(f)).join(', ')}
+                        <p class="deep-search-hint">Try scanning the property website's contact page</p>
+                    </div>
+                    <button class="btn btn-secondary deep-search-btn" id="deepSearchBtn" onclick="window.startDeepSearch()">
+                        🌐 Deeper Search
+                    </button>
+                </div>
+            </div>
+        `;
+    }
 
     // Display suggestions for missing fields
     if (Object.keys(result.suggestions || {}).length > 0) {
@@ -469,12 +500,124 @@ export async function deleteProperty() {
     }
 }
 
+/**
+ * Start deep search for missing contact fields
+ */
+async function startDeepSearch() {
+    if (isProcessing) return;
+    if (!currentProperty || !currentLeasingUrl) {
+        toast('No leasing URL available for deep search', 'error');
+        return;
+    }
+
+    const deepSearchBtn = document.getElementById('deepSearchBtn');
+    const container = document.getElementById('enrichmentSuggestions');
+
+    try {
+        isProcessing = true;
+        deepSearchBtn.disabled = true;
+        deepSearchBtn.innerHTML = '⏳ Searching...';
+
+        // Add progress indicator
+        const progressHtml = `
+            <div id="deepSearchProgress" class="deep-search-progress">
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="deepSearchProgressBar" style="width: 0%"></div>
+                </div>
+                <div class="progress-status" id="deepSearchStatus">Initializing...</div>
+            </div>
+        `;
+        deepSearchBtn.parentElement.querySelector('.deep-search-prompt').insertAdjacentHTML('afterend', progressHtml);
+
+        const result = await deepSearchProperty(
+            { ...currentProperty, leasing_link: currentLeasingUrl },
+            currentMissingFields,
+            (message, percent) => {
+                const bar = document.getElementById('deepSearchProgressBar');
+                const status = document.getElementById('deepSearchStatus');
+                if (bar) bar.style.width = `${percent}%`;
+                if (status) status.textContent = message;
+            }
+        );
+
+        // Remove progress bar
+        const progressEl = document.getElementById('deepSearchProgress');
+        if (progressEl) progressEl.remove();
+
+        // Process results
+        if (result.suggestions && Object.keys(result.suggestions).length > 0) {
+            toast(`🎉 Found ${Object.keys(result.suggestions).length} additional fields!`, 'success');
+
+            // Merge new suggestions into current suggestions
+            for (const [field, suggestion] of Object.entries(result.suggestions)) {
+                currentSuggestions[field] = suggestion;
+            }
+
+            // Add new suggestions to the UI
+            for (const [field, suggestion] of Object.entries(result.suggestions)) {
+                const fieldLabel = getFieldLabel(field);
+                const suggestionHtml = `
+                    <div class="enrichment-suggestion-item deep-search-result">
+                        <label class="enrichment-checkbox-label">
+                            <input type="checkbox"
+                                   class="enrichment-checkbox"
+                                   data-field="${field}"
+                                   data-type="suggestion"
+                                   checked
+                                   onchange="window.updateEnrichmentApplyBtn()">
+                            <span class="enrichment-field-name">${fieldLabel}</span>
+                            <span class="deep-search-badge">🌐 Deep Search</span>
+                        </label>
+                        <div class="enrichment-suggestion-value">${suggestion.value}</div>
+                        <div class="enrichment-confidence high">
+                            ${Math.round(suggestion.confidence * 100)}% confidence
+                            <span class="enrichment-source">via ${suggestion.source}</span>
+                        </div>
+                        ${suggestion.reason ? `<div class="enrichment-reason">${suggestion.reason}</div>` : ''}
+                    </div>
+                `;
+
+                // Insert after the deep search section
+                const deepSearchSection = container.querySelector('.deep-search-section');
+                if (deepSearchSection) {
+                    deepSearchSection.insertAdjacentHTML('afterend', suggestionHtml);
+                }
+            }
+
+            // Hide the deep search button
+            const deepSearchSection = container.querySelector('.deep-search-section');
+            if (deepSearchSection) {
+                deepSearchSection.innerHTML = `
+                    <div class="deep-search-complete">
+                        ✅ Deep search found ${Object.keys(result.suggestions).length} additional fields
+                    </div>
+                `;
+            }
+
+            updateApplyButton();
+        } else {
+            toast('No additional data found on property website', 'info');
+            deepSearchBtn.innerHTML = '❌ No Results';
+            deepSearchBtn.disabled = true;
+        }
+
+    } catch (error) {
+        console.error('[Deep Search] Error:', error);
+        toast(`Deep search failed: ${error.message}`, 'error');
+        deepSearchBtn.innerHTML = '🌐 Retry Search';
+        deepSearchBtn.disabled = false;
+    } finally {
+        isProcessing = false;
+    }
+}
+
 // Export global functions for onclick handlers
 window.closeEnrichmentModal = closeModal;
 window.applyEnrichmentChanges = applyChanges;
 window.updateEnrichmentApplyBtn = updateApplyButton;
 window.openPropertyEnrichment = openEnrichmentModal;
 window.deleteEnrichmentProperty = deleteProperty;
+window.startDeepSearch = startDeepSearch;
 
 export default {
     initEnrichmentUI,
