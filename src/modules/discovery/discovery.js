@@ -240,79 +240,73 @@ async function runAutoEnrichment() {
     document.getElementById('discoveryStatus').textContent = 'Enriching...';
 
     try {
-        // Get all pending properties
-        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-        const supabaseUrl = window.SUPABASE_URL || 'https://mevirooooypfjbsrmzrk.supabase.co';
-        const supabaseKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTkyNDcsImV4cCI6MjA2MjgzNTI0N30.deZKhstvNaTopcXBKnTKyBdO8sRFAM1FJck_Y5o4QbY';
-        const supabase = createClient(supabaseUrl, supabaseKey);
+        // First check how many pending properties
+        const checkResponse = await fetch(`${API_BASE_URL}/api/property/batch-enrich`);
+        const checkData = await checkResponse.json();
 
-        const { data: properties, error } = await supabase
-            .from('properties')
-            .select('id, name, street_address, city, state, leasing_link')
-            .eq('enrichment_status', 'pending')
-            .limit(50);
+        if (!checkData.configured) {
+            addLogEntry('error', '❌ Enrichment not configured - missing API keys on server');
+            return;
+        }
 
-        if (error) throw error;
-
-        if (!properties || properties.length === 0) {
+        if (checkData.pending === 0) {
             addLogEntry('info', '✅ No pending properties to enrich');
             return;
         }
 
-        addLogEntry('info', `Found ${properties.length} properties to enrich`);
+        addLogEntry('info', `Found ${checkData.pending} properties to enrich`);
 
-        let enriched = 0;
-        let failed = 0;
+        let totalEnriched = 0;
+        let totalFailed = 0;
+        let remaining = checkData.pending;
 
-        for (const prop of properties) {
-            try {
-                addLogEntry('info', `🔄 Enriching: ${prop.name || prop.street_address}`);
+        // Process in batches of 5
+        while (remaining > 0) {
+            addLogEntry('info', `🔄 Processing batch... (${remaining} remaining)`);
 
-                const response = await fetch(`${API_BASE_URL}/api/property/enrich`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ property: prop })
-                });
+            const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ limit: 5 })
+            });
 
-                if (response.ok) {
-                    const result = await response.json();
-                    if (result.suggestions && Object.keys(result.suggestions).length > 0) {
-                        // Auto-apply suggestions
-                        const updates = {};
-                        for (const [field, suggestion] of Object.entries(result.suggestions)) {
-                            if (suggestion.confidence >= 0.7) {
-                                updates[field] = suggestion.value;
-                            }
-                        }
+            if (!response.ok) {
+                const error = await response.json();
+                addLogEntry('error', `❌ Batch error: ${error.message || error.error}`);
+                break;
+            }
 
-                        if (Object.keys(updates).length > 0) {
-                            updates.enrichment_status = 'enriched';
-                            updates.enriched_at = new Date().toISOString();
+            const result = await response.json();
 
-                            await supabase
-                                .from('properties')
-                                .update(updates)
-                                .eq('id', prop.id);
+            totalEnriched += result.enriched;
+            totalFailed += result.failed;
+            remaining = result.remaining;
 
-                            enriched++;
-                            addLogEntry('success', `✅ Enriched: ${prop.name || prop.street_address}`);
-                        }
-                    }
+            // Log individual results
+            for (const r of result.results || []) {
+                if (r.status === 'enriched') {
+                    addLogEntry('success', `✅ ${r.name}`);
+                } else if (r.status === 'error') {
+                    addLogEntry('error', `❌ ${r.name}: ${r.error}`);
                 } else {
-                    failed++;
-                    addLogEntry('error', `❌ Failed: ${prop.name || prop.street_address}`);
+                    addLogEntry('info', `ℹ️ ${r.name}: no data found`);
                 }
+            }
 
-                // Rate limiting
-                await new Promise(r => setTimeout(r, 2000));
+            // Update progress
+            const processed = checkData.pending - remaining;
+            const percent = Math.round((processed / checkData.pending) * 100);
+            document.getElementById('discoveryProgressBar').style.width = `${percent}%`;
+            document.getElementById('discoveryProgressText').textContent = `Enriching... ${processed}/${checkData.pending}`;
+            document.getElementById('discoveryProgressPercent').textContent = `${percent}%`;
 
-            } catch (err) {
-                failed++;
-                addLogEntry('error', `❌ Error enriching ${prop.name}: ${err.message}`);
+            // Small delay between batches
+            if (remaining > 0) {
+                await new Promise(r => setTimeout(r, 1000));
             }
         }
 
-        addLogEntry('info', `🎉 Enrichment complete! ${enriched} enriched, ${failed} failed`);
+        addLogEntry('info', `🎉 Enrichment complete! ${totalEnriched} enriched, ${totalFailed} failed`);
 
     } catch (error) {
         addLogEntry('error', `❌ Enrichment error: ${error.message}`);
