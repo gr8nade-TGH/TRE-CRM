@@ -1,17 +1,26 @@
 /**
  * Apartment Discovery Module
  * Scans Google Maps for apartment complexes using SerpAPI
+ *
+ * Strategy: Grid-based GPS search with pagination
+ * - 36 GPS grid points covering San Antonio metro
+ * - 3 search queries per point (apartments, apartment complex, apartment homes)
+ * - 3 pages per query (0, 20, 40)
+ * - Total: ~324 API calls for comprehensive coverage
  */
 
 // API Base URL - use relative path for Vercel deployment
 const API_BASE_URL = '';
 
 // State
-let areas = [];
+let gridPoints = [];
+let searchQueries = [];
 let isScanning = false;
 let shouldStop = false;
 let totalFound = 0;
-let areasScanned = 0;
+let totalInserted = 0;
+let gridPointsScanned = 0;
+let currentSearch = { gridIndex: 0, queryIndex: 0, page: 0 };
 
 /**
  * Initialize the discovery page
@@ -19,19 +28,21 @@ let areasScanned = 0;
 export async function initDiscovery() {
     console.log('[Discovery] Initializing...');
 
-    // Load areas from API
+    // Load grid configuration from API
     try {
         const response = await fetch(`${API_BASE_URL}/api/property/discover`);
         const data = await response.json();
 
         if (data.success) {
-            areas = data.areas;
-            renderAreasGrid();
-            updateAreasCount();
+            gridPoints = data.grid;
+            searchQueries = data.searchQueries || ['apartments'];
+            renderGridPointsDisplay();
+            updateStats();
+            addLogEntry('info', `Ready to scan ${gridPoints.length} grid points with ${searchQueries.length} queries each`);
         }
     } catch (error) {
-        console.error('[Discovery] Failed to load areas:', error);
-        addLogEntry('error', 'Failed to load areas: ' + error.message);
+        console.error('[Discovery] Failed to load grid:', error);
+        addLogEntry('error', 'Failed to load grid configuration: ' + error.message);
     }
 
     // Setup event listeners
@@ -60,26 +71,26 @@ function setupEventListeners() {
 }
 
 /**
- * Render the areas grid
+ * Render the grid points display
  */
-function renderAreasGrid() {
+function renderGridPointsDisplay() {
     const grid = document.getElementById('discoveryAreasGrid');
     if (!grid) return;
 
-    grid.innerHTML = areas.map(area => `
-        <div class="area-card" id="area-${area.index}" data-status="pending">
+    grid.innerHTML = gridPoints.map(point => `
+        <div class="area-card" id="grid-${point.index}" data-status="pending">
             <span class="area-icon">📍</span>
-            <span class="area-name">${area.name}</span>
+            <span class="area-name">${point.name}</span>
             <span class="area-status">Pending</span>
         </div>
     `).join('');
 }
 
 /**
- * Update area card status
+ * Update grid point card status
  */
-function updateAreaStatus(index, status, count = null) {
-    const card = document.getElementById(`area-${index}`);
+function updateGridPointStatus(index, status, count = null) {
+    const card = document.getElementById(`grid-${index}`);
     if (!card) return;
 
     card.dataset.status = status;
@@ -90,10 +101,11 @@ function updateAreaStatus(index, status, count = null) {
         case 'scanning':
             iconEl.textContent = '🔄';
             statusEl.textContent = 'Scanning...';
+            card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
             break;
         case 'complete':
             iconEl.textContent = '✅';
-            statusEl.textContent = count !== null ? `${count} found` : 'Done';
+            statusEl.textContent = count !== null ? `+${count} new` : 'Done';
             break;
         case 'error':
             iconEl.textContent = '❌';
@@ -132,15 +144,18 @@ function updateProgress(current, total, message) {
 }
 
 /**
- * Update counts
+ * Update stats display
  */
-function updateAreasCount() {
-    document.getElementById('discoveryAreasScanned').textContent = `${areasScanned} / ${areas.length}`;
-    document.getElementById('discoveryTotalFound').textContent = totalFound;
+function updateStats() {
+    const areasEl = document.getElementById('discoveryAreasScanned');
+    const foundEl = document.getElementById('discoveryTotalFound');
+
+    if (areasEl) areasEl.textContent = `${gridPointsScanned} / ${gridPoints.length}`;
+    if (foundEl) foundEl.textContent = `${totalInserted} new (${totalFound} total)`;
 }
 
 /**
- * Start full scan of all areas
+ * Start full scan of all grid points
  */
 async function startFullScan() {
     if (isScanning) return;
@@ -148,7 +163,9 @@ async function startFullScan() {
     isScanning = true;
     shouldStop = false;
     totalFound = 0;
-    areasScanned = 0;
+    totalInserted = 0;
+    gridPointsScanned = 0;
+    currentSearch = { gridIndex: 0, queryIndex: 0, page: 0 };
 
     // Update UI
     document.getElementById('startFullScanBtn').disabled = true;
@@ -157,64 +174,104 @@ async function startFullScan() {
     document.getElementById('discoveryProgressSection').style.display = 'block';
     document.getElementById('discoveryStatus').textContent = 'Scanning...';
 
-    addLogEntry('info', '🚀 Starting full scan of San Antonio...');
+    addLogEntry('info', '🚀 Starting comprehensive grid scan of San Antonio metro...');
+    addLogEntry('info', `📍 ${gridPoints.length} grid points × ${searchQueries.length} queries × 3 pages = ${gridPoints.length * searchQueries.length * 3} searches`);
 
-    // Reset all area cards
-    areas.forEach(a => updateAreaStatus(a.index, 'pending'));
+    // Reset all grid point cards
+    gridPoints.forEach(p => updateGridPointStatus(p.index, 'pending'));
 
-    // Scan each area
-    for (let i = 0; i < areas.length; i++) {
-        if (shouldStop) {
-            addLogEntry('warning', '⏹️ Scan stopped by user');
-            break;
+    let lastGridIndex = -1;
+    let gridPointInserted = 0;
+
+    // Continue scanning until complete or stopped
+    while (!shouldStop) {
+        const { gridIndex, queryIndex, page } = currentSearch;
+
+        // Update UI when moving to new grid point
+        if (gridIndex !== lastGridIndex) {
+            if (lastGridIndex >= 0) {
+                updateGridPointStatus(lastGridIndex, 'complete', gridPointInserted);
+                gridPointsScanned++;
+            }
+            lastGridIndex = gridIndex;
+            gridPointInserted = 0;
+            updateGridPointStatus(gridIndex, 'scanning');
         }
 
-        const area = areas[i];
-        updateAreaStatus(area.index, 'scanning');
-        updateProgress(i, areas.length, `Scanning ${area.name}...`);
+        const gridPoint = gridPoints[gridIndex];
+        const query = searchQueries[queryIndex];
+
+        updateProgress(
+            gridIndex * searchQueries.length * 3 + queryIndex * 3 + Math.floor(page / 20),
+            gridPoints.length * searchQueries.length * 3,
+            `${gridPoint?.name}: "${query}" (page ${page / 20 + 1})`
+        );
 
         try {
-            const result = await scanArea(area.index);
-            totalFound += result.inserted;
-            areasScanned++;
+            const result = await executeSearch(gridIndex, queryIndex, page);
 
-            updateAreaStatus(area.index, 'complete', result.apartments);
-            addLogEntry('success', `✅ ${area.name}: Found ${result.apartments} apartments, ${result.inserted} new`);
+            totalFound += result.found;
+            totalInserted += result.inserted;
+            gridPointInserted += result.inserted;
+
+            if (result.inserted > 0) {
+                addLogEntry('success', `✅ ${gridPoint.name}: +${result.inserted} new (${result.found} found, ${result.duplicates} dupes)`);
+            }
+
+            updateStats();
+
+            // Check if scan is complete
+            if (result.isComplete) {
+                updateGridPointStatus(gridIndex, 'complete', gridPointInserted);
+                gridPointsScanned++;
+                break;
+            }
+
+            // Move to next search
+            if (result.next) {
+                currentSearch = result.next;
+            } else {
+                break;
+            }
 
         } catch (error) {
-            updateAreaStatus(area.index, 'error');
-            addLogEntry('error', `❌ ${area.name}: ${error.message}`);
+            addLogEntry('error', `❌ ${gridPoint?.name}: ${error.message}`);
+            // Move to next grid point on error
+            if (gridIndex < gridPoints.length - 1) {
+                currentSearch = { gridIndex: gridIndex + 1, queryIndex: 0, page: 0 };
+            } else {
+                break;
+            }
         }
 
-        updateAreasCount();
-
-        // Small delay between requests
-        await new Promise(r => setTimeout(r, 500));
+        // Small delay between requests to avoid rate limiting
+        await new Promise(r => setTimeout(r, 300));
     }
 
     // Complete
     isScanning = false;
     document.getElementById('startFullScanBtn').disabled = false;
     document.getElementById('stopScanBtn').disabled = true;
-    document.getElementById('runEnrichmentBtn').disabled = totalFound === 0;
+    document.getElementById('runEnrichmentBtn').disabled = totalInserted === 0;
     document.getElementById('discoveryStatus').textContent = shouldStop ? 'Stopped' : 'Complete';
 
-    updateProgress(areas.length, areas.length, 'Scan complete!');
-    addLogEntry('info', `🎉 Scan complete! Found ${totalFound} new apartments.`);
+    updateProgress(gridPoints.length * searchQueries.length * 3, gridPoints.length * searchQueries.length * 3, 'Scan complete!');
+    addLogEntry('info', `🎉 Scan complete! Found ${totalFound} apartments, ${totalInserted} new unique properties added.`);
 }
 
 /**
- * Scan a single area
+ * Execute a single search at a grid point
  */
-async function scanArea(areaIndex) {
+async function executeSearch(gridIndex, queryIndex, page) {
     const response = await fetch(`${API_BASE_URL}/api/property/discover`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ areaIndex })
+        body: JSON.stringify({ gridIndex, queryIndex, page })
     });
 
     if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || `API error: ${response.status}`);
     }
 
     return await response.json();
