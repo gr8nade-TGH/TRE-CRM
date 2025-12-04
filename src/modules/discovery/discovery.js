@@ -3,7 +3,8 @@
  * Scans Google Maps for apartment complexes using SerpAPI
  */
 
-import { API_BASE_URL } from '../../api/config.js';
+// API Base URL - use relative path for Vercel deployment
+const API_BASE_URL = '';
 
 // State
 let areas = [];
