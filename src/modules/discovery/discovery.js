@@ -232,8 +232,94 @@ function stopScan() {
  * Run auto-enrichment on all discovered properties
  */
 async function runAutoEnrichment() {
-    addLogEntry('info', '🤖 Auto-enrichment feature coming soon!');
-    // TODO: Implement batch enrichment
+    addLogEntry('info', '🤖 Starting auto-enrichment of discovered properties...');
+
+    document.getElementById('runEnrichmentBtn').disabled = true;
+    document.getElementById('startFullScanBtn').disabled = true;
+    document.getElementById('discoveryStatus').textContent = 'Enriching...';
+
+    try {
+        // Get all pending properties
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const supabaseUrl = window.SUPABASE_URL || 'https://mevirooooypfjbsrmzrk.supabase.co';
+        const supabaseKey = window.SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcyNTkyNDcsImV4cCI6MjA2MjgzNTI0N30.deZKhstvNaTopcXBKnTKyBdO8sRFAM1FJck_Y5o4QbY';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+
+        const { data: properties, error } = await supabase
+            .from('properties')
+            .select('id, name, street_address, city, state, leasing_link')
+            .eq('enrichment_status', 'pending')
+            .limit(50);
+
+        if (error) throw error;
+
+        if (!properties || properties.length === 0) {
+            addLogEntry('info', '✅ No pending properties to enrich');
+            return;
+        }
+
+        addLogEntry('info', `Found ${properties.length} properties to enrich`);
+
+        let enriched = 0;
+        let failed = 0;
+
+        for (const prop of properties) {
+            try {
+                addLogEntry('info', `🔄 Enriching: ${prop.name || prop.street_address}`);
+
+                const response = await fetch(`${API_BASE_URL}/api/property/enrich`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ property: prop })
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.suggestions && Object.keys(result.suggestions).length > 0) {
+                        // Auto-apply suggestions
+                        const updates = {};
+                        for (const [field, suggestion] of Object.entries(result.suggestions)) {
+                            if (suggestion.confidence >= 0.7) {
+                                updates[field] = suggestion.value;
+                            }
+                        }
+
+                        if (Object.keys(updates).length > 0) {
+                            updates.enrichment_status = 'enriched';
+                            updates.enriched_at = new Date().toISOString();
+
+                            await supabase
+                                .from('properties')
+                                .update(updates)
+                                .eq('id', prop.id);
+
+                            enriched++;
+                            addLogEntry('success', `✅ Enriched: ${prop.name || prop.street_address}`);
+                        }
+                    }
+                } else {
+                    failed++;
+                    addLogEntry('error', `❌ Failed: ${prop.name || prop.street_address}`);
+                }
+
+                // Rate limiting
+                await new Promise(r => setTimeout(r, 2000));
+
+            } catch (err) {
+                failed++;
+                addLogEntry('error', `❌ Error enriching ${prop.name}: ${err.message}`);
+            }
+        }
+
+        addLogEntry('info', `🎉 Enrichment complete! ${enriched} enriched, ${failed} failed`);
+
+    } catch (error) {
+        addLogEntry('error', `❌ Enrichment error: ${error.message}`);
+    } finally {
+        document.getElementById('runEnrichmentBtn').disabled = false;
+        document.getElementById('startFullScanBtn').disabled = false;
+        document.getElementById('discoveryStatus').textContent = 'Ready';
+    }
 }
 
 // Export for global access
