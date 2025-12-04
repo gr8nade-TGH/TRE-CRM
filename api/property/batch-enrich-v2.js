@@ -258,6 +258,39 @@ export default async function handler(req, res) {
                     if (unitResult.videos?.length > 0) {
                         result.phases.videos = unitResult.videos.slice(0, 3);
                     }
+
+                    // ============ STORE DISCOVERED SPECIALS ============
+                    if (unitResult.specials && unitResult.specials.length > 0) {
+                        console.log(`[Specials] Found ${unitResult.specials.length} specials for ${prop.name}`);
+
+                        for (const special of unitResult.specials) {
+                            // Check if this special already exists (avoid duplicates)
+                            const { data: existing } = await supabase
+                                .from('property_specials')
+                                .select('id')
+                                .eq('property_id', prop.id)
+                                .ilike('special_text', `%${special.text.slice(0, 30)}%`)
+                                .single();
+
+                            if (!existing) {
+                                await supabase.from('property_specials').insert({
+                                    property_id: prop.id,
+                                    special_text: special.text,
+                                    source: unitResult.sources.includes('browserless') ? 'browserless' : 'serpapi',
+                                    discovered_at: new Date().toISOString(),
+                                    expires_at: special.expires ? new Date(special.expires).toISOString() : null,
+                                    is_active: true,
+                                    confidence: special.confidence || 0.8
+                                });
+                                console.log(`[Specials] ✅ Saved: "${special.text.slice(0, 50)}..."`);
+                            }
+                        }
+
+                        result.phases.specials = {
+                            found: unitResult.specials.length,
+                            specials: unitResult.specials
+                        };
+                    }
                 }
 
                 results.push(result);

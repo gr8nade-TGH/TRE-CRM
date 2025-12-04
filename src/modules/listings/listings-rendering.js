@@ -73,8 +73,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 	}
 
 	try {
-		// Fetch properties and specials in parallel
-		const [properties, specialsData] = await Promise.all([
+		// Fetch properties and specials (both manual and discovered) in parallel
+		const [properties, specialsData, discoveredSpecialsMap] = await Promise.all([
 			SupabaseAPI.getProperties({
 				search: state.search,
 				market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
@@ -82,7 +82,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 				maxPrice: state.listingsFilters.maxPrice,
 				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
 			}),
-			SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' })
+			SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' }),
+			SupabaseAPI.getAllSpecialsForListings()
 		]);
 
 		// Extract specials array from response
@@ -136,13 +137,26 @@ export async function renderListings(options, autoSelectProperty = null) {
 					}
 				}
 
-				// Find active specials for this property
+				// Find active specials for this property (merge manual + discovered)
 				const propName = prop.community_name || prop.name;
 				const propSpecials = specials.filter(s => s.property_name === propName);
-				const activeSpecials = propSpecials.filter(s => {
+				const manualActiveSpecials = propSpecials.filter(s => {
 					const expDate = new Date(s.valid_until || s.expiration_date);
 					return expDate > new Date();
-				});
+				}).map(s => ({
+					text: s.current_special || s.title,
+					source: 'manual',
+					expires: s.valid_until,
+					discoveredAt: s.created_at,
+					isActive: true
+				}));
+
+				// Get discovered specials by property ID (from property_specials table)
+				const discoveredSpecials = discoveredSpecialsMap.get(prop.id) || [];
+				const activeDiscovered = discoveredSpecials.filter(s => s.isActive);
+
+				// Merge both sources (manual first, then discovered)
+				const activeSpecials = [...manualActiveSpecials, ...activeDiscovered];
 
 				return {
 					...prop,
@@ -286,6 +300,25 @@ export async function renderListings(options, autoSelectProperty = null) {
 			const hasPhotos = prop.photos && prop.photos.length > 0;
 			const totalPhotos = prop.photos?.length || 0;
 
+			// Build specials tooltip with dates
+			let specialsTooltip = '';
+			if (hasActiveSpecials) {
+				const tooltipLines = prop.activeSpecials.slice(0, 3).map(s => {
+					const text = s.text?.slice(0, 60) || 'Special offer';
+					const dateInfo = s.expires
+						? `Expires: ${new Date(s.expires).toLocaleDateString()}`
+						: s.discoveredAt
+							? `Found: ${new Date(s.discoveredAt).toLocaleDateString()}`
+							: 'Status unknown';
+					const sourceIcon = s.source === 'manual' ? '✏️' : '🤖';
+					return `${sourceIcon} ${text}${text.length >= 60 ? '...' : ''} (${dateInfo})`;
+				});
+				if (prop.activeSpecials.length > 3) {
+					tooltipLines.push(`...and ${prop.activeSpecials.length - 3} more`);
+				}
+				specialsTooltip = tooltipLines.join('&#10;');
+			}
+
 			tr.innerHTML = `
 			<td>
 				${hasUnits ? `<span class="expand-arrow" data-property-id="${prop.id}" style="cursor: pointer; user-select: none;">▶</span>` : ''}
@@ -306,7 +339,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 				<div class="lead-name">
 					<strong>${communityName}</strong>
 					${matchScoreBadge}
-					${hasActiveSpecials ? `<span class="special-icon" onclick="window.viewPropertySpecialsFromListing('${prop.id}', '${communityName.replace(/'/g, "\\'")}', ${JSON.stringify(prop.activeSpecials).replace(/"/g, '&quot;')})" title="${prop.activeSpecials.length} active special(s)" style="cursor: pointer; margin-left: 6px; font-size: 1em;">🔥</span>` : ''}
+					${hasActiveSpecials ? `<span class="special-icon" onclick="window.viewPropertySpecialsFromListing('${prop.id}', '${communityName.replace(/'/g, "\\'")}', ${JSON.stringify(prop.activeSpecials).replace(/"/g, '&quot;')})" title="${specialsTooltip}" style="cursor: pointer; margin-left: 6px; font-size: 1em;">🔥</span>` : ''}
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
 					${!state.customerView.isActive && commission > 0 ? `<span class="commission-badge" style="background: #dbeafe; color: #1e40af; padding: 2px 6px; border-radius: 4px; font-size: 0.75em; margin-left: 6px; font-weight: 600;">Com: ${commission}%</span>` : ''}
 					${markedForReview ? '<span class="review-flag" title="Marked for Review">🚩</span>' : ''}

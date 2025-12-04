@@ -304,6 +304,7 @@ let api, renderLeads, renderSpecials;
 	}
 
 	// View property specials from listing table (specials data already loaded)
+	// Now handles both manual specials (old format) and discovered specials (new format)
 	window.viewPropertySpecialsFromListing = function (propertyId, propertyName, specialsData) {
 		// Show modal with specials
 		const modal = document.getElementById('listingSpecialsModal');
@@ -318,21 +319,36 @@ let api, renderLeads, renderSpecials;
 		propertyNameSpan.textContent = propertyName;
 		tbody.innerHTML = '';
 
-		// Render specials
+		// Render specials (support both old and new format)
 		specialsData.forEach(special => {
-			const expDate = new Date(special.valid_until || special.expiration_date);
-			const isExpired = expDate < new Date();
-			const specialTitle = special.title || special.current_special;
-			const specialDesc = special.description || special.commission_rate;
+			// New format: { text, source, expires, discoveredAt, isActive }
+			// Old format: { title, current_special, description, valid_until, expiration_date }
+			const specialText = special.text || special.title || special.current_special || 'Special offer';
+			const expiresDate = special.expires || special.valid_until || special.expiration_date;
+			const discoveredDate = special.discoveredAt || special.created_at;
+			const source = special.source || 'manual';
+			const isActive = special.isActive !== undefined ? special.isActive : (expiresDate ? new Date(expiresDate) > new Date() : true);
+
+			// Format dates
+			const expiresStr = expiresDate ? new Date(expiresDate).toLocaleDateString() : 'Unknown';
+			const discoveredStr = discoveredDate ? new Date(discoveredDate).toLocaleDateString() : 'Unknown';
+
+			// Source indicator
+			const sourceIcon = source === 'manual' ? '✏️ Manual' : source === 'serpapi' ? '🔍 Auto-found' : '🤖 Scraped';
 
 			const tr = document.createElement('tr');
 			tr.innerHTML = `
 				<td>
-					<strong>${specialTitle}</strong>
-					${isExpired ? '<span style="color: #ef4444; font-size: 0.85em; margin-left: 8px;">(Expired)</span>' : ''}
+					<strong>${specialText}</strong>
+					${!isActive ? '<span style="color: #ef4444; font-size: 0.85em; margin-left: 8px;">(Expired/Inactive)</span>' : '<span style="color: #10b981; font-size: 0.85em; margin-left: 8px;">✓ Active</span>'}
 				</td>
-				<td>${specialDesc}</td>
-				<td>${expDate.toLocaleDateString()}</td>
+				<td style="font-size: 0.85em; color: #6b7280;">
+					${sourceIcon}<br>
+					<small>Found: ${discoveredStr}</small>
+				</td>
+				<td style="font-size: 0.9em;">
+					${expiresDate ? (isActive ? `Expires: ${expiresStr}` : `Expired: ${expiresStr}`) : '<span style="color: #f59e0b;">⚠️ No expiry date</span>'}
+				</td>
 			`;
 			tbody.appendChild(tr);
 		});
