@@ -48,25 +48,8 @@ function createEnrichmentModal() {
                     <h3 id="enrichmentPropertyName">Loading...</h3>
                     <p id="enrichmentPropertyAddress" class="enrichment-address"></p>
                 </div>
-                
-                <div id="enrichmentProgress" class="enrichment-progress">
-                    <div class="enrichment-progress-bar">
-                        <div class="enrichment-progress-fill" id="enrichmentProgressFill"></div>
-                    </div>
-                    <p id="enrichmentProgressText" class="enrichment-progress-text">Initializing...</p>
-                </div>
-                
-                <div id="enrichmentResults" class="enrichment-results hidden">
-                    <div id="enrichmentSuggestions" class="enrichment-suggestions"></div>
-                    <div id="enrichmentScreenshot" class="enrichment-screenshot hidden">
-                        <details>
-                            <summary>📸 Source Screenshot</summary>
-                            <img id="enrichmentScreenshotImg" alt="Source page screenshot" />
-                        </details>
-                    </div>
-                </div>
 
-                <!-- Unit Search Section - shown after property enrichment -->
+                <!-- Unit Search Section - shown after property enrichment (at TOP) -->
                 <div id="unitSearchSection" class="unit-search-section hidden">
                     <div class="unit-search-header">
                         <h4>🏢 Unit Availability Search</h4>
@@ -84,6 +67,23 @@ function createEnrichmentModal() {
                         <p id="unitSearchProgressText" class="enrichment-progress-text">Searching...</p>
                     </div>
                     <div id="unitSearchResults" class="unit-search-results hidden"></div>
+                </div>
+
+                <div id="enrichmentProgress" class="enrichment-progress">
+                    <div class="enrichment-progress-bar">
+                        <div class="enrichment-progress-fill" id="enrichmentProgressFill"></div>
+                    </div>
+                    <p id="enrichmentProgressText" class="enrichment-progress-text">Initializing...</p>
+                </div>
+
+                <div id="enrichmentResults" class="enrichment-results hidden">
+                    <div id="enrichmentSuggestions" class="enrichment-suggestions"></div>
+                    <div id="enrichmentScreenshot" class="enrichment-screenshot hidden">
+                        <details>
+                            <summary>📸 Source Screenshot</summary>
+                            <img id="enrichmentScreenshotImg" alt="Source page screenshot" />
+                        </details>
+                    </div>
                 </div>
 
                 <div id="enrichmentError" class="enrichment-error hidden">

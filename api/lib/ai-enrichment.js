@@ -450,13 +450,14 @@ async function runTargetedSearches(property, serpApiKey) {
 /**
  * Simple fetch-based scrape for property websites (fast, no browser needed)
  * @param {string} url - URL to scrape
+ * @param {number} timeoutMs - Timeout in milliseconds (default 15000)
  * @returns {Promise<Object>} Page content
  */
-async function simpleFetch(url) {
-    console.log(`[AI Enrichment] Simple fetch: ${url}`);
+async function simpleFetch(url, timeoutMs = 15000) {
+    console.log(`[AI Enrichment] Simple fetch: ${url} (timeout: ${timeoutMs}ms)`);
     try {
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), 15000);
+        const timeout = setTimeout(() => controller.abort(), timeoutMs);
 
         const response = await fetch(url, {
             headers: {
@@ -515,10 +516,11 @@ async function simpleFetch(url) {
  * Uses stealth mode, blocks unnecessary resources, randomizes fingerprint
  * @param {string} url - URL to scrape
  * @param {string} browserlessToken - Browserless API token
+ * @param {number} timeout - Timeout in ms (default 30000)
  * @returns {Promise<Object>} Page content and metadata
  */
-async function browserlessScrape(url, browserlessToken) {
-    console.log(`[AI Enrichment] Browserless scrape: ${url}`);
+async function browserlessScrape(url, browserlessToken, timeout = 30000) {
+    console.log(`[AI Enrichment] Browserless scrape: ${url} (timeout: ${timeout}ms)`);
 
     let browser;
     const userAgent = randomChoice(USER_AGENTS);
@@ -566,10 +568,10 @@ async function browserlessScrape(url, browserlessToken) {
                     : originalQuery(parameters);
         });
 
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 });
+        await page.goto(url, { waitUntil: 'domcontentloaded', timeout });
 
-        // Random delay to appear human
-        await new Promise(r => setTimeout(r, randomDelay(1500, 3000)));
+        // Short delay to appear human (reduced for faster scraping)
+        await new Promise(r => setTimeout(r, randomDelay(500, 1000)));
 
         // Extract content
         const content = await page.evaluate(() => {
@@ -610,16 +612,17 @@ async function browserlessScrape(url, browserlessToken) {
  * Smart scrape - tries simple fetch first, falls back to Browserless
  * @param {string} url - URL to scrape
  * @param {string} browserlessToken - Browserless API token
+ * @param {number} timeout - Optional timeout in ms (default 30000)
  * @returns {Promise<Object>} Page content
  */
-async function scrapePage(url, browserlessToken) {
+async function scrapePage(url, browserlessToken, timeout = 30000) {
     // First try simple fetch (fast, cheap)
-    let result = await simpleFetch(url);
+    let result = await simpleFetch(url, timeout);
 
     // If content is too short or failed, try Browserless (handles JS rendering)
     if (!result.success || (result.content && result.content.length < 500)) {
         console.log(`[AI Enrichment] Falling back to Browserless for: ${url}`);
-        result = await browserlessScrape(url, browserlessToken);
+        result = await browserlessScrape(url, browserlessToken, timeout);
     }
 
     return result;
@@ -1839,30 +1842,34 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
         return results;
     }
 
-    // Common paths for floor plans and availability
+    // Priority paths for floor plans and availability (most common first)
+    // Only try top 4 paths to avoid timeout
     const unitPaths = [
         '/floor-plans',
         '/floorplans',
         '/apartments',
-        '/availability',
-        '/available-apartments',
-        '/units',
-        '/pricing',
-        '/rent',
-        '/floor-plans-pricing',
-        ''  // Also check main page
+        '/availability'
     ];
 
-    // Try each path until we find unit data
+    // Try paths until we find good content - STOP EARLY to avoid timeout
     let contentToAnalyze = '';
     let successfulUrl = null;
+    const MAX_PAGES = 2; // Only scrape max 2 pages to stay under 60s
+    let pagesScraped = 0;
 
     for (const path of unitPaths) {
+        if (pagesScraped >= MAX_PAGES && contentToAnalyze) {
+            console.log(`[Unit Search] Stopping after ${pagesScraped} pages (have content)`);
+            break;
+        }
+
         const fullUrl = path ? `${baseUrl.origin}${path}` : leasingUrl;
         console.log(`[Unit Search] Trying: ${fullUrl}`);
 
         try {
-            const pageData = await scrapePage(fullUrl, browserlessToken);
+            const pageData = await scrapePage(fullUrl, browserlessToken, 15000); // 15s timeout per page
+            pagesScraped++;
+
             results.sources_checked.push({
                 url: fullUrl,
                 success: pageData.success
@@ -1877,18 +1884,34 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
                     content.includes('sq ft') ||
                     content.includes('sqft') ||
                     content.includes('floor plan') ||
-                    content.includes('available') ||
                     content.includes('/month') ||
-                    content.includes('starting at');
+                    content.includes('starting at') ||
+                    content.includes('$ per month');
 
                 if (hasUnitData) {
-                    contentToAnalyze += `\n\n--- Content from ${fullUrl} ---\n${pageData.content}`;
+                    contentToAnalyze = `--- Content from ${fullUrl} ---\n${pageData.content}`;
                     successfulUrl = fullUrl;
                     console.log(`[Unit Search] Found unit data at: ${fullUrl}`);
+                    break; // Stop once we find good content
                 }
             }
         } catch (error) {
             console.log(`[Unit Search] Error scraping ${fullUrl}: ${error.message}`);
+            // Don't count failed pages against limit
+        }
+    }
+
+    // If no luck with subpages, try main page as fallback
+    if (!contentToAnalyze && pagesScraped < MAX_PAGES) {
+        console.log(`[Unit Search] Trying main page: ${leasingUrl}`);
+        try {
+            const pageData = await scrapePage(leasingUrl, browserlessToken, 15000);
+            if (pageData.success && pageData.content) {
+                contentToAnalyze = `--- Content from ${leasingUrl} ---\n${pageData.content}`;
+                successfulUrl = leasingUrl;
+            }
+        } catch (error) {
+            console.log(`[Unit Search] Error on main page: ${error.message}`);
         }
     }
 
