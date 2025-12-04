@@ -2093,45 +2093,52 @@ export async function getDiscoveredSpecials({ propertyIds = null, activeOnly = t
 export async function getAllSpecialsForListings() {
     const supabase = getSupabase();
 
-    // Fetch both types in parallel
-    const [manualSpecials, discoveredSpecials] = await Promise.all([
-        supabase.from('specials').select('*').eq('active', true),
-        supabase.from('property_specials').select('*').eq('is_active', true)
-    ]);
+    try {
+        // Fetch both types in parallel
+        const [manualSpecials, discoveredSpecials] = await Promise.all([
+            supabase.from('specials').select('*').eq('active', true),
+            supabase.from('property_specials').select('*').eq('is_active', true)
+        ]);
 
-    const specialsMap = new Map();
+        const specialsMap = new Map();
 
-    // Process manual specials (keyed by property_name)
-    for (const special of (manualSpecials.data || [])) {
-        const key = special.property_name;
-        if (!specialsMap.has(key)) specialsMap.set(key, []);
-        specialsMap.get(key).push({
-            id: special.id,
-            text: special.current_special || special.title,
-            source: 'manual',
-            expires: special.valid_until,
-            discoveredAt: special.created_at,
-            isActive: new Date(special.valid_until) > new Date(),
-            confidence: 1.0
-        });
+        // Process manual specials (keyed by property_name for backward compat)
+        for (const special of (manualSpecials.data || [])) {
+            const key = special.property_name;
+            if (!key) continue;
+            if (!specialsMap.has(key)) specialsMap.set(key, []);
+            specialsMap.get(key).push({
+                id: special.id,
+                text: special.current_special || special.title,
+                source: 'manual',
+                expires: special.valid_until,
+                discoveredAt: special.created_at,
+                isActive: special.valid_until ? new Date(special.valid_until) > new Date() : true,
+                confidence: 1.0
+            });
+        }
+
+        // Process discovered specials (keyed by property_id)
+        for (const special of (discoveredSpecials.data || [])) {
+            const key = special.property_id;
+            if (!key) continue;
+            if (!specialsMap.has(key)) specialsMap.set(key, []);
+            specialsMap.get(key).push({
+                id: special.id,
+                text: special.special_text,
+                source: special.source,
+                expires: special.expires_at,
+                discoveredAt: special.discovered_at,
+                isActive: special.is_active && (!special.expires_at || new Date(special.expires_at) > new Date()),
+                confidence: special.confidence
+            });
+        }
+
+        return specialsMap;
+    } catch (error) {
+        console.error('Error fetching specials for listings:', error);
+        return new Map(); // Return empty map on error to not break listings page
     }
-
-    // Process discovered specials (keyed by property_id)
-    for (const special of (discoveredSpecials.data || [])) {
-        const key = special.property_id;
-        if (!specialsMap.has(key)) specialsMap.set(key, []);
-        specialsMap.get(key).push({
-            id: special.id,
-            text: special.special_text,
-            source: special.source,
-            expires: special.expires_at,
-            discoveredAt: special.discovered_at,
-            isActive: special.is_active && (!special.expires_at || new Date(special.expires_at) > new Date()),
-            confidence: special.confidence
-        });
-    }
-
-    return specialsMap;
 }
 
 export async function updateSpecial(id, specialData) {

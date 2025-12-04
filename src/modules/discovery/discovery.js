@@ -19,6 +19,7 @@ let isScanning = false;
 let shouldStop = false;
 let totalFound = 0;
 let totalInserted = 0;
+let totalSpecialsFound = 0;
 let gridPointsScanned = 0;
 let currentSearch = { gridIndex: 0, queryIndex: 0, page: 0 };
 
@@ -149,9 +150,11 @@ function updateProgress(current, total, message) {
 function updateStats() {
     const areasEl = document.getElementById('discoveryAreasScanned');
     const foundEl = document.getElementById('discoveryTotalFound');
+    const specialsEl = document.getElementById('discoverySpecialsFound');
 
     if (areasEl) areasEl.textContent = `${gridPointsScanned} / ${gridPoints.length}`;
     if (foundEl) foundEl.textContent = `${totalInserted} new (${totalFound} total)`;
+    if (specialsEl) specialsEl.textContent = totalSpecialsFound;
 }
 
 /**
@@ -391,6 +394,12 @@ async function runEnrichmentPhase(phase, total) {
                 } else {
                     addLogEntry('info', `ℹ️ ${r.name}: no floor plans found`);
                     if (unitPhase?.videosFound) addLogEntry('info', `  (but found ${unitPhase.videosFound} videos, ${unitPhase.imagesFound} images)`);
+                }
+                // Show specials found
+                if (r.phases?.specials?.found > 0) {
+                    addLogEntry('success', `  🔥 ${r.phases.specials.found} specials found!`);
+                    totalSpecialsFound += r.phases.specials.found;
+                    updateStats();
                 }
             }
         }
