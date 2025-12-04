@@ -1364,77 +1364,22 @@ body {
 	border-spacing: 0;
 }
 
-/* Listings table specific styles */
-#listingsTable {
-	width: 100%;
-	/* Table should fit container width */
-	table-layout: fixed;
-	/* Fixed layout for better column control */
-}
-
-/* Optimize column widths for listings table - Updated for 4-column layout */
-/* Column 1: Expand arrow */
-#listingsTable th:nth-child(1),
-#listingsTable td:nth-child(1) {
-	width: 30px;
-	min-width: 30px;
-	max-width: 30px;
-	padding: 8px 4px !important;
-}
-
-/* Column 2: Photo thumbnail */
-#listingsTable th:nth-child(2),
-#listingsTable td:nth-child(2) {
-	width: 70px;
-	min-width: 70px;
-	max-width: 70px;
-	padding: 8px 4px !important;
-}
-
-/* Column 3: Listings (property name, address, details) - Flexible */
-#listingsTable th:nth-child(3),
-#listingsTable td:nth-child(3) {
-	width: 100%;
-	min-width: 0;
-	max-width: none;
-}
-
-/* Column 4: Rent Range - Compact but readable */
-#listingsTable th:nth-child(4),
-#listingsTable td:nth-child(4) {
-	width: 120px;
-	min-width: 100px;
-	max-width: 120px;
-}
-
-/* Allow wrapping in the listings column, prevent wrapping in others */
-#listingsTable th:nth-child(3),
-#listingsTable td:nth-child(3) {
-	white-space: normal;
-	/* Allow wrapping for property details */
-}
-
-#listingsTable th:nth-child(1),
-#listingsTable td:nth-child(1),
-#listingsTable th:nth-child(2),
-#listingsTable td:nth-child(2),
-#listingsTable th:nth-child(4),
-#listingsTable td:nth-child(4) {
-	white-space: nowrap;
-	/* Prevent wrapping for expand arrow, photo and rent range */
-}
+/* Listings table specific styles - see consolidated rules at end of file */
 
 /* Property Thumbnail Styles */
 .property-thumbnail {
 	width: 60px;
-	height: 45px;
+	height: 50px;
 	border-radius: 6px;
 	overflow: hidden;
 	cursor: pointer;
 	transition: transform 0.2s, box-shadow 0.2s;
 	position: relative;
-	background: #f1f5f9;
-	border: 2px solid #e2e8f0;
+	background: #1e293b;
+	border: 2px solid #334155;
+	display: flex;
+	align-items: center;
+	justify-content: center;
 }
 
 .property-thumbnail:hover {
@@ -1447,8 +1392,9 @@ body {
 }
 
 .property-thumbnail.needs-photo {
-	border-color: #94a3b8;
+	border-color: #475569;
 	border-style: dashed;
+	background: #1e293b;
 }
 
 .property-thumbnail img {
@@ -1464,38 +1410,49 @@ body {
 	flex-direction: column;
 	align-items: center;
 	justify-content: center;
-	color: #94a3b8;
-	font-size: 14px;
+	color: #64748b;
+	gap: 2px;
+}
+
+.thumbnail-placeholder span {
+	font-size: 16px;
+	opacity: 0.7;
 }
 
 .thumbnail-placeholder small {
-	font-size: 8px;
-	margin-top: 2px;
-	text-align: center;
+	font-size: 7px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+	color: #64748b;
 }
 
 .photo-count {
 	position: absolute;
 	bottom: 2px;
 	right: 2px;
-	background: rgba(0, 0, 0, 0.7);
+	background: rgba(0, 0, 0, 0.75);
 	color: white;
-	font-size: 10px;
-	padding: 1px 4px;
+	font-size: 9px;
+	padding: 2px 5px;
 	border-radius: 3px;
 	font-weight: 600;
 }
 
-/* Compact padding for listings table to fit in 35% column */
+/* Compact row styling for listings table */
 #listingsTable th,
 #listingsTable td {
-	padding: 12px 10px !important;
+	padding: 10px 6px !important;
+	vertical-align: middle;
 }
 
-#listingsTable th:nth-child(2),
-#listingsTable td:nth-child(2) {
-	padding: 12px 12px !important;
-	/* Slightly more padding for main content column */
+#listingsTable tbody tr {
+	border-bottom: 1px solid #e2e8f0;
+}
+
+/* Property content column needs more padding */
+#listingsTable td:nth-child(3) {
+	padding: 8px 10px !important;
 }
 
 .data-table thead th {
@@ -1633,41 +1590,10 @@ body {
 	margin: 0;
 }
 
-/* Listings table layout - AGGRESSIVE FIX */
+/* Listings table layout */
 #listingsTable {
 	table-layout: fixed !important;
 	width: 100% !important;
-}
-
-/* Checkbox column styling - FORCE NARROW */
-#listingsTable th:first-child,
-#listingsTable td:first-child {
-	width: 25px !important;
-	min-width: 25px !important;
-	max-width: 25px !important;
-	padding: 4px 8px !important;
-	text-align: center !important;
-	white-space: nowrap !important;
-	box-sizing: border-box !important;
-}
-
-#listingsTable th:nth-child(2),
-#listingsTable td:nth-child(2) {
-	width: auto !important;
-}
-
-#listingsTable th:nth-child(3),
-#listingsTable td:nth-child(3) {
-	width: 120px !important;
-}
-
-#listingsTable th:nth-child(4),
-#listingsTable td:nth-child(4) {
-	width: 100px !important;
-}
-
-#listingsTable th:first-child {
-	border-right: none !important;
 }
 
 /* PUMI Label Styling */
@@ -3887,20 +3813,41 @@ body {
 }
 
 
-/* Column width constraints for listings table */
+/* Column width constraints for listings table - 4 columns */
+/* Col 1: Expand arrow - fixed narrow */
 #listingsTable th:nth-child(1),
 #listingsTable td:nth-child(1) {
-	width: 50%;
+	width: 28px !important;
+	min-width: 28px !important;
+	max-width: 28px !important;
+	padding: 8px 4px !important;
 }
 
+/* Col 2: Photo thumbnail - fixed */
 #listingsTable th:nth-child(2),
 #listingsTable td:nth-child(2) {
-	width: 30%;
+	width: 75px !important;
+	min-width: 75px !important;
+	max-width: 75px !important;
+	padding: 8px 6px !important;
 }
 
+/* Col 3: Listings/property info - flexible */
 #listingsTable th:nth-child(3),
 #listingsTable td:nth-child(3) {
-	width: 20%;
+	width: auto !important;
+	min-width: 0 !important;
+	padding: 10px 8px !important;
+}
+
+/* Col 4: Rent range - fixed */
+#listingsTable th:nth-child(4),
+#listingsTable td:nth-child(4) {
+	width: 100px !important;
+	min-width: 90px !important;
+	max-width: 110px !important;
+	padding: 8px 6px !important;
+	text-align: right !important;
 }
 
 /* Custom scrollbar for listings table */
@@ -3973,18 +3920,46 @@ body {
 	height: 100%;
 }
 
+/* Listings table property content styling */
+#listingsTable .lead-name {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 4px 8px;
+	line-height: 1.4;
+	margin-bottom: 2px;
+}
+
+#listingsTable .lead-name strong {
+	font-size: 13px;
+	font-weight: 700;
+	color: #1e293b;
+}
+
+#listingsTable .subtle.mono {
+	font-size: 11px;
+	color: #64748b;
+	margin-bottom: 4px;
+	line-height: 1.3;
+}
+
+#listingsTable .unit-count {
+	display: none;
+}
+
 /* Community meta styling */
 .community-details {
-	margin-top: 6px;
+	margin-top: 4px;
 	display: flex;
 	align-items: center;
 	gap: 8px;
-	font-size: 12px;
+	font-size: 11px;
 }
 
 .market-info {
 	color: #3b82f6;
 	font-weight: 600;
+	font-size: 11px;
 }
 
 .beds-baths {
@@ -4017,11 +3992,22 @@ body {
 }
 
 .community-meta {
-	margin-top: 8px;
+	margin-top: 6px;
 	display: flex;
 	align-items: center;
-	gap: 12px;
-	font-size: 12px;
+	gap: 10px;
+	font-size: 11px;
+}
+
+.community-meta .last-updated {
+	font-size: 10px;
+	color: #94a3b8;
+}
+
+.listing-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
 }
 
 .interest-count {
