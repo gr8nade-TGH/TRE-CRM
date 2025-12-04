@@ -1999,86 +1999,127 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
         return results;
     }
 
-    // Priority paths for floor plans and availability (most common first)
-    // Only try top 4 paths to avoid timeout
-    const unitPaths = [
-        '/floor-plans',
-        '/floorplans',
-        '/apartments',
-        '/availability'
-    ];
-
-    // Try paths until we find good content - STOP EARLY to avoid timeout
+    // Try the main/provided URL FIRST (most reliable for small property sites)
+    // Then try common subpaths if the main page doesn't have unit data
     let contentToAnalyze = '';
     let successfulUrl = null;
-    let collectedImageUrls = []; // Collect floor plan image URLs
-    const MAX_PAGES = 2; // Only scrape max 2 pages to stay under 60s
+    let collectedImageUrls = [];
+    const MAX_PAGES = 3;
     let pagesScraped = 0;
 
-    for (const path of unitPaths) {
-        if (pagesScraped >= MAX_PAGES && contentToAnalyze) {
-            console.log(`[Unit Search] Stopping after ${pagesScraped} pages (have content)`);
-            break;
-        }
+    // Helper to check if content has unit/floor plan data
+    const hasUnitIndicators = (content) => {
+        const lower = content.toLowerCase();
+        return (
+            lower.includes('bedroom') ||
+            lower.includes('bed/bath') ||
+            lower.includes('1 bed') ||
+            lower.includes('2 bed') ||
+            lower.includes('studio') ||
+            lower.includes('sq ft') ||
+            lower.includes('sqft') ||
+            lower.includes('square feet') ||
+            lower.includes('floor plan') ||
+            lower.includes('floorplan') ||
+            lower.includes('/month') ||
+            lower.includes('per month') ||
+            lower.includes('starting at $') ||
+            lower.includes('rent:') ||
+            lower.includes('price:') ||
+            lower.includes('available units') ||
+            lower.includes('availability')
+        );
+    };
 
-        const fullUrl = path ? `${baseUrl.origin}${path}` : leasingUrl;
-        console.log(`[Unit Search] Trying: ${fullUrl}`);
+    // STEP 1: Try the main/provided URL first
+    console.log(`[Unit Search] Step 1 - Trying main URL: ${leasingUrl}`);
+    try {
+        const pageData = await scrapePage(leasingUrl, browserlessToken, 15000);
+        pagesScraped++;
 
-        try {
-            const pageData = await scrapePage(fullUrl, browserlessToken, 15000); // 15s timeout per page
-            pagesScraped++;
+        results.sources_checked.push({
+            url: leasingUrl,
+            success: pageData.success
+        });
 
-            results.sources_checked.push({
-                url: fullUrl,
-                success: pageData.success
-            });
-
-            if (pageData.success && pageData.content) {
-                // Collect image URLs if available
-                if (pageData.imageUrls && pageData.imageUrls.length > 0) {
-                    collectedImageUrls = [...collectedImageUrls, ...pageData.imageUrls];
-                    console.log(`[Unit Search] Found ${pageData.imageUrls.length} potential floor plan images`);
-                }
-
-                // Check if content has floor plan or unit indicators
-                const content = pageData.content.toLowerCase();
-                const hasUnitData =
-                    content.includes('bedroom') ||
-                    content.includes('bed/bath') ||
-                    content.includes('sq ft') ||
-                    content.includes('sqft') ||
-                    content.includes('floor plan') ||
-                    content.includes('/month') ||
-                    content.includes('starting at') ||
-                    content.includes('$ per month');
-
-                if (hasUnitData) {
-                    contentToAnalyze = `--- Content from ${fullUrl} ---\n${pageData.content}`;
-                    successfulUrl = fullUrl;
-                    console.log(`[Unit Search] Found unit data at: ${fullUrl}`);
-                    break; // Stop once we find good content
-                }
+        if (pageData.success && pageData.content) {
+            if (pageData.imageUrls && pageData.imageUrls.length > 0) {
+                collectedImageUrls = [...collectedImageUrls, ...pageData.imageUrls];
+                console.log(`[Unit Search] Found ${pageData.imageUrls.length} images on main page`);
             }
-        } catch (error) {
-            console.log(`[Unit Search] Error scraping ${fullUrl}: ${error.message}`);
-            // Don't count failed pages against limit
+
+            if (hasUnitIndicators(pageData.content)) {
+                contentToAnalyze = `--- Content from ${leasingUrl} ---\n${pageData.content}`;
+                successfulUrl = leasingUrl;
+                console.log(`[Unit Search] Found unit data on main page!`);
+            } else {
+                console.log(`[Unit Search] Main page has no unit indicators, will try subpages`);
+            }
+        }
+    } catch (error) {
+        console.log(`[Unit Search] Error on main page: ${error.message}`);
+    }
+
+    // STEP 2: If main page didn't have unit data, try common subpaths
+    if (!contentToAnalyze) {
+        const unitPaths = [
+            '/floor-plans',
+            '/floorplans',
+            '/apartments',
+            '/availability',
+            '/units',
+            '/rentals',
+            '/properties',
+            '/our-apartments'
+        ];
+
+        for (const path of unitPaths) {
+            if (pagesScraped >= MAX_PAGES || contentToAnalyze) {
+                break;
+            }
+
+            const fullUrl = `${baseUrl.origin}${path}`;
+            console.log(`[Unit Search] Step 2 - Trying: ${fullUrl}`);
+
+            try {
+                const pageData = await scrapePage(fullUrl, browserlessToken, 12000);
+                pagesScraped++;
+
+                results.sources_checked.push({
+                    url: fullUrl,
+                    success: pageData.success
+                });
+
+                if (pageData.success && pageData.content) {
+                    if (pageData.imageUrls && pageData.imageUrls.length > 0) {
+                        collectedImageUrls = [...collectedImageUrls, ...pageData.imageUrls];
+                    }
+
+                    if (hasUnitIndicators(pageData.content)) {
+                        contentToAnalyze = `--- Content from ${fullUrl} ---\n${pageData.content}`;
+                        successfulUrl = fullUrl;
+                        console.log(`[Unit Search] Found unit data at: ${fullUrl}`);
+                        break;
+                    }
+                }
+            } catch (error) {
+                console.log(`[Unit Search] Error scraping ${fullUrl}: ${error.message}`);
+            }
         }
     }
 
-    // If no luck with subpages, try main page as fallback
-    if (!contentToAnalyze && pagesScraped < MAX_PAGES) {
-        console.log(`[Unit Search] Trying main page: ${leasingUrl}`);
+    // STEP 3: If still no content but we have images, use main page content anyway
+    // (Some sites have unit info but don't match our keyword patterns)
+    if (!contentToAnalyze && collectedImageUrls.length > 0) {
+        console.log(`[Unit Search] No keyword matches but found ${collectedImageUrls.length} images - trying AI extraction anyway`);
         try {
-            const pageData = await scrapePage(leasingUrl, browserlessToken, 15000);
-            if (pageData.success && pageData.content) {
-                contentToAnalyze = `--- Content from ${leasingUrl} ---\n${pageData.content}`;
+            const pageData = await scrapePage(leasingUrl, browserlessToken, 10000);
+            if (pageData.success && pageData.content && pageData.content.length > 500) {
+                contentToAnalyze = `--- Content from ${leasingUrl} (forced) ---\n${pageData.content}`;
                 successfulUrl = leasingUrl;
-                if (pageData.imageUrls) {
-                    collectedImageUrls = [...collectedImageUrls, ...pageData.imageUrls];
-                }
             }
-        } catch (error) {
-            console.log(`[Unit Search] Error on main page: ${error.message}`);
+        } catch (e) {
+            console.log(`[Unit Search] Fallback scrape failed: ${e.message}`);
         }
     }
 
@@ -2201,20 +2242,38 @@ ${imageUrls.join('\n')}`;
         });
 
         const data = await response.json();
-        const result = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+        const rawContent = data.choices?.[0]?.message?.content || '{}';
+        console.log('[Unit Search] Raw AI response length:', rawContent.length);
 
-        // Clean and validate the results
-        const cleanedFloorPlans = (result.floorPlans || []).filter(fp =>
-            fp.name && typeof fp.beds === 'number'
-        ).map(fp => ({
+        const result = JSON.parse(rawContent);
+        console.log('[Unit Search] Parsed floor plans:', result.floorPlans?.length || 0);
+        console.log('[Unit Search] Parsed units:', result.units?.length || 0);
+
+        // Clean and validate the results - be more lenient
+        const cleanedFloorPlans = (result.floorPlans || []).filter(fp => {
+            // Must have name and beds (can be 0 for studio)
+            const valid = fp.name && typeof fp.beds === 'number';
+            if (!valid && fp.name) {
+                console.log(`[Unit Search] Filtered out floor plan: ${fp.name} (beds: ${fp.beds})`);
+            }
+            return valid;
+        }).map(fp => ({
             ...fp,
-            // Only include image_url if it's a valid URL, no source tracking
+            // Only include image_url if it's a valid URL
             image_url: fp.image_url && fp.image_url.startsWith('http') ? fp.image_url : null
         }));
 
-        const cleanedUnits = (result.units || []).filter(u =>
-            u.unit_number && typeof u.rent === 'number'
-        );
+        const cleanedUnits = (result.units || []).filter(u => {
+            // Must have unit_number and rent
+            const valid = u.unit_number && typeof u.rent === 'number';
+            if (!valid && u.unit_number) {
+                console.log(`[Unit Search] Filtered out unit: ${u.unit_number} (rent: ${u.rent})`);
+            }
+            return valid;
+        });
+
+        console.log('[Unit Search] Final cleaned floor plans:', cleanedFloorPlans.length);
+        console.log('[Unit Search] Final cleaned units:', cleanedUnits.length);
 
         return {
             floorPlans: cleanedFloorPlans,
@@ -2222,6 +2281,7 @@ ${imageUrls.join('\n')}`;
         };
     } catch (error) {
         console.error('[Unit Search] AI extraction error:', error.message);
+        console.error('[Unit Search] Error stack:', error.stack);
         return { floorPlans: [], units: [] };
     }
 }
