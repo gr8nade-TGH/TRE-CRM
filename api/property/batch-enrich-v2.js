@@ -92,23 +92,48 @@ function buildSafeUpdate(currentData, suggestions, forceFields = []) {
     return updates;
 }
 
+// Initialize Supabase client at module level
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serpApiKey = process.env.SERP_API_KEY;
+
+function getSupabase() {
+    if (!supabaseUrl || !supabaseKey) {
+        throw new Error('Supabase not configured');
+    }
+    return createClient(supabaseUrl, supabaseKey);
+}
+
 export default async function handler(req, res) {
     res.setHeader('Access-Control-Allow-Origin', '*');
 
+    // Initialize supabase for this request
+    let supabase;
+    try {
+        supabase = getSupabase();
+    } catch (e) {
+        return res.status(500).json({ error: 'Supabase not configured' });
+    }
+
     // GET - Return status and counts
     if (req.method === 'GET') {
-        const [pending, enriched, withUnits] = await Promise.all([
-            supabase.from('properties').select('*', { count: 'exact', head: true }).eq('enrichment_status', 'pending'),
-            supabase.from('properties').select('*', { count: 'exact', head: true }).eq('enrichment_status', 'enriched'),
-            supabase.from('floor_plans').select('property_id', { count: 'exact', head: true })
-        ]);
+        try {
+            const [pending, enriched, withUnits] = await Promise.all([
+                supabase.from('properties').select('*', { count: 'exact', head: true }).eq('enrichment_status', 'pending'),
+                supabase.from('properties').select('*', { count: 'exact', head: true }).eq('enrichment_status', 'enriched'),
+                supabase.from('floor_plans').select('property_id', { count: 'exact', head: true })
+            ]);
 
-        return res.status(200).json({
-            pending: pending.count || 0,
-            enriched: enriched.count || 0,
-            withFloorPlans: withUnits.count || 0,
-            configured: !!(process.env.OPENAI_API_KEY && process.env.BROWSERLESS_TOKEN)
-        });
+            return res.status(200).json({
+                pending: pending.count || 0,
+                enriched: enriched.count || 0,
+                withFloorPlans: withUnits.count || 0,
+                configured: !!(process.env.OPENAI_API_KEY && process.env.BROWSERLESS_TOKEN)
+            });
+        } catch (error) {
+            console.error('[batch-enrich-v2 GET] Error:', error);
+            return res.status(500).json({ error: 'Failed to get status', message: error.message });
+        }
     }
 
     if (req.method !== 'POST') {
@@ -324,14 +349,3 @@ export default async function handler(req, res) {
         return res.status(500).json({ error: error.message });
     }
 }
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const serpApiKey = process.env.SERP_API_KEY;
-
-if (!supabaseUrl || !supabaseKey) {
-    return res.status(500).json({ error: 'Supabase not configured' });
-}
-
-const supabase = createClient(supabaseUrl, supabaseKey);
-
