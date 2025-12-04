@@ -63,30 +63,51 @@ const PREFERRED_DOMAINS = [
     'equityapartments.com', 'avalonbay.com', 'udr.com', 'camden.com'
 ];
 
-// Indicators that a property is NOT an apartment complex (for-sale, single-family, etc.)
+// Indicators that a property is NOT an apartment complex (for-sale, small multifamily, single-family)
 const NON_APARTMENT_INDICATORS = {
-    // Words in property name/title that suggest it's NOT an apartment
+    // Words in property name/title/URL that suggest it's NOT an apartment complex
     titlePatterns: [
         /\bMLS\s*#?\s*\d+/i,              // MLS listing number
         /\bfor\s+sale\b/i,                 // For sale
         /\bsold\b/i,                       // Already sold
-        /\bsingle\s*family\b/i,            // Single family home
-        /\bduplex\b/i,                     // Duplex
-        /\btriplex\b/i,                    // Triplex
-        /\bfourplex\b/i,                   // Fourplex
-        /\btownhome\b/i,                   // Townhome (usually for sale)
-        /\bcondo\s+for\s+sale\b/i,         // Condo for sale
-        /\bhome\s+for\s+sale\b/i,          // Home for sale
-        /\bhouse\s+for\s+sale\b/i,         // House for sale
         /\bforeclosure\b/i,                // Foreclosure
         /\bauction\b/i,                    // Auction
         /\best\.?\s+\d{4}\b/i              // Established year (often for-sale listings)
+    ],
+    // Small multifamily / non-complex property types (for rent OR sale)
+    smallPropertyPatterns: [
+        /\bduplex\b/i,                     // Duplex (2 units)
+        /\btriplex\b/i,                    // Triplex (3 units)
+        /\bfourplex\b/i,                   // Fourplex (4 units)
+        /\bquadplex\b/i,                   // Quadplex (4 units)
+        /\b4[\-\s]?plex\b/i,               // 4-plex variation
+        /\bsingle\s*family\b/i,            // Single family home
+        /\btownhome\b/i,                   // Townhome
+        /\btownhouse\b/i,                  // Townhouse
+        /\bcondo\b/i,                      // Condo (individual unit)
+        /\bhouse\s+for\s+rent\b/i,         // House for rent
+        /\bhome\s+for\s+rent\b/i,          // Home for rent
+        /\b[1-4]\s*bed(?:room)?s?\s+house\b/i,  // "3 bedroom house"
+        /\bsingle\s+unit\b/i,              // Single unit
+        /\bprivate\s+home\b/i,             // Private home
+        /\brental\s+home\b/i,              // Rental home
+        /\brental\s+house\b/i              // Rental house
     ],
     // Domains that indicate for-sale listings
     saleDomains: [
         'zillow.com', 'realtor.com', 'redfin.com', 'trulia.com',
         'homecity.com', 'har.com', 'coldwellbanker.com', 'century21.com',
         'kw.com', 'sothebysrealty.com', 'compass.com', 'opendoor.com'
+    ],
+    // Domains that list small rentals (duplexes, single-family, etc.)
+    smallRentalDomains: [
+        'ahrn.com',           // Military housing - often duplexes/single family
+        'militarybyowner.com',
+        'craigslist.org',     // Usually individual rentals
+        'turbotenant.com',    // Landlord platform for small properties
+        'avail.co',           // Small landlord platform
+        'cozy.co',            // Small rentals
+        'rentler.com'         // Often small properties
     ]
 };
 
@@ -594,7 +615,7 @@ function findPropertyFromSerpApiResults(organicResults, knowledgeGraph, address)
 
 /**
  * Detect if search results indicate this is NOT an apartment complex
- * (e.g., single-family home for sale, duplex listing, MLS listing)
+ * (e.g., single-family home, duplex, triplex, for-sale listing)
  * @param {Array} organicResults - SerpApi organic search results
  * @param {Object} knowledgeGraph - SerpApi knowledge graph data
  * @param {string} propertyName - Extracted property name
@@ -604,66 +625,115 @@ function findPropertyFromSerpApiResults(organicResults, knowledgeGraph, address)
 function detectNonApartmentProperty(organicResults, knowledgeGraph, propertyName, websiteUrl) {
     const reasons = [];
     let confidence = 0;
+    let propertyType = 'unknown';
 
-    // Check property name for non-apartment indicators
+    // Check property name for for-sale indicators (MLS, sold, etc.)
     if (propertyName) {
         for (const pattern of NON_APARTMENT_INDICATORS.titlePatterns) {
             if (pattern.test(propertyName)) {
-                reasons.push(`Property name contains "${propertyName.match(pattern)?.[0] || 'for-sale indicator'}"`);
+                const match = propertyName.match(pattern)?.[0] || 'for-sale indicator';
+                reasons.push(`Property name contains "${match}"`);
                 confidence = Math.max(confidence, 0.85);
+                propertyType = 'for_sale';
+            }
+        }
+        // Check for small multifamily patterns in property name
+        for (const pattern of NON_APARTMENT_INDICATORS.smallPropertyPatterns) {
+            if (pattern.test(propertyName)) {
+                const match = propertyName.match(pattern)?.[0] || 'small property';
+                reasons.push(`Property appears to be a ${match} (not an apartment complex)`);
+                confidence = Math.max(confidence, 0.85);
+                propertyType = 'small_multifamily';
             }
         }
     }
 
-    // Check website URL for for-sale domains
+    // Check website URL for small property patterns (e.g., /duplex/ in URL)
     if (websiteUrl) {
-        const isSaleDomain = NON_APARTMENT_INDICATORS.saleDomains.some(d => websiteUrl.includes(d));
+        const urlLower = websiteUrl.toLowerCase();
+
+        // Check for for-sale domains
+        const isSaleDomain = NON_APARTMENT_INDICATORS.saleDomains.some(d => urlLower.includes(d));
         if (isSaleDomain) {
             reasons.push(`Found on for-sale website: ${websiteUrl}`);
             confidence = Math.max(confidence, 0.8);
+            propertyType = 'for_sale';
+        }
+
+        // Check for small rental domains (duplexes, single-family, etc.)
+        const isSmallRentalDomain = NON_APARTMENT_INDICATORS.smallRentalDomains.some(d => urlLower.includes(d));
+        if (isSmallRentalDomain) {
+            reasons.push(`Found on small rental listing site: ${websiteUrl}`);
+            confidence = Math.max(confidence, 0.75);
+            propertyType = 'small_multifamily';
+        }
+
+        // Check URL path for small property indicators
+        for (const pattern of NON_APARTMENT_INDICATORS.smallPropertyPatterns) {
+            if (pattern.test(urlLower)) {
+                const match = urlLower.match(pattern)?.[0] || 'small property';
+                reasons.push(`URL indicates ${match} listing`);
+                confidence = Math.max(confidence, 0.8);
+                propertyType = 'small_multifamily';
+            }
         }
     }
 
-    // Check organic results for for-sale patterns
+    // Check organic results for patterns
     let forSaleCount = 0;
+    let smallPropertyCount = 0;
     let apartmentCount = 0;
 
     for (const result of organicResults || []) {
         const title = (result.title || '').toLowerCase();
         const snippet = (result.snippet || '').toLowerCase();
-        const link = result.link || '';
+        const link = (result.link || '').toLowerCase();
+        const combined = `${title} ${snippet} ${link}`;
 
         // Check for for-sale indicators
-        const titleAndSnippet = `${title} ${snippet}`;
-        if (/for\s+sale|mls|sold|listing|realtor|buy\s+this|home\s+value/i.test(titleAndSnippet)) {
+        if (/for\s+sale|mls|sold|listing|realtor|buy\s+this|home\s+value/i.test(combined)) {
             forSaleCount++;
         }
 
-        // Check for apartment indicators
-        if (/apartments?|leasing|rent|floor\s*plans?|studio|1\s*bed|2\s*bed|bedroom.*rent/i.test(titleAndSnippet)) {
+        // Check for small property indicators
+        for (const pattern of NON_APARTMENT_INDICATORS.smallPropertyPatterns) {
+            if (pattern.test(combined)) {
+                smallPropertyCount++;
+                break; // Only count once per result
+            }
+        }
+
+        // Check for apartment complex indicators
+        if (/apartment\s*(complex|community|homes)|leasing\s+office|floor\s*plans?|studio.*1\s*bed.*2\s*bed|move-in\s+special/i.test(combined)) {
             apartmentCount++;
         }
 
-        // Check link for for-sale domains
+        // Check link for for-sale or small rental domains
         const isSaleLink = NON_APARTMENT_INDICATORS.saleDomains.some(d => link.includes(d));
-        if (isSaleLink) {
-            forSaleCount++;
-        }
+        const isSmallLink = NON_APARTMENT_INDICATORS.smallRentalDomains.some(d => link.includes(d));
+        if (isSaleLink) forSaleCount++;
+        if (isSmallLink) smallPropertyCount++;
     }
 
-    // If significantly more for-sale results than apartment results
+    // Analyze search results distribution
     if (forSaleCount > 2 && forSaleCount > apartmentCount * 2) {
-        reasons.push(`Search results indicate for-sale property (${forSaleCount} sale indicators vs ${apartmentCount} rental indicators)`);
+        reasons.push(`Search results indicate for-sale property (${forSaleCount} sale indicators vs ${apartmentCount} apartment indicators)`);
         confidence = Math.max(confidence, 0.75);
+        propertyType = 'for_sale';
+    }
+
+    if (smallPropertyCount > 2 && smallPropertyCount > apartmentCount) {
+        reasons.push(`Search results indicate small property (${smallPropertyCount} small property indicators vs ${apartmentCount} apartment indicators)`);
+        confidence = Math.max(confidence, 0.75);
+        propertyType = propertyType === 'unknown' ? 'small_multifamily' : propertyType;
     }
 
     // Check knowledge graph type if available
     if (knowledgeGraph) {
         const kgType = (knowledgeGraph.type || '').toLowerCase();
-        const kgTitle = (knowledgeGraph.title || '').toLowerCase();
 
         if (kgType.includes('real estate') && !kgType.includes('apartment')) {
-            reasons.push('Google knowledge graph indicates real estate listing, not apartment');
+            reasons.push('Google identifies this as a real estate listing, not an apartment complex');
             confidence = Math.max(confidence, 0.7);
         }
     }
@@ -671,7 +741,8 @@ function detectNonApartmentProperty(organicResults, knowledgeGraph, propertyName
     return {
         isNonApartment: confidence >= 0.7,
         confidence,
-        reasons
+        reasons,
+        propertyType
     };
 }
 
@@ -865,14 +936,19 @@ export async function enrichProperty(property, options = {}) {
             );
 
             if (nonApartmentCheck.isNonApartment) {
-                console.log(`[AI Enrichment] ⚠️ NON-APARTMENT DETECTED: ${nonApartmentCheck.reasons.join('; ')}`);
+                const typeLabel = nonApartmentCheck.propertyType === 'for_sale'
+                    ? 'for-sale listing'
+                    : 'small property (duplex/single-family)';
+                console.log(`[AI Enrichment] ⚠️ NON-APARTMENT DETECTED (${typeLabel}): ${nonApartmentCheck.reasons.join('; ')}`);
 
                 results.suggest_delete = true;
                 results.non_apartment_detection = {
                     confidence: nonApartmentCheck.confidence,
                     reasons: nonApartmentCheck.reasons,
                     property_name: searchExtract.property_name,
-                    website_url: searchExtract.website_url
+                    website_url: searchExtract.website_url,
+                    property_type: nonApartmentCheck.propertyType,
+                    type_label: typeLabel
                 };
                 results.completed_at = new Date().toISOString();
 
@@ -882,7 +958,7 @@ export async function enrichProperty(property, options = {}) {
                         value: searchExtract.property_name,
                         confidence: searchExtract.confidence || 0.8,
                         source: 'serpapi',
-                        reason: '⚠️ This appears to be a for-sale listing, not an apartment'
+                        reason: `⚠️ This appears to be a ${typeLabel}, not an apartment complex`
                     };
                 }
 

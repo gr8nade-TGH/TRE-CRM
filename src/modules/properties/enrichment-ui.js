@@ -170,22 +170,29 @@ function displaySuggestions(result) {
         const detection = result.non_apartment_detection;
         const foundName = detection.property_name || 'Unknown';
         const reasons = detection.reasons.join('<br>• ');
+        const typeLabel = detection.type_label || 'non-apartment property';
+        const typeIcon = detection.property_type === 'for_sale' ? '🏠💰' : '🏠';
+        const typeDescription = detection.property_type === 'for_sale'
+            ? 'This is a for-sale listing, not a rental apartment'
+            : 'This is a small property (duplex, single-family, townhome), not an apartment complex';
 
         container.innerHTML = `
             <div class="enrichment-delete-warning">
                 <div class="delete-warning-header">
-                    <span class="warning-icon">⚠️</span>
+                    <span class="warning-icon">${typeIcon}</span>
                     <h4>This doesn't appear to be an apartment complex</h4>
                 </div>
                 <div class="delete-warning-body">
                     <p><strong>Detected as:</strong> ${foundName}</p>
+                    <p><strong>Type:</strong> ${typeLabel}</p>
                     <p class="delete-reasons">
                         <strong>Why:</strong><br>
                         • ${reasons}
                     </p>
                     <p class="delete-confidence">
-                        ${Math.round(detection.confidence * 100)}% confidence this is a for-sale listing or single-family property
+                        ${Math.round(detection.confidence * 100)}% confidence
                     </p>
+                    <p class="type-description">${typeDescription}</p>
                 </div>
                 <div class="delete-warning-actions">
                     <p>This listing may have been imported incorrectly. Would you like to delete it?</p>

@@ -10588,6 +10588,15 @@ input[type="radio"] {
 	font-size: 14px;
 }
 
+.type-description {
+	font-style: italic;
+	color: #9ca3af !important;
+	font-size: 13px !important;
+	border-top: 1px solid #e5e7eb;
+	padding-top: 12px;
+	margin-top: 12px !important;
+}
+
 .btn-danger {
 	background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
 	color: white;
