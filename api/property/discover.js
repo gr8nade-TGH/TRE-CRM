@@ -9,55 +9,55 @@ import { createClient } from '@supabase/supabase-js';
 
 const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
 
-// San Antonio neighborhoods/areas for staged scanning
+// San Antonio zip codes for comprehensive coverage
+const SAN_ANTONIO_ZIP_CODES = [
+    // Central
+    '78201', '78202', '78203', '78204', '78205', '78206', '78207', '78208', '78209', '78210',
+    '78211', '78212', '78213', '78214', '78215', '78216', '78217', '78218', '78219', '78220',
+    '78221', '78222', '78223', '78224', '78225', '78226', '78227', '78228', '78229', '78230',
+    '78231', '78232', '78233', '78234', '78235', '78236', '78237', '78238', '78239', '78240',
+    '78241', '78242', '78243', '78244', '78245', '78246', '78247', '78248', '78249', '78250',
+    '78251', '78252', '78253', '78254', '78255', '78256', '78257', '78258', '78259', '78260',
+    '78261', '78263', '78264', '78266',
+    // Surrounding areas
+    '78023', '78015', '78154', '78108', '78109', '78148', '78150', '78152', '78073'
+];
+
+// Build search areas from zip codes + neighborhoods
 const SAN_ANTONIO_AREAS = [
-    // Central/Downtown
+    // ZIP code searches - most comprehensive (each can return different results)
+    ...SAN_ANTONIO_ZIP_CODES.map(zip => ({
+        name: `ZIP ${zip}`,
+        query: `apartment complex ${zip}`,
+        zip: zip
+    })),
+
+    // Neighborhood searches as backup
     { name: 'Downtown', query: 'apartments downtown San Antonio TX' },
-    { name: 'Midtown', query: 'apartments midtown San Antonio TX' },
-    { name: 'Southtown', query: 'apartments Southtown San Antonio TX' },
-    
-    // North Side
     { name: 'Stone Oak', query: 'apartments Stone Oak San Antonio TX' },
-    { name: 'Alamo Heights', query: 'apartments Alamo Heights San Antonio TX' },
-    { name: 'Terrell Hills', query: 'apartments Terrell Hills San Antonio TX' },
-    { name: 'Hollywood Park', query: 'apartments Hollywood Park San Antonio TX' },
-    { name: 'Shavano Park', query: 'apartments Shavano Park San Antonio TX' },
-    { name: 'North Central', query: 'apartments North Central San Antonio TX' },
-    
-    // Northwest
-    { name: 'Helotes', query: 'apartments Helotes San Antonio TX' },
-    { name: 'Leon Valley', query: 'apartments Leon Valley San Antonio TX' },
+    { name: 'Alamo Heights', query: 'apartments Alamo Heights TX' },
     { name: 'Medical Center', query: 'apartments Medical Center San Antonio TX' },
-    { name: 'UTSA Area', query: 'apartments UTSA San Antonio TX' },
-    { name: 'The Dominion', query: 'apartments The Dominion San Antonio TX' },
-    
-    // Northeast
+    { name: 'UTSA Area', query: 'apartments near UTSA San Antonio TX' },
+    { name: 'The Rim', query: 'apartments The Rim San Antonio TX' },
+    { name: 'La Cantera', query: 'apartments La Cantera San Antonio TX' },
+    { name: 'Helotes', query: 'apartments Helotes TX' },
+    { name: 'Leon Valley', query: 'apartments Leon Valley TX' },
     { name: 'Schertz', query: 'apartments Schertz TX' },
     { name: 'Converse', query: 'apartments Converse TX' },
     { name: 'Live Oak', query: 'apartments Live Oak TX' },
-    { name: 'Windcrest', query: 'apartments Windcrest TX' },
-    { name: 'Randolph AFB', query: 'apartments near Randolph AFB TX' },
-    
-    // West Side
-    { name: 'SeaWorld Area', query: 'apartments near SeaWorld San Antonio TX' },
-    { name: 'Westover Hills', query: 'apartments Westover Hills San Antonio TX' },
-    { name: 'Culebra', query: 'apartments Culebra San Antonio TX' },
-    
-    // South Side
-    { name: 'Brooks City Base', query: 'apartments Brooks City Base San Antonio TX' },
-    { name: 'Southside', query: 'apartments South San Antonio TX' },
-    { name: 'Mission', query: 'apartments Mission San Antonio TX' },
-    
-    // East Side
-    { name: 'East Side', query: 'apartments East San Antonio TX' },
-    { name: 'Fort Sam Houston', query: 'apartments near Fort Sam Houston TX' },
-    
-    // General/Catch-all searches
-    { name: 'General 1', query: 'apartment complexes San Antonio TX' },
-    { name: 'General 2', query: 'luxury apartments San Antonio TX' },
-    { name: 'General 3', query: 'affordable apartments San Antonio TX' },
-    { name: 'General 4', query: 'pet friendly apartments San Antonio TX' },
-    { name: 'General 5', query: 'new apartments San Antonio TX' },
+    { name: 'Selma', query: 'apartments Selma TX' },
+    { name: 'Universal City', query: 'apartments Universal City TX' },
+    { name: 'Cibolo', query: 'apartments Cibolo TX' },
+    { name: 'New Braunfels', query: 'apartments New Braunfels TX' },
+    { name: 'Boerne', query: 'apartments Boerne TX' },
+
+    // Catch-all searches
+    { name: 'Luxury', query: 'luxury apartments San Antonio TX' },
+    { name: 'Affordable', query: 'affordable apartments San Antonio TX' },
+    { name: 'Pet Friendly', query: 'pet friendly apartments San Antonio TX' },
+    { name: 'New Construction', query: 'new apartment complex San Antonio TX' },
+    { name: 'Senior Living', query: 'senior apartments San Antonio TX' },
+    { name: 'Student Housing', query: 'student apartments San Antonio TX' },
 ];
 
 /**
@@ -65,7 +65,7 @@ const SAN_ANTONIO_AREAS = [
  */
 async function searchApartments(query, serpApiKey, start = 0) {
     console.log(`[Discovery] Searching: "${query}" (start: ${start})`);
-    
+
     const params = new URLSearchParams({
         engine: 'google_maps',
         q: query,
@@ -77,7 +77,7 @@ async function searchApartments(query, serpApiKey, start = 0) {
     });
 
     const response = await fetch(`${SERPAPI_BASE_URL}?${params.toString()}`);
-    
+
     if (!response.ok) {
         throw new Error(`SerpAPI error: ${response.status}`);
     }
@@ -152,13 +152,13 @@ export default async function handler(req, res) {
         // Get the area to search
         const areaIdx = typeof areaIndex === 'number' ? areaIndex : 0;
         const area = SAN_ANTONIO_AREAS[areaIdx];
-        
+
         if (!area) {
             return res.status(400).json({ error: 'Invalid area index' });
         }
 
         console.log(`[Discovery] Scanning area: ${area.name}`);
-        
+
         // Search for apartments
         const results = await searchApartments(area.query, serpApiKey, start);
         console.log(`[Discovery] Found ${results.length} results`);
@@ -171,7 +171,7 @@ export default async function handler(req, res) {
             // Skip non-apartment results
             const type = (place.type || '').toLowerCase();
             const title = (place.title || '').toLowerCase();
-            
+
             if (type.includes('real estate') || type.includes('property management') ||
                 title.includes('realtor') || title.includes('realty')) {
                 skipped.push({ title: place.title, reason: 'Real estate/management company' });
@@ -238,9 +238,9 @@ export default async function handler(req, res) {
 
     } catch (error) {
         console.error('[Discovery] Error:', error);
-        return res.status(500).json({ 
-            error: 'Discovery failed', 
-            message: error.message 
+        return res.status(500).json({
+            error: 'Discovery failed',
+            message: error.message
         });
     }
 }
