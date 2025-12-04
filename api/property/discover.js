@@ -74,11 +74,9 @@ const SAN_ANTONIO_GRID = [
     { name: 'Fair Oaks Ranch', lat: 29.7460, lng: -98.6430 },
 ];
 
-// Additional keyword variations to search at each grid point
+// Search query - just apartment complex for precision
 const SEARCH_QUERIES = [
-    'apartments',
     'apartment complex',
-    'apartment homes',
 ];
 
 /**
