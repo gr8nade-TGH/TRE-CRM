@@ -112,6 +112,15 @@ export async function openEnrichmentModal(property) {
     document.getElementById('enrichmentPropertyAddress').textContent =
         `${property.street_address || property.address}, ${property.city}, ${property.state} ${property.zip_code}`;
 
+    // Reset footer to original state (in case delete buttons were shown previously)
+    const footer = document.getElementById('enrichmentFooter');
+    footer.innerHTML = `
+        <button class="btn btn-secondary" onclick="window.closeEnrichmentModal()">Cancel</button>
+        <button class="btn btn-primary" id="enrichmentApplyBtn" disabled onclick="window.applyEnrichmentChanges()">
+            Apply Selected
+        </button>
+    `;
+
     // Reset UI state
     document.getElementById('enrichmentProgress').classList.remove('hidden');
     document.getElementById('enrichmentResults').classList.add('hidden');
