@@ -10519,6 +10519,92 @@ input[type="radio"] {
 	border-top: 1px solid #e2e8f0;
 }
 
+/* Non-Apartment Delete Warning */
+.enrichment-delete-warning {
+	background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+	border: 2px solid #fca5a5;
+	border-radius: 12px;
+	padding: 20px;
+	margin-bottom: 16px;
+}
+
+.delete-warning-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.delete-warning-header .warning-icon {
+	font-size: 32px;
+}
+
+.delete-warning-header h4 {
+	margin: 0;
+	color: #991b1b;
+	font-size: 16px;
+	font-weight: 600;
+}
+
+.delete-warning-body {
+	background: white;
+	border-radius: 8px;
+	padding: 16px;
+	margin-bottom: 16px;
+}
+
+.delete-warning-body p {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	color: #374151;
+}
+
+.delete-warning-body p:last-child {
+	margin-bottom: 0;
+}
+
+.delete-reasons {
+	font-size: 13px !important;
+	color: #6b7280 !important;
+	line-height: 1.6;
+}
+
+.delete-confidence {
+	background: #fef3c7;
+	border-radius: 6px;
+	padding: 8px 12px;
+	font-size: 13px !important;
+	color: #92400e !important;
+	font-weight: 500;
+}
+
+.delete-warning-actions {
+	text-align: center;
+}
+
+.delete-warning-actions p {
+	margin: 0;
+	color: #6b7280;
+	font-size: 14px;
+}
+
+.btn-danger {
+	background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+	color: white;
+	border: none;
+	padding: 10px 20px;
+	border-radius: 8px;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.btn-danger:hover {
+	background: linear-gradient(135deg, #b91c1c 0%, #991b1b 100%);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(185, 28, 28, 0.3);
+}
+
 /* Needs Review Badge */
 .needs-review-badge {
 	display: inline-flex;

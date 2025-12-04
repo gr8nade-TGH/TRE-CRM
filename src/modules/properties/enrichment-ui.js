@@ -161,6 +161,47 @@ function displaySuggestions(result) {
     currentSuggestions = result.suggestions;
 
     const container = document.getElementById('enrichmentSuggestions');
+    const footer = document.getElementById('enrichmentFooter');
+
+    // ============================================================
+    // NON-APARTMENT DETECTION: Show delete suggestion
+    // ============================================================
+    if (result.suggest_delete && result.non_apartment_detection) {
+        const detection = result.non_apartment_detection;
+        const foundName = detection.property_name || 'Unknown';
+        const reasons = detection.reasons.join('<br>• ');
+
+        container.innerHTML = `
+            <div class="enrichment-delete-warning">
+                <div class="delete-warning-header">
+                    <span class="warning-icon">⚠️</span>
+                    <h4>This doesn't appear to be an apartment complex</h4>
+                </div>
+                <div class="delete-warning-body">
+                    <p><strong>Detected as:</strong> ${foundName}</p>
+                    <p class="delete-reasons">
+                        <strong>Why:</strong><br>
+                        • ${reasons}
+                    </p>
+                    <p class="delete-confidence">
+                        ${Math.round(detection.confidence * 100)}% confidence this is a for-sale listing or single-family property
+                    </p>
+                </div>
+                <div class="delete-warning-actions">
+                    <p>This listing may have been imported incorrectly. Would you like to delete it?</p>
+                </div>
+            </div>
+        `;
+
+        // Update footer with delete button
+        footer.innerHTML = `
+            <button class="btn btn-secondary" onclick="window.closeEnrichmentModal()">Keep Listing</button>
+            <button class="btn btn-danger" onclick="window.deleteEnrichmentProperty()">
+                🗑️ Delete Listing
+            </button>
+        `;
+        return;
+    }
 
     // Show data analysis summary
     const analysis = result.data_analysis || {};
@@ -374,11 +415,50 @@ export async function isEnrichmentAvailable() {
     return status.configured === true;
 }
 
+/**
+ * Delete the current property (for non-apartment listings)
+ */
+export async function deleteProperty() {
+    if (!currentProperty) return;
+
+    const propertyName = currentProperty.name || currentProperty.street_address || 'this property';
+
+    // Confirm deletion
+    if (!confirm(`Are you sure you want to delete "${propertyName}"?\n\nThis action cannot be undone.`)) {
+        return;
+    }
+
+    try {
+        const { getSupabase } = await import('../../api/supabase-api.js');
+        const supabase = getSupabase();
+
+        const { error } = await supabase
+            .from('properties')
+            .delete()
+            .eq('id', currentProperty.id);
+
+        if (error) {
+            throw new Error(error.message);
+        }
+
+        toast('🗑️ Property deleted successfully', 'success');
+        closeModal();
+
+        // Trigger a refresh of the listings page
+        if (window.refreshListingsPage) {
+            window.refreshListingsPage();
+        }
+    } catch (error) {
+        toast(`❌ Failed to delete: ${error.message}`, 'error');
+    }
+}
+
 // Export global functions for onclick handlers
 window.closeEnrichmentModal = closeModal;
 window.applyEnrichmentChanges = applyChanges;
 window.updateEnrichmentApplyBtn = updateApplyButton;
 window.openPropertyEnrichment = openEnrichmentModal;
+window.deleteEnrichmentProperty = deleteProperty;
 
 export default {
     initEnrichmentUI,

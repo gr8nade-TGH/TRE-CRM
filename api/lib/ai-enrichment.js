@@ -63,6 +63,33 @@ const PREFERRED_DOMAINS = [
     'equityapartments.com', 'avalonbay.com', 'udr.com', 'camden.com'
 ];
 
+// Indicators that a property is NOT an apartment complex (for-sale, single-family, etc.)
+const NON_APARTMENT_INDICATORS = {
+    // Words in property name/title that suggest it's NOT an apartment
+    titlePatterns: [
+        /\bMLS\s*#?\s*\d+/i,              // MLS listing number
+        /\bfor\s+sale\b/i,                 // For sale
+        /\bsold\b/i,                       // Already sold
+        /\bsingle\s*family\b/i,            // Single family home
+        /\bduplex\b/i,                     // Duplex
+        /\btriplex\b/i,                    // Triplex
+        /\bfourplex\b/i,                   // Fourplex
+        /\btownhome\b/i,                   // Townhome (usually for sale)
+        /\bcondo\s+for\s+sale\b/i,         // Condo for sale
+        /\bhome\s+for\s+sale\b/i,          // Home for sale
+        /\bhouse\s+for\s+sale\b/i,         // House for sale
+        /\bforeclosure\b/i,                // Foreclosure
+        /\bauction\b/i,                    // Auction
+        /\best\.?\s+\d{4}\b/i              // Established year (often for-sale listings)
+    ],
+    // Domains that indicate for-sale listings
+    saleDomains: [
+        'zillow.com', 'realtor.com', 'redfin.com', 'trulia.com',
+        'homecity.com', 'har.com', 'coldwellbanker.com', 'century21.com',
+        'kw.com', 'sothebysrealty.com', 'compass.com', 'opendoor.com'
+    ]
+};
+
 /**
  * Check if AI enrichment is configured
  * @returns {Object} Configuration status
@@ -566,6 +593,89 @@ function findPropertyFromSerpApiResults(organicResults, knowledgeGraph, address)
 }
 
 /**
+ * Detect if search results indicate this is NOT an apartment complex
+ * (e.g., single-family home for sale, duplex listing, MLS listing)
+ * @param {Array} organicResults - SerpApi organic search results
+ * @param {Object} knowledgeGraph - SerpApi knowledge graph data
+ * @param {string} propertyName - Extracted property name
+ * @param {string} websiteUrl - Found website URL
+ * @returns {Object} Detection result with isNonApartment flag and reason
+ */
+function detectNonApartmentProperty(organicResults, knowledgeGraph, propertyName, websiteUrl) {
+    const reasons = [];
+    let confidence = 0;
+
+    // Check property name for non-apartment indicators
+    if (propertyName) {
+        for (const pattern of NON_APARTMENT_INDICATORS.titlePatterns) {
+            if (pattern.test(propertyName)) {
+                reasons.push(`Property name contains "${propertyName.match(pattern)?.[0] || 'for-sale indicator'}"`);
+                confidence = Math.max(confidence, 0.85);
+            }
+        }
+    }
+
+    // Check website URL for for-sale domains
+    if (websiteUrl) {
+        const isSaleDomain = NON_APARTMENT_INDICATORS.saleDomains.some(d => websiteUrl.includes(d));
+        if (isSaleDomain) {
+            reasons.push(`Found on for-sale website: ${websiteUrl}`);
+            confidence = Math.max(confidence, 0.8);
+        }
+    }
+
+    // Check organic results for for-sale patterns
+    let forSaleCount = 0;
+    let apartmentCount = 0;
+
+    for (const result of organicResults || []) {
+        const title = (result.title || '').toLowerCase();
+        const snippet = (result.snippet || '').toLowerCase();
+        const link = result.link || '';
+
+        // Check for for-sale indicators
+        const titleAndSnippet = `${title} ${snippet}`;
+        if (/for\s+sale|mls|sold|listing|realtor|buy\s+this|home\s+value/i.test(titleAndSnippet)) {
+            forSaleCount++;
+        }
+
+        // Check for apartment indicators
+        if (/apartments?|leasing|rent|floor\s*plans?|studio|1\s*bed|2\s*bed|bedroom.*rent/i.test(titleAndSnippet)) {
+            apartmentCount++;
+        }
+
+        // Check link for for-sale domains
+        const isSaleLink = NON_APARTMENT_INDICATORS.saleDomains.some(d => link.includes(d));
+        if (isSaleLink) {
+            forSaleCount++;
+        }
+    }
+
+    // If significantly more for-sale results than apartment results
+    if (forSaleCount > 2 && forSaleCount > apartmentCount * 2) {
+        reasons.push(`Search results indicate for-sale property (${forSaleCount} sale indicators vs ${apartmentCount} rental indicators)`);
+        confidence = Math.max(confidence, 0.75);
+    }
+
+    // Check knowledge graph type if available
+    if (knowledgeGraph) {
+        const kgType = (knowledgeGraph.type || '').toLowerCase();
+        const kgTitle = (knowledgeGraph.title || '').toLowerCase();
+
+        if (kgType.includes('real estate') && !kgType.includes('apartment')) {
+            reasons.push('Google knowledge graph indicates real estate listing, not apartment');
+            confidence = Math.max(confidence, 0.7);
+        }
+    }
+
+    return {
+        isNonApartment: confidence >= 0.7,
+        confidence,
+        reasons
+    };
+}
+
+/**
  * Use AI to extract property name and website from search content (fallback)
  * @param {string} content - Scraped search results content
  * @param {string} address - Property address
@@ -734,6 +844,50 @@ export async function enrichProperty(property, options = {}) {
             results.errors.push(`Google search failed: ${googleData.error}`);
             results.completed_at = new Date().toISOString();
             return results;
+        }
+    }
+
+    // ============================================================
+    // NON-APARTMENT DETECTION: Check if this is a for-sale property
+    // ============================================================
+    if (serpApiKey) {
+        // Get the search results we stored for analysis
+        const lastSearch = results.sources_checked.find(s => s.source === 'serpapi_search');
+        if (lastSearch?.success) {
+            // Re-fetch organic results for detection (they're in memory from serpApiSearch)
+            const serpApiResults = await serpApiSearch(searchQuery, serpApiKey);
+
+            const nonApartmentCheck = detectNonApartmentProperty(
+                serpApiResults.organic || [],
+                serpApiResults.knowledgeGraph,
+                searchExtract.property_name,
+                searchExtract.website_url
+            );
+
+            if (nonApartmentCheck.isNonApartment) {
+                console.log(`[AI Enrichment] ⚠️ NON-APARTMENT DETECTED: ${nonApartmentCheck.reasons.join('; ')}`);
+
+                results.suggest_delete = true;
+                results.non_apartment_detection = {
+                    confidence: nonApartmentCheck.confidence,
+                    reasons: nonApartmentCheck.reasons,
+                    property_name: searchExtract.property_name,
+                    website_url: searchExtract.website_url
+                };
+                results.completed_at = new Date().toISOString();
+
+                // Still include the found name so user can see what was detected
+                if (searchExtract.property_name) {
+                    results.suggestions.name = {
+                        value: searchExtract.property_name,
+                        confidence: searchExtract.confidence || 0.8,
+                        source: 'serpapi',
+                        reason: '⚠️ This appears to be a for-sale listing, not an apartment'
+                    };
+                }
+
+                return results;
+            }
         }
     }
 
