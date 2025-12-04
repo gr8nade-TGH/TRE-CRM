@@ -39,9 +39,12 @@ const ENRICHABLE_FIELDS = {
     contact_phone: { dbColumn: 'contact_phone', priority: 2, description: 'Leasing office phone' },
     contact_email: { dbColumn: 'contact_email', priority: 3, description: 'Leasing office email' },
     contact_name: { dbColumn: 'contact_name', priority: 4, description: 'Leasing contact name' },
-    amenities: { dbColumn: 'amenities', priority: 5, description: 'Property amenities' },
-    leasing_link: { dbColumn: 'leasing_link', priority: 6, description: 'Leasing/apply URL' },
-    management_company: { dbColumn: 'management_company', priority: 7, description: 'Management company' }
+    amenities: { dbColumn: 'amenities', priority: 5, description: 'Property amenities (detailed list)' },
+    amenities_tags: { dbColumn: 'amenities', priority: 5, description: 'Short amenity tags (Pool, Gym, etc.)' },
+    neighborhood: { dbColumn: 'neighborhood', priority: 6, description: 'Neighborhood/area name' },
+    description: { dbColumn: 'description', priority: 7, description: 'AI-generated property description' },
+    leasing_link: { dbColumn: 'leasing_link', priority: 8, description: 'Leasing/apply URL' },
+    management_company: { dbColumn: 'management_company', priority: 9, description: 'Management company' }
 };
 
 // Domains to skip (aggregators that block scrapers or have stale data)
@@ -371,29 +374,39 @@ async function scrapePage(url, browserlessToken) {
 }
 
 /**
- * Call OpenAI API with function calling
+ * Call OpenAI API for extraction or text generation
  * @param {string} systemPrompt - System instructions
  * @param {string} userPrompt - User message with context
  * @param {string} apiKey - OpenAI API key
- * @returns {Promise<Object>} AI response
+ * @param {Object} options - Optional settings
+ * @param {boolean} options.returnRaw - Return raw text instead of parsing JSON
+ * @returns {Promise<Object|string>} AI response
  */
-async function callOpenAI(systemPrompt, userPrompt, apiKey) {
+async function callOpenAI(systemPrompt, userPrompt, apiKey, options = {}) {
+    const { returnRaw = false } = options;
+
+    const requestBody = {
+        model: 'gpt-4o-mini', // Cost-effective, good at extraction
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        temperature: returnRaw ? 0.7 : 0.1, // Higher temp for creative descriptions
+        max_tokens: returnRaw ? 300 : 1000
+    };
+
+    // Only use JSON response format when not returning raw text
+    if (!returnRaw) {
+        requestBody.response_format = { type: 'json_object' };
+    }
+
     const response = await fetch(`${OPENAI_API_BASE}/chat/completions`, {
         method: 'POST',
         headers: {
             'Authorization': `Bearer ${apiKey}`,
             'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-            model: 'gpt-4o-mini', // Cost-effective, good at extraction
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userPrompt }
-            ],
-            temperature: 0.1, // Low temp for consistent extraction
-            max_tokens: 1000,
-            response_format: { type: 'json_object' }
-        })
+        body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
@@ -402,7 +415,10 @@ async function callOpenAI(systemPrompt, userPrompt, apiKey) {
     }
 
     const data = await response.json();
-    return JSON.parse(data.choices[0].message.content);
+    const content = data.choices[0].message.content;
+
+    // Return raw text or parse JSON
+    return returnRaw ? content : JSON.parse(content);
 }
 
 /**
@@ -454,6 +470,20 @@ function analyzePropertyData(property) {
         analysis.missing.push('amenities');
     } else {
         analysis.existing.amenities = property.amenities;
+    }
+
+    // Neighborhood
+    if (!property.neighborhood) {
+        analysis.missing.push('neighborhood');
+    } else {
+        analysis.existing.neighborhood = property.neighborhood;
+    }
+
+    // Description
+    if (!property.description) {
+        analysis.missing.push('description');
+    } else {
+        analysis.existing.description = property.description;
     }
 
     // Leasing link
@@ -772,6 +802,7 @@ export async function enrichProperty(property, options = {}) {
 
     const missingFieldsList = dataAnalysis.missing
         .filter(f => f !== 'name' || !results.suggestions.name) // Skip name if already found
+        .filter(f => f !== 'description') // Description is generated separately
         .map(f => `- ${f}: ${ENRICHABLE_FIELDS[f]?.description || f}`)
         .join('\n');
 
@@ -782,6 +813,8 @@ IMPORTANT RULES:
 2. Phone format: (XXX) XXX-XXXX
 3. Don't make up data - use null if not found
 4. Prioritize contact_phone - agents need this for follow-up
+5. For amenities: provide BOTH a detailed description AND short tags
+6. For neighborhood: extract the neighborhood/area name if mentioned (e.g., "The Rim", "Stone Oak", "Hidden Forest")
 
 Respond with JSON:
 {
@@ -790,7 +823,9 @@ Respond with JSON:
         "contact_phone": "(XXX) XXX-XXXX or null",
         "contact_email": "email@domain.com or null",
         "contact_name": "Leasing agent name or null",
-        "amenities": ["array", "of", "amenities"] or [],
+        "amenities": "Detailed amenities description as a paragraph or comma-separated list",
+        "amenities_tags": ["Pool", "Gym", "Pet Friendly", "Parking", "In-Unit W/D"],
+        "neighborhood": "Neighborhood or area name (e.g., Stone Oak, The Rim) or null",
         "management_company": "Company name or null"
     },
     "confidence": 0.0-1.0
@@ -858,13 +893,37 @@ Return JSON only.`;
                 };
             }
 
-            // Amenities
-            if (ext.amenities?.length > 0 && dataAnalysis.missing.includes('amenities')) {
+            // Amenities (detailed description)
+            if (ext.amenities && dataAnalysis.missing.includes('amenities')) {
+                // If it's an array, join into description
+                const amenitiesValue = Array.isArray(ext.amenities)
+                    ? ext.amenities.join(', ')
+                    : ext.amenities;
                 results.suggestions.amenities = {
-                    value: ext.amenities,
+                    value: amenitiesValue,
                     confidence: conf,
                     source: contentSource,
-                    reason: 'Extracted amenities list'
+                    reason: 'Extracted amenities description'
+                };
+            }
+
+            // Amenities tags (short array for badges)
+            if (ext.amenities_tags?.length > 0) {
+                results.suggestions.amenities_tags = {
+                    value: ext.amenities_tags,
+                    confidence: conf,
+                    source: contentSource,
+                    reason: 'Extracted amenity tags'
+                };
+            }
+
+            // Neighborhood
+            if (ext.neighborhood && dataAnalysis.missing.includes('neighborhood')) {
+                results.suggestions.neighborhood = {
+                    value: ext.neighborhood,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found neighborhood/area name'
                 };
             }
 
@@ -881,6 +940,54 @@ Return JSON only.`;
     } catch (error) {
         console.error('[AI Enrichment] Extraction error:', error);
         results.errors.push(`AI extraction failed: ${error.message}`);
+    }
+
+    // ============================================================
+    // STEP 4: Generate AI Property Description
+    // ============================================================
+    if (dataAnalysis.missing.includes('description')) {
+        console.log('[AI Enrichment] Step 4: Generating AI property description...');
+        try {
+            const propertyName = results.suggestions.name?.value || searchExtract.property_name || 'This property';
+            const neighborhood = results.suggestions.neighborhood?.value || '';
+            const amenitiesDesc = results.suggestions.amenities?.value || '';
+            const amenitiesTags = results.suggestions.amenities_tags?.value || [];
+
+            const descPrompt = `Write a compelling 2-3 sentence property description for a real estate listing.
+
+Property: ${propertyName}
+Location: ${city}, ${state}
+${neighborhood ? `Neighborhood: ${neighborhood}` : ''}
+${amenitiesTags.length > 0 ? `Key Amenities: ${amenitiesTags.join(', ')}` : ''}
+${amenitiesDesc ? `Full Amenities: ${amenitiesDesc.slice(0, 500)}` : ''}
+
+Guidelines:
+- Start with location context (e.g., "Located in the ${neighborhood || 'heart of ' + city}...")
+- Highlight 2-3 standout amenities
+- Keep it professional but inviting
+- 2-3 sentences max
+
+Return ONLY the description text, no quotes or formatting.`;
+
+            const descResult = await callOpenAI(
+                'You write professional real estate property descriptions. Return only the description text.',
+                descPrompt,
+                openaiKey,
+                { returnRaw: true }
+            );
+
+            if (descResult && typeof descResult === 'string' && descResult.length > 20) {
+                results.suggestions.description = {
+                    value: descResult.trim(),
+                    confidence: 0.85,
+                    source: 'ai_generated',
+                    reason: 'AI-generated property description'
+                };
+            }
+        } catch (error) {
+            console.error('[AI Enrichment] Description generation error:', error);
+            // Non-critical, continue without description
+        }
     }
 
     results.completed_at = new Date().toISOString();

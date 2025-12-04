@@ -180,15 +180,32 @@ function displaySuggestions(result) {
     if (Object.keys(result.suggestions || {}).length > 0) {
         for (const [field, suggestion] of Object.entries(result.suggestions)) {
             const fieldLabel = getFieldLabel(field);
-            const displayValue = Array.isArray(suggestion.value)
-                ? suggestion.value.join(', ')
-                : suggestion.value;
+
+            // Special rendering for different field types
+            let displayValue = '';
+            let valueClass = 'enrichment-suggestion-value';
+
+            if (field === 'amenities_tags' && Array.isArray(suggestion.value)) {
+                // Render amenity tags as badges
+                displayValue = suggestion.value.map(tag =>
+                    `<span class="enrichment-tag">${tag}</span>`
+                ).join(' ');
+                valueClass = 'enrichment-tags-container';
+            } else if (field === 'description') {
+                // Render description with styling for longer text
+                displayValue = `<em>${suggestion.value}</em>`;
+                valueClass = 'enrichment-suggestion-value enrichment-description';
+            } else if (Array.isArray(suggestion.value)) {
+                displayValue = suggestion.value.join(', ');
+            } else {
+                displayValue = suggestion.value;
+            }
 
             const confidenceClass = suggestion.confidence >= 0.8 ? 'high' :
                 suggestion.confidence >= 0.6 ? 'medium' : 'low';
 
             container.innerHTML += `
-                <div class="enrichment-suggestion-item">
+                <div class="enrichment-suggestion-item ${field === 'description' ? 'description-item' : ''}">
                     <label class="enrichment-checkbox-label">
                         <input type="checkbox"
                                class="enrichment-checkbox"
@@ -198,7 +215,7 @@ function displaySuggestions(result) {
                                onchange="window.updateEnrichmentApplyBtn()">
                         <span class="enrichment-field-name">${fieldLabel}</span>
                     </label>
-                    <div class="enrichment-suggestion-value">${displayValue}</div>
+                    <div class="${valueClass}">${displayValue}</div>
                     <div class="enrichment-confidence ${confidenceClass}">
                         ${Math.round(suggestion.confidence * 100)}% confidence
                         <span class="enrichment-source">via ${suggestion.source}</span>
@@ -271,8 +288,12 @@ function getFieldLabel(field) {
     const labels = {
         name: '🏢 Property Name',
         amenities: '✨ Amenities',
+        amenities_tags: '🏷️ Amenity Tags',
+        neighborhood: '📍 Neighborhood',
+        description: '📝 Property Description',
         contact_phone: '📞 Contact Phone',
         contact_email: '📧 Contact Email',
+        contact_name: '👤 Contact Name',
         leasing_link: '🔗 Leasing URL',
         management_company: '🏛️ Management Company'
     };

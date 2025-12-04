@@ -10332,6 +10332,42 @@ input[type="radio"] {
 	border: 1px solid #e2e8f0;
 }
 
+/* Description field styling */
+.enrichment-suggestion-value.enrichment-description {
+	font-size: 13px;
+	line-height: 1.5;
+	color: #475569;
+	font-style: italic;
+	max-height: 100px;
+	overflow-y: auto;
+}
+
+/* Amenity tags container */
+.enrichment-tags-container {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	padding: 8px 0;
+	margin: 8px 0;
+}
+
+.enrichment-tag {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 10px;
+	background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+	color: white;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 500;
+}
+
+/* Description suggestion item */
+.enrichment-suggestion-item.description-item {
+	background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+	border-color: #86efac;
+}
+
 .enrichment-confidence {
 	display: flex;
 	align-items: center;

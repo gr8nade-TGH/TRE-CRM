@@ -54,6 +54,8 @@ export async function enrichProperty(property, onProgress = () => { }) {
             contact_email: property.contact_email,
             contact_name: property.contact_name,
             amenities: property.amenities,
+            neighborhood: property.neighborhood,
+            description: property.description,
             leasing_link: property.leasing_link,
             management_company: property.management_company
         };
@@ -72,11 +74,12 @@ export async function enrichProperty(property, onProgress = () => { }) {
 
         // Show progress steps while waiting
         const progressSteps = [
-            { message: '🌐 Connecting to property websites...', progress: 30, delay: 3000 },
-            { message: '📄 Scraping listing details...', progress: 45, delay: 6000 },
-            { message: '🏢 Extracting property name & amenities...', progress: 60, delay: 10000 },
-            { message: '📞 Finding contact information...', progress: 70, delay: 14000 },
-            { message: '🤖 AI analyzing & verifying data...', progress: 85, delay: 18000 }
+            { message: '🌐 Connecting to property websites...', progress: 25, delay: 3000 },
+            { message: '📄 Scraping listing details...', progress: 40, delay: 6000 },
+            { message: '🏢 Extracting property name & amenities...', progress: 55, delay: 10000 },
+            { message: '📍 Finding neighborhood info...', progress: 65, delay: 14000 },
+            { message: '📞 Finding contact information...', progress: 75, delay: 18000 },
+            { message: '📝 Generating property description...', progress: 85, delay: 22000 }
         ];
 
         // Set up progress timers
@@ -139,13 +142,32 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
                     updates.community_name = suggestion.value;
                     break;
                 case 'amenities':
-                    updates.amenities = suggestion.value;
+                    // Amenities can be a string or array - store as text
+                    updates.amenities = Array.isArray(suggestion.value)
+                        ? suggestion.value
+                        : suggestion.value;
+                    break;
+                case 'amenities_tags':
+                    // Amenity tags are stored as array in amenities column
+                    // Only apply if amenities wasn't already set
+                    if (!updates.amenities) {
+                        updates.amenities = suggestion.value;
+                    }
+                    break;
+                case 'neighborhood':
+                    updates.neighborhood = suggestion.value;
+                    break;
+                case 'description':
+                    updates.description = suggestion.value;
                     break;
                 case 'contact_phone':
                     updates.contact_phone = suggestion.value;
                     break;
                 case 'contact_email':
                     updates.contact_email = suggestion.value;
+                    break;
+                case 'contact_name':
+                    updates.contact_name = suggestion.value;
                     break;
                 case 'leasing_link':
                     updates.leasing_link = suggestion.value;

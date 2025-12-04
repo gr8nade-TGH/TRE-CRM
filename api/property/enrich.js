@@ -62,6 +62,8 @@ export default async function handler(req, res) {
             contact_email,
             contact_name,
             amenities,
+            neighborhood,
+            description,
             leasing_link,
             management_company
         } = req.body;
@@ -93,6 +95,8 @@ export default async function handler(req, res) {
             contact_email,
             contact_name,
             amenities,
+            neighborhood,
+            description,
             leasing_link,
             management_company
         });
