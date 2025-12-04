@@ -142,15 +142,13 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
                     updates.community_name = suggestion.value;
                     break;
                 case 'amenities':
-                    // Amenities can be a string or array - store as text
-                    updates.amenities = Array.isArray(suggestion.value)
-                        ? suggestion.value
-                        : suggestion.value;
+                    // Amenities description is stored in description field instead
+                    // The database amenities column is TEXT[] (array), not text
+                    // Skip - we use amenities_tags for the array instead
                     break;
                 case 'amenities_tags':
-                    // Amenity tags are stored as array in amenities column
-                    // Only apply if amenities wasn't already set
-                    if (!updates.amenities) {
+                    // Amenity tags are stored as array in amenities column (TEXT[])
+                    if (Array.isArray(suggestion.value)) {
                         updates.amenities = suggestion.value;
                     }
                     break;
