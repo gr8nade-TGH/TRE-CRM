@@ -130,11 +130,24 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
     const { getSupabase } = await import('./supabase-api.js');
     const supabase = getSupabase();
 
+    // Helper to check if value is valid (not null/empty/placeholder)
+    const isValidValue = (value) => {
+        if (value === null || value === undefined) return false;
+        if (typeof value === 'string') {
+            const trimmed = value.trim().toLowerCase();
+            if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined' ||
+                trimmed === 'n/a' || trimmed === 'none') {
+                return false;
+            }
+        }
+        return true;
+    };
+
     // Build update object from accepted suggestions
     const updates = {};
 
     for (const [field, suggestion] of Object.entries(suggestions)) {
-        if (suggestion.accepted) {
+        if (suggestion.accepted && isValidValue(suggestion.value)) {
             // Map suggestion fields to database columns
             switch (field) {
                 case 'name':
@@ -149,7 +162,11 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
                 case 'amenities_tags':
                     // Amenity tags are stored as array in amenities column (TEXT[])
                     if (Array.isArray(suggestion.value)) {
-                        updates.amenities = suggestion.value;
+                        // Filter out any null-like values from the array
+                        const validTags = suggestion.value.filter(tag => isValidValue(tag));
+                        if (validTags.length > 0) {
+                            updates.amenities = validTags;
+                        }
                     }
                     break;
                 case 'neighborhood':
@@ -185,6 +202,9 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
     updates.enrichment_status = 'enriched';
     updates.enriched_at = new Date().toISOString();
 
+    console.log('[Property Enrichment] Applying updates to property:', propertyId);
+    console.log('[Property Enrichment] Updates:', JSON.stringify(updates, null, 2));
+
     const { data, error } = await supabase
         .from('properties')
         .update(updates)
@@ -193,6 +213,7 @@ export async function applyEnrichmentSuggestions(propertyId, suggestions) {
         .single();
 
     if (error) {
+        console.error('[Property Enrichment] Supabase error:', error);
         throw new Error(`Failed to apply suggestions: ${error.message}`);
     }
 
