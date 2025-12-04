@@ -151,6 +151,23 @@ export async function openEnrichmentModal(property) {
     document.getElementById('enrichmentApplyBtn').disabled = true;
     document.getElementById('enrichmentSuggestions').innerHTML = '';
 
+    // Reset unit search section
+    const unitSection = document.getElementById('unitSearchSection');
+    if (unitSection) {
+        unitSection.classList.add('hidden');
+        document.getElementById('unitSearchPrompt').classList.remove('hidden');
+        document.getElementById('unitSearchProgress').classList.add('hidden');
+        document.getElementById('unitSearchResults').classList.add('hidden');
+        document.getElementById('unitSearchResults').innerHTML = '';
+        const unitSearchBtn = document.getElementById('unitSearchBtn');
+        if (unitSearchBtn) {
+            unitSearchBtn.disabled = false;
+            unitSearchBtn.innerHTML = '🔍 Search for Units';
+        }
+    }
+    currentLeasingUrl = null;
+    currentUnitResults = null;
+
     // Start enrichment
     try {
         const result = await enrichProperty(property, (message, progress) => {
@@ -677,8 +694,14 @@ async function startDeepSearch() {
  * Start unit search for available units and floor plans
  */
 async function startUnitSearch() {
-    if (isProcessing) return;
+    console.log('[Unit Search] Button clicked, isProcessing:', isProcessing, 'currentProperty:', !!currentProperty, 'currentLeasingUrl:', currentLeasingUrl);
+
+    if (isProcessing) {
+        console.log('[Unit Search] Blocked - still processing');
+        return;
+    }
     if (!currentProperty || !currentLeasingUrl) {
+        console.log('[Unit Search] Blocked - no property or leasing URL');
         toast('No leasing URL available for unit search', 'error');
         return;
     }
