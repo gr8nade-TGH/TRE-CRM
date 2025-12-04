@@ -7,9 +7,9 @@
  * @module properties/enrichment-ui
  */
 
-import { enrichProperty, applyEnrichmentSuggestions, markAsReviewed, checkEnrichmentStatus, deepSearchProperty } from '../../api/property-enrichment.js';
+import { enrichProperty, applyEnrichmentSuggestions, markAsReviewed, checkEnrichmentStatus, deepSearchProperty, searchPropertyUnits } from '../../api/property-enrichment.js';
 import { toast } from '../../utils/helpers.js';
-import { getAppSetting } from '../../api/supabase-api.js';
+import { getAppSetting, getFloorPlans, createFloorPlan, updateFloorPlan, createUnit } from '../../api/supabase-api.js';
 
 // State
 let currentProperty = null;
@@ -18,6 +18,7 @@ let currentMissingFields = null;
 let currentLeasingUrl = null;
 let enrichmentModal = null;
 let isProcessing = false;
+let currentUnitResults = null;
 
 /**
  * Initialize the enrichment UI
@@ -64,7 +65,27 @@ function createEnrichmentModal() {
                         </details>
                     </div>
                 </div>
-                
+
+                <!-- Unit Search Section - shown after property enrichment -->
+                <div id="unitSearchSection" class="unit-search-section hidden">
+                    <div class="unit-search-header">
+                        <h4>🏢 Unit Availability Search</h4>
+                        <p class="unit-search-description">Search for available units and floor plans from the property website.</p>
+                    </div>
+                    <div id="unitSearchPrompt" class="unit-search-prompt">
+                        <button class="btn btn-unit-search" id="unitSearchBtn" onclick="window.startUnitSearch()">
+                            🔍 Search for Units
+                        </button>
+                    </div>
+                    <div id="unitSearchProgress" class="unit-search-progress hidden">
+                        <div class="enrichment-progress-bar">
+                            <div class="enrichment-progress-fill" id="unitSearchProgressFill"></div>
+                        </div>
+                        <p id="unitSearchProgressText" class="enrichment-progress-text">Searching...</p>
+                    </div>
+                    <div id="unitSearchResults" class="unit-search-results hidden"></div>
+                </div>
+
                 <div id="enrichmentError" class="enrichment-error hidden">
                     <p id="enrichmentErrorText"></p>
                 </div>
@@ -365,6 +386,19 @@ function displaySuggestions(result) {
         screenshotImg.src = result.screenshot;
     }
 
+    // Show unit search section if we have a leasing URL
+    if (currentLeasingUrl) {
+        const unitSection = document.getElementById('unitSearchSection');
+        if (unitSection) {
+            unitSection.classList.remove('hidden');
+            // Reset unit search UI
+            document.getElementById('unitSearchPrompt').classList.remove('hidden');
+            document.getElementById('unitSearchProgress').classList.add('hidden');
+            document.getElementById('unitSearchResults').classList.add('hidden');
+            document.getElementById('unitSearchResults').innerHTML = '';
+        }
+    }
+
     // Enable apply button
     updateApplyButton();
 }
@@ -639,6 +673,351 @@ async function startDeepSearch() {
     }
 }
 
+/**
+ * Start unit search for available units and floor plans
+ */
+async function startUnitSearch() {
+    if (isProcessing) return;
+    if (!currentProperty || !currentLeasingUrl) {
+        toast('No leasing URL available for unit search', 'error');
+        return;
+    }
+
+    const unitSearchBtn = document.getElementById('unitSearchBtn');
+    const promptDiv = document.getElementById('unitSearchPrompt');
+    const progressDiv = document.getElementById('unitSearchProgress');
+    const resultsDiv = document.getElementById('unitSearchResults');
+    const progressFill = document.getElementById('unitSearchProgressFill');
+    const progressText = document.getElementById('unitSearchProgressText');
+
+    try {
+        isProcessing = true;
+        unitSearchBtn.disabled = true;
+        promptDiv.classList.add('hidden');
+        progressDiv.classList.remove('hidden');
+
+        const propertyName = currentSuggestions?.name?.value || currentProperty.name || currentProperty.community_name;
+        const address = currentProperty.street_address || currentProperty.address;
+
+        const result = await searchPropertyUnits({
+            propertyId: currentProperty.id,
+            propertyName: propertyName,
+            leasingUrl: currentLeasingUrl,
+            address: address
+        }, (message, percent) => {
+            if (progressFill) progressFill.style.width = `${percent}%`;
+            if (progressText) progressText.textContent = message;
+        });
+
+        progressDiv.classList.add('hidden');
+        currentUnitResults = result;
+
+        // Display results
+        displayUnitResults(result, resultsDiv);
+
+    } catch (error) {
+        console.error('[Unit Search] Error:', error);
+        toast(`Unit search failed: ${error.message}`, 'error');
+        progressDiv.classList.add('hidden');
+        promptDiv.classList.remove('hidden');
+        unitSearchBtn.disabled = false;
+        unitSearchBtn.innerHTML = '🔄 Retry Search';
+    } finally {
+        isProcessing = false;
+    }
+}
+
+/**
+ * Display unit search results
+ */
+function displayUnitResults(result, container) {
+    container.classList.remove('hidden');
+
+    const floorPlans = result.floorPlans || [];
+    const units = result.units || [];
+
+    if (floorPlans.length === 0 && units.length === 0) {
+        container.innerHTML = `
+            <div class="unit-search-empty">
+                <p>❌ No unit data found on the property website.</p>
+                <p class="hint">The website may not have a public floor plans or availability page.</p>
+            </div>
+        `;
+        return;
+    }
+
+    let html = `<div class="unit-search-found">`;
+
+    // Floor Plans Summary
+    if (floorPlans.length > 0) {
+        html += `
+            <h5>📐 Floor Plans Found (${floorPlans.length})</h5>
+            <div class="unit-floor-plans-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllFloorPlans" onchange="window.toggleAllFloorPlans(this.checked)"></th>
+                            <th>Name</th>
+                            <th>Beds/Baths</th>
+                            <th>Sqft</th>
+                            <th>Rent Range</th>
+                            <th>Avail</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        floorPlans.forEach((fp, idx) => {
+            const rentRange = fp.rent_min === fp.rent_max
+                ? `$${fp.rent_min?.toLocaleString() || '?'}`
+                : `$${fp.rent_min?.toLocaleString() || '?'} - $${fp.rent_max?.toLocaleString() || '?'}`;
+            html += `
+                <tr>
+                    <td><input type="checkbox" class="fp-checkbox" data-fp-idx="${idx}" checked></td>
+                    <td><strong>${fp.name}</strong></td>
+                    <td>${fp.beds}bd/${fp.baths}ba</td>
+                    <td>${fp.sqft?.toLocaleString() || '?'} sqft</td>
+                    <td>${rentRange}</td>
+                    <td>${fp.units_available || '?'}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table></div>`;
+    }
+
+    // Individual Units
+    if (units.length > 0) {
+        html += `
+            <h5 style="margin-top: 16px;">🏠 Individual Units Found (${units.length})</h5>
+            <div class="unit-units-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th><input type="checkbox" id="selectAllUnits" onchange="window.toggleAllUnits(this.checked)"></th>
+                            <th>Unit #</th>
+                            <th>Floor Plan</th>
+                            <th>Beds/Baths</th>
+                            <th>Sqft</th>
+                            <th>Rent</th>
+                            <th>Available</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        units.forEach((unit, idx) => {
+            const availDate = unit.available_from
+                ? new Date(unit.available_from).toLocaleDateString()
+                : 'Now';
+            const statusBadge = unit.status === 'available'
+                ? '<span class="badge-available">Available</span>'
+                : unit.status === 'pending'
+                    ? '<span class="badge-pending">Pending</span>'
+                    : '<span class="badge-leased">Leased</span>';
+            html += `
+                <tr>
+                    <td><input type="checkbox" class="unit-checkbox" data-unit-idx="${idx}" checked></td>
+                    <td><strong>${unit.unit_number}</strong></td>
+                    <td>${unit.floor_plan_name || '-'}</td>
+                    <td>${unit.beds}bd/${unit.baths}ba</td>
+                    <td>${unit.sqft?.toLocaleString() || '?'}</td>
+                    <td>$${unit.rent?.toLocaleString() || '?'}</td>
+                    <td>${availDate}</td>
+                    <td>${statusBadge}</td>
+                </tr>
+            `;
+        });
+
+        html += `</tbody></table></div>`;
+    }
+
+    html += `
+        <div class="unit-search-actions">
+            <button class="btn btn-primary" onclick="window.importSelectedUnits()">
+                📥 Import Selected Units
+            </button>
+            <p class="import-hint">This will create/update floor plans and units for this property</p>
+        </div>
+    </div>`;
+
+    container.innerHTML = html;
+}
+
+/**
+ * Toggle all floor plan checkboxes
+ */
+function toggleAllFloorPlans(checked) {
+    document.querySelectorAll('.fp-checkbox').forEach(cb => cb.checked = checked);
+}
+
+/**
+ * Toggle all unit checkboxes
+ */
+function toggleAllUnits(checked) {
+    document.querySelectorAll('.unit-checkbox').forEach(cb => cb.checked = checked);
+}
+
+/**
+ * Import selected units and floor plans to the database
+ */
+async function importSelectedUnits() {
+    if (!currentUnitResults || !currentProperty) {
+        toast('No unit data to import', 'error');
+        return;
+    }
+
+    const floorPlans = currentUnitResults.floorPlans || [];
+    const units = currentUnitResults.units || [];
+    const propertyId = currentProperty.id;
+
+    // Get selected floor plans
+    const selectedFpIndexes = [];
+    document.querySelectorAll('.fp-checkbox:checked').forEach(cb => {
+        selectedFpIndexes.push(parseInt(cb.dataset.fpIdx));
+    });
+
+    // Get selected units
+    const selectedUnitIndexes = [];
+    document.querySelectorAll('.unit-checkbox:checked').forEach(cb => {
+        selectedUnitIndexes.push(parseInt(cb.dataset.unitIdx));
+    });
+
+    if (selectedFpIndexes.length === 0 && selectedUnitIndexes.length === 0) {
+        toast('No items selected to import', 'error');
+        return;
+    }
+
+    try {
+        const importBtn = document.querySelector('.unit-search-actions button');
+        importBtn.disabled = true;
+        importBtn.innerHTML = '⏳ Importing...';
+
+        let fpCreated = 0, fpUpdated = 0, unitsCreated = 0;
+
+        // Create a map of floor plan name -> DB id for linking units
+        const floorPlanMap = new Map();
+
+        // Import floor plans first
+        for (const idx of selectedFpIndexes) {
+            const fp = floorPlans[idx];
+            if (!fp) continue;
+
+            // Check if floor plan already exists for this property
+            const existingFps = await getFloorPlans(propertyId);
+            const existing = existingFps?.find(e =>
+                e.beds === fp.beds && e.baths === fp.baths
+            );
+
+            if (existing) {
+                // Update existing floor plan
+                await updateFloorPlan(existing.id, {
+                    name: fp.name,
+                    sqft: fp.sqft || existing.sqft,
+                    market_rent: fp.rent_max || existing.market_rent,
+                    starting_at: fp.rent_min || existing.starting_at,
+                    units_available: fp.units_available || existing.units_available
+                });
+                floorPlanMap.set(fp.name, existing.id);
+                fpUpdated++;
+            } else {
+                // Create new floor plan
+                const newFp = await createFloorPlan({
+                    property_id: propertyId,
+                    name: fp.name,
+                    beds: fp.beds,
+                    baths: fp.baths,
+                    sqft: fp.sqft || null,
+                    market_rent: fp.rent_max || fp.rent_min || 0,
+                    starting_at: fp.rent_min || fp.rent_max || 0,
+                    units_available: fp.units_available || 0,
+                    has_concession: false
+                });
+                floorPlanMap.set(fp.name, newFp.id);
+                fpCreated++;
+            }
+        }
+
+        // Import units
+        for (const idx of selectedUnitIndexes) {
+            const unit = units[idx];
+            if (!unit) continue;
+
+            // Find or create the floor plan for this unit
+            let floorPlanId = floorPlanMap.get(unit.floor_plan_name);
+
+            if (!floorPlanId) {
+                // Create a floor plan for this unit if needed
+                const existingFps = await getFloorPlans(propertyId);
+                const existing = existingFps?.find(e =>
+                    e.beds === unit.beds && e.baths === unit.baths
+                );
+
+                if (existing) {
+                    floorPlanId = existing.id;
+                } else {
+                    const newFp = await createFloorPlan({
+                        property_id: propertyId,
+                        name: unit.floor_plan_name || `${unit.beds}x${unit.baths}`,
+                        beds: unit.beds,
+                        baths: unit.baths,
+                        sqft: unit.sqft || null,
+                        market_rent: unit.rent || 0,
+                        starting_at: unit.rent || 0,
+                        units_available: 1,
+                        has_concession: false
+                    });
+                    floorPlanId = newFp.id;
+                    fpCreated++;
+                }
+            }
+
+            // Create the unit
+            await createUnit({
+                floor_plan_id: floorPlanId,
+                property_id: propertyId,
+                unit_number: unit.unit_number,
+                floor: unit.floor || null,
+                rent: unit.rent || null,
+                market_rent: unit.rent || null,
+                available_from: unit.available_from || new Date().toISOString().split('T')[0],
+                is_available: unit.status === 'available',
+                status: unit.status || 'available',
+                is_active: true
+            });
+            unitsCreated++;
+        }
+
+        toast(`✅ Imported: ${fpCreated} floor plans created, ${fpUpdated} updated, ${unitsCreated} units added`, 'success');
+
+        // Update the UI
+        const resultsDiv = document.getElementById('unitSearchResults');
+        resultsDiv.innerHTML = `
+            <div class="unit-import-success">
+                <h5>✅ Import Complete!</h5>
+                <p>${fpCreated} floor plan(s) created</p>
+                <p>${fpUpdated} floor plan(s) updated</p>
+                <p>${unitsCreated} unit(s) added</p>
+            </div>
+        `;
+
+        // Refresh listings
+        if (window.refreshListingsPage) {
+            window.refreshListingsPage();
+        }
+
+    } catch (error) {
+        console.error('[Unit Import] Error:', error);
+        toast(`Import failed: ${error.message}`, 'error');
+        const importBtn = document.querySelector('.unit-search-actions button');
+        if (importBtn) {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '📥 Retry Import';
+        }
+    }
+}
+
 // Export global functions for onclick handlers
 window.closeEnrichmentModal = closeModal;
 window.applyEnrichmentChanges = applyChanges;
@@ -646,6 +1025,10 @@ window.updateEnrichmentApplyBtn = updateApplyButton;
 window.openPropertyEnrichment = openEnrichmentModal;
 window.deleteEnrichmentProperty = deleteProperty;
 window.startDeepSearch = startDeepSearch;
+window.startUnitSearch = startUnitSearch;
+window.toggleAllFloorPlans = toggleAllFloorPlans;
+window.toggleAllUnits = toggleAllUnits;
+window.importSelectedUnits = importSelectedUnits;
 
 export default {
     initEnrichmentUI,

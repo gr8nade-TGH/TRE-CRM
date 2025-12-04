@@ -305,11 +305,64 @@ export async function deepSearchProperty(property, missingFields, onProgress = (
     }
 }
 
+/**
+ * Search for available units at a property
+ * @param {Object} params - Search parameters
+ * @param {string} params.propertyId - Property ID
+ * @param {string} params.propertyName - Property name
+ * @param {string} params.leasingUrl - Property leasing URL
+ * @param {string} params.address - Property address
+ * @param {Function} onProgress - Progress callback
+ * @returns {Promise<Object>} Unit search results
+ */
+export async function searchPropertyUnits({ propertyId, propertyName, leasingUrl, address }, onProgress = () => { }) {
+    console.log(`[Unit Search] Starting search for ${propertyName}`);
+    console.log(`[Unit Search] Leasing URL: ${leasingUrl}`);
+
+    try {
+        onProgress('🏢 Connecting to property website...', 10);
+
+        const response = await fetch(`${BASE_URL}/unit-search`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                propertyId,
+                propertyName,
+                leasingUrl,
+                address
+            })
+        });
+
+        onProgress('🔍 Scanning floor plans and availability...', 40);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.error || `Server error: ${response.status}`);
+        }
+
+        onProgress('🤖 AI extracting unit details...', 70);
+
+        const result = await response.json();
+
+        onProgress('✅ Unit search complete!', 100);
+        console.log(`[Unit Search] Found ${result.floorPlans?.length || 0} floor plans, ${result.units?.length || 0} units`);
+
+        return result;
+
+    } catch (error) {
+        console.error('[Unit Search] Request failed:', error);
+        throw error;
+    }
+}
+
 export default {
     checkEnrichmentStatus,
     enrichProperty,
     applyEnrichmentSuggestions,
     markAsReviewed,
-    deepSearchProperty
+    deepSearchProperty,
+    searchPropertyUnits
 };
 

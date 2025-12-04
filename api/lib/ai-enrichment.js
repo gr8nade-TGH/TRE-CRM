@@ -1797,10 +1797,231 @@ Rules:
     }
 }
 
+/**
+ * Search for available units on a property website
+ * Scrapes floor plans and availability pages
+ *
+ * @param {Object} params - Search parameters
+ * @param {string} params.propertyId - Property ID
+ * @param {string} params.propertyName - Property name
+ * @param {string} params.leasingUrl - Property leasing URL
+ * @param {string} params.address - Property address
+ * @returns {Promise<Object>} Unit search results
+ */
+export async function searchUnits({ propertyId, propertyName, leasingUrl, address }) {
+    const browserlessToken = process.env.BROWSERLESS_TOKEN;
+    const openaiKey = process.env.OPENAI_API_KEY;
+
+    if (!browserlessToken || !openaiKey) {
+        throw new Error('Unit search requires BROWSERLESS_TOKEN and OPENAI_API_KEY');
+    }
+
+    console.log(`[Unit Search] Starting search for: ${propertyName}`);
+    console.log(`[Unit Search] Base URL: ${leasingUrl}`);
+
+    const results = {
+        propertyId,
+        propertyName,
+        units: [],
+        floorPlans: [],
+        sources_checked: [],
+        errors: [],
+        started_at: new Date().toISOString()
+    };
+
+    // Parse base URL for building subpage URLs
+    let baseUrl;
+    try {
+        baseUrl = new URL(leasingUrl);
+    } catch (e) {
+        results.errors.push(`Invalid leasing URL: ${leasingUrl}`);
+        results.completed_at = new Date().toISOString();
+        return results;
+    }
+
+    // Common paths for floor plans and availability
+    const unitPaths = [
+        '/floor-plans',
+        '/floorplans',
+        '/apartments',
+        '/availability',
+        '/available-apartments',
+        '/units',
+        '/pricing',
+        '/rent',
+        '/floor-plans-pricing',
+        ''  // Also check main page
+    ];
+
+    // Try each path until we find unit data
+    let contentToAnalyze = '';
+    let successfulUrl = null;
+
+    for (const path of unitPaths) {
+        const fullUrl = path ? `${baseUrl.origin}${path}` : leasingUrl;
+        console.log(`[Unit Search] Trying: ${fullUrl}`);
+
+        try {
+            const pageData = await scrapePage(fullUrl, browserlessToken);
+            results.sources_checked.push({
+                url: fullUrl,
+                success: pageData.success
+            });
+
+            if (pageData.success && pageData.content) {
+                // Check if content has floor plan or unit indicators
+                const content = pageData.content.toLowerCase();
+                const hasUnitData =
+                    content.includes('bedroom') ||
+                    content.includes('bed/bath') ||
+                    content.includes('sq ft') ||
+                    content.includes('sqft') ||
+                    content.includes('floor plan') ||
+                    content.includes('available') ||
+                    content.includes('/month') ||
+                    content.includes('starting at');
+
+                if (hasUnitData) {
+                    contentToAnalyze += `\n\n--- Content from ${fullUrl} ---\n${pageData.content}`;
+                    successfulUrl = fullUrl;
+                    console.log(`[Unit Search] Found unit data at: ${fullUrl}`);
+                }
+            }
+        } catch (error) {
+            console.log(`[Unit Search] Error scraping ${fullUrl}: ${error.message}`);
+        }
+    }
+
+    if (!contentToAnalyze) {
+        console.log('[Unit Search] No unit content found on any page');
+        results.errors.push('No floor plan or availability pages found');
+        results.completed_at = new Date().toISOString();
+        return results;
+    }
+
+    // Use AI to extract unit data from content
+    console.log('[Unit Search] Extracting unit data with AI...');
+    const extracted = await extractUnitsFromContent(contentToAnalyze, propertyName, openaiKey);
+
+    if (extracted.floorPlans && extracted.floorPlans.length > 0) {
+        results.floorPlans = extracted.floorPlans;
+        console.log(`[Unit Search] Found ${extracted.floorPlans.length} floor plans`);
+    }
+
+    if (extracted.units && extracted.units.length > 0) {
+        results.units = extracted.units;
+        console.log(`[Unit Search] Found ${extracted.units.length} individual units`);
+    }
+
+    results.sourceUrl = successfulUrl;
+    results.completed_at = new Date().toISOString();
+    return results;
+}
+
+/**
+ * Extract unit/floor plan data from scraped content using AI
+ */
+async function extractUnitsFromContent(content, propertyName, openaiKey) {
+    const truncatedContent = content.slice(0, 15000);
+
+    const systemPrompt = `You are an expert at extracting apartment unit and floor plan data from websites.
+
+Extract ALL floor plans and available units from this apartment property website.
+
+Return JSON in this exact format:
+{
+  "floorPlans": [
+    {
+      "name": "A1 or The Madison or 1x1 Classic",
+      "beds": 1,
+      "baths": 1.0,
+      "sqft": 650,
+      "rent_min": 1050,
+      "rent_max": 1200,
+      "units_available": 3
+    }
+  ],
+  "units": [
+    {
+      "unit_number": "101 or A or Unit 1",
+      "floor_plan_name": "A1 (link to floor plan above)",
+      "beds": 1,
+      "baths": 1.0,
+      "sqft": 650,
+      "rent": 1095,
+      "available_from": "2025-01-15 or null if move-in ready",
+      "floor": 1,
+      "status": "available or pending or leased"
+    }
+  ]
+}
+
+IMPORTANT RULES:
+1. Extract ALL floor plans you can find (A1, A2, B1, etc.)
+2. Extract ALL individual units if shown (101, 102, 201, etc.)
+3. Rent should be numeric only (no $ or commas)
+4. Sqft should be numeric only
+5. available_from should be YYYY-MM-DD format or null
+6. If only floor plans are shown (not individual units), return empty units array
+7. baths can be decimals like 1.5, 2.0
+8. beds 0 = studio
+9. Don't make up data - only extract what's clearly shown`;
+
+    const userPrompt = `Property: ${propertyName}
+
+Extract floor plans and units from this content:
+---
+${truncatedContent}
+---
+
+Return JSON only.`;
+
+    try {
+        const response = await fetch(`${OPENAI_API_BASE}/chat/completions`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${openaiKey}`,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userPrompt }
+                ],
+                temperature: 0.1,
+                max_tokens: 2000,
+                response_format: { type: "json_object" }
+            })
+        });
+
+        const data = await response.json();
+        const result = JSON.parse(data.choices?.[0]?.message?.content || '{}');
+
+        // Clean and validate the results
+        const cleanedFloorPlans = (result.floorPlans || []).filter(fp =>
+            fp.name && typeof fp.beds === 'number'
+        );
+
+        const cleanedUnits = (result.units || []).filter(u =>
+            u.unit_number && typeof u.rent === 'number'
+        );
+
+        return {
+            floorPlans: cleanedFloorPlans,
+            units: cleanedUnits
+        };
+    } catch (error) {
+        console.error('[Unit Search] AI extraction error:', error.message);
+        return { floorPlans: [], units: [] };
+    }
+}
+
 export default {
     checkConfiguration,
     enrichProperty,
     analyzePropertyData,
-    deepSearchProperty
+    deepSearchProperty,
+    searchUnits
 };
 
