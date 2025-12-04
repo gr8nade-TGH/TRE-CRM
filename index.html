@@ -608,6 +608,7 @@
 							<thead>
 								<tr>
 									<th></th>
+									<th class="photo-col"></th>
 									<th data-sort="name" class="sortable">Listings <span class="sort-icon">↕</span></th>
 									<th data-sort="rent_min" class="sortable">Rent Range <span
 											class="sort-icon">↕</span></th>
@@ -3778,6 +3779,21 @@
 				<div class="modal-body">
 					<div id="dynamicModalContent">
 						<!-- Dynamic content will be populated here -->
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Property Photo Gallery Modal -->
+		<div id="photoGalleryModal" class="modal hidden">
+			<div class="modal-card large" id="photoGalleryModalCard">
+				<div class="modal-header">
+					<h3 id="photoGalleryTitle">📷 Property Photos</h3>
+					<button id="closePhotoGallery" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="photoGalleryContent">
+						<!-- Photos will be populated here -->
 					</div>
 				</div>
 			</div>

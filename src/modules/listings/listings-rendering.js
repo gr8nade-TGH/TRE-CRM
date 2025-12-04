@@ -281,9 +281,26 @@ export async function renderListings(options, autoSelectProperty = null) {
 				matchScoreBadge = generateStarRating(matchScore);
 			}
 
+			// Get primary photo (first image from photos array)
+			const primaryPhoto = prop.photos && prop.photos.length > 0 ? prop.photos[0] : null;
+			const hasPhotos = prop.photos && prop.photos.length > 0;
+			const totalPhotos = prop.photos?.length || 0;
+
 			tr.innerHTML = `
 			<td>
 				${hasUnits ? `<span class="expand-arrow" data-property-id="${prop.id}" style="cursor: pointer; user-select: none;">▶</span>` : ''}
+			</td>
+			<td class="photo-cell">
+				<div class="property-thumbnail ${hasPhotos ? 'has-photo' : 'needs-photo'}" data-property-id="${prop.id}" title="${hasPhotos ? `View ${totalPhotos} photo(s)` : 'Need Image'}">
+					${hasPhotos
+					? `<img src="${primaryPhoto}" alt="${communityName}" onerror="this.parentElement.classList.add('needs-photo'); this.parentElement.classList.remove('has-photo'); this.style.display='none'; this.nextElementSibling.style.display='flex';">`
+					: ''}
+					<div class="thumbnail-placeholder" style="${hasPhotos ? 'display:none;' : 'display:flex;'}">
+						<span>📷</span>
+						<small>Need Image</small>
+					</div>
+					${hasPhotos ? `<span class="photo-count">${totalPhotos}</span>` : ''}
+				</div>
 			</td>
 			<td data-sort="name">
 				<div class="lead-name">
@@ -395,6 +412,19 @@ export async function renderListings(options, autoSelectProperty = null) {
 				});
 			}
 
+			// Add photo thumbnail click handler to open gallery
+			const photoThumbnail = tr.querySelector('.property-thumbnail');
+			if (photoThumbnail) {
+				photoThumbnail.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					console.log('=== PHOTO THUMBNAIL CLICKED ===');
+					console.log('Property:', prop.name);
+
+					const { openPhotoGalleryModal } = await import('./photo-gallery.js');
+					await openPhotoGalleryModal(prop);
+				});
+			}
+
 			// Add expand/collapse handler for units
 			if (hasUnits) {
 				const expandArrow = tr.querySelector('.expand-arrow');
@@ -460,6 +490,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					<td style="padding-left: 40px;">
 						<input type="checkbox" class="unit-checkbox" data-unit-id="${unit.id}" ${isInactive ? 'disabled' : ''}>
 					</td>
+					<td></td>
 					<td>
 						<div class="lead-name" style="font-size: 0.9em;">
 							<span style="color: #6b7280;">Unit ${unit.unit_number}</span>
