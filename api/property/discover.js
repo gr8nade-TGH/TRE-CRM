@@ -230,6 +230,9 @@ export default async function handler(req, res) {
             // Use google_place_id as primary deduplication key
             const placeId = place.place_id || place.data_id;
 
+            const coordLat = place.gps_coordinates?.latitude || null;
+            const coordLng = place.gps_coordinates?.longitude || null;
+
             apartments.push({
                 name: place.title,
                 community_name: place.title,
@@ -243,8 +246,11 @@ export default async function handler(req, res) {
                 google_data_id: place.data_id || null, // For photos API later
                 google_rating: place.rating || null,
                 google_reviews_count: place.reviews || null,
-                latitude: place.gps_coordinates?.latitude || null,
-                longitude: place.gps_coordinates?.longitude || null,
+                // Store coordinates in BOTH column sets for map compatibility
+                lat: coordLat,
+                lng: coordLng,
+                latitude: coordLat,
+                longitude: coordLng,
                 thumbnail: place.thumbnail || null,
                 discovered_at: new Date().toISOString(),
                 enrichment_status: 'pending',
