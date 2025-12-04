@@ -8,13 +8,17 @@
  * @returns {boolean} True if property matches all filters
  */
 export function matchesListingsFilters(property, filters) {
-	// Search filter
+	// Search filter - handle null/undefined values safely
 	if (filters.search) {
 		const searchTerm = filters.search.toLowerCase();
+		const name = (property.name || property.community_name || '').toLowerCase();
+		const address = (property.address || property.street_address || '').toLowerCase();
+		const amenities = Array.isArray(property.amenities) ? property.amenities : [];
+
 		const matchesSearch =
-			property.name.toLowerCase().includes(searchTerm) ||
-			property.address.toLowerCase().includes(searchTerm) ||
-			property.amenities.some(amenity => amenity.toLowerCase().includes(searchTerm));
+			name.includes(searchTerm) ||
+			address.includes(searchTerm) ||
+			amenities.some(amenity => (amenity || '').toLowerCase().includes(searchTerm));
 		if (!matchesSearch) return false;
 	}
 
@@ -48,7 +52,7 @@ export function matchesListingsFilters(property, filters) {
 		}
 	}
 
-	// Amenities filter
+	// Amenities filter - handle null/undefined safely
 	if (filters.amenities !== 'any') {
 		const amenityMap = {
 			'pool': 'Pool',
@@ -57,7 +61,8 @@ export function matchesListingsFilters(property, filters) {
 			'ev': 'EV Charging'
 		};
 		const requiredAmenity = amenityMap[filters.amenities];
-		if (!property.amenities.includes(requiredAmenity)) {
+		const amenities = Array.isArray(property.amenities) ? property.amenities : [];
+		if (!amenities.includes(requiredAmenity)) {
 			return false;
 		}
 	}
