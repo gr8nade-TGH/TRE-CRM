@@ -448,6 +448,72 @@ async function runTargetedSearches(property, serpApiKey) {
 }
 
 /**
+ * Search for property images using SerpAPI Google Images
+ * Returns clean image URLs with no source tracking
+ *
+ * @param {string} propertyName - Property name
+ * @param {string} city - City
+ * @param {string} state - State
+ * @param {string} serpApiKey - SerpAPI key
+ * @returns {Promise<string[]>} Array of image URLs
+ */
+async function searchPropertyImages(propertyName, city, state, serpApiKey) {
+    if (!propertyName || !serpApiKey) return [];
+
+    console.log(`[AI Enrichment] Searching for property images: ${propertyName}`);
+
+    try {
+        const params = new URLSearchParams({
+            engine: 'google_images',
+            q: `"${propertyName}" apartments ${city} ${state} exterior building`,
+            num: '10',
+            gl: 'us',
+            hl: 'en',
+            safe: 'active',
+            api_key: serpApiKey
+        });
+
+        const response = await fetch(`${SERPAPI_BASE_URL}?${params.toString()}`);
+        if (!response.ok) {
+            console.log(`[AI Enrichment] Image search failed: ${response.status}`);
+            return [];
+        }
+
+        const data = await response.json();
+        const images = data.images_results || [];
+
+        // Extract only the original image URLs - no source/attribution
+        const imageUrls = images
+            .slice(0, 6) // Limit to 6 images
+            .map(img => img.original)
+            .filter(url => {
+                if (!url) return false;
+                // Filter out small/icon images and known bad sources
+                const lowerUrl = url.toLowerCase();
+                return !lowerUrl.includes('icon') &&
+                    !lowerUrl.includes('logo') &&
+                    !lowerUrl.includes('avatar') &&
+                    !lowerUrl.includes('favicon') &&
+                    !lowerUrl.includes('placeholder') &&
+                    (lowerUrl.endsWith('.jpg') ||
+                        lowerUrl.endsWith('.jpeg') ||
+                        lowerUrl.endsWith('.png') ||
+                        lowerUrl.endsWith('.webp') ||
+                        lowerUrl.includes('.jpg') ||
+                        lowerUrl.includes('.jpeg') ||
+                        lowerUrl.includes('.png'));
+            });
+
+        console.log(`[AI Enrichment] Found ${imageUrls.length} property images`);
+        return imageUrls;
+
+    } catch (error) {
+        console.error('[AI Enrichment] Image search error:', error.message);
+        return [];
+    }
+}
+
+/**
  * Simple fetch-based scrape for property websites (fast, no browser needed)
  * @param {string} url - URL to scrape
  * @param {number} timeoutMs - Timeout in milliseconds (default 15000)
@@ -573,6 +639,43 @@ async function browserlessScrape(url, browserlessToken, timeout = 30000) {
         // Short delay to appear human (reduced for faster scraping)
         await new Promise(r => setTimeout(r, randomDelay(500, 1000)));
 
+        // Extract image URLs BEFORE removing elements (for floor plan images)
+        const imageUrls = await page.evaluate((pageUrl) => {
+            const baseOrigin = new URL(pageUrl).origin;
+            const imgs = Array.from(document.querySelectorAll('img'));
+            return imgs
+                .map(img => {
+                    let src = img.src || img.dataset.src || img.dataset.lazySrc || '';
+                    // Convert relative URLs to absolute
+                    if (src && !src.startsWith('http')) {
+                        src = src.startsWith('/') ? baseOrigin + src : baseOrigin + '/' + src;
+                    }
+                    const alt = img.alt || '';
+                    return { src, alt };
+                })
+                .filter(img => {
+                    if (!img.src) return false;
+                    const lowerSrc = img.src.toLowerCase();
+                    const lowerAlt = img.alt.toLowerCase();
+                    // Filter for floor plan related images
+                    const isFloorPlan =
+                        lowerAlt.includes('floor') ||
+                        lowerAlt.includes('plan') ||
+                        lowerAlt.includes('layout') ||
+                        lowerSrc.includes('floor') ||
+                        lowerSrc.includes('plan') ||
+                        lowerSrc.includes('layout') ||
+                        lowerSrc.includes('fp_') ||
+                        lowerSrc.includes('floorplan');
+                    // Also accept large images that might be floor plans
+                    const isLargeImage =
+                        (img.width >= 300 || lowerSrc.includes('large') || lowerSrc.includes('full'));
+                    return isFloorPlan || isLargeImage;
+                })
+                .map(img => img.src)
+                .slice(0, 20); // Limit to 20 images
+        }, url);
+
         // Extract content
         const content = await page.evaluate(() => {
             // Remove non-content elements
@@ -597,6 +700,7 @@ async function browserlessScrape(url, browserlessToken, timeout = 30000) {
             description,
             content,
             contentLength: content.length,
+            imageUrls, // Include extracted image URLs
             method: 'browserless',
             scrapedAt: new Date().toISOString()
         };
@@ -1631,6 +1735,31 @@ Return ONLY the description text, no quotes or formatting.`;
         }
     }
 
+    // ============================================================
+    // STEP 6: Search for property images (if photos field is empty)
+    // ============================================================
+    const hasExistingPhotos = property.photos && Array.isArray(property.photos) && property.photos.length > 0;
+    if (!hasExistingPhotos && serpApiKey && (searchExtract.property_name || property.name)) {
+        console.log('[AI Enrichment] Step 6: Searching for property images...');
+        try {
+            const propertyNameForSearch = searchExtract.property_name || property.name;
+            const propertyImages = await searchPropertyImages(propertyNameForSearch, city, state, serpApiKey);
+
+            if (propertyImages.length > 0) {
+                results.suggestions.photos = {
+                    value: propertyImages,
+                    confidence: 0.75,
+                    source: 'image_search',
+                    reason: `Found ${propertyImages.length} property photos`
+                };
+                console.log(`[AI Enrichment] Found ${propertyImages.length} property photos`);
+            }
+        } catch (error) {
+            console.error('[AI Enrichment] Image search error:', error.message);
+            // Non-critical, continue without images
+        }
+    }
+
     results.completed_at = new Date().toISOString();
     console.log(`[AI Enrichment] Complete. Found ${Object.keys(results.suggestions).length} suggestions.`);
     return results;
@@ -1641,19 +1770,29 @@ Return ONLY the description text, no quotes or formatting.`;
 // ============================================================
 
 /**
- * Common subpages to check for contact information
+ * Common subpages to check for contact information and specials
  */
-const CONTACT_SUBPAGES = [
+const DEEP_SEARCH_SUBPAGES = [
+    // Contact pages (most likely to have contact info)
     '/contact',
     '/contact-us',
     '/about',
     '/about-us',
+    '/team',
+    '/staff',
+    // Leasing pages (may have specials and contact info)
     '/apply',
     '/leasing',
     '/schedule-tour',
     '/schedule-a-tour',
-    '/team',
-    '/staff'
+    // Specials/promotions pages
+    '/specials',
+    '/promotions',
+    '/move-in-specials',
+    '/deals',
+    '/offers',
+    '/current-specials',
+    '/incentives'
 ];
 
 /**
@@ -1691,8 +1830,18 @@ export async function deepSearchProperty(options) {
         return results;
     }
 
-    // Build list of URLs to scrape
-    const urlsToScrape = CONTACT_SUBPAGES.map(path => `${baseUrl.origin}${path}`);
+    // Build list of URLs to scrape based on what we're looking for
+    // Prioritize specials pages if looking for specials_text
+    const lookingForSpecials = missing_fields.includes('specials_text');
+    const urlsToScrape = DEEP_SEARCH_SUBPAGES
+        .filter(path => {
+            // If looking for specials, include all pages
+            if (lookingForSpecials) return true;
+            // Otherwise skip specials-specific pages
+            const specialsPaths = ['/specials', '/promotions', '/move-in-specials', '/deals', '/offers', '/current-specials', '/incentives'];
+            return !specialsPaths.includes(path);
+        })
+        .map(path => `${baseUrl.origin}${path}`);
 
     // Scrape each subpage
     for (const url of urlsToScrape) {
@@ -1715,8 +1864,8 @@ export async function deepSearchProperty(options) {
             });
 
             if (pageData.success && pageData.content?.length > 200) {
-                // Extract contact info from this page
-                const extraction = await extractContactInfo(
+                // Extract contact info and specials from this page
+                const extraction = await extractDeepSearchInfo(
                     pageData.content,
                     stillMissing,
                     address,
@@ -1749,29 +1898,37 @@ export async function deepSearchProperty(options) {
 }
 
 /**
- * Extract contact information from page content
+ * Extract contact information and specials from page content
  */
-async function extractContactInfo(content, missingFields, address, openaiKey) {
+async function extractDeepSearchInfo(content, missingFields, address, openaiKey) {
     const truncatedContent = content.slice(0, 12000);
 
-    const systemPrompt = `You are extracting contact information from a property website.
+    // Build dynamic extraction based on what's missing
+    const lookingForSpecials = missingFields.includes('specials_text');
+    const lookingForContact = missingFields.some(f => ['contact_phone', 'contact_email', 'contact_name'].includes(f));
+
+    const systemPrompt = `You are extracting property information from an apartment website.
 Look for: ${missingFields.join(', ')}
 
 Return ONLY valid JSON:
 {
   "extracted": {
-    "contact_phone": "(XXX) XXX-XXXX or null",
+    ${lookingForContact ? `"contact_phone": "(XXX) XXX-XXXX or null",
     "contact_email": "email@domain.com or null",
-    "contact_name": "Person's name or null"
+    "contact_name": "Person's name or null",` : ''}
+    ${lookingForSpecials ? `"specials_text": "Current move-in specials, promotions, or deals - include specific amounts/months if mentioned. Example: '$500 off first month' or '2 months free on 12-month lease'. Return null if no specials found.",` : ''}
+    "office_hours": "Office hours if shown or null"
   }
 }
 
 Rules:
-- Only extract actual contact info, not placeholder text
+- Only extract real data, not placeholder text
 - Phone must be a real phone number format
 - Email must be a valid email address
 - Contact name should be a real person's name (not "Leasing Office")
-- Return null if not found or uncertain`;
+- For specials: Look for move-in specials, rent concessions, free months, waived fees, etc.
+- Be specific about specials amounts/terms when found
+- Return null for any field not found or uncertain`;
 
     try {
         const response = await fetch(`${OPENAI_API_BASE}/chat/completions`, {
@@ -1787,7 +1944,7 @@ Rules:
                     { role: 'user', content: `Property: ${address}\n\nPage content:\n${truncatedContent}` }
                 ],
                 temperature: 0.1,
-                max_tokens: 500,
+                max_tokens: 600,
                 response_format: { type: "json_object" }
             })
         });
@@ -1854,6 +2011,7 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
     // Try paths until we find good content - STOP EARLY to avoid timeout
     let contentToAnalyze = '';
     let successfulUrl = null;
+    let collectedImageUrls = []; // Collect floor plan image URLs
     const MAX_PAGES = 2; // Only scrape max 2 pages to stay under 60s
     let pagesScraped = 0;
 
@@ -1876,6 +2034,12 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
             });
 
             if (pageData.success && pageData.content) {
+                // Collect image URLs if available
+                if (pageData.imageUrls && pageData.imageUrls.length > 0) {
+                    collectedImageUrls = [...collectedImageUrls, ...pageData.imageUrls];
+                    console.log(`[Unit Search] Found ${pageData.imageUrls.length} potential floor plan images`);
+                }
+
                 // Check if content has floor plan or unit indicators
                 const content = pageData.content.toLowerCase();
                 const hasUnitData =
@@ -1909,6 +2073,9 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
             if (pageData.success && pageData.content) {
                 contentToAnalyze = `--- Content from ${leasingUrl} ---\n${pageData.content}`;
                 successfulUrl = leasingUrl;
+                if (pageData.imageUrls) {
+                    collectedImageUrls = [...collectedImageUrls, ...pageData.imageUrls];
+                }
             }
         } catch (error) {
             console.log(`[Unit Search] Error on main page: ${error.message}`);
@@ -1922,9 +2089,13 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
         return results;
     }
 
+    // Dedupe image URLs
+    collectedImageUrls = [...new Set(collectedImageUrls)];
+    console.log(`[Unit Search] Total unique floor plan images found: ${collectedImageUrls.length}`);
+
     // Use AI to extract unit data from content
     console.log('[Unit Search] Extracting unit data with AI...');
-    const extracted = await extractUnitsFromContent(contentToAnalyze, propertyName, openaiKey);
+    const extracted = await extractUnitsFromContent(contentToAnalyze, propertyName, collectedImageUrls, openaiKey);
 
     if (extracted.floorPlans && extracted.floorPlans.length > 0) {
         results.floorPlans = extracted.floorPlans;
@@ -1943,9 +2114,11 @@ export async function searchUnits({ propertyId, propertyName, leasingUrl, addres
 
 /**
  * Extract unit/floor plan data from scraped content using AI
+ * Now includes image URL matching for floor plans
  */
-async function extractUnitsFromContent(content, propertyName, openaiKey) {
+async function extractUnitsFromContent(content, propertyName, imageUrls, openaiKey) {
     const truncatedContent = content.slice(0, 15000);
+    const hasImages = imageUrls && imageUrls.length > 0;
 
     const systemPrompt = `You are an expert at extracting apartment unit and floor plan data from websites.
 
@@ -1961,7 +2134,8 @@ Return JSON in this exact format:
       "sqft": 650,
       "rent_min": 1050,
       "rent_max": 1200,
-      "units_available": 3
+      "units_available": 3${hasImages ? `,
+      "image_url": "URL from provided image list that best matches this floor plan or null"` : ''}
     }
   ],
   "units": [
@@ -1988,16 +2162,24 @@ IMPORTANT RULES:
 6. If only floor plans are shown (not individual units), return empty units array
 7. baths can be decimals like 1.5, 2.0
 8. beds 0 = studio
-9. Don't make up data - only extract what's clearly shown`;
+9. Don't make up data - only extract what's clearly shown${hasImages ? `
+10. For image_url: Match floor plan names to image URLs. Look for floor plan name (A1, B2, etc.) in the URL. If uncertain, use null.` : ''}`;
 
-    const userPrompt = `Property: ${propertyName}
+    let userPrompt = `Property: ${propertyName}
 
 Extract floor plans and units from this content:
 ---
 ${truncatedContent}
----
+---`;
 
-Return JSON only.`;
+    if (hasImages) {
+        userPrompt += `
+
+Available floor plan image URLs (match these to floor plans if possible):
+${imageUrls.join('\n')}`;
+    }
+
+    userPrompt += '\n\nReturn JSON only.';
 
     try {
         const response = await fetch(`${OPENAI_API_BASE}/chat/completions`, {
@@ -2013,7 +2195,7 @@ Return JSON only.`;
                     { role: 'user', content: userPrompt }
                 ],
                 temperature: 0.1,
-                max_tokens: 2000,
+                max_tokens: 2500,
                 response_format: { type: "json_object" }
             })
         });
@@ -2024,7 +2206,11 @@ Return JSON only.`;
         // Clean and validate the results
         const cleanedFloorPlans = (result.floorPlans || []).filter(fp =>
             fp.name && typeof fp.beds === 'number'
-        );
+        ).map(fp => ({
+            ...fp,
+            // Only include image_url if it's a valid URL, no source tracking
+            image_url: fp.image_url && fp.image_url.startsWith('http') ? fp.image_url : null
+        }));
 
         const cleanedUnits = (result.units || []).filter(u =>
             u.unit_number && typeof u.rent === 'number'

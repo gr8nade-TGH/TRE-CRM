@@ -269,11 +269,10 @@ function displaySuggestions(result) {
     currentMissingFields = (analysis.missing || []).filter(f => !foundFields.includes(f));
     currentLeasingUrl = result.suggestions?.leasing_link?.value || currentProperty?.leasing_link;
 
-    // Check if deep search might help (contact fields are usually on subpages)
-    const contactFieldsMissing = currentMissingFields.filter(f =>
-        ['contact_email', 'contact_name', 'contact_phone'].includes(f)
-    );
-    const canDeepSearch = contactFieldsMissing.length > 0 && currentLeasingUrl;
+    // Check if deep search might help (contact fields and specials are usually on subpages)
+    const deepSearchFields = ['contact_email', 'contact_name', 'contact_phone', 'specials_text'];
+    const deepSearchFieldsMissing = currentMissingFields.filter(f => deepSearchFields.includes(f));
+    const canDeepSearch = deepSearchFieldsMissing.length > 0 && currentLeasingUrl;
 
     container.innerHTML = `
         <div class="enrichment-analysis-summary">
@@ -284,15 +283,15 @@ function displaySuggestions(result) {
         <p class="enrichment-hint">Select which suggestions to apply:</p>
     `;
 
-    // Show deep search option if contact fields are still missing
+    // Show deep search option if contact fields or specials are still missing
     if (canDeepSearch) {
         container.innerHTML += `
             <div class="deep-search-section">
                 <div class="deep-search-prompt">
                     <span class="deep-search-icon">🔍</span>
                     <div class="deep-search-text">
-                        <strong>Still missing:</strong> ${contactFieldsMissing.map(f => getFieldLabel(f)).join(', ')}
-                        <p class="deep-search-hint">Try scanning the property website's contact page</p>
+                        <strong>Still missing:</strong> ${deepSearchFieldsMissing.map(f => getFieldLabel(f)).join(', ')}
+                        <p class="deep-search-hint">Scan property website for contact info & specials</p>
                     </div>
                     <button class="btn btn-secondary deep-search-btn" id="deepSearchBtn" onclick="window.startDeepSearch()">
                         🌐 Deeper Search
@@ -311,7 +310,18 @@ function displaySuggestions(result) {
             let displayValue = '';
             let valueClass = 'enrichment-suggestion-value';
 
-            if (field === 'amenities_tags' && Array.isArray(suggestion.value)) {
+            if (field === 'photos' && Array.isArray(suggestion.value)) {
+                // Render photos as thumbnail gallery
+                displayValue = `<div class="enrichment-photos-gallery">
+                    ${suggestion.value.map((url, idx) => `
+                        <div class="enrichment-photo-thumb" data-index="${idx}">
+                            <img src="${url}" alt="Property photo ${idx + 1}" loading="lazy"
+                                 onerror="this.parentElement.style.display='none'">
+                        </div>
+                    `).join('')}
+                </div>`;
+                valueClass = 'enrichment-photos-container';
+            } else if (field === 'amenities_tags' && Array.isArray(suggestion.value)) {
                 // Render amenity tags as badges
                 displayValue = suggestion.value.map(tag =>
                     `<span class="enrichment-tag">${tag}</span>`
@@ -462,7 +472,10 @@ function getFieldLabel(field) {
         accepts_eviction_under_1: '⚠️ Recent Eviction',
         accepts_felony: '⚖️ Felony OK',
         accepts_misdemeanor: '⚖️ Misdemeanor OK',
-        same_day_move_in: '🚀 Same-Day Move-In'
+        same_day_move_in: '🚀 Same-Day Move-In',
+
+        // Media
+        photos: '📷 Property Photos'
     };
     return labels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }

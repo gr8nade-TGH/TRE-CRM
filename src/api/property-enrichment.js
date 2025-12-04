@@ -261,7 +261,7 @@ export async function deepSearchProperty(property, missingFields, onProgress = (
             throw new Error('No leasing URL available for deep search');
         }
 
-        onProgress('📄 Scanning contact page...', 25);
+        onProgress('📄 Scanning contact & specials pages...', 25);
 
         const response = await fetch(`${BASE_URL}/deep-search`, {
             method: 'POST',
@@ -278,11 +278,11 @@ export async function deepSearchProperty(property, missingFields, onProgress = (
             })
         });
 
-        onProgress('🔎 Scanning about page...', 50);
+        onProgress('🔎 Scanning promotions pages...', 50);
 
         // Simulate progress while waiting
         await new Promise(r => setTimeout(r, 2000));
-        onProgress('📞 Looking for contact info...', 75);
+        onProgress('🎁 Looking for contact info & specials...', 75);
 
         const responseText = await response.text();
         let result;
