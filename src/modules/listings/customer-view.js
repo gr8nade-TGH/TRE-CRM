@@ -187,6 +187,14 @@ export function clearCustomerSelection() {
 		customerSelector.value = '';
 	}
 
+	// Clear the search input text
+	const customerSearchInput = document.getElementById('customerSearchInput');
+	if (customerSearchInput) {
+		customerSearchInput.value = '';
+		customerSearchInput.classList.remove('has-selection');
+		// Note: highlight-prompt is managed by renderListings
+	}
+
 	const missingDataWarning = document.getElementById('missingDataWarning');
 	if (missingDataWarning) {
 		missingDataWarning.style.display = 'none';

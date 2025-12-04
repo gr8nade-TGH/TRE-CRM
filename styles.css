@@ -567,6 +567,37 @@ body {
 	font-weight: 500;
 }
 
+/* Highlight prompt when no customer selected - subtle yellow glow */
+.customer-search-input.highlight-prompt {
+	background: #fffbeb;
+	border-color: #fbbf24;
+	box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+	animation: pulse-highlight 2s ease-in-out infinite;
+}
+
+@keyframes pulse-highlight {
+
+	0%,
+	100% {
+		box-shadow: 0 0 0 3px rgba(251, 191, 36, 0.25);
+	}
+
+	50% {
+		box-shadow: 0 0 0 5px rgba(251, 191, 36, 0.15);
+	}
+}
+
+.customer-search-input.highlight-prompt::placeholder {
+	color: #b45309;
+}
+
+.customer-search-input.highlight-prompt:focus {
+	animation: none;
+	border-color: var(--brand);
+	box-shadow: 0 0 0 3px rgba(21, 62, 122, 0.1);
+	background: white;
+}
+
 /* Search Results Dropdown */
 .customer-search-results {
 	position: absolute;

@@ -58,25 +58,18 @@ export async function renderListings(options, autoSelectProperty = null) {
 		return;
 	}
 
-	// Customer View: Show prompt if no customer selected (unless skipped)
+	// Customer View: Highlight customer search if no customer selected
+	const customerSearchInput = document.getElementById('customerSearchInput');
 	if (state.customerView.isActive && !state.customerView.selectedCustomer && !state.customerView.skipped) {
-		tbody.innerHTML = `
-			<tr>
-				<td colspan="3" style="padding: 60px 20px; text-align: center;">
-					<div class="customer-view-prompt">
-						<svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-							<path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path>
-							<circle cx="9" cy="7" r="4"></circle>
-							<path d="M23 21v-2a4 4 0 0 0-3-3.87"></path>
-							<path d="M16 3.13a4 4 0 0 1 0 7.75"></path>
-						</svg>
-						<h3>Select a Customer</h3>
-						<p>Choose a customer from the dropdown above to view listings with match scores</p>
-					</div>
-				</td>
-			</tr>
-		`;
-		return;
+		// Add highlight to indicate customer selection is available
+		if (customerSearchInput) {
+			customerSearchInput.classList.add('highlight-prompt');
+		}
+	} else {
+		// Remove highlight when customer is selected or skipped
+		if (customerSearchInput) {
+			customerSearchInput.classList.remove('highlight-prompt');
+		}
 	}
 
 	try {
