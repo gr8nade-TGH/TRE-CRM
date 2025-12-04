@@ -109,6 +109,9 @@ export default async function handler(req, res) {
             success: true,
             property_id,
             address: results.address,
+            // Non-apartment detection (for delete suggestion)
+            suggest_delete: results.suggest_delete || false,
+            non_apartment_detection: results.non_apartment_detection || null,
             // Analysis of what was missing vs existing
             data_analysis: results.dataAnalysis,
             // New data found for missing fields
