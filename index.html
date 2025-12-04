@@ -1660,8 +1660,37 @@
 							</div>
 						</div>
 
-						<!-- RentCast API Panel -->
-						<div class="mc-control-panel">
+						<!-- Apartment Discovery Panel -->
+						<div class="mc-control-panel discovery-panel">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon"
+									style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<circle cx="11" cy="11" r="8"></circle>
+										<path d="M21 21l-4.35-4.35"></path>
+										<path d="M11 8v6"></path>
+										<path d="M8 11h6"></path>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>🔍 Apartment Discovery</h2>
+									<p class="mc-panel-description">Scan Google Maps for apartment complexes</p>
+								</div>
+							</div>
+							<div class="mc-control-grid">
+								<div style="display: flex; gap: 12px; align-items: center;">
+									<span class="badge badge-success">SerpAPI Powered</span>
+									<button id="openDiscoveryPageBtn" class="btn btn-success btn-sm"
+										onclick="window.location.hash = '#/discovery';">
+										🚀 Open Discovery →
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<!-- RentCast API Panel (Deprecated) -->
+						<div class="mc-control-panel" style="opacity: 0.6;">
 							<div class="mc-panel-header">
 								<div class="mc-panel-icon">
 									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
@@ -1672,17 +1701,97 @@
 								</div>
 								<div class="mc-panel-title-group">
 									<h2>RentCast API</h2>
-									<p class="mc-panel-description">Sync rental listings from RentCast</p>
+									<p class="mc-panel-description">Legacy data source (deprecated)</p>
 								</div>
 							</div>
 							<div class="mc-control-grid">
 								<div style="display: flex; gap: 12px; align-items: center;">
-									<span id="rentcastStatusBadge" class="badge badge-inactive">Checking...</span>
+									<span id="rentcastStatusBadge" class="badge badge-inactive">Deprecated</span>
 									<button id="openRentcastPageBtn" class="btn btn-secondary btn-sm">
-										Open API Console →
+										View API Console →
 									</button>
 								</div>
 							</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/discovery -->
+			<section id="discoveryView" class="route-view hidden">
+				<div class="discovery-page mission-control-active">
+					<div class="mc-header">
+						<h1>🔍 Apartment Discovery</h1>
+						<p class="mc-subtitle">Scan San Antonio for apartment complexes using Google Maps</p>
+					</div>
+
+					<!-- Discovery Status Card -->
+					<div class="discovery-status-card">
+						<div class="status-grid">
+							<div class="status-item">
+								<span class="status-label">Market</span>
+								<span class="status-value">🏙️ San Antonio, TX</span>
+							</div>
+							<div class="status-item">
+								<span class="status-label">Properties Found</span>
+								<span class="status-value" id="discoveryTotalFound">0</span>
+							</div>
+							<div class="status-item">
+								<span class="status-label">Areas Scanned</span>
+								<span class="status-value" id="discoveryAreasScanned">0 / 33</span>
+							</div>
+							<div class="status-item">
+								<span class="status-label">Status</span>
+								<span class="status-value" id="discoveryStatus">Ready</span>
+							</div>
+						</div>
+					</div>
+
+					<!-- Scan Controls -->
+					<div class="discovery-controls">
+						<div class="controls-header">
+							<h2>🎛️ Scan Controls</h2>
+							<p>Scan all San Antonio neighborhoods for apartment complexes. Each area takes ~3-5 seconds.
+							</p>
+						</div>
+						<div class="controls-row">
+							<button id="startFullScanBtn" class="btn btn-success btn-lg">
+								🚀 Start Full Scan
+							</button>
+							<button id="stopScanBtn" class="btn btn-danger btn-lg" disabled>
+								⏹️ Stop Scan
+							</button>
+							<button id="runEnrichmentBtn" class="btn btn-primary btn-lg" disabled>
+								🤖 Auto-Enrich All
+							</button>
+						</div>
+					</div>
+
+					<!-- Progress Section -->
+					<div class="discovery-progress" id="discoveryProgressSection" style="display: none;">
+						<h3>📊 Scan Progress</h3>
+						<div class="progress-bar-container">
+							<div class="progress-bar" id="discoveryProgressBar" style="width: 0%;"></div>
+						</div>
+						<div class="progress-details">
+							<span id="discoveryProgressText">Initializing...</span>
+							<span id="discoveryProgressPercent">0%</span>
+						</div>
+					</div>
+
+					<!-- Areas Grid -->
+					<div class="discovery-areas">
+						<h3>🗺️ San Antonio Areas</h3>
+						<div class="areas-grid" id="discoveryAreasGrid">
+							<!-- Areas will be populated by JS -->
+						</div>
+					</div>
+
+					<!-- Results Log -->
+					<div class="discovery-log">
+						<h3>📋 Discovery Log</h3>
+						<div class="log-container" id="discoveryLogContainer">
+							<div class="log-entry info">Ready to start discovery scan...</div>
 						</div>
 					</div>
 				</div>

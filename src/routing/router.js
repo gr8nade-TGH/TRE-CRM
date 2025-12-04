@@ -205,6 +205,19 @@ export function route(deps) {
 				console.error('Error loading RentCast API page:', error);
 			}
 		})();
+	} else if (hash === '/discovery') {
+		state.currentPage = 'discovery';
+		show(document.getElementById('discoveryView'));
+		setRoleLabel('discovery');
+		// Initialize Discovery page
+		(async () => {
+			try {
+				const { initDiscovery } = await import('../modules/discovery/discovery.js');
+				await initDiscovery();
+			} catch (error) {
+				console.error('Error loading Discovery page:', error);
+			}
+		})();
 	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
 		// Leads page with optional query parameters
 		state.currentPage = 'leads';
