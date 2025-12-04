@@ -383,9 +383,37 @@ function getFieldLabel(field) {
         contact_email: '📧 Contact Email',
         contact_name: '👤 Contact Name',
         leasing_link: '🔗 Leasing URL',
-        management_company: '🏛️ Management Company'
+        management_company: '🏛️ Management Company',
+        office_hours: '🕐 Office Hours',
+
+        // Pricing
+        rent_min: '💰 Min Rent',
+        rent_max: '💰 Max Rent',
+        specials_text: '🎉 Current Specials',
+
+        // Unit Info
+        beds_min: '🛏️ Min Beds',
+        beds_max: '🛏️ Max Beds',
+        sqft_min: '📐 Min Sqft',
+        sqft_max: '📐 Max Sqft',
+
+        // Pet Policy
+        accepts_up_to_3_pets: '🐾 Multiple Pets',
+        pet_policy: '🐶 Pet Policy',
+
+        // Qualifications
+        income_requirement: '💵 Income Requirement',
+        accepts_bad_credit: '💳 Bad Credit OK',
+        accepts_section_8: '🏠 Section 8',
+        accepts_broken_lease_1_year: '📋 Broken Lease OK',
+        accepts_broken_lease_under_1: '📋 Recent Broken Lease',
+        accepts_eviction_1_year: '⚠️ Eviction OK',
+        accepts_eviction_under_1: '⚠️ Recent Eviction',
+        accepts_felony: '⚖️ Felony OK',
+        accepts_misdemeanor: '⚖️ Misdemeanor OK',
+        same_day_move_in: '🚀 Same-Day Move-In'
     };
-    return labels[field] || field;
+    return labels[field] || field.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 }
 
 /**

@@ -52,18 +52,57 @@ function isValidValue(value) {
     return true;
 }
 
-// All enrichable fields
+// All enrichable fields - organized by category
 const ENRICHABLE_FIELDS = {
-    name: { dbColumn: 'name', priority: 1, description: 'Property/community name' },
-    contact_phone: { dbColumn: 'contact_phone', priority: 2, description: 'Leasing office phone' },
-    contact_email: { dbColumn: 'contact_email', priority: 3, description: 'Leasing office email' },
-    contact_name: { dbColumn: 'contact_name', priority: 4, description: 'Leasing contact name' },
-    amenities: { dbColumn: 'amenities', priority: 5, description: 'Property amenities (detailed list)' },
-    amenities_tags: { dbColumn: 'amenities', priority: 5, description: 'Short amenity tags (Pool, Gym, etc.)' },
-    neighborhood: { dbColumn: 'neighborhood', priority: 6, description: 'Neighborhood/area name' },
-    description: { dbColumn: 'description', priority: 7, description: 'AI-generated property description' },
-    leasing_link: { dbColumn: 'leasing_link', priority: 8, description: 'Leasing/apply URL' },
-    management_company: { dbColumn: 'management_company', priority: 9, description: 'Management company' }
+    // === CORE IDENTITY ===
+    name: { dbColumn: 'name', priority: 1, category: 'identity', description: 'Property/community name' },
+    leasing_link: { dbColumn: 'leasing_link', priority: 2, category: 'identity', description: 'Leasing/apply URL' },
+    description: { dbColumn: 'description', priority: 3, category: 'identity', description: 'AI-generated property description' },
+
+    // === CONTACT INFO ===
+    contact_phone: { dbColumn: 'contact_phone', priority: 4, category: 'contact', description: 'Leasing office phone' },
+    contact_email: { dbColumn: 'contact_email', priority: 5, category: 'contact', description: 'Leasing office email' },
+    contact_name: { dbColumn: 'contact_name', priority: 6, category: 'contact', description: 'Leasing contact name' },
+    office_hours: { dbColumn: 'office_hours', priority: 7, category: 'contact', description: 'Leasing office hours (e.g., Mon-Fri 9am-6pm)' },
+
+    // === LOCATION ===
+    neighborhood: { dbColumn: 'neighborhood', priority: 8, category: 'location', description: 'Neighborhood/area name' },
+
+    // === FEATURES & AMENITIES ===
+    amenities: { dbColumn: 'amenities', priority: 9, category: 'features', description: 'Property amenities (detailed list)' },
+    amenities_tags: { dbColumn: 'amenities', priority: 9, category: 'features', description: 'Short amenity tags (Pool, Gym, etc.)' },
+
+    // === PRICING ===
+    rent_min: { dbColumn: 'rent_min', priority: 10, category: 'pricing', description: 'Minimum rent price' },
+    rent_max: { dbColumn: 'rent_max', priority: 10, category: 'pricing', description: 'Maximum rent price' },
+    specials_text: { dbColumn: 'specials_text', priority: 11, category: 'pricing', description: 'Current specials/promotions' },
+
+    // === UNIT INFO (property-level ranges) ===
+    beds_min: { dbColumn: 'beds_min', priority: 12, category: 'units', description: 'Minimum bedrooms offered' },
+    beds_max: { dbColumn: 'beds_max', priority: 12, category: 'units', description: 'Maximum bedrooms offered' },
+    sqft_min: { dbColumn: 'sqft_min', priority: 13, category: 'units', description: 'Minimum sqft' },
+    sqft_max: { dbColumn: 'sqft_max', priority: 13, category: 'units', description: 'Maximum sqft' },
+
+    // === PET POLICY ===
+    accepts_up_to_3_pets: { dbColumn: 'accepts_up_to_3_pets', priority: 14, category: 'pets', description: 'Accepts 3+ pets' },
+    pet_policy: { dbColumn: null, priority: 14, category: 'pets', description: 'Pet policy details (breed restrictions, weight limits, fees)' },
+
+    // === QUALIFICATION REQUIREMENTS ===
+    accepts_bad_credit: { dbColumn: 'accepts_bad_credit', priority: 15, category: 'qualifications', description: 'Accepts applicants with bad credit' },
+    accepts_section_8: { dbColumn: 'accepts_section_8', priority: 15, category: 'qualifications', description: 'Accepts Section 8/Housing vouchers' },
+    accepts_broken_lease_under_1: { dbColumn: 'accepts_broken_lease_under_1', priority: 15, category: 'qualifications', description: 'Accepts broken lease < 1 year' },
+    accepts_broken_lease_1_year: { dbColumn: 'accepts_broken_lease_1_year', priority: 15, category: 'qualifications', description: 'Accepts broken lease 1-2 years' },
+    accepts_eviction_under_1: { dbColumn: 'accepts_eviction_under_1', priority: 15, category: 'qualifications', description: 'Accepts eviction < 1 year' },
+    accepts_eviction_1_year: { dbColumn: 'accepts_eviction_1_year', priority: 15, category: 'qualifications', description: 'Accepts eviction 1-2 years' },
+    accepts_felony: { dbColumn: 'accepts_felony', priority: 16, category: 'qualifications', description: 'Accepts felony record' },
+    accepts_misdemeanor: { dbColumn: 'accepts_misdemeanor', priority: 16, category: 'qualifications', description: 'Accepts misdemeanor record' },
+    income_requirement: { dbColumn: null, priority: 16, category: 'qualifications', description: 'Income requirement (e.g., 2.5x or 3x rent)' },
+
+    // === MOVE-IN ===
+    same_day_move_in: { dbColumn: 'same_day_move_in', priority: 17, category: 'movein', description: 'Offers same-day move-in' },
+
+    // === MANAGEMENT ===
+    management_company: { dbColumn: null, priority: 18, category: 'management', description: 'Management company name' }
 };
 
 // Domains to skip (aggregators that block scrapers or have stale data)
@@ -260,6 +299,152 @@ async function serpApiLocalSearch(query, location, serpApiKey) {
         console.log(`[AI Enrichment] SerpApi Local search failed: ${error.message}`);
         return { success: false, error: error.message, localResults: [] };
     }
+}
+
+/**
+ * Search Google Maps using SerpApi for detailed place information
+ * Returns reviews, hours, and more detailed business data
+ * @param {string} placeId - Google Place ID (from local search)
+ * @param {string} serpApiKey - SerpApi API key
+ * @returns {Promise<Object>} Place details
+ */
+async function serpApiMapsSearch(placeId, serpApiKey) {
+    console.log(`[AI Enrichment] SerpApi Maps search for place: ${placeId}`);
+    try {
+        const params = new URLSearchParams({
+            engine: 'google_maps',
+            place_id: placeId,
+            hl: 'en',
+            api_key: serpApiKey
+        });
+
+        const response = await fetch(`${SERPAPI_BASE_URL}?${params.toString()}`);
+
+        if (!response.ok) {
+            throw new Error(`SerpApi Maps error: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log(`[AI Enrichment] SerpApi Maps returned place data`);
+
+        // Extract useful data from place details
+        const place = data.place_results || {};
+        return {
+            success: true,
+            place: {
+                title: place.title,
+                rating: place.rating,
+                reviews: place.reviews,
+                reviewsCount: place.reviews_count || place.user_reviews_total,
+                type: place.type,
+                address: place.address,
+                phone: place.phone,
+                website: place.website,
+                hours: place.hours || place.operating_hours,
+                priceRange: place.price,
+                description: place.description,
+                amenities: place.amenities,
+                serviceOptions: place.service_options
+            }
+        };
+    } catch (error) {
+        console.log(`[AI Enrichment] SerpApi Maps search failed: ${error.message}`);
+        return { success: false, error: error.message, place: null };
+    }
+}
+
+/**
+ * Run multiple targeted SerpApi searches for specific data types
+ * @param {Object} property - Property data
+ * @param {string} serpApiKey - SerpApi API key
+ * @returns {Promise<Object>} Combined search results
+ */
+async function runTargetedSearches(property, serpApiKey) {
+    const address = property.street_address || property.address;
+    const city = property.city || 'San Antonio';
+    const state = property.state || 'TX';
+    const propertyName = property.name || '';
+
+    const results = {
+        petPolicy: null,
+        specials: null,
+        qualifications: null,
+        reviews: null
+    };
+
+    // Build search queries for different data types
+    const queries = [];
+
+    // Pet policy search
+    if (propertyName) {
+        queries.push({
+            type: 'petPolicy',
+            query: `"${propertyName}" ${city} ${state} pet policy dogs cats allowed`
+        });
+    }
+
+    // Specials/promotions search
+    if (propertyName) {
+        queries.push({
+            type: 'specials',
+            query: `"${propertyName}" ${city} ${state} move-in specials promotions deals`
+        });
+    }
+
+    // Qualification requirements search
+    if (propertyName) {
+        queries.push({
+            type: 'qualifications',
+            query: `"${propertyName}" ${city} ${state} income requirements credit score application`
+        });
+    }
+
+    // Run searches in parallel (max 3 to avoid rate limits)
+    const searchPromises = queries.slice(0, 3).map(async ({ type, query }) => {
+        try {
+            const params = new URLSearchParams({
+                engine: 'google',
+                q: query,
+                num: '5',
+                gl: 'us',
+                hl: 'en',
+                api_key: serpApiKey
+            });
+
+            const response = await fetch(`${SERPAPI_BASE_URL}?${params.toString()}`);
+            if (!response.ok) return { type, success: false };
+
+            const data = await response.json();
+            return {
+                type,
+                success: true,
+                organic: (data.organic_results || []).map(r => ({
+                    title: r.title,
+                    link: r.link,
+                    snippet: r.snippet
+                })),
+                answerBox: data.answer_box || null
+            };
+        } catch (error) {
+            console.log(`[AI Enrichment] Targeted search (${type}) failed: ${error.message}`);
+            return { type, success: false };
+        }
+    });
+
+    const searchResults = await Promise.all(searchPromises);
+
+    // Organize results by type
+    for (const result of searchResults) {
+        if (result.success) {
+            results[result.type] = {
+                snippets: result.organic.map(r => r.snippet).filter(Boolean),
+                answerBox: result.answerBox
+            };
+        }
+    }
+
+    console.log(`[AI Enrichment] Targeted searches completed: ${searchResults.filter(r => r.success).length}/${queries.length} successful`);
+    return results;
 }
 
 /**
@@ -997,6 +1182,23 @@ export async function enrichProperty(property, options = {}) {
     }
 
     // ============================================================
+    // STEP 1B: Run targeted searches for specific data types
+    // ============================================================
+    let targetedSearchData = null;
+    if (serpApiKey && searchExtract.property_name) {
+        console.log('[AI Enrichment] Step 1B: Running targeted searches for pet policy, specials, qualifications...');
+        targetedSearchData = await runTargetedSearches(
+            { ...property, name: searchExtract.property_name },
+            serpApiKey
+        );
+        results.sources_checked.push({
+            source: 'serpapi_targeted',
+            types: ['petPolicy', 'specials', 'qualifications'],
+            success: true
+        });
+    }
+
+    // ============================================================
     // STEP 2: Scrape property's own website (most accurate source)
     // ============================================================
     let propertyWebsiteData = null;
@@ -1055,30 +1257,66 @@ export async function enrichProperty(property, options = {}) {
         .map(f => `- ${f}: ${ENRICHABLE_FIELDS[f]?.description || f}`)
         .join('\n');
 
-    const systemPrompt = `You are a real estate data extraction expert. Extract property information from webpage content.
+    const systemPrompt = `You are a real estate data extraction expert. Extract apartment property information from webpage content.
 
 IMPORTANT RULES:
 1. Only extract data you're confident about
 2. Phone format: (XXX) XXX-XXXX
 3. Don't make up data - use null if not found
-4. Prioritize contact_phone - agents need this for follow-up
+4. Prioritize contact info - agents need this for follow-up
 5. For amenities: provide BOTH a detailed description AND short tags
-6. For neighborhood: extract the neighborhood/area name if mentioned (e.g., "The Rim", "Stone Oak", "Hidden Forest")
+6. For boolean fields: use true/false/null (null if not mentioned)
+7. For pricing: extract minimum and maximum values if shown
 
 Respond with JSON:
 {
     "extracted": {
-        "property_name": "Official apartment name",
+        "property_name": "Official apartment name or null",
         "contact_phone": "(XXX) XXX-XXXX or null",
         "contact_email": "email@domain.com or null",
-        "contact_name": "Leasing agent name or null",
-        "amenities": "Detailed amenities description as a paragraph or comma-separated list",
-        "amenities_tags": ["Pool", "Gym", "Pet Friendly", "Parking", "In-Unit W/D"],
-        "neighborhood": "Neighborhood or area name (e.g., Stone Oak, The Rim) or null",
-        "management_company": "Company name or null"
+        "contact_name": "Leasing agent/manager name or null",
+        "office_hours": "Mon-Fri 9am-6pm, Sat 10am-5pm or null",
+        "neighborhood": "Neighborhood name (Stone Oak, The Rim) or null",
+        "management_company": "Management company name or null",
+
+        "amenities": "Detailed amenities description or null",
+        "amenities_tags": ["Pool", "Gym", "Pet Friendly"] or [],
+
+        "rent_min": 900 or null,
+        "rent_max": 2500 or null,
+        "beds_min": 0 or null,
+        "beds_max": 3 or null,
+        "sqft_min": 500 or null,
+        "sqft_max": 1500 or null,
+        "specials_text": "Current specials/promotions or null",
+
+        "pet_policy": "Pet policy details or null",
+        "accepts_up_to_3_pets": true/false/null,
+
+        "income_requirement": "2.5x or 3x rent or null",
+        "accepts_bad_credit": true/false/null,
+        "accepts_section_8": true/false/null,
+        "accepts_broken_lease": true/false/null,
+        "accepts_eviction": true/false/null,
+        "accepts_felony": true/false/null,
+        "same_day_move_in": true/false/null
     },
     "confidence": 0.0-1.0
 }`;
+
+    // Build additional context from targeted searches
+    let targetedContext = '';
+    if (targetedSearchData) {
+        if (targetedSearchData.petPolicy?.snippets?.length) {
+            targetedContext += `\nPet Policy Search Results:\n${targetedSearchData.petPolicy.snippets.slice(0, 3).join('\n')}\n`;
+        }
+        if (targetedSearchData.specials?.snippets?.length) {
+            targetedContext += `\nSpecials/Promotions Search Results:\n${targetedSearchData.specials.snippets.slice(0, 3).join('\n')}\n`;
+        }
+        if (targetedSearchData.qualifications?.snippets?.length) {
+            targetedContext += `\nQualification Requirements Search Results:\n${targetedSearchData.qualifications.snippets.slice(0, 3).join('\n')}\n`;
+        }
+    }
 
     const userPrompt = `Property: ${fullAddress}
 ${searchExtract.property_name ? `Known Name: ${searchExtract.property_name}` : ''}
@@ -1088,8 +1326,9 @@ ${missingFieldsList || 'None'}
 
 Content from ${contentSource}:
 ---
-${contentToAnalyze.slice(0, 12000)}
+${contentToAnalyze.slice(0, 10000)}
 ---
+${targetedContext ? `\nAdditional Search Context:\n${targetedContext}` : ''}
 
 Return JSON only.`;
 
@@ -1187,6 +1426,152 @@ Return JSON only.`;
                     confidence: 0.75,
                     source: contentSource,
                     reason: 'Found management company'
+                };
+            }
+
+            // Office hours - only add if valid value
+            if (isValidValue(ext.office_hours) && dataAnalysis.missing.includes('office_hours')) {
+                results.suggestions.office_hours = {
+                    value: ext.office_hours,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found office hours'
+                };
+            }
+
+            // === PRICING FIELDS ===
+            if (typeof ext.rent_min === 'number' && ext.rent_min > 0) {
+                results.suggestions.rent_min = {
+                    value: ext.rent_min,
+                    confidence: 0.9,
+                    source: contentSource,
+                    reason: 'Found minimum rent'
+                };
+            }
+            if (typeof ext.rent_max === 'number' && ext.rent_max > 0) {
+                results.suggestions.rent_max = {
+                    value: ext.rent_max,
+                    confidence: 0.9,
+                    source: contentSource,
+                    reason: 'Found maximum rent'
+                };
+            }
+            if (isValidValue(ext.specials_text)) {
+                results.suggestions.specials_text = {
+                    value: ext.specials_text,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found current specials/promotions'
+                };
+            }
+
+            // === UNIT INFO FIELDS ===
+            if (typeof ext.beds_min === 'number' && ext.beds_min >= 0) {
+                results.suggestions.beds_min = {
+                    value: ext.beds_min,
+                    confidence: 0.9,
+                    source: contentSource,
+                    reason: 'Found minimum bedrooms'
+                };
+            }
+            if (typeof ext.beds_max === 'number' && ext.beds_max > 0) {
+                results.suggestions.beds_max = {
+                    value: ext.beds_max,
+                    confidence: 0.9,
+                    source: contentSource,
+                    reason: 'Found maximum bedrooms'
+                };
+            }
+            if (typeof ext.sqft_min === 'number' && ext.sqft_min > 0) {
+                results.suggestions.sqft_min = {
+                    value: ext.sqft_min,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found minimum sqft'
+                };
+            }
+            if (typeof ext.sqft_max === 'number' && ext.sqft_max > 0) {
+                results.suggestions.sqft_max = {
+                    value: ext.sqft_max,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found maximum sqft'
+                };
+            }
+
+            // === PET POLICY ===
+            if (typeof ext.accepts_up_to_3_pets === 'boolean') {
+                results.suggestions.accepts_up_to_3_pets = {
+                    value: ext.accepts_up_to_3_pets,
+                    confidence: 0.8,
+                    source: contentSource,
+                    reason: ext.accepts_up_to_3_pets ? 'Accepts multiple pets' : 'Pet restrictions apply'
+                };
+            }
+            if (isValidValue(ext.pet_policy)) {
+                results.suggestions.pet_policy = {
+                    value: ext.pet_policy,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found pet policy details'
+                };
+            }
+
+            // === QUALIFICATION FIELDS ===
+            if (isValidValue(ext.income_requirement)) {
+                results.suggestions.income_requirement = {
+                    value: ext.income_requirement,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: 'Found income requirement'
+                };
+            }
+            if (typeof ext.accepts_bad_credit === 'boolean') {
+                results.suggestions.accepts_bad_credit = {
+                    value: ext.accepts_bad_credit,
+                    confidence: 0.75,
+                    source: contentSource,
+                    reason: ext.accepts_bad_credit ? 'Second chance property' : 'Standard credit requirements'
+                };
+            }
+            if (typeof ext.accepts_section_8 === 'boolean') {
+                results.suggestions.accepts_section_8 = {
+                    value: ext.accepts_section_8,
+                    confidence: 0.85,
+                    source: contentSource,
+                    reason: ext.accepts_section_8 ? 'Accepts housing vouchers' : 'Does not accept Section 8'
+                };
+            }
+            if (typeof ext.accepts_broken_lease === 'boolean') {
+                results.suggestions.accepts_broken_lease_1_year = {
+                    value: ext.accepts_broken_lease,
+                    confidence: 0.7,
+                    source: contentSource,
+                    reason: ext.accepts_broken_lease ? 'May work with broken leases' : 'No broken lease history accepted'
+                };
+            }
+            if (typeof ext.accepts_eviction === 'boolean') {
+                results.suggestions.accepts_eviction_1_year = {
+                    value: ext.accepts_eviction,
+                    confidence: 0.7,
+                    source: contentSource,
+                    reason: ext.accepts_eviction ? 'May work with eviction history' : 'No eviction history accepted'
+                };
+            }
+            if (typeof ext.accepts_felony === 'boolean') {
+                results.suggestions.accepts_felony = {
+                    value: ext.accepts_felony,
+                    confidence: 0.7,
+                    source: contentSource,
+                    reason: ext.accepts_felony ? 'May work with felony records' : 'Background check required'
+                };
+            }
+            if (typeof ext.same_day_move_in === 'boolean') {
+                results.suggestions.same_day_move_in = {
+                    value: ext.same_day_move_in,
+                    confidence: 0.8,
+                    source: contentSource,
+                    reason: ext.same_day_move_in ? 'Same-day move-in available' : 'Standard move-in process'
                 };
             }
         }
