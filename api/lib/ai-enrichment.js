@@ -33,6 +33,25 @@ const VIEWPORTS = [
     { width: 1366, height: 768 }
 ];
 
+/**
+ * Check if a value is valid (not null, undefined, empty, or literal "null" string)
+ * @param {any} value - Value to check
+ * @returns {boolean} True if value is valid/usable
+ */
+function isValidValue(value) {
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'string') {
+        const trimmed = value.trim().toLowerCase();
+        // Filter out null-like strings and common placeholder patterns
+        if (trimmed === '' || trimmed === 'null' || trimmed === 'undefined' ||
+            trimmed === 'n/a' || trimmed === 'na' || trimmed === 'none' ||
+            trimmed === 'not available' || trimmed === 'not found') {
+            return false;
+        }
+    }
+    return true;
+}
+
 // All enrichable fields
 const ENRICHABLE_FIELDS = {
     name: { dbColumn: 'name', priority: 1, description: 'Property/community name' },
@@ -1081,8 +1100,8 @@ Return JSON only.`;
             const ext = extraction.extracted;
             const conf = extraction.confidence || 0.7;
 
-            // Property name (if not already found)
-            if (ext.property_name && !results.suggestions.name && dataAnalysis.missing.includes('name')) {
+            // Property name (if not already found) - only add if valid value
+            if (isValidValue(ext.property_name) && !results.suggestions.name && dataAnalysis.missing.includes('name')) {
                 results.suggestions.name = {
                     value: ext.property_name,
                     confidence: conf,
@@ -1091,8 +1110,8 @@ Return JSON only.`;
                 };
             }
 
-            // Contact phone
-            if (ext.contact_phone) {
+            // Contact phone - only add if valid value
+            if (isValidValue(ext.contact_phone)) {
                 results.suggestions.contact_phone = {
                     value: ext.contact_phone,
                     confidence: 0.9,
@@ -1103,8 +1122,8 @@ Return JSON only.`;
                 };
             }
 
-            // Contact email
-            if (ext.contact_email) {
+            // Contact email - only add if valid value
+            if (isValidValue(ext.contact_email)) {
                 results.suggestions.contact_email = {
                     value: ext.contact_email,
                     confidence: 0.85,
@@ -1113,8 +1132,8 @@ Return JSON only.`;
                 };
             }
 
-            // Contact name
-            if (ext.contact_name) {
+            // Contact name - only add if valid value (not "null" or empty)
+            if (isValidValue(ext.contact_name)) {
                 results.suggestions.contact_name = {
                     value: ext.contact_name,
                     confidence: 0.75,
@@ -1123,8 +1142,8 @@ Return JSON only.`;
                 };
             }
 
-            // Amenities (detailed description)
-            if (ext.amenities && dataAnalysis.missing.includes('amenities')) {
+            // Amenities (detailed description) - only add if valid value
+            if (isValidValue(ext.amenities) && dataAnalysis.missing.includes('amenities')) {
                 // If it's an array, join into description
                 const amenitiesValue = Array.isArray(ext.amenities)
                     ? ext.amenities.join(', ')
@@ -1139,16 +1158,20 @@ Return JSON only.`;
 
             // Amenities tags (short array for badges)
             if (ext.amenities_tags?.length > 0) {
-                results.suggestions.amenities_tags = {
-                    value: ext.amenities_tags,
-                    confidence: conf,
-                    source: contentSource,
-                    reason: 'Extracted amenity tags'
-                };
+                // Filter out any null-like values from the array
+                const validTags = ext.amenities_tags.filter(tag => isValidValue(tag));
+                if (validTags.length > 0) {
+                    results.suggestions.amenities_tags = {
+                        value: validTags,
+                        confidence: conf,
+                        source: contentSource,
+                        reason: 'Extracted amenity tags'
+                    };
+                }
             }
 
-            // Neighborhood
-            if (ext.neighborhood && dataAnalysis.missing.includes('neighborhood')) {
+            // Neighborhood - only add if valid value
+            if (isValidValue(ext.neighborhood) && dataAnalysis.missing.includes('neighborhood')) {
                 results.suggestions.neighborhood = {
                     value: ext.neighborhood,
                     confidence: 0.85,
@@ -1157,8 +1180,8 @@ Return JSON only.`;
                 };
             }
 
-            // Management company
-            if (ext.management_company && dataAnalysis.missing.includes('management_company')) {
+            // Management company - only add if valid value
+            if (isValidValue(ext.management_company) && dataAnalysis.missing.includes('management_company')) {
                 results.suggestions.management_company = {
                     value: ext.management_company,
                     confidence: 0.75,
