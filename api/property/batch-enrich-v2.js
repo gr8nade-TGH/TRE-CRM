@@ -144,7 +144,8 @@ export default async function handler(req, res) {
         phase = 'property',  // 'property' | 'units' | 'both'
         limit = 5,
         forceUpdate = false,  // If true, overwrites existing data
-        forceFields = []      // Specific fields to force update
+        forceFields = [],     // Specific fields to force update
+        area = null           // Filter by discovery_area
     } = req.body;
 
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -167,6 +168,11 @@ export default async function handler(req, res) {
         } else if (phase === 'units') {
             // Phase 2: Get enriched properties that have leasing_link but no floor plans yet
             query = query.eq('enrichment_status', 'enriched').not('leasing_link', 'is', null);
+        }
+
+        // Filter by area if specified
+        if (area) {
+            query = query.eq('discovery_area', area);
         }
 
         const { data: properties, error: fetchError } = await query.limit(limit);
@@ -328,15 +334,22 @@ export default async function handler(req, res) {
             }
         }
 
-        // Get remaining counts
-        const { count: remaining } = await supabase
+        // Get remaining counts (respecting area filter)
+        let remainingQuery = supabase
             .from('properties')
             .select('*', { count: 'exact', head: true })
             .eq('enrichment_status', phase === 'units' ? 'enriched' : 'pending');
 
+        if (area) {
+            remainingQuery = remainingQuery.eq('discovery_area', area);
+        }
+
+        const { count: remaining } = await remainingQuery;
+
         return res.status(200).json({
             success: true,
             phase,
+            area: area || 'all',
             processed: properties.length,
             enriched,
             unitsFound,
