@@ -288,17 +288,23 @@ function stopScan() {
 
 /**
  * Run auto-enrichment on all discovered properties
+ * Uses v2 API with two phases: property data → unit data
  */
 async function runAutoEnrichment() {
-    addLogEntry('info', '🤖 Starting auto-enrichment of discovered properties...');
+    const enrichBtn = document.getElementById('runEnrichmentBtn');
+    const scanBtn = document.getElementById('startFullScanBtn');
 
-    document.getElementById('runEnrichmentBtn').disabled = true;
-    document.getElementById('startFullScanBtn').disabled = true;
+    addLogEntry('info', '🤖 Starting 2-phase enrichment...');
+    addLogEntry('info', '  Phase 1: Property data (rent, amenities, contact)');
+    addLogEntry('info', '  Phase 2: Unit data (floor plans, videos, reviews)');
+
+    enrichBtn.disabled = true;
+    scanBtn.disabled = true;
     document.getElementById('discoveryStatus').textContent = 'Enriching...';
 
     try {
-        // First check how many pending properties
-        const checkResponse = await fetch(`${API_BASE_URL}/api/property/batch-enrich`);
+        // Check status with v2 API
+        const checkResponse = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
         const checkData = await checkResponse.json();
 
         if (!checkData.configured) {
@@ -306,72 +312,102 @@ async function runAutoEnrichment() {
             return;
         }
 
-        if (checkData.pending === 0) {
-            addLogEntry('info', '✅ No pending properties to enrich');
-            return;
+        // ========== PHASE 1: Property Data ==========
+        if (checkData.pending > 0) {
+            addLogEntry('info', `\n📋 PHASE 1: Enriching ${checkData.pending} properties...`);
+            await runEnrichmentPhase('property', checkData.pending);
+        } else {
+            addLogEntry('info', '✅ Phase 1: All properties already enriched');
         }
 
-        addLogEntry('info', `Found ${checkData.pending} properties to enrich`);
+        // ========== PHASE 2: Unit Data ==========
+        // Re-check to get updated enriched count
+        const recheck = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
+        const recheckData = await recheck.json();
 
-        let totalEnriched = 0;
-        let totalFailed = 0;
-        let remaining = checkData.pending;
-
-        // Process in batches of 5
-        while (remaining > 0) {
-            addLogEntry('info', `🔄 Processing batch... (${remaining} remaining)`);
-
-            const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ limit: 5 })
-            });
-
-            if (!response.ok) {
-                const error = await response.json();
-                addLogEntry('error', `❌ Batch error: ${error.message || error.error}`);
-                break;
-            }
-
-            const result = await response.json();
-
-            totalEnriched += result.enriched;
-            totalFailed += result.failed;
-            remaining = result.remaining;
-
-            // Log individual results
-            for (const r of result.results || []) {
-                if (r.status === 'enriched') {
-                    addLogEntry('success', `✅ ${r.name}`);
-                } else if (r.status === 'error') {
-                    addLogEntry('error', `❌ ${r.name}: ${r.error}`);
-                } else {
-                    addLogEntry('info', `ℹ️ ${r.name}: no data found`);
-                }
-            }
-
-            // Update progress
-            const processed = checkData.pending - remaining;
-            const percent = Math.round((processed / checkData.pending) * 100);
-            document.getElementById('discoveryProgressBar').style.width = `${percent}%`;
-            document.getElementById('discoveryProgressText').textContent = `Enriching... ${processed}/${checkData.pending}`;
-            document.getElementById('discoveryProgressPercent').textContent = `${percent}%`;
-
-            // Small delay between batches
-            if (remaining > 0) {
-                await new Promise(r => setTimeout(r, 1000));
-            }
+        if (recheckData.enriched > 0) {
+            addLogEntry('info', `\n🏠 PHASE 2: Searching units for ${recheckData.enriched} properties...`);
+            addLogEntry('info', '  → Using YouTube, Google Images, Reviews, then Browserless');
+            await runEnrichmentPhase('units', recheckData.enriched);
         }
 
-        addLogEntry('info', `🎉 Enrichment complete! ${totalEnriched} enriched, ${totalFailed} failed`);
+        addLogEntry('info', '\n🎉 Enrichment complete!');
 
     } catch (error) {
         addLogEntry('error', `❌ Enrichment error: ${error.message}`);
     } finally {
-        document.getElementById('runEnrichmentBtn').disabled = false;
-        document.getElementById('startFullScanBtn').disabled = false;
+        enrichBtn.disabled = false;
+        scanBtn.disabled = false;
         document.getElementById('discoveryStatus').textContent = 'Ready';
     }
+}
+
+/**
+ * Run a single enrichment phase
+ */
+async function runEnrichmentPhase(phase, total) {
+    let processed = 0;
+    let remaining = total;
+
+    while (remaining > 0) {
+        addLogEntry('info', `🔄 ${phase === 'property' ? 'Enriching' : 'Searching units'}... (${remaining} remaining)`);
+
+        const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phase, limit: 3 })  // Smaller batches for unit search (it's slower)
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            addLogEntry('error', `❌ Batch error: ${error.message || error.error}`);
+            break;
+        }
+
+        const result = await response.json();
+        remaining = result.remaining;
+        processed += result.processed;
+
+        // Log individual results
+        for (const r of result.results || []) {
+            const propPhase = r.phases?.property;
+            const unitPhase = r.phases?.units;
+
+            if (phase === 'property') {
+                if (propPhase?.status === 'enriched') {
+                    addLogEntry('success', `✅ ${r.name} - updated: ${propPhase.fieldsUpdated?.join(', ') || 'basic data'}`);
+                } else {
+                    addLogEntry('info', `ℹ️ ${r.name}: ${propPhase?.status || 'processed'}`);
+                }
+                // Show YouTube bonus
+                if (r.phases?.youtube?.found) {
+                    addLogEntry('info', `  🎬 Found ${r.phases.youtube.found} YouTube videos`);
+                }
+            } else if (phase === 'units') {
+                if (unitPhase?.status === 'found') {
+                    addLogEntry('success', `✅ ${r.name} - ${unitPhase.floorPlans} floor plans (via ${unitPhase.sources?.join(', ')})`);
+                    if (unitPhase.videos) addLogEntry('info', `  🎬 ${unitPhase.videos} videos found`);
+                    if (unitPhase.reviews) addLogEntry('info', `  💬 ${unitPhase.reviews} reviews analyzed`);
+                } else {
+                    addLogEntry('info', `ℹ️ ${r.name}: no floor plans found`);
+                    if (unitPhase?.videosFound) addLogEntry('info', `  (but found ${unitPhase.videosFound} videos, ${unitPhase.imagesFound} images)`);
+                }
+            }
+        }
+
+        // Update progress
+        const percent = Math.round((processed / total) * 100);
+        document.getElementById('discoveryProgressBar').style.width = `${percent}%`;
+        document.getElementById('discoveryProgressText').textContent = `${phase === 'property' ? 'Enriching' : 'Unit search'}... ${processed}/${total}`;
+        document.getElementById('discoveryProgressPercent').textContent = `${percent}%`;
+
+        // Delay between batches
+        if (remaining > 0) {
+            await new Promise(r => setTimeout(r, 1000));
+        }
+    }
+
+    addLogEntry('info', `✅ Phase complete: processed ${processed} properties`);
 }
 
 // Export for global access
