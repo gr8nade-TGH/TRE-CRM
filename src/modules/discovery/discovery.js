@@ -54,7 +54,7 @@ export async function initDiscovery() {
 }
 
 /**
- * Check enrichment status and enable/disable button accordingly
+ * Check enrichment status and enable/disable buttons accordingly
  */
 async function checkEnrichmentStatus() {
     try {
@@ -62,14 +62,23 @@ async function checkEnrichmentStatus() {
         const data = await response.json();
 
         const enrichBtn = document.getElementById('runEnrichmentBtn');
-        if (enrichBtn) {
-            // Enable if there are pending properties OR enriched properties needing unit scan
-            const hasPending = data.pending > 0;
-            const hasEnrichedWithoutUnits = data.enriched > 0 && data.withFloorPlans < data.enriched;
-            enrichBtn.disabled = !hasPending && !hasEnrichedWithoutUnits;
+        const unitScanBtn = document.getElementById('runUnitScanBtn');
 
-            if (hasPending) {
+        if (enrichBtn) {
+            // Enable if there are pending properties
+            enrichBtn.disabled = data.pending === 0;
+
+            if (data.pending > 0) {
                 addLogEntry('info', `📋 ${data.pending} properties ready for enrichment`);
+            }
+        }
+
+        if (unitScanBtn) {
+            // Enable if there are enriched properties (ready for unit scanning)
+            unitScanBtn.disabled = data.enriched === 0;
+
+            if (data.enriched > 0) {
+                addLogEntry('info', `🏠 ${data.enriched} enriched properties ready for unit scanning`);
             }
         }
     } catch (error) {
@@ -84,6 +93,7 @@ function setupEventListeners() {
     const startBtn = document.getElementById('startFullScanBtn');
     const stopBtn = document.getElementById('stopScanBtn');
     const enrichBtn = document.getElementById('runEnrichmentBtn');
+    const unitScanBtn = document.getElementById('runUnitScanBtn');
 
     if (startBtn) {
         startBtn.addEventListener('click', startFullScan);
@@ -95,6 +105,10 @@ function setupEventListeners() {
 
     if (enrichBtn) {
         enrichBtn.addEventListener('click', runAutoEnrichment);
+    }
+
+    if (unitScanBtn) {
+        unitScanBtn.addEventListener('click', runUnitScan);
     }
 }
 
@@ -452,6 +466,51 @@ async function runEnrichmentPhase(phase, total) {
     }
 
     addLogEntry('info', `✅ Phase complete: processed ${processed} properties`);
+}
+
+/**
+ * Run unit scanning only (Phase 2) on enriched properties
+ */
+async function runUnitScan() {
+    const unitScanBtn = document.getElementById('runUnitScanBtn');
+    const scanBtn = document.getElementById('startFullScanBtn');
+
+    addLogEntry('info', '🏠 Starting Unit Scan (Phase 2 only)...');
+    addLogEntry('info', '  → Scraping floor plans, pricing, availability from property websites');
+
+    unitScanBtn.disabled = true;
+    scanBtn.disabled = true;
+    document.getElementById('discoveryStatus').textContent = 'Scanning Units...';
+    document.getElementById('discoveryProgressSection').style.display = 'block';
+
+    try {
+        // Check how many enriched properties we have
+        const checkResponse = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
+        const checkData = await checkResponse.json();
+
+        if (checkData.enriched === 0) {
+            addLogEntry('warning', '⚠️ No enriched properties ready for unit scanning');
+            addLogEntry('info', 'Run "Auto-Enrich All" first to enrich properties');
+            return;
+        }
+
+        addLogEntry('info', `📋 Scanning units for ${checkData.enriched} enriched properties...`);
+        await runEnrichmentPhase('units', checkData.enriched);
+
+        // Check results
+        const finalCheck = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
+        const finalData = await finalCheck.json();
+
+        addLogEntry('success', `\n🎉 Unit scan complete!`);
+        addLogEntry('info', `📊 Floor plans in database: ${finalData.withFloorPlans || 0}`);
+
+    } catch (error) {
+        addLogEntry('error', `❌ Unit scan error: ${error.message}`);
+    } finally {
+        unitScanBtn.disabled = false;
+        scanBtn.disabled = false;
+        document.getElementById('discoveryStatus').textContent = 'Ready';
+    }
 }
 
 // Export for global access
