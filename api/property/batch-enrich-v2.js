@@ -42,6 +42,20 @@ function shouldUpdate(currentValue, newValue, forceUpdate = false) {
     return false;
 }
 
+// Valid database columns - only these will be saved
+const VALID_DB_COLUMNS = new Set([
+    'name', 'description', 'neighborhood', 'amenities', 'rent_min', 'rent_max',
+    'beds_min', 'beds_max', 'baths_min', 'baths_max', 'sqft_min', 'sqft_max',
+    'specials_text', 'pet_policy', 'contact_phone', 'contact_email', 'contact_name',
+    'office_hours', 'leasing_link', 'website', 'photos', 'management_company',
+    'enrichment_status', 'enriched_at'
+]);
+
+// Field name mapping (AI field -> DB column)
+const FIELD_MAPPING = {
+    'amenities_tags': 'amenities',  // amenities_tags should save to amenities column
+};
+
 /**
  * Build safe update object - only includes fields that should be updated
  */
@@ -51,9 +65,18 @@ function buildSafeUpdate(currentData, suggestions, forceFields = []) {
     for (const [field, suggestion] of Object.entries(suggestions)) {
         if (suggestion.confidence < 0.6) continue;
 
+        // Map field name to DB column if needed
+        const dbColumn = FIELD_MAPPING[field] || field;
+
+        // Skip fields that don't exist in the database
+        if (!VALID_DB_COLUMNS.has(dbColumn)) {
+            console.log(`[buildSafeUpdate] Skipping unknown column: ${field} -> ${dbColumn}`);
+            continue;
+        }
+
         const force = forceFields.includes(field);
-        if (shouldUpdate(currentData[field], suggestion.value, force)) {
-            updates[field] = suggestion.value;
+        if (shouldUpdate(currentData[dbColumn], suggestion.value, force)) {
+            updates[dbColumn] = suggestion.value;
         }
     }
 
