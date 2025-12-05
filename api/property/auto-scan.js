@@ -88,8 +88,9 @@ export default async function ({ page }) {
 
         if (!response.ok) {
             const errText = await response.text();
-            console.error(`[scrapePage] Browserless error ${response.status}:`, errText.slice(0, 200));
-            return { html: null, finalUrl: url, error: `HTTP ${response.status}` };
+            console.error(`[scrapePage] Browserless error ${response.status}:`, errText.slice(0, 500));
+            // Return more details about the error
+            return { html: null, finalUrl: url, error: `HTTP ${response.status}`, browserlessError: errText.slice(0, 500) };
         }
 
         const text = await response.text();
@@ -213,7 +214,7 @@ async function scanPropertyUrl(url, prop) {
             units: [],
             sources: [],
             errors: [scrapeResult.error || 'Failed to scrape page'],
-            debug: { url, scrapeError: scrapeResult.error }
+            debug: { url, scrapeError: scrapeResult.error, browserlessError: scrapeResult.browserlessError }
         };
     }
 
@@ -281,7 +282,7 @@ async function scanILSSite(ilsSite, prop) {
                 units: [],
                 sources: [],
                 errors: [scrapeResult.error || 'Failed to scrape ILS page'],
-                debug: { listingUrl: result.link, scrapeError: scrapeResult.error }
+                debug: { listingUrl: result.link, scrapeError: scrapeResult.error, browserlessError: scrapeResult.browserlessError }
             };
         }
 
