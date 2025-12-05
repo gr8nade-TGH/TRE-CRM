@@ -46,8 +46,35 @@ export async function initDiscovery() {
         addLogEntry('error', 'Failed to load grid configuration: ' + error.message);
     }
 
+    // Check if there are pending properties to enrich
+    await checkEnrichmentStatus();
+
     // Setup event listeners
     setupEventListeners();
+}
+
+/**
+ * Check enrichment status and enable/disable button accordingly
+ */
+async function checkEnrichmentStatus() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
+        const data = await response.json();
+
+        const enrichBtn = document.getElementById('runEnrichmentBtn');
+        if (enrichBtn) {
+            // Enable if there are pending properties OR enriched properties needing unit scan
+            const hasPending = data.pending > 0;
+            const hasEnrichedWithoutUnits = data.enriched > 0 && data.withFloorPlans < data.enriched;
+            enrichBtn.disabled = !hasPending && !hasEnrichedWithoutUnits;
+
+            if (hasPending) {
+                addLogEntry('info', `📋 ${data.pending} properties ready for enrichment`);
+            }
+        }
+    } catch (error) {
+        console.log('[Discovery] Could not check enrichment status:', error.message);
+    }
 }
 
 /**
