@@ -519,6 +519,56 @@ function formatPriceShort(price) {
 }
 
 /**
+ * Apply dot marker styles to an element (preserves Mapbox positioning)
+ */
+function applyDotStyle(element, isPUMI, isSelected) {
+	element.className = 'custom-dot-marker' + (isPUMI ? ' pumi-marker' : '');
+	element.textContent = '';
+	element.style.width = isPUMI ? '16px' : '12px';
+	element.style.height = isPUMI ? '16px' : '12px';
+	element.style.borderRadius = '50%';
+	element.style.background = isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6');
+	element.style.border = '2px solid white';
+	element.style.boxShadow = isPUMI
+		? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)'
+		: '0 2px 4px rgba(0,0,0,0.3)';
+	element.style.cursor = 'pointer';
+	element.style.padding = '0';
+	element.style.minWidth = '';
+	element.style.fontSize = '';
+	element.style.fontWeight = '';
+	element.style.color = '';
+	element.style.textAlign = '';
+	element.style.whiteSpace = '';
+	element.style.lineHeight = '';
+	element.dataset.isPriceBubble = 'false';
+}
+
+/**
+ * Apply price bubble styles to an element (preserves Mapbox positioning)
+ */
+function applyPriceBubbleStyle(element, priceText, isPUMI, isSelected) {
+	element.className = 'price-marker' + (isSelected ? ' selected' : '') + (isPUMI ? ' pumi' : '');
+	element.textContent = priceText;
+	element.style.width = 'auto';
+	element.style.height = 'auto';
+	element.style.borderRadius = '12px';
+	element.style.background = isPUMI ? '#22c55e' : '#dc2626';
+	element.style.border = `2px solid ${isSelected ? '#fbbf24' : '#fff'}`;
+	element.style.boxShadow = (isPUMI ? '0 0 10px rgba(34, 197, 94, 0.6), ' : '') + '0 2px 6px rgba(0,0,0,0.3)';
+	element.style.cursor = 'pointer';
+	element.style.padding = '4px 8px';
+	element.style.minWidth = '36px';
+	element.style.fontSize = '11px';
+	element.style.fontWeight = '700';
+	element.style.color = '#fff';
+	element.style.textAlign = 'center';
+	element.style.whiteSpace = 'nowrap';
+	element.style.lineHeight = '1.2';
+	element.dataset.isPriceBubble = 'true';
+}
+
+/**
  * Update markers based on whether they're inside the drawn polygon
  * Markers inside become price bubbles, others stay as dots
  * @param {Object} polygon - GeoJSON polygon geometry
@@ -539,41 +589,10 @@ function updateMarkersInPolygon(polygon) {
 				// Transform to price bubble
 				const rentMin = prop.rent_min || prop.rent_range_min || null;
 				const priceText = formatPriceShort(rentMin);
-
-				element.className = 'price-marker' + (isSelected ? ' selected' : '') + (isPUMI ? ' pumi' : '');
-				element.textContent = priceText;
-				element.style.cssText = `
-					background: ${isPUMI ? '#22c55e' : '#dc2626'};
-					color: #fff;
-					font-weight: 700;
-					padding: 4px 8px;
-					border-radius: 12px;
-					border: 2px solid ${isSelected ? '#fbbf24' : '#fff'};
-					box-shadow: ${isPUMI ? '0 0 10px rgba(34, 197, 94, 0.6),' : ''} 0 2px 6px rgba(0,0,0,0.3);
-					white-space: nowrap;
-					font-size: 11px;
-					min-width: 36px;
-					text-align: center;
-					cursor: pointer;
-					line-height: 1.2;
-					transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
-				`;
-				// Store original state for reverting
-				element.dataset.isPriceBubble = 'true';
+				applyPriceBubbleStyle(element, priceText, isPUMI, isSelected);
 			} else {
-				// Revert to dot marker
-				element.className = 'custom-dot-marker' + (isPUMI ? ' pumi-marker' : '');
-				element.textContent = '';
-				element.style.cssText = `
-					width: ${isPUMI ? '16px' : '12px'};
-					height: ${isPUMI ? '16px' : '12px'};
-					border-radius: 50%;
-					background: ${isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6')};
-					border: 2px solid white;
-					box-shadow: ${isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
-					cursor: pointer;
-				`;
-				element.dataset.isPriceBubble = 'false';
+				// Keep as dot marker
+				applyDotStyle(element, isPUMI, isSelected);
 			}
 		}
 	});
@@ -602,18 +621,7 @@ export function resetMarkersToDefault() {
 
 		if (markerGroup.pin) {
 			const element = markerGroup.pin.getElement();
-			element.className = 'custom-dot-marker' + (isPUMI ? ' pumi-marker' : '');
-			element.textContent = '';
-			element.style.cssText = `
-				width: ${isPUMI ? '16px' : '12px'};
-				height: ${isPUMI ? '16px' : '12px'};
-				border-radius: 50%;
-				background: ${isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6')};
-				border: 2px solid white;
-				box-shadow: ${isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
-				cursor: pointer;
-			`;
-			element.dataset.isPriceBubble = 'false';
+			applyDotStyle(element, isPUMI, isSelected);
 		}
 	});
 }
