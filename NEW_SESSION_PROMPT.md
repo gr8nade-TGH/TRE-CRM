@@ -1,43 +1,85 @@
-# Prompt for New Augment AI Session
+# TRE CRM - Auto Unit Scanner Context
 
-Copy and paste the text below into your new Augment chat session:
-
----
-
-I'm continuing work on the **TRE CRM Property Matcher feature**. I've lost my previous chat history, but I have a comprehensive handoff document that contains all the context you need.
-
-Please read the handoff document located at `PROPERTY_MATCHER_HANDOFF.md` in the workspace root and familiarize yourself with:
-
-1. **What has been built** - Phases 1-4 of the Property Matcher feature are complete
-2. **Current status** - All code is committed to the `feature/page-functions` branch and deployed to production
-3. **What needs testing** - I need to test the complete flow (there's a test checklist in the handoff doc)
-4. **Technical details** - How the token system, activity logging, and cooldown reset work
-
-## Current Situation:
-
-- ✅ **Phase 1-4 are COMPLETE** and pushed to production (https://tre-crm.vercel.app)
-- ✅ **Both SQL migrations (049 and 050) have been run** in the production Supabase database
-- ⏳ **I have NOT tested the feature yet** - I'm about to test it now
-- ❓ **Phase 5 (Resend webhooks) is OPTIONAL** - we can discuss if needed after testing
-
-## What I Need From You:
-
-1. **Read the handoff document** (`PROPERTY_MATCHER_HANDOFF.md`) to understand the complete implementation
-2. **Be ready to help me debug** if I encounter any issues during testing
-3. **Help me complete Phase 5** (Resend webhooks) if I decide I want that feature after testing
-4. **Answer any questions** I have about how the Property Matcher works
-
-## Important Context:
-
-- This is a **production application** deployed on Vercel
-- I prefer to **test live on production** rather than locally
-- The Property Matcher allows leads to view matched properties, select favorites, schedule tours, and request more options
-- It uses a **token-based system** (no login required for leads)
-- All activity is logged to the Lead Activity Log in the CRM
-
-Please confirm you've read the handoff document and let me know you're ready to assist with testing and any follow-up work!
+## Current Status
+We're testing the **Auto Unit Scanner** feature. The code is ready and pushed to GitHub but **Vercel is NOT auto-deploying**. You need to manually trigger a redeploy from the Vercel dashboard before testing.
 
 ---
 
-**After pasting the above, the AI will read `PROPERTY_MATCHER_HANDOFF.md` and be fully up to speed on your project.**
+## What the Auto Unit Scanner Does
+Automatically scans property websites and ILS sites (apartments.com, zillow, rent.com) to find available units with floor plans, pricing, and availability. It runs continuously with 15-second delays between scans.
+
+## 7 Scan Methods (priority order)
+1. `property-base` - Scrapes property homepage directly
+2. `property-floorplans` - Scrapes /floorplans path
+3. `property-floor-plans` - Scrapes /floor-plans path
+4. `property-availability` - Scrapes /availability path
+5. `apartments.com` - Google search for property on apartments.com
+6. `zillow.com` - Google search for property on zillow.com
+7. `rent.com` - Google search for property on rent.com
+
+## Adaptive Learning System
+- Each method tracks success/failure rates in `unit_scan_history` table
+- Methods need 10+ attempts before stats are reliable
+- Methods below 10% success become "low-priority" (still run, just less often)
+- Methods are NEVER fully disabled - always keeps trying
+
+## Tech Stack
+- **Browserless.io** `/function` API - Runs Puppeteer in cloud to scrape JavaScript-heavy sites
+- **SerpAPI** - Google search to find property listings on ILS sites
+- **OpenAI GPT-4o-mini** - Extracts structured unit data from scraped HTML
+- **Supabase** - PostgreSQL database storing properties, units, scan history
+
+## Key Files
+| File | Purpose |
+|------|---------|
+| `api/property/auto-scan.js` | Main API - method rotation, scraping, AI extraction |
+| `src/modules/discovery/discovery.js` | Frontend - Auto-Scan UI, debug logging, countdown timer |
+| `index.html` | Contains the Auto Unit Scanner panel HTML |
+
+## Database Tables
+- `properties` - Property data including `leasing_link` (website URL)
+- `units` - Unit data (floor plans, pricing, availability)
+- `unit_scan_history` - Scan attempts with success/failure per method
+
+## Recent Fixes Applied (Dec 5, 2025)
+
+### 1. Corrupted Leasing URLs (FIXED in database)
+139 properties had Google redirect URLs like `/url?q=http://example.com/&opi=...`
+- Fixed via SQL to extract real URLs
+- Also decoded URL-encoded characters (%3F, %26, %3D)
+
+### 2. Scan History Cleared
+Reset `unit_scan_history` table for fresh start with clean URLs
+
+### 3. Timer Bug (FIXED in code)
+Changed from `setInterval` to `setTimeout` chain so countdown only starts AFTER scan completes
+
+### 4. Debug Button (ADDED)
+"Copy Debug" button captures last 30 log entries as JSON for troubleshooting
+
+## Current Issue
+- Code is pushed to GitHub but Vercel isn't auto-deploying
+- User needs to manually redeploy from Vercel dashboard
+- After deploy, test the auto-scanner and check debug output
+
+## Testing Steps
+1. Deploy latest code to Vercel (manual redeploy needed)
+2. Go to Discovery page → Auto Unit Scanner panel
+3. Click "Start Auto-Scan"
+4. Watch for successful unit extraction
+5. If failures, click "Copy Debug" and analyze the JSON
+
+## Supabase Project
+- **Project ID:** `mevirooooypfjbsrmzrk`
+- **Region:** `us-east-2`
+
+## Environment Variables Needed
+- `BROWSERLESS_TOKEN` - For cloud browser scraping
+- `SERPAPI_KEY` - For Google search API
+- `OPENAI_API_KEY` - For AI unit extraction
+- `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`
+
+## Other Active Features
+- **Auto Enrich All** - Re-enriches property data (rent ranges, amenities, contacts) for properties not updated in 7+ days
+- Both Auto-Scan and Auto-Enrich can run simultaneously
 
