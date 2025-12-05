@@ -135,11 +135,21 @@ export function addMarker(prop, matchScore = null) {
 		? ` · ${[bedsDisplay, bathsDisplay].filter(Boolean).join(' / ')}`
 		: '';
 
+	// Get primary photo if available
+	const primaryPhoto = prop.photos && prop.photos.length > 0 ? prop.photos[0] : null;
+
 	const popupContent = `
 		<div class="mapbox-popup">
-			<strong>${prop.community_name || prop.name || 'Unknown'}</strong><br>
-			${prop.street_address || prop.address || ''}<br>
-			<span class="subtle">${rentDisplay}${bedsBathsDisplay}</span>
+			${primaryPhoto ? `
+				<div class="popup-image">
+					<img src="${primaryPhoto}" alt="${prop.community_name || prop.name || 'Property'}" onerror="this.style.display='none';">
+				</div>
+			` : ''}
+			<div class="popup-content">
+				<strong>${prop.community_name || prop.name || 'Unknown'}</strong><br>
+				${prop.street_address || prop.address || ''}<br>
+				<span class="subtle">${rentDisplay}${bedsBathsDisplay}</span>
+			</div>
 		</div>
 	`;
 

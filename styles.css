@@ -4359,11 +4359,30 @@ body {
 .mapboxgl-popup-content {
 	border-radius: 8px;
 	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	padding: 12px;
+	padding: 0;
+	overflow: hidden;
+	max-width: 280px;
 }
 
 .mapboxgl-popup-content .mapbox-popup {
 	font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+.mapboxgl-popup-content .mapbox-popup .popup-image {
+	width: 100%;
+	height: 120px;
+	overflow: hidden;
+	background: #f3f4f6;
+}
+
+.mapboxgl-popup-content .mapbox-popup .popup-image img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.mapboxgl-popup-content .mapbox-popup .popup-content {
+	padding: 12px;
 }
 
 .mapboxgl-popup-content .mapbox-popup strong {
