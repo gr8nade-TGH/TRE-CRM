@@ -142,7 +142,9 @@ export default async function handler(req, res) {
         limit = 5,
         forceUpdate = false,  // If true, overwrites existing data
         forceFields = [],     // Specific fields to force update
-        area = null           // Filter by discovery_area
+        area = null,          // Filter by discovery_area
+        propertyIds = null,   // Specific property IDs to process
+        overrideUrl = null    // Override URL for unit scanning (when URL entered manually)
     } = req.body;
 
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -156,23 +158,43 @@ export default async function handler(req, res) {
     }
 
     try {
-        // Get properties to process based on phase
-        let query = supabase.from('properties').select('*');
+        let properties;
 
-        if (phase === 'property' || phase === 'both') {
-            // Phase 1: Get pending properties
-            query = query.eq('enrichment_status', 'pending');
-        } else if (phase === 'units') {
-            // Phase 2: Get enriched properties that have leasing_link but no floor plans yet
-            query = query.eq('enrichment_status', 'enriched').not('leasing_link', 'is', null);
+        // If specific property IDs provided, fetch those directly
+        if (propertyIds && propertyIds.length > 0) {
+            const { data, error } = await supabase
+                .from('properties')
+                .select('*')
+                .in('id', propertyIds);
+
+            if (error) {
+                return res.status(500).json({ error: error.message });
+            }
+            properties = data;
+        } else {
+            // Get properties to process based on phase
+            let query = supabase.from('properties').select('*');
+
+            if (phase === 'property' || phase === 'both') {
+                // Phase 1: Get pending properties
+                query = query.eq('enrichment_status', 'pending');
+            } else if (phase === 'units') {
+                // Phase 2: Get enriched properties that have leasing_link but no floor plans yet
+                query = query.eq('enrichment_status', 'enriched').not('leasing_link', 'is', null);
+            }
+
+            // Filter by area if specified
+            if (area) {
+                query = query.eq('discovery_area', area);
+            }
+
+            const { data, error: fetchError } = await query.limit(limit);
+
+            if (fetchError) {
+                return res.status(500).json({ error: fetchError.message });
+            }
+            properties = data;
         }
-
-        // Filter by area if specified
-        if (area) {
-            query = query.eq('discovery_area', area);
-        }
-
-        const { data: properties, error: fetchError } = await query.limit(limit);
 
         if (fetchError) {
             return res.status(500).json({ error: fetchError.message });
@@ -253,17 +275,24 @@ export default async function handler(req, res) {
                 }
 
                 // ============ PHASE 2: UNIT DISCOVERY (Smart 3-Step) ============
-                if ((phase === 'units' || phase === 'both') && prop.leasing_link) {
-                    console.log(`[Phase 2] Smart Unit Search: ${prop.name}`);
+                // Use overrideUrl if provided, otherwise fall back to leasing_link
+                const unitScanUrl = overrideUrl || prop.leasing_link;
+                if ((phase === 'units' || phase === 'both') && unitScanUrl) {
+                    console.log(`[Phase 2] Smart Unit Search: ${prop.name} at ${unitScanUrl}`);
 
                     // Use smart 3-step unit search: SerpAPI → AI Analysis → Browserless (if needed)
                     const unitResult = await smartUnitSearch({
                         propertyId: prop.id,
                         propertyName: prop.name,
-                        leasingUrl: prop.leasing_link,
+                        leasingUrl: unitScanUrl,
                         city: prop.city || 'San Antonio',
                         googleDataId: prop.google_data_id
                     });
+
+                    // Save the URL to the property if it was manually provided
+                    if (overrideUrl && !prop.leasing_link) {
+                        await supabase.from('properties').update({ leasing_link: overrideUrl }).eq('id', prop.id);
+                    }
 
                     // Insert floor plans into database and build a map for unit linking
                     const floorPlanMap = {}; // name -> id

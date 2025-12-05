@@ -414,11 +414,17 @@ export async function renderListings(options, autoSelectProperty = null) {
 						e.stopPropagation();
 						const propertyId = e.currentTarget.dataset.propertyId;
 						const propertyName = e.currentTarget.dataset.propertyName;
-						const leasingUrl = e.currentTarget.dataset.leasingUrl;
+						let leasingUrl = e.currentTarget.dataset.leasingUrl;
 
+						// If no URL, prompt user to enter one
 						if (!leasingUrl) {
-							alert(`No leasing URL found for ${propertyName}. Please add a website URL first.`);
-							return;
+							leasingUrl = prompt(`No website URL found for ${propertyName}.\n\nEnter the property website URL (e.g., https://www.brandonoakssanantonio.com):`)?.trim();
+							if (!leasingUrl) return;
+
+							// Basic URL validation
+							if (!leasingUrl.startsWith('http')) {
+								leasingUrl = 'https://' + leasingUrl;
+							}
 						}
 
 						// Show loading state
@@ -430,13 +436,14 @@ export async function renderListings(options, autoSelectProperty = null) {
 						iconContainer.title = 'Scanning units...';
 
 						try {
-							console.log(`[Scan Units] Starting scan for ${propertyName}...`);
+							console.log(`[Scan Units] Starting scan for ${propertyName} at ${leasingUrl}...`);
 							const response = await fetch('/api/property/batch-enrich-v2', {
 								method: 'POST',
 								headers: { 'Content-Type': 'application/json' },
 								body: JSON.stringify({
 									phase: 'units',
-									propertyIds: [propertyId]
+									propertyIds: [propertyId],
+									overrideUrl: leasingUrl  // Pass the URL in case it was entered manually
 								})
 							});
 
