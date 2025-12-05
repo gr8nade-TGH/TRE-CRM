@@ -67,12 +67,18 @@ async function checkEnrichmentStatus() {
         const enrichBtn = document.getElementById('runEnrichmentBtn');
         const unitScanBtn = document.getElementById('runUnitScanBtn');
 
+        // Count total properties that could potentially be enriched/re-enriched
+        const totalProperties = (data.pending || 0) + (data.enriched || 0) + (data.withFloorPlans || 0);
+
         if (enrichBtn) {
-            // Enable if there are pending properties
-            enrichBtn.disabled = data.pending === 0;
+            // Enable if there are ANY properties (allow re-enrichment)
+            // Original: enrichBtn.disabled = data.pending === 0;
+            enrichBtn.disabled = false; // Always enable - user can re-enrich
 
             if (data.pending > 0) {
                 addLogEntry('info', `📋 ${data.pending} properties ready for enrichment`);
+            } else {
+                addLogEntry('info', `📋 All properties enriched. Re-enrich available if needed.`);
             }
         }
 

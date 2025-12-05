@@ -116,15 +116,22 @@ export default async function handler(req, res) {
     // GET - Return status and counts
     if (req.method === 'GET') {
         try {
-            const [pending, enriched, withUnits] = await Promise.all([
+            const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+            const [pending, stale, enriched, withUnits, total] = await Promise.all([
                 supabase.from('properties').select('*', { count: 'exact', head: true }).eq('enrichment_status', 'pending'),
+                supabase.from('properties').select('*', { count: 'exact', head: true }).lt('updated_at', sevenDaysAgo),
                 supabase.from('properties').select('*', { count: 'exact', head: true }).eq('enrichment_status', 'enriched'),
-                supabase.from('floor_plans').select('property_id', { count: 'exact', head: true })
+                supabase.from('floor_plans').select('property_id', { count: 'exact', head: true }),
+                supabase.from('properties').select('*', { count: 'exact', head: true })
             ]);
 
             return res.status(200).json({
                 pending: pending.count || 0,
+                stale: stale.count || 0,  // Properties not updated in 7+ days
+                enrichable: (pending.count || 0) + (stale.count || 0),  // Total that can be enriched
                 enriched: enriched.count || 0,
+                total: total.count || 0,
                 withFloorPlans: withUnits.count || 0,
                 configured: !!(process.env.OPENAI_API_KEY && process.env.BROWSERLESS_TOKEN)
             });
@@ -177,8 +184,10 @@ export default async function handler(req, res) {
             let query = supabase.from('properties').select('*');
 
             if (phase === 'property' || phase === 'both') {
-                // Phase 1: Get pending properties
-                query = query.eq('enrichment_status', 'pending');
+                // Phase 1: Get pending properties OR properties not updated in 7+ days
+                // This allows re-enrichment of stale data
+                const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+                query = query.or(`enrichment_status.eq.pending,updated_at.lt.${sevenDaysAgo}`);
             } else if (phase === 'units') {
                 // Phase 2: Get enriched properties that have leasing_link but no floor plans yet
                 query = query.eq('enrichment_status', 'enriched').not('leasing_link', 'is', null);
@@ -191,6 +200,9 @@ export default async function handler(req, res) {
             if (area) {
                 query = query.eq('discovery_area', area);
             }
+
+            // Order by oldest updated first (prioritize stale data)
+            query = query.order('updated_at', { ascending: true, nullsFirst: true });
 
             const { data, error: fetchError } = await query.limit(limit);
 
