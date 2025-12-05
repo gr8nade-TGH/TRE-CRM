@@ -167,6 +167,9 @@ export function toggleViewMode(viewMode, renderListings) {
 	// Clear customer selection when switching back to Agent View
 	if (!isCustomerView) {
 		clearCustomerSelection();
+	} else {
+		// In Customer View without selection, still show draw controls
+		setupDefaultPreferredAreaControls();
 	}
 
 	// Re-render listings
@@ -200,15 +203,13 @@ export function clearCustomerSelection() {
 		missingDataWarning.style.display = 'none';
 	}
 
-	// Clear preferred area polygon from map and hide controls
+	// Clear preferred area polygon from map
 	clearPreferredArea();
 	clearDrawing();
 
-	// Hide preferred area controls
-	const controlsContainer = document.getElementById('preferredAreaControls');
-	if (controlsContainer) {
-		controlsContainer.style.display = 'none';
-	}
+	// Keep preferred area controls visible (always available for drawing)
+	// but reset them to default state
+	setupDefaultPreferredAreaControls();
 }
 
 /**
@@ -486,6 +487,53 @@ function hidePreferredAreaControls() {
 	}
 	// Clear any active drawing
 	clearDrawing();
+}
+
+/**
+ * Set up default preferred area controls (no customer selected)
+ * Shows draw controls for general area filtering
+ */
+function setupDefaultPreferredAreaControls() {
+	const controlsContainer = document.getElementById('preferredAreaControls');
+	const drawBtn = document.getElementById('drawPreferredAreaBtn');
+	const editBtn = document.getElementById('editPreferredAreaBtn');
+	const clearBtn = document.getElementById('clearPreferredAreaBtn');
+	const saveBtn = document.getElementById('savePreferredAreaBtn');
+
+	if (!controlsContainer) return;
+
+	// Show controls
+	controlsContainer.style.display = 'flex';
+
+	// Hide edit button (no existing area)
+	if (editBtn) {
+		editBtn.style.display = 'none';
+	}
+
+	// Hide save button initially
+	if (saveBtn) {
+		saveBtn.style.display = 'none';
+	}
+
+	// Remove existing event listeners by cloning
+	const newDrawBtn = drawBtn.cloneNode(true);
+	const newClearBtn = clearBtn.cloneNode(true);
+
+	drawBtn.parentNode.replaceChild(newDrawBtn, drawBtn);
+	clearBtn.parentNode.replaceChild(newClearBtn, clearBtn);
+
+	// Draw button - start drawing
+	newDrawBtn.addEventListener('click', () => {
+		startDrawing();
+		newDrawBtn.classList.add('active');
+	});
+
+	// Clear button - cancel drawing
+	newClearBtn.addEventListener('click', () => {
+		cancelDrawing(null);
+		newDrawBtn.classList.remove('active');
+		clearPreferredArea();
+	});
 }
 
 /**
