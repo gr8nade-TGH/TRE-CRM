@@ -1,74 +1,157 @@
-// Auto Unit Scanner API
-// Continuous scanning with method rotation
+// Auto Unit Scanner API - Enhanced with domain tracking and never-disable logic
 import { createClient } from '@supabase/supabase-js';
 
 const BROWSERLESS_BASE = 'https://chrome.browserless.io';
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
 
-// Scan methods in rotation order
+// Scan methods - property methods first (most reliable), then ILS backup
 const SCAN_METHODS = [
-    { id: 'property-floorplans', path: '/floorplans', type: 'property' },
-    { id: 'property-floor-plans', path: '/floor-plans', type: 'property' },
-    { id: 'property-availability', path: '/availability', type: 'property' },
-    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com' },
-    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b' },
-    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com' }
+    { id: 'property-base', path: '', type: 'property', label: 'Property Homepage' },
+    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans' },
+    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans' },
+    { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability' },
+    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com' },
+    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b', label: 'Zillow.com' },
+    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com' }
 ];
 
-// Scrape a page with Browserless /function API (clicks floor plan cards)
+// Scrape a page with Browserless /function API (enhanced with more click targets)
 async function scrapePage(url, browserlessToken) {
+    console.log(`[scrapePage] Fetching: ${url}`);
     try {
+        const code = `
+            module.exports = async ({ page }) => {
+                try {
+                    await page.goto('${url.replace(/'/g, "\\'")}', {
+                        waitUntil: 'networkidle2',
+                        timeout: 45000
+                    });
+                } catch (navError) {
+                    // Try with less strict wait
+                    await page.goto('${url.replace(/'/g, "\\'")}', {
+                        waitUntil: 'domcontentloaded',
+                        timeout: 45000
+                    });
+                }
+
+                await page.waitForTimeout(3000);
+
+                // Scroll to trigger lazy loading
+                await page.evaluate(() => {
+                    window.scrollTo(0, document.body.scrollHeight / 2);
+                });
+                await page.waitForTimeout(1000);
+                await page.evaluate(() => {
+                    window.scrollTo(0, document.body.scrollHeight);
+                });
+                await page.waitForTimeout(2000);
+
+                // Click on various floor plan/unit elements to expand
+                const expandSelectors = [
+                    '.floor-plan-card', '[class*="floor-plan"]', '[class*="floorplan"]',
+                    '.pricingGridItem', '[data-testid*="floorplan"]', '[data-testid*="unit"]',
+                    '.availability-card', '.unit-card', '[class*="unit-row"]',
+                    '.pricing-card', '[class*="pricing"]', 'button[class*="view"]',
+                    '[class*="expand"]', '[class*="details"]', '.accordion-header'
+                ];
+
+                for (const sel of expandSelectors) {
+                    try {
+                        const els = await page.$$(sel);
+                        for (let i = 0; i < Math.min(els.length, 8); i++) {
+                            await els[i].click().catch(() => {});
+                            await page.waitForTimeout(300);
+                        }
+                    } catch (e) {}
+                }
+
+                await page.waitForTimeout(1500);
+
+                const content = await page.content();
+                const url = page.url();
+                return JSON.stringify({ html: content, finalUrl: url });
+            };
+        `;
+
         const response = await fetch(`${BROWSERLESS_BASE}/function?token=${browserlessToken}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                code: `
-                    module.exports = async ({ page }) => {
-                        await page.goto('${url}', { waitUntil: 'networkidle2', timeout: 30000 });
-                        await page.waitForTimeout(3000);
-
-                        // Click floor plan cards to expand
-                        const selectors = ['.floor-plan-card', '[class*="floor-plan"]', '[class*="floorplan"]',
-                                           '.pricingGridItem', '[data-testid*="floorplan"]'];
-                        for (const sel of selectors) {
-                            try {
-                                const els = await page.$$(sel);
-                                for (let i = 0; i < Math.min(els.length, 5); i++) {
-                                    await els[i].click().catch(() => {});
-                                    await page.waitForTimeout(500);
-                                }
-                            } catch (e) {}
-                        }
-                        await page.waitForTimeout(2000);
-                        return await page.content();
-                    };
-                `
-            })
+            body: JSON.stringify({ code })
         });
 
-        if (!response.ok) return null;
-        const html = await response.text();
-        return html?.length > 2000 ? html : null;
+        if (!response.ok) {
+            const errText = await response.text();
+            console.error(`[scrapePage] Browserless error ${response.status}:`, errText.slice(0, 200));
+            return { html: null, finalUrl: url, error: `HTTP ${response.status}` };
+        }
+
+        const text = await response.text();
+        try {
+            const parsed = JSON.parse(text);
+            console.log(`[scrapePage] Got ${parsed.html?.length || 0} chars from ${parsed.finalUrl}`);
+            return {
+                html: parsed.html?.length > 1000 ? parsed.html : null,
+                finalUrl: parsed.finalUrl,
+                error: parsed.html?.length <= 1000 ? 'Page too short' : null
+            };
+        } catch (e) {
+            // Might be raw HTML (old format)
+            return {
+                html: text?.length > 1000 ? text : null,
+                finalUrl: url,
+                error: text?.length <= 1000 ? 'Page too short' : null
+            };
+        }
     } catch (e) {
         console.error('[scrapePage] Error:', e.message);
-        return null;
+        return { html: null, finalUrl: url, error: e.message };
     }
 }
 
-// Extract units from HTML using AI
-async function extractUnits(html, propertyName, floorPlans, openaiKey) {
-    if (!html || html.length < 500) return [];
+// Extract units from HTML using AI - ENHANCED prompt
+async function extractUnits(html, propertyName, openaiKey) {
+    if (!html || html.length < 500) {
+        console.log(`[extractUnits] HTML too short: ${html?.length || 0} chars`);
+        return { units: [], rawResponse: null, error: 'HTML too short' };
+    }
 
+    // Clean HTML to text
     const text = html
         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+        .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
         .replace(/<[^>]+>/g, ' ')
         .replace(/\s+/g, ' ')
-        .slice(0, 15000);
+        .trim()
+        .slice(0, 20000);
 
-    const prompt = `Extract apartment units from "${propertyName}". Return ONLY JSON:
-{"units":[{"unit_number":"101","beds":1,"baths":1,"sqft":750,"rent":1250,"available_from":"2025-01-15","floor_plan_name":"A1"}]}
-Rules: unit_number must be specific apt number, rent as number only, available_from as YYYY-MM-DD or null.`;
+    console.log(`[extractUnits] Sending ${text.length} chars to OpenAI for "${propertyName}"`);
+
+    const prompt = `You are extracting apartment unit availability data from a property website.
+
+PROPERTY: "${propertyName}"
+
+Look for:
+- Individual unit numbers (like "101", "A-202", "#1234")
+- Bedroom/bathroom counts
+- Square footage
+- Monthly rent prices
+- Move-in/availability dates
+
+IMPORTANT:
+- Only extract SPECIFIC unit numbers, not floor plan types
+- If you see "5 units available" for a floor plan, that's not enough detail - we need actual unit numbers
+- Rent should be a number only (no $ or commas)
+- Dates as YYYY-MM-DD format
+- If no specific units found, return empty array
+
+Return ONLY valid JSON in this exact format:
+{"units":[{"unit_number":"101","beds":1,"baths":1,"sqft":750,"rent":1250,"available_from":"2025-01-15","floor_plan_name":"A1"}],"found_any_unit_data":true}
+
+If you cannot find specific unit numbers, return:
+{"units":[],"found_any_unit_data":false,"reason":"explanation"}`;
 
     try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -76,85 +159,146 @@ Rules: unit_number must be specific apt number, rent as number only, available_f
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
             body: JSON.stringify({
                 model: 'gpt-4o-mini',
-                messages: [{ role: 'user', content: `${prompt}\n\nPage content:\n${text}` }],
+                messages: [{ role: 'user', content: `${prompt}\n\n---PAGE CONTENT---\n${text}` }],
                 temperature: 0.1,
-                max_tokens: 3000
+                max_tokens: 4000
             })
         });
-        if (!resp.ok) return [];
+
+        if (!resp.ok) {
+            const errText = await resp.text();
+            console.error(`[extractUnits] OpenAI error ${resp.status}:`, errText.slice(0, 200));
+            return { units: [], rawResponse: null, error: `OpenAI ${resp.status}` };
+        }
+
         const data = await resp.json();
-        const match = data.choices?.[0]?.message?.content?.match(/\{[\s\S]*\}/);
-        return match ? JSON.parse(match[0]).units || [] : [];
+        const content = data.choices?.[0]?.message?.content;
+        console.log(`[extractUnits] OpenAI response: ${content?.slice(0, 300)}`);
+
+        const match = content?.match(/\{[\s\S]*\}/);
+        if (!match) {
+            return { units: [], rawResponse: content, error: 'No JSON in response' };
+        }
+
+        const parsed = JSON.parse(match[0]);
+        return {
+            units: parsed.units || [],
+            rawResponse: content,
+            foundAnyData: parsed.found_any_unit_data,
+            reason: parsed.reason
+        };
     } catch (e) {
-        return [];
+        console.error(`[extractUnits] Error:`, e.message);
+        return { units: [], rawResponse: null, error: e.message };
     }
 }
 
-// Scan a property website URL
-async function scanPropertyUrl(url, prop, floorPlans) {
+// Scan a property website URL - returns detailed result
+async function scanPropertyUrl(url, prop) {
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
     const openaiKey = process.env.OPENAI_API_KEY;
 
     console.log(`[Auto-Scan] Scraping property URL: ${url}`);
-    const html = await scrapePage(url, browserlessToken);
+    const scrapeResult = await scrapePage(url, browserlessToken);
 
-    if (!html) return { units: [], sources: [], errors: ['Failed to scrape page'] };
+    if (!scrapeResult.html) {
+        return {
+            units: [],
+            sources: [],
+            errors: [scrapeResult.error || 'Failed to scrape page'],
+            debug: { url, scrapeError: scrapeResult.error }
+        };
+    }
 
-    const units = await extractUnits(html, prop.community_name, floorPlans, openaiKey);
+    const extractResult = await extractUnits(scrapeResult.html, prop.community_name, openaiKey);
+
     return {
-        units: units.map(u => ({ ...u, status: 'available', is_available: true, is_active: true })),
-        sources: units.length > 0 ? ['property-website'] : [],
-        errors: []
+        units: extractResult.units.map(u => ({ ...u, status: 'available', is_available: true, is_active: true })),
+        sources: extractResult.units.length > 0 ? [new URL(url).hostname] : [],
+        errors: extractResult.error ? [extractResult.error] : [],
+        debug: {
+            url,
+            finalUrl: scrapeResult.finalUrl,
+            htmlLength: scrapeResult.html.length,
+            aiFoundData: extractResult.foundAnyData,
+            aiReason: extractResult.reason,
+            rawResponse: extractResult.rawResponse?.slice(0, 500)
+        }
     };
 }
 
-// Scan ILS site (apartments.com, zillow, rent.com)
-async function scanILSSite(ilsSite, prop, floorPlans) {
+// Scan ILS site (apartments.com, zillow, rent.com) - returns detailed result
+async function scanILSSite(ilsSite, prop) {
     const serpApiKey = process.env.SERP_API_KEY;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
     const openaiKey = process.env.OPENAI_API_KEY;
 
-    if (!serpApiKey) return { units: [], sources: [], errors: ['Missing SERP_API_KEY'] };
+    if (!serpApiKey) {
+        return { units: [], sources: [], errors: ['Missing SERP_API_KEY'], debug: { error: 'No SerpAPI key' } };
+    }
 
     const methodConfig = SCAN_METHODS.find(m => m.id === ilsSite);
-    const query = `${methodConfig?.searchPattern || 'site:' + ilsSite} "${prop.community_name}" ${prop.city || 'San Antonio'} ${prop.state || 'TX'}`;
+    const query = `${methodConfig?.searchPattern || 'site:' + ilsSite} "${prop.community_name}" ${prop.city || ''} ${prop.state || ''}`.trim();
 
     console.log(`[Auto-Scan] Searching ${ilsSite}: ${query}`);
 
     try {
         // Search for listing
-        const searchResp = await fetch(`${SERPAPI_BASE}?${new URLSearchParams({ engine: 'google', q: query, num: '3', api_key: serpApiKey })}`);
+        const searchResp = await fetch(`${SERPAPI_BASE}?${new URLSearchParams({ engine: 'google', q: query, num: '5', api_key: serpApiKey })}`);
         const searchData = await searchResp.json();
+
+        console.log(`[Auto-Scan] SerpAPI returned ${searchData.organic_results?.length || 0} results`);
 
         const result = searchData.organic_results?.find(r =>
             r.link?.includes(ilsSite.replace('.com', '')) &&
             !r.link?.includes('/reviews') &&
-            !r.link?.includes('/photos')
+            !r.link?.includes('/photos') &&
+            !r.link?.includes('/ratings')
         );
 
-        if (!result?.link) return { units: [], sources: [], errors: [`No ${ilsSite} listing found`] };
+        if (!result?.link) {
+            return {
+                units: [],
+                sources: [],
+                errors: [`No ${ilsSite} listing found`],
+                debug: { query, serpResults: searchData.organic_results?.map(r => r.link)?.slice(0, 5) }
+            };
+        }
 
         console.log(`[Auto-Scan] Found listing: ${result.link}`);
 
         // Scrape the listing
-        const html = await scrapePage(result.link, browserlessToken);
-        if (!html) return { units: [], sources: [], errors: ['Failed to scrape ILS page'] };
+        const scrapeResult = await scrapePage(result.link, browserlessToken);
+        if (!scrapeResult.html) {
+            return {
+                units: [],
+                sources: [],
+                errors: [scrapeResult.error || 'Failed to scrape ILS page'],
+                debug: { listingUrl: result.link, scrapeError: scrapeResult.error }
+            };
+        }
 
-        const units = await extractUnits(html, prop.community_name, floorPlans, openaiKey);
+        const extractResult = await extractUnits(scrapeResult.html, prop.community_name, openaiKey);
         return {
-            units: units.map(u => ({ ...u, status: 'available', is_available: true, is_active: true })),
-            sources: units.length > 0 ? [ilsSite] : [],
-            errors: []
+            units: extractResult.units.map(u => ({ ...u, status: 'available', is_available: true, is_active: true })),
+            sources: extractResult.units.length > 0 ? [ilsSite] : [],
+            errors: extractResult.error ? [extractResult.error] : [],
+            debug: {
+                listingUrl: result.link,
+                htmlLength: scrapeResult.html.length,
+                aiFoundData: extractResult.foundAnyData,
+                aiReason: extractResult.reason
+            }
         };
     } catch (e) {
-        return { units: [], sources: [], errors: [e.message] };
+        console.error(`[scanILSSite] Error:`, e);
+        return { units: [], sources: [], errors: [e.message], debug: { exception: e.message } };
     }
 }
 
-// Minimum attempts before a method's success rate matters
-const MIN_SAMPLE_SIZE = 5;
-// Methods with this success rate or below after MIN_SAMPLE_SIZE attempts get disabled
-const DISABLE_THRESHOLD = 0;
+// NEVER fully disable - just heavily deprioritize failing methods
+const MIN_SAMPLE_SIZE = 10;  // Need more samples before making decisions
+const LOW_PRIORITY_THRESHOLD = 10; // Methods below 10% get low priority but still run
 
 export default async function handler(req, res) {
     const supabaseUrl = process.env.SUPABASE_URL;
@@ -212,7 +356,7 @@ export default async function handler(req, res) {
                 }
             }
 
-            // Calculate rates and determine status
+            // Calculate rates and determine status - NEVER fully disable
             for (const id of Object.keys(methodStats)) {
                 const stat = methodStats[id];
                 stat.successRate = stat.attempts > 0 ? Math.round((stat.successes / stat.attempts) * 100) : 0;
@@ -220,8 +364,8 @@ export default async function handler(req, res) {
 
                 if (stat.attempts < MIN_SAMPLE_SIZE) {
                     stat.status = 'learning';
-                } else if (stat.successRate <= DISABLE_THRESHOLD) {
-                    stat.status = 'disabled';
+                } else if (stat.successRate < LOW_PRIORITY_THRESHOLD) {
+                    stat.status = 'low-priority'; // Changed from 'disabled' - still usable
                 } else {
                     stat.status = 'active';
                 }
@@ -229,8 +373,8 @@ export default async function handler(req, res) {
 
             // Sort methods by effectiveness (for UI display)
             const methodStatsArray = Object.values(methodStats).sort((a, b) => {
-                // Active > Learning > Disabled
-                const statusOrder = { active: 0, learning: 1, disabled: 2 };
+                // Active > Learning > Low-priority
+                const statusOrder = { active: 0, learning: 1, 'low-priority': 2 };
                 if (statusOrder[a.status] !== statusOrder[b.status]) {
                     return statusOrder[a.status] - statusOrder[b.status];
                 }
@@ -310,24 +454,40 @@ export default async function handler(req, res) {
 
             if (methodConfig?.type === 'property') {
                 // Property website method - use specific path
-                const scanUrl = prop.leasing_link.replace(/\/?$/, '') + (methodConfig.path || '');
-                result = await scanPropertyUrl(scanUrl, prop, floorPlans || []);
+                const baseUrl = prop.leasing_link.replace(/\/?$/, '');
+                const scanUrl = baseUrl + (methodConfig.path || '');
+                result = await scanPropertyUrl(scanUrl, prop);
             } else {
                 // ILS method - search and scrape specific site
-                result = await scanILSSite(method, prop, floorPlans || []);
+                result = await scanILSSite(method, prop);
             }
 
-            // Record scan history
-            await supabase.from('unit_scan_history').insert({
+            // Record scan history with debug info
+            const historyEntry = {
                 property_id: propertyId,
                 scan_method: method,
                 success: result.units.length > 0,
                 units_found: result.units.length,
-                error: result.errors?.join('; ') || null
-            });
+                error: result.errors?.join('; ') || null,
+                debug_info: result.debug ? JSON.stringify(result.debug) : null
+            };
 
-            // Save units if found
-            if (result.units.length > 0) {
+            await supabase.from('unit_scan_history').insert(historyEntry);
+
+            // If we found units, track the successful domain for future reference
+            if (result.units.length > 0 && result.sources?.length > 0) {
+                const successDomain = result.sources[0];
+                console.log(`[Auto-Scan] SUCCESS! Found ${result.units.length} units from ${successDomain}`);
+
+                // Update property with successful scrape source
+                await supabase
+                    .from('properties')
+                    .update({
+                        last_successful_scrape_source: successDomain,
+                        last_unit_scan_at: new Date().toISOString()
+                    })
+                    .eq('id', propertyId);
+
                 // Upsert units
                 for (const unit of result.units) {
                     await supabase.from('units').upsert({
@@ -352,7 +512,8 @@ export default async function handler(req, res) {
                 propertyName: prop.community_name,
                 method,
                 unitsFound: result.units.length,
-                sources: result.sources
+                sources: result.sources,
+                debug: result.debug // Include debug info in response
             });
 
         } catch (error) {
@@ -364,97 +525,95 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 }
 
-// Get active methods sorted by effectiveness
-function getActiveMethods(methodStats) {
-    return SCAN_METHODS
-        .filter(m => {
-            const stat = methodStats[m.id];
-            // Include if: still learning OR has some success
-            return !stat || stat.status !== 'disabled';
-        })
-        .sort((a, b) => {
-            const statA = methodStats[a.id];
-            const statB = methodStats[b.id];
+// Get ALL methods sorted by effectiveness - NEVER filter any out
+function getAllMethodsSorted(methodStats) {
+    return [...SCAN_METHODS].sort((a, b) => {
+        const statA = methodStats[a.id];
+        const statB = methodStats[b.id];
 
-            // Untested methods get medium priority (let them learn)
-            if (!statA || statA.attempts === 0) return 0;
-            if (!statB || statB.attempts === 0) return 0;
+        // Learning methods (untested) get high priority
+        if ((!statA || statA.attempts === 0) && statB?.attempts > 0) return -1;
+        if ((!statB || statB.attempts === 0) && statA?.attempts > 0) return 1;
 
-            // Sort by success rate (higher = first)
-            return (statB?.successRate || 0) - (statA?.successRate || 0);
-        });
+        // Then by success rate (higher = first)
+        const rateA = statA?.successRate || 0;
+        const rateB = statB?.successRate || 0;
+        if (rateA !== rateB) return rateB - rateA;
+
+        // Finally by attempts (fewer = try more)
+        return (statA?.attempts || 0) - (statB?.attempts || 0);
+    });
 }
 
-// Find next property to scan
+// Find next property to scan - ALWAYS returns a property if any exist
 function findNextProperty(properties, historyByProperty, methodStats) {
-    const activeMethods = getActiveMethods(methodStats);
-
-    if (activeMethods.length === 0) {
-        console.log('[Auto-Scan] All methods disabled!');
+    if (properties.length === 0) {
+        console.log('[Auto-Scan] No properties with leasing URLs!');
         return null;
     }
+
+    const allMethods = getAllMethodsSorted(methodStats);
 
     // Score each property: lower = should scan next
     const scored = properties.map(p => {
         const history = historyByProperty[p.id] || [];
         const methodsTried = new Set(history.map(h => h.scan_method));
         const lastScan = history[0]?.scanned_at ? new Date(history[0].scanned_at) : new Date(0);
+        const timeSinceLastScan = Date.now() - lastScan.getTime();
 
-        // Check if there are untried ACTIVE methods for this property
-        const hasUntriedActiveMethods = activeMethods.some(m => !methodsTried.has(m.id));
+        // Check if there are ANY untried methods for this property
+        const hasUntriedMethods = allMethods.some(m => !methodsTried.has(m.id));
         const hasAnySuccess = history.some(h => h.success);
         const unitsFound = history.reduce((sum, h) => sum + (h.units_found || 0), 0);
 
-        return {
-            property: p,
-            score: (hasUntriedActiveMethods ? 0 : 1000) + // Prioritize properties with untried methods
-                (hasAnySuccess ? 500 : 0) +               // De-prioritize ones that already have units
-                (unitsFound * 2) +                        // De-prioritize by units found
-                methodsTried.size * 10 +                  // Fewer methods tried = higher priority
-                (Date.now() - lastScan.getTime()) / -86400000 // Older = higher priority
-        };
+        // Score: lower = higher priority
+        let score = 0;
+
+        // Prioritize properties with untried methods
+        if (!hasUntriedMethods) score += 5000;
+
+        // Prioritize properties that haven't been scanned recently
+        if (timeSinceLastScan > 24 * 60 * 60 * 1000) score -= 100; // Bonus for 24h+ old
+
+        // De-prioritize properties that already found units
+        if (hasAnySuccess) score += 1000;
+        score += unitsFound * 50;
+
+        // Fewer methods tried = higher priority
+        score += methodsTried.size * 100;
+
+        return { property: p, score, hasUntriedMethods, methodsTried: methodsTried.size };
     });
 
     scored.sort((a, b) => a.score - b.score);
+
+    console.log(`[findNextProperty] Top 3 candidates:`,
+        scored.slice(0, 3).map(s => `${s.property.community_name} (score=${s.score}, tried=${s.methodsTried})`));
+
     return scored[0]?.property || null;
 }
 
-// Find next method to try for a property (uses smart prioritization)
+// Find next method to try for a property - cycles through ALL methods
 function findNextMethod(history, methodStats) {
     const methodsTried = new Set(history.map(h => h.scan_method));
-    const activeMethods = getActiveMethods(methodStats);
+    const allMethods = getAllMethodsSorted(methodStats);
 
-    // Find first untried ACTIVE method (already sorted by effectiveness)
-    for (const method of activeMethods) {
+    // Find first untried method (sorted by effectiveness)
+    for (const method of allMethods) {
         if (!methodsTried.has(method.id)) {
+            console.log(`[findNextMethod] Untried method: ${method.id}`);
             return method.id;
         }
     }
 
-    // All active methods tried - return the most effective one that was tried longest ago
-    const activeMethodIds = new Set(activeMethods.map(m => m.id));
-    const triedActiveMethods = [...methodsTried].filter(m => activeMethodIds.has(m));
+    // All methods have been tried - pick the one with best success rate that was tried longest ago
+    const methodsByRecency = history
+        .sort((a, b) => new Date(a.scanned_at) - new Date(b.scanned_at)) // Oldest first
+        .map(h => h.scan_method);
 
-    if (triedActiveMethods.length === 0) {
-        // Fallback: try first active method anyway
-        return activeMethods[0]?.id || SCAN_METHODS[0].id;
-    }
-
-    // Sort by: effectiveness first, then by recency (oldest first)
-    triedActiveMethods.sort((a, b) => {
-        const statA = methodStats[a];
-        const statB = methodStats[b];
-
-        // First by success rate
-        const rateDiff = (statB?.successRate || 0) - (statA?.successRate || 0);
-        if (Math.abs(rateDiff) > 10) return rateDiff; // Significant difference
-
-        // Then by recency (oldest first to retry)
-        const aLast = history.find(h => h.scan_method === a)?.scanned_at || '';
-        const bLast = history.find(h => h.scan_method === b)?.scanned_at || '';
-        return aLast.localeCompare(bLast);
-    });
-
-    return triedActiveMethods[0];
+    // Return oldest tried method to retry (gives it another chance)
+    const oldestMethod = methodsByRecency[0] || allMethods[0]?.id || SCAN_METHODS[0].id;
+    console.log(`[findNextMethod] All methods tried, retrying oldest: ${oldestMethod}`);
+    return oldestMethod;
 }
 

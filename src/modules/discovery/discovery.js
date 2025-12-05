@@ -582,15 +582,15 @@ function renderMethodStatsTable(methodStats) {
     };
 
     tbody.innerHTML = methodStats.map(m => {
-        // Status styling
+        // Status styling - NEVER show as fully disabled
         let statusBadge, statusColor, rowOpacity;
-        if (m.status === 'disabled') {
-            statusBadge = '🚫 Disabled';
-            statusColor = '#ef4444';
-            rowOpacity = '0.5';
+        if (m.status === 'low-priority') {
+            statusBadge = '⚠️ Low Priority';
+            statusColor = '#f59e0b';
+            rowOpacity = '0.7';
         } else if (m.status === 'learning') {
             statusBadge = '📊 Learning';
-            statusColor = '#f59e0b';
+            statusColor = '#3b82f6';
             rowOpacity = '1';
         } else {
             statusBadge = '✅ Active';
@@ -755,7 +755,11 @@ async function runAutoScan() {
 
         debugLog('API response received', {
             hasNext: !!status.next,
+            nextProperty: status.next?.propertyName,
+            nextMethod: status.next?.method,
+            leasingUrl: status.next?.leasingUrl,
             stats: status.stats,
+            methodStats: status.methodStats?.map(m => `${m.method}: ${m.attempts}/${m.successes}`),
             error: status.error
         });
 
@@ -791,7 +795,10 @@ async function runAutoScan() {
         const scanDuration = Date.now() - scanStartTime;
 
         debugLog('Scan complete', {
-            result,
+            unitsFound: result.unitsFound,
+            sources: result.sources,
+            debug: result.debug,
+            error: result.error,
             durationMs: scanDuration,
             httpStatus: scanResp.status
         });
