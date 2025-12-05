@@ -301,7 +301,6 @@ function stopScan() {
 /**
  * Run auto-enrichment on all discovered properties
  * Uses v2 API with two phases: property data → unit data
- * Shows progress per area like the scan does
  */
 async function runAutoEnrichment() {
     const enrichBtn = document.getElementById('runEnrichmentBtn');
@@ -315,16 +314,6 @@ async function runAutoEnrichment() {
     scanBtn.disabled = true;
     document.getElementById('discoveryStatus').textContent = 'Enriching...';
 
-    // Reset all area cards to pending state for enrichment
-    gridPoints.forEach(point => {
-        const card = document.getElementById(`grid-${point.index}`);
-        if (card) {
-            card.dataset.status = 'pending';
-            card.querySelector('.area-icon').textContent = '📍';
-            card.querySelector('.area-status').textContent = 'Pending';
-        }
-    });
-
     try {
         // Check status with v2 API
         const checkResponse = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
@@ -335,38 +324,13 @@ async function runAutoEnrichment() {
             return;
         }
 
-        const totalToProcess = checkData.pending || 0;
-        if (totalToProcess === 0) {
-            addLogEntry('info', '✅ No pending properties to enrich');
-            return;
+        // ========== PHASE 1: Property Data ==========
+        if (checkData.pending > 0) {
+            addLogEntry('info', `\n📋 PHASE 1: Enriching ${checkData.pending} properties...`);
+            await runEnrichmentPhase('property', checkData.pending);
+        } else {
+            addLogEntry('info', '✅ Phase 1: All properties already enriched');
         }
-
-        addLogEntry('info', `📋 Found ${totalToProcess} properties to enrich`);
-
-        // ========== PHASE 1: Property Data (by area) ==========
-        addLogEntry('info', `\n📋 PHASE 1: Enriching ${totalToProcess} properties by area...`);
-
-        let totalEnriched = 0;
-        let areasProcessed = 0;
-
-        // Process each area
-        for (const point of gridPoints) {
-            updateGridPointStatus(point.index, 'enriching');
-
-            // Enrich properties in this area
-            const areaEnriched = await enrichPropertiesInArea(point.name);
-
-            areasProcessed++;
-            totalEnriched += areaEnriched;
-
-            updateGridPointStatus(point.index, 'enriched', areaEnriched);
-            updateProgress(areasProcessed, gridPoints.length, `Enriching... ${areasProcessed}/${gridPoints.length} areas`);
-
-            // Small delay between areas
-            await new Promise(r => setTimeout(r, 200));
-        }
-
-        addLogEntry('success', `✅ Phase 1 complete: ${totalEnriched} properties enriched`);
 
         // ========== PHASE 2: Unit Data ==========
         const recheck = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
@@ -387,58 +351,6 @@ async function runAutoEnrichment() {
         scanBtn.disabled = false;
         document.getElementById('discoveryStatus').textContent = 'Ready';
     }
-}
-
-/**
- * Enrich all properties in a specific area
- */
-async function enrichPropertiesInArea(areaName) {
-    let enrichedCount = 0;
-    let hasMore = true;
-
-    while (hasMore) {
-        try {
-            const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    phase: 'property',
-                    limit: 5,
-                    area: areaName  // Filter by area
-                })
-            });
-
-            if (!response.ok) {
-                addLogEntry('error', `❌ Error enriching ${areaName}`);
-                break;
-            }
-
-            const result = await response.json();
-
-            // Log individual results
-            for (const r of result.results || []) {
-                if (r.phases?.property?.status === 'enriched') {
-                    addLogEntry('success', `✅ ${r.name}`);
-                } else {
-                    addLogEntry('info', `ℹ️ ${r.name}: ${r.phases?.property?.status || 'processed'}`);
-                }
-            }
-
-            enrichedCount += result.processed || 0;
-
-            // Check if there are more in this area
-            hasMore = result.remaining > 0 && result.processed > 0;
-
-            if (hasMore) {
-                await new Promise(r => setTimeout(r, 500));
-            }
-        } catch (error) {
-            addLogEntry('error', `❌ ${areaName}: ${error.message}`);
-            break;
-        }
-    }
-
-    return enrichedCount;
 }
 
 /**
