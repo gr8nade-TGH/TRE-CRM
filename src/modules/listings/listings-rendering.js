@@ -418,15 +418,23 @@ export async function renderListings(options, autoSelectProperty = null) {
 
 						console.log(`[Scan Units] Property: ${propertyName}, URL from data attr: "${leasingUrl}"`);
 
-						// If no URL, prompt user to enter one
-						if (!leasingUrl) {
+						// Ask user which scan type
+						const scanChoice = prompt(
+							`Scan Units for ${propertyName}\n\n` +
+							`Choose scan type:\n` +
+							`1 = Quick Scan (property website)\n` +
+							`2 = Deep Scan (apartments.com, zillow, rent.com)\n\n` +
+							`Enter 1 or 2:`
+						)?.trim();
+
+						if (!scanChoice || !['1', '2'].includes(scanChoice)) return;
+						const isDeepScan = scanChoice === '2';
+
+						// If no URL and quick scan, prompt user to enter one
+						if (!leasingUrl && !isDeepScan) {
 							leasingUrl = prompt(`No website URL found for ${propertyName}.\n\nEnter the property website URL (e.g., https://www.brandonoakssanantonio.com):`)?.trim();
 							if (!leasingUrl) return;
-
-							// Basic URL validation
-							if (!leasingUrl.startsWith('http')) {
-								leasingUrl = 'https://' + leasingUrl;
-							}
+							if (!leasingUrl.startsWith('http')) leasingUrl = 'https://' + leasingUrl;
 						}
 
 						// Show loading state
@@ -435,17 +443,17 @@ export async function renderListings(options, autoSelectProperty = null) {
 						const originalColor = icon.style.color;
 						icon.style.color = '#fbbf24';
 						iconContainer.classList.add('scanning');
-						iconContainer.title = 'Scanning units...';
+						iconContainer.title = isDeepScan ? 'Deep scanning ILS sites...' : 'Scanning units...';
 
 						try {
-							console.log(`[Scan Units] Starting scan for ${propertyName} at ${leasingUrl}...`);
+							console.log(`[Scan Units] Starting ${isDeepScan ? 'deep' : 'quick'} scan for ${propertyName}...`);
 							const response = await fetch('/api/property/batch-enrich-v2', {
 								method: 'POST',
 								headers: { 'Content-Type': 'application/json' },
 								body: JSON.stringify({
-									phase: 'units',
+									phase: isDeepScan ? 'deep_scan' : 'units',
 									propertyIds: [propertyId],
-									overrideUrl: leasingUrl  // Pass the URL in case it was entered manually
+									overrideUrl: leasingUrl
 								})
 							});
 
@@ -454,10 +462,14 @@ export async function renderListings(options, autoSelectProperty = null) {
 
 							if (result.success) {
 								const propResult = result.results?.[0];
-								if (propResult?.phases?.units?.status === 'found') {
-									alert(`✅ Found ${propResult.phases.units.floorPlans || 0} floor plans and ${propResult.phases.units.units || 0} units for ${propertyName}!`);
+								const phaseResult = isDeepScan ? propResult?.phases?.deep_scan : propResult?.phases?.units;
+								if (phaseResult?.status === 'found') {
+									const msg = isDeepScan
+										? `✅ Deep Scan found ${phaseResult.units || 0} units from: ${phaseResult.sources?.join(', ') || 'ILS sites'}`
+										: `✅ Found ${phaseResult.floorPlans || 0} floor plans and ${phaseResult.units || 0} units!`;
+									alert(msg);
 								} else {
-									alert(`ℹ️ No new unit data found for ${propertyName}. The property website may not have unit availability info.`);
+									alert(`ℹ️ No new unit data found for ${propertyName}.`);
 								}
 							} else {
 								alert(`❌ Error scanning ${propertyName}: ${result.error || 'Unknown error'}`);

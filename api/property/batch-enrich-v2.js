@@ -16,6 +16,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { enrichProperty } from '../lib/ai-enrichment.js';
 import { smartUnitSearch } from '../lib/smart-unit-search.js';
+import { deepScanUnits } from '../lib/ils-unit-scraper.js';
 
 export const config = {
     maxDuration: 300  // 5 minutes max
@@ -138,7 +139,7 @@ export default async function handler(req, res) {
     }
 
     const {
-        phase = 'property',  // 'property' | 'units' | 'both'
+        phase = 'property',  // 'property' | 'units' | 'both' | 'deep_scan'
         limit = 5,
         forceUpdate = false,  // If true, overwrites existing data
         forceFields = [],     // Specific fields to force update
@@ -181,6 +182,9 @@ export default async function handler(req, res) {
             } else if (phase === 'units') {
                 // Phase 2: Get enriched properties that have leasing_link but no floor plans yet
                 query = query.eq('enrichment_status', 'enriched').not('leasing_link', 'is', null);
+            } else if (phase === 'deep_scan') {
+                // Phase 3: Deep scan - get properties that have been unit-scanned but may need more units
+                query = query.in('enrichment_status', ['enriched', 'units_scanned']);
             }
 
             // Filter by area if specified
@@ -435,6 +439,69 @@ export default async function handler(req, res) {
                         enrichment_status: 'units_scanned',
                         units_scanned_at: new Date().toISOString()
                     }).eq('id', prop.id);
+                }
+
+                // ============ PHASE 3: DEEP SCAN (ILS Aggregators) ============
+                if (phase === 'deep_scan') {
+                    console.log(`[Phase 3] Deep Scan ILS: ${prop.name}`);
+
+                    // Get existing floor plans for this property
+                    const { data: existingFloorPlans } = await supabase
+                        .from('floor_plans')
+                        .select('id, name, beds, baths, sqft, starting_at, market_rent')
+                        .eq('property_id', prop.id);
+
+                    const deepResult = await deepScanUnits({
+                        propertyId: prop.id,
+                        propertyName: prop.name,
+                        city: prop.city || 'San Antonio',
+                        state: prop.state || 'TX',
+                        floorPlans: existingFloorPlans || [],
+                        leasingUrl: overrideUrl || prop.leasing_link
+                    });
+
+                    // Insert new floor plans discovered
+                    const floorPlanMap = {};
+                    for (const fp of existingFloorPlans || []) {
+                        floorPlanMap[fp.name] = fp.id;
+                    }
+
+                    if (deepResult.newFloorPlans?.length > 0) {
+                        for (const fp of deepResult.newFloorPlans) {
+                            if (!floorPlanMap[fp.name]) {
+                                const { data: inserted } = await supabase.from('floor_plans').insert({
+                                    property_id: prop.id, name: fp.name, beds: fp.beds, baths: fp.baths,
+                                    sqft: fp.sqft, starting_at: fp.rent_min, market_rent: fp.rent_max
+                                }).select('id').single();
+                                if (inserted) floorPlanMap[fp.name] = inserted.id;
+                            }
+                        }
+                    }
+
+                    // Insert units from ILS
+                    let unitsInserted = 0;
+                    for (const unit of deepResult.units || []) {
+                        const floorPlanId = unit.floor_plan_id || floorPlanMap[unit.floor_plan_name] || null;
+                        const { data: existing } = await supabase.from('units')
+                            .select('id').eq('property_id', prop.id).eq('unit_number', unit.unit_number).single();
+
+                        if (!existing) {
+                            const { error } = await supabase.from('units').insert({
+                                property_id: prop.id, floor_plan_id: floorPlanId, unit_number: unit.unit_number,
+                                floor: unit.floor, rent: unit.rent, market_rent: unit.market_rent || unit.rent,
+                                available_from: unit.available_from, is_available: true, status: 'available'
+                            });
+                            if (!error) unitsInserted++;
+                        }
+                    }
+
+                    result.phases.deep_scan = {
+                        status: deepResult.units.length > 0 ? 'found' : 'none_found',
+                        units: unitsInserted,
+                        sources: deepResult.sources,
+                        errors: deepResult.errors
+                    };
+                    unitsFound += unitsInserted;
                 }
 
                 results.push(result);
