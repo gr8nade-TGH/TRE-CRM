@@ -474,7 +474,148 @@ function handleDrawUpdate(e) {
 		}
 		updateDrawingUI(true);
 		console.log('📍 Polygon drawn/updated:', currentDrawnPolygon);
+
+		// Transform markers inside polygon to price bubbles
+		updateMarkersInPolygon(currentDrawnPolygon);
 	}
+}
+
+/**
+ * Check if a point is inside a polygon using ray casting algorithm
+ * @param {number} lng - Longitude
+ * @param {number} lat - Latitude
+ * @param {Object} polygon - GeoJSON polygon geometry
+ * @returns {boolean} True if point is inside polygon
+ */
+function isPointInPolygon(lng, lat, polygon) {
+	if (!polygon || !polygon.coordinates || !polygon.coordinates[0]) return false;
+
+	const coords = polygon.coordinates[0]; // Outer ring
+	let inside = false;
+
+	for (let i = 0, j = coords.length - 1; i < coords.length; j = i++) {
+		const xi = coords[i][0], yi = coords[i][1];
+		const xj = coords[j][0], yj = coords[j][1];
+
+		const intersect = ((yi > lat) !== (yj > lat)) &&
+			(lng < (xj - xi) * (lat - yi) / (yj - yi) + xi);
+		if (intersect) inside = !inside;
+	}
+
+	return inside;
+}
+
+/**
+ * Format price for display (e.g., 1500 -> "$1.5k")
+ * @param {number} price - The price value
+ * @returns {string} Formatted price string
+ */
+function formatPriceShort(price) {
+	if (!price || price === 0) return 'N/A';
+	if (price >= 1000) {
+		return '$' + (price / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+	}
+	return '$' + price;
+}
+
+/**
+ * Update markers based on whether they're inside the drawn polygon
+ * Markers inside become price bubbles, others stay as dots
+ * @param {Object} polygon - GeoJSON polygon geometry
+ */
+function updateMarkersInPolygon(polygon) {
+	markers.forEach(markerGroup => {
+		const prop = markerGroup.property;
+		if (!prop.lat || !prop.lng) return;
+
+		const isInside = isPointInPolygon(prop.lng, prop.lat, polygon);
+		const isSelected = selectedProperty && selectedProperty.id === prop.id;
+		const isPUMI = prop.is_pumi || prop.isPUMI || false;
+
+		if (markerGroup.pin) {
+			const element = markerGroup.pin.getElement();
+
+			if (isInside) {
+				// Transform to price bubble
+				const rentMin = prop.rent_min || prop.rent_range_min || null;
+				const priceText = formatPriceShort(rentMin);
+
+				element.className = 'price-marker' + (isSelected ? ' selected' : '') + (isPUMI ? ' pumi' : '');
+				element.textContent = priceText;
+				element.style.cssText = `
+					background: ${isPUMI ? '#22c55e' : '#dc2626'};
+					color: #fff;
+					font-weight: 700;
+					padding: 4px 8px;
+					border-radius: 12px;
+					border: 2px solid ${isSelected ? '#fbbf24' : '#fff'};
+					box-shadow: ${isPUMI ? '0 0 10px rgba(34, 197, 94, 0.6),' : ''} 0 2px 6px rgba(0,0,0,0.3);
+					white-space: nowrap;
+					font-size: 11px;
+					min-width: 36px;
+					text-align: center;
+					cursor: pointer;
+					line-height: 1.2;
+					transform: ${isSelected ? 'scale(1.15)' : 'scale(1)'};
+				`;
+				// Store original state for reverting
+				element.dataset.isPriceBubble = 'true';
+			} else {
+				// Revert to dot marker
+				element.className = 'custom-dot-marker' + (isPUMI ? ' pumi-marker' : '');
+				element.textContent = '';
+				element.style.cssText = `
+					width: ${isPUMI ? '16px' : '12px'};
+					height: ${isPUMI ? '16px' : '12px'};
+					border-radius: 50%;
+					background: ${isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6')};
+					border: 2px solid white;
+					box-shadow: ${isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
+					cursor: pointer;
+				`;
+				element.dataset.isPriceBubble = 'false';
+			}
+		}
+	});
+
+	// Count properties inside
+	const insideCount = markers.filter(m =>
+		m.property.lat && m.property.lng &&
+		isPointInPolygon(m.property.lng, m.property.lat, polygon)
+	).length;
+
+	console.log(`🎯 ${insideCount} properties inside drawn area`);
+
+	if (window.showToast && insideCount > 0) {
+		window.showToast(`${insideCount} properties in selected area`, 'info', 2000);
+	}
+}
+
+/**
+ * Reset all markers to default dot style (when polygon is cleared)
+ */
+export function resetMarkersToDefault() {
+	markers.forEach(markerGroup => {
+		const prop = markerGroup.property;
+		const isSelected = selectedProperty && selectedProperty.id === prop.id;
+		const isPUMI = prop.is_pumi || prop.isPUMI || false;
+
+		if (markerGroup.pin) {
+			const element = markerGroup.pin.getElement();
+			element.className = 'custom-dot-marker' + (isPUMI ? ' pumi-marker' : '');
+			element.textContent = '';
+			element.style.cssText = `
+				width: ${isPUMI ? '16px' : '12px'};
+				height: ${isPUMI ? '16px' : '12px'};
+				border-radius: 50%;
+				background: ${isSelected ? '#ef4444' : (isPUMI ? '#22c55e' : '#3b82f6')};
+				border: 2px solid white;
+				box-shadow: ${isPUMI ? '0 0 15px rgba(34, 197, 94, 0.8), 0 0 25px rgba(34, 197, 94, 0.6), 0 2px 8px rgba(0,0,0,0.3)' : '0 2px 4px rgba(0,0,0,0.3)'};
+				cursor: pointer;
+			`;
+			element.dataset.isPriceBubble = 'false';
+		}
+	});
 }
 
 /**
@@ -564,6 +705,8 @@ export function clearDrawing() {
 	isDrawingMode = false;
 	updateDrawingUI(false);
 	clearPreferredArea();
+	// Reset markers back to dots
+	resetMarkersToDefault();
 	console.log('🗑️ Drawing cleared');
 }
 
@@ -579,6 +722,8 @@ export function cancelDrawing(existingPolygon) {
 	currentDrawnPolygon = null;
 	isDrawingMode = false;
 	updateDrawingUI(false);
+	// Reset markers back to dots
+	resetMarkersToDefault();
 
 	// Restore the original polygon display if exists
 	if (existingPolygon) {
