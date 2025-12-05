@@ -131,37 +131,102 @@ async function scrapeForUnits(leasingUrl, browserlessToken, openaiKey, propertyN
     // Include availability pages to find individual units
     const baseUrl = leasingUrl.replace(/\/$/, '');
     const urls = [
-        leasingUrl,
+        baseUrl + '/floorplans',  // Most common for unit availability
         baseUrl + '/floor-plans',
-        baseUrl + '/floorplans',
         baseUrl + '/availability',
-        baseUrl + '/available-units',
-        baseUrl + '/apartments',
-        baseUrl + '/specials'
+        leasingUrl
     ];
     let allText = '', allImages = [];
+
     for (const url of urls) {
         try {
             console.log(`[Browserless] Trying: ${url}`);
-            const response = await fetch(`https://chrome.browserless.io/content?token=${browserlessToken}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ url, waitFor: 3000 })
-            });
-            if (!response.ok) continue;
-            const html = await response.text();
-            if (html.length < 1000) continue;
 
-            // Extract text
-            const textContent = html.replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '').replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').slice(0, 5000);
+            // Use Browserless /function endpoint to click floor plans and extract unit data
+            const response = await fetch(`https://chrome.browserless.io/function?token=${browserlessToken}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    code: `
+                        module.exports = async ({ page }) => {
+                            await page.goto('${url}', { waitUntil: 'networkidle2', timeout: 15000 });
+                            await page.waitForTimeout(3000);
+
+                            // Try to click floor plan items to expand them (common patterns)
+                            const clickSelectors = [
+                                '.floor-plan-card', '.floorplan-card', '.fp-card',
+                                '[class*="floor-plan"]', '[class*="floorplan"]',
+                                '.unit-type', '.plan-item', '.fp-item',
+                                'button:has-text("View")', 'button:has-text("Details")'
+                            ];
+
+                            for (const selector of clickSelectors) {
+                                try {
+                                    const elements = await page.$$(selector);
+                                    for (let i = 0; i < Math.min(elements.length, 5); i++) {
+                                        await elements[i].click().catch(() => {});
+                                        await page.waitForTimeout(500);
+                                    }
+                                } catch (e) {}
+                            }
+
+                            await page.waitForTimeout(2000);
+                            return await page.content();
+                        };
+                    `
+                })
+            });
+
+            if (!response.ok) {
+                console.log(`[Browserless] ${url}: ${response.status} - trying simple content fetch`);
+                // Fallback to simple content fetch
+                const fallbackResp = await fetch(`https://chrome.browserless.io/content?token=${browserlessToken}`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url, waitFor: 5000, gotoOptions: { waitUntil: 'networkidle2' } })
+                });
+                if (!fallbackResp.ok) continue;
+                var html = await fallbackResp.text();
+            } else {
+                var html = await response.text();
+            }
+
+            if (html.length < 1000) {
+                console.log(`[Browserless] ${url}: Too short (${html.length} chars)`);
+                continue;
+            }
+
+            console.log(`[Browserless] ${url}: Got ${html.length} chars`);
+
+            // Extract MORE text - unit data is often further down the page
+            const textContent = html
+                .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+                .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+                .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')  // Remove nav
+                .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')  // Remove footer
+                .replace(/<[^>]+>/g, ' ')
+                .replace(/\s+/g, ' ')
+                .slice(0, 12000);  // Get more content for unit data
+
             allText += `\n--- ${url} ---\n${textContent}`;
 
             // Extract images from HTML
             const imgMatches = html.match(/src=["']([^"']+(?:floor|plan|unit|bedroom)[^"']*\.(?:jpg|png|webp))["']/gi) || [];
             allImages.push(...imgMatches.map(m => m.match(/src=["']([^"']+)["']/)?.[1]).filter(Boolean));
-        } catch (e) { console.error(`[Browserless] ${url}:`, e.message); }
+
+            // If we found substantial content with unit-like data, we can stop
+            if (textContent.match(/apt|unit|#\d+|available|move.?in/i) && textContent.length > 3000) {
+                console.log(`[Browserless] Found unit-like content, stopping search`);
+                break;
+            }
+        } catch (e) {
+            console.error(`[Browserless] ${url}:`, e.message);
+        }
     }
-    // Extract both units and specials from all scraped content
+
+    // Extract floor plans, units, and specials from all scraped content
     const extracted = await extractUnitsAndSpecials(allText, allText, propertyName, openaiKey);
+    console.log(`[Browserless] Extracted: ${extracted.floorPlans?.length || 0} floor plans, ${extracted.units?.length || 0} units, ${extracted.specials?.length || 0} specials`);
     return { ...extracted, images: allImages };
 }
 
