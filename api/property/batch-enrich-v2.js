@@ -196,10 +196,6 @@ export default async function handler(req, res) {
             properties = data;
         }
 
-        if (fetchError) {
-            return res.status(500).json({ error: fetchError.message });
-        }
-
         if (!properties || properties.length === 0) {
             return res.status(200).json({
                 message: 'No properties to process',
