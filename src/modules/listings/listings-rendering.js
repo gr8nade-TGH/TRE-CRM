@@ -354,6 +354,11 @@ export async function renderListings(options, autoSelectProperty = null) {
 				<div class="community-meta">
 					<div class="listing-controls">
 						${state.role === 'manager' ? `
+							<div class="scan-units-icon" data-property-id="${prop.id}" data-property-name="${communityName}" data-leasing-url="${prop.leasing_url || prop.website || ''}" title="Scan Units for this property">
+								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #10b981;">
+									<path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M17,17H7V7H17V17M15,15V9H9V15H15Z"/>
+								</svg>
+							</div>
 							<div class="gear-icon" data-property-id="${prop.id}" data-property-name="${communityName}" title="Edit Listing & Mark PUMI">
 								<svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="color: #6b7280;">
 									<path d="M12 15.5A3.5 3.5 0 0 1 8.5 12A3.5 3.5 0 0 1 12 8.5a3.5 3.5 0 0 1 3.5 3.5a3.5 3.5 0 0 1-3.5 3.5m7.43-2.53c.04-.32.07-.64.07-.97c0-.33-.03-.66-.07-1l2.11-1.63c.19-.15.24-.42.12-.64l-2-3.46c-.12-.22-.39-.31-.61-.22l-2.49 1c-.52-.39-1.06-.73-1.69-.98l-.37-2.65A.506.506 0 0 0 14 2h-4c-.25 0-.46.18-.5.42l-.37 2.65c-.63.25-1.17.59-1.69.98l-2.49-1c-.22-.09-.49 0-.61.22l-2 3.46c-.13.22-.07.49.12.64L4.57 11c-.04.34-.07.67-.07 1c0 .33.03.65.07.97l-2.11 1.66c-.19.15-.25.42-.12.64l2 3.46c.12.22.39.3.61.22l2.49-1.01c.52.4 1.06.74 1.69.99l.37 2.65c.04.24.25.42.5.42h4c.25 0 .46-.18.5-.42l.37-2.65c.63-.26 1.17-.59 1.69-.99l2.49 1.01c.22.08.49 0 .61-.22l2-3.46c.12-.22.07-.49-.12-.64l-2.11-1.66Z"/>
@@ -386,8 +391,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 
 			// Add click handler to table row
 			tr.addEventListener('click', (e) => {
-				// Don't trigger if clicking on gear icon or heart icon
-				if (!e.target.closest('.gear-icon') && !e.target.closest('.interest-count')) {
+				// Don't trigger if clicking on control icons
+				if (!e.target.closest('.gear-icon') && !e.target.closest('.interest-count') && !e.target.closest('.scan-units-icon')) {
 					selectProperty(prop);
 				}
 			});
@@ -399,6 +404,64 @@ export async function renderListings(options, autoSelectProperty = null) {
 					gearIcon.addEventListener('click', (e) => {
 						e.stopPropagation();
 						openListingEditModal(prop);
+					});
+				}
+
+				// Add scan units icon click handler
+				const scanUnitsIcon = tr.querySelector('.scan-units-icon');
+				if (scanUnitsIcon) {
+					scanUnitsIcon.addEventListener('click', async (e) => {
+						e.stopPropagation();
+						const propertyId = e.currentTarget.dataset.propertyId;
+						const propertyName = e.currentTarget.dataset.propertyName;
+						const leasingUrl = e.currentTarget.dataset.leasingUrl;
+
+						if (!leasingUrl) {
+							alert(`No leasing URL found for ${propertyName}. Please add a website URL first.`);
+							return;
+						}
+
+						// Show loading state
+						const iconContainer = e.currentTarget;
+						const icon = iconContainer.querySelector('svg');
+						const originalColor = icon.style.color;
+						icon.style.color = '#fbbf24';
+						iconContainer.classList.add('scanning');
+						iconContainer.title = 'Scanning units...';
+
+						try {
+							console.log(`[Scan Units] Starting scan for ${propertyName}...`);
+							const response = await fetch('/api/property/batch-enrich-v2', {
+								method: 'POST',
+								headers: { 'Content-Type': 'application/json' },
+								body: JSON.stringify({
+									phase: 'units',
+									propertyIds: [propertyId]
+								})
+							});
+
+							const result = await response.json();
+							console.log(`[Scan Units] Result for ${propertyName}:`, result);
+
+							if (result.success) {
+								const propResult = result.results?.[0];
+								if (propResult?.phases?.units?.status === 'found') {
+									alert(`✅ Found ${propResult.phases.units.floorPlans || 0} floor plans and ${propResult.phases.units.units || 0} units for ${propertyName}!`);
+								} else {
+									alert(`ℹ️ No new unit data found for ${propertyName}. The property website may not have unit availability info.`);
+								}
+							} else {
+								alert(`❌ Error scanning ${propertyName}: ${result.error || 'Unknown error'}`);
+							}
+						} catch (error) {
+							console.error('[Scan Units] Error:', error);
+							alert(`❌ Error scanning ${propertyName}: ${error.message}`);
+						} finally {
+							// Reset icon
+							icon.style.color = originalColor;
+							iconContainer.classList.remove('scanning');
+							iconContainer.title = 'Scan Units for this property';
+						}
 					});
 				}
 			}

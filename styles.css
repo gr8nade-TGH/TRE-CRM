@@ -3991,6 +3991,39 @@ body {
 	color: #374151 !important;
 }
 
+.scan-units-icon {
+	display: flex;
+	align-items: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	padding: 2px;
+	border-radius: 4px;
+}
+
+.scan-units-icon:hover {
+	background: #d1fae5;
+	transform: scale(1.1);
+}
+
+.scan-units-icon:hover svg {
+	color: #059669 !important;
+}
+
+.scan-units-icon.scanning svg {
+	animation: spin 1s linear infinite;
+	color: #fbbf24 !important;
+}
+
+@keyframes spin {
+	from {
+		transform: rotate(0deg);
+	}
+
+	to {
+		transform: rotate(360deg);
+	}
+}
+
 .community-meta {
 	margin-top: 6px;
 	display: flex;
