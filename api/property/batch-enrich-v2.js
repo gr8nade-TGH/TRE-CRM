@@ -23,40 +23,8 @@ export const config = {
 
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
 
-/**
- * Search YouTube for property tour videos
- */
-async function searchYouTubeTours(propertyName, city, serpApiKey) {
-    if (!propertyName || !serpApiKey) return [];
-
-    try {
-        const query = `"${propertyName}" apartment tour ${city}`;
-        const params = new URLSearchParams({
-            engine: 'youtube',
-            search_query: query,
-            api_key: serpApiKey
-        });
-
-        const response = await fetch(`${SERPAPI_BASE}?${params}`);
-        if (!response.ok) return [];
-
-        const data = await response.json();
-        const videos = (data.video_results || []).slice(0, 3);
-
-        return videos.map(v => ({
-            title: v.title,
-            link: v.link,
-            thumbnail: v.thumbnail?.static,
-            duration: v.length?.text,
-            channel: v.channel?.name
-        }));
-    } catch (error) {
-        console.error('[YouTube Search] Error:', error.message);
-        return [];
-    }
-}
-
-// NOTE: Floor plan images, unit images, and reviews are now handled by smartUnitSearch
+// NOTE: YouTube search removed - data wasn't being saved and wasted API calls
+// Floor plan images, unit images, and reviews are handled by smartUnitSearch
 
 /**
  * Check if a field should be updated (safe re-enrichment)
@@ -222,14 +190,6 @@ export default async function handler(req, res) {
                     } else {
                         await supabase.from('properties').update({ enrichment_status: 'reviewed' }).eq('id', prop.id);
                         result.phases.property = { status: 'no_data_found' };
-                    }
-
-                    // Bonus: Search YouTube for tours
-                    if (serpApiKey && prop.name) {
-                        const videos = await searchYouTubeTours(prop.name, prop.city || 'San Antonio', serpApiKey);
-                        if (videos.length > 0) {
-                            result.phases.youtube = { found: videos.length, videos };
-                        }
                     }
                 }
 
