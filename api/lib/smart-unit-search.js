@@ -91,10 +91,10 @@ async function getGoogleReviews(dataId, apiKey) {
 
 async function extractUnitsAndSpecials(textContent, specialsContent, propertyName, openaiKey) {
     if ((!textContent || textContent.length < 50) && (!specialsContent || specialsContent.length < 20)) {
-        return { floorPlans: [], specials: [] };
+        return { floorPlans: [], specials: [], units: [] };
     }
     try {
-        const combinedContent = `UNIT/FLOOR PLAN INFO:\n${textContent?.slice(0, 3000) || 'None'}\n\nSPECIALS/PROMOTIONS:\n${specialsContent?.slice(0, 1500) || 'None'}`;
+        const combinedContent = `UNIT/FLOOR PLAN INFO:\n${textContent?.slice(0, 4000) || 'None'}\n\nSPECIALS/PROMOTIONS:\n${specialsContent?.slice(0, 1500) || 'None'}`;
 
         const response = await fetch('https://api.openai.com/v1/chat/completions', {
             method: 'POST',
@@ -102,27 +102,43 @@ async function extractUnitsAndSpecials(textContent, specialsContent, propertyNam
             body: JSON.stringify({
                 model: 'gpt-4o-mini',
                 messages: [{
-                    role: 'system', content: `Extract floor plans AND specials from "${propertyName}" content. Return JSON:
+                    role: 'system', content: `Extract floor plans, individual units, AND specials from "${propertyName}" content. Return JSON:
 {
-  "floorPlans": [{"name":"A1","beds":1,"baths":1,"sqft":750,"rent_min":1200,"rent_max":1400}],
+  "floorPlans": [{"name":"A1","beds":1,"baths":1,"sqft":750,"rent_min":1200,"rent_max":1400,"units_available":3}],
+  "units": [{"unit_number":"101","floor_plan_name":"A1","rent":1250,"available_from":"2025-01-15","floor":1}],
   "specials": [{"text":"$500 off first month","expires":"2025-01-31","confidence":0.9}]
 }
-For specials: Extract move-in specials, rent concessions, free months, waived fees. Include expiration date if mentioned (YYYY-MM-DD format). Set confidence 0.9 if clear current offer, 0.7 if might be outdated, 0.5 if uncertain.` },
+IMPORTANT:
+- floorPlans = unit TYPES (A1, B2, Studio, 1 Bedroom, etc.) with beds/baths/sqft/rent range
+- units = SPECIFIC apartments (Unit 101, Apt 202, #305) with exact rent and availability date
+- Link units to floor plans via floor_plan_name (match to closest floor plan name)
+- For available_from: use YYYY-MM-DD format, or null if not specified
+- For specials: Extract move-in specials, rent concessions, free months, waived fees. Set confidence 0.9 if clear current offer, 0.7 if might be outdated.` },
                 { role: 'user', content: combinedContent }],
                 temperature: 0.3
             })
         });
-        if (!response.ok) return { floorPlans: [], specials: [] };
+        if (!response.ok) return { floorPlans: [], specials: [], units: [] };
         const data = await response.json();
         const content = data.choices?.[0]?.message?.content || '';
         const jsonMatch = content.match(/\{[\s\S]*\}/);
         if (jsonMatch) return JSON.parse(jsonMatch[0]);
     } catch (e) { console.error('[AI Extract]', e.message); }
-    return { floorPlans: [], specials: [] };
+    return { floorPlans: [], specials: [], units: [] };
 }
 
 async function scrapeForUnits(leasingUrl, browserlessToken, openaiKey, propertyName) {
-    const urls = [leasingUrl, leasingUrl.replace(/\/$/, '') + '/floor-plans', leasingUrl.replace(/\/$/, '') + '/floorplans', leasingUrl.replace(/\/$/, '') + '/specials'];
+    // Include availability pages to find individual units
+    const baseUrl = leasingUrl.replace(/\/$/, '');
+    const urls = [
+        leasingUrl,
+        baseUrl + '/floor-plans',
+        baseUrl + '/floorplans',
+        baseUrl + '/availability',
+        baseUrl + '/available-units',
+        baseUrl + '/apartments',
+        baseUrl + '/specials'
+    ];
     let allText = '', allImages = [];
     for (const url of urls) {
         try {

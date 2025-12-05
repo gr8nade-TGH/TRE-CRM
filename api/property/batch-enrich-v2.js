@@ -265,7 +265,8 @@ export default async function handler(req, res) {
                         googleDataId: prop.google_data_id
                     });
 
-                    // Insert floor plans into database
+                    // Insert floor plans into database and build a map for unit linking
+                    const floorPlanMap = {}; // name -> id
                     if (unitResult.floorPlans && unitResult.floorPlans.length > 0) {
                         for (const fp of unitResult.floorPlans) {
                             const { data: existing } = await supabase
@@ -276,7 +277,7 @@ export default async function handler(req, res) {
                                 .single();
 
                             if (!existing) {
-                                const { error: fpError } = await supabase.from('floor_plans').insert({
+                                const { data: inserted, error: fpError } = await supabase.from('floor_plans').insert({
                                     property_id: prop.id,
                                     name: fp.name,
                                     beds: fp.beds,
@@ -284,30 +285,87 @@ export default async function handler(req, res) {
                                     sqft: fp.sqft,
                                     market_rent: fp.rent_max || fp.rent_min,
                                     starting_at: fp.rent_min,
+                                    units_available: fp.units_available || 0,
                                     image_url: fp.image_url || unitResult.images?.floorPlans?.[0]?.url || null
-                                });
+                                }).select('id').single();
+
                                 if (fpError) {
                                     console.error(`[FloorPlan Insert Error] ${prop.name}:`, fpError.message);
                                 } else {
                                     console.log(`[FloorPlan Saved] ${prop.name} - ${fp.name}`);
+                                    floorPlanMap[fp.name] = inserted.id;
+                                }
+                            } else {
+                                floorPlanMap[fp.name] = existing.id;
+                            }
+                        }
+                    }
+
+                    // Insert individual units and link to floor plans
+                    let unitsInserted = 0;
+                    if (unitResult.units && unitResult.units.length > 0) {
+                        console.log(`[Units] Found ${unitResult.units.length} individual units for ${prop.name}`);
+
+                        for (const unit of unitResult.units) {
+                            // Find matching floor plan ID
+                            let floorPlanId = null;
+                            if (unit.floor_plan_name) {
+                                // Try exact match first
+                                floorPlanId = floorPlanMap[unit.floor_plan_name];
+                                // Try partial match if no exact match
+                                if (!floorPlanId) {
+                                    const fpName = Object.keys(floorPlanMap).find(name =>
+                                        name.toLowerCase().includes(unit.floor_plan_name.toLowerCase()) ||
+                                        unit.floor_plan_name.toLowerCase().includes(name.toLowerCase())
+                                    );
+                                    if (fpName) floorPlanId = floorPlanMap[fpName];
+                                }
+                            }
+
+                            // Check if unit already exists
+                            const { data: existingUnit } = await supabase
+                                .from('units')
+                                .select('id')
+                                .eq('property_id', prop.id)
+                                .eq('unit_number', unit.unit_number)
+                                .single();
+
+                            if (!existingUnit) {
+                                const { error: unitError } = await supabase.from('units').insert({
+                                    property_id: prop.id,
+                                    floor_plan_id: floorPlanId,
+                                    unit_number: unit.unit_number,
+                                    floor: unit.floor || null,
+                                    rent: unit.rent || null,
+                                    market_rent: unit.market_rent || unit.rent || null,
+                                    available_from: unit.available_from || null,
+                                    is_available: true,
+                                    status: 'available'
+                                });
+
+                                if (unitError) {
+                                    console.error(`[Unit Insert Error] ${prop.name} - ${unit.unit_number}:`, unitError.message);
+                                } else {
+                                    console.log(`[Unit Saved] ${prop.name} - Unit ${unit.unit_number} (FP: ${unit.floor_plan_name || 'unknown'})`);
+                                    unitsInserted++;
                                 }
                             }
                         }
-                        unitsFound += unitResult.floorPlans.length;
-                        result.phases.units = {
-                            status: 'found',
-                            floorPlans: unitResult.floorPlans.length,
-                            sources: unitResult.sources,
-                            videos: unitResult.videos?.length || 0,
-                            reviews: unitResult.reviews?.length || 0
-                        };
-                    } else {
-                        result.phases.units = {
-                            status: 'none_found',
-                            videosFound: unitResult.videos?.length || 0,
-                            imagesFound: unitResult.images?.floorPlans?.length || 0
-                        };
                     }
+
+                    unitsFound += unitResult.floorPlans?.length || 0;
+                    result.phases.units = unitResult.floorPlans?.length > 0 || unitsInserted > 0 ? {
+                        status: 'found',
+                        floorPlans: unitResult.floorPlans?.length || 0,
+                        units: unitsInserted,
+                        sources: unitResult.sources,
+                        videos: unitResult.videos?.length || 0,
+                        reviews: unitResult.reviews?.length || 0
+                    } : {
+                        status: 'none_found',
+                        videosFound: unitResult.videos?.length || 0,
+                        imagesFound: unitResult.images?.floorPlans?.length || 0
+                    };
 
                     // Store YouTube video links if found
                     if (unitResult.videos?.length > 0) {
