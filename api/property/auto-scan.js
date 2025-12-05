@@ -1,7 +1,7 @@
 // Auto Unit Scanner API - Enhanced with domain tracking and never-disable logic
 import { createClient } from '@supabase/supabase-js';
 
-const BROWSERLESS_BASE = 'https://chrome.browserless.io';
+const BROWSERLESS_BASE = 'https://production-sfo.browserless.io';
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
 
 // Scan methods - property methods first (most reliable), then ILS backup
@@ -15,68 +15,75 @@ const SCAN_METHODS = [
     { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com' }
 ];
 
-// Scrape a page with Browserless /function API (enhanced with more click targets)
+// Scrape a page with Browserless /function API (V2 format)
 async function scrapePage(url, browserlessToken) {
     console.log(`[scrapePage] Fetching: ${url}`);
     try {
+        // Escape URL for use in JavaScript code
+        const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+
+        // V2 Browserless API format - use export default and return { data, type }
         const code = `
-            module.exports = async ({ page }) => {
-                try {
-                    await page.goto('${url.replace(/'/g, "\\'")}', {
-                        waitUntil: 'networkidle2',
-                        timeout: 45000
-                    });
-                } catch (navError) {
-                    // Try with less strict wait
-                    await page.goto('${url.replace(/'/g, "\\'")}', {
-                        waitUntil: 'domcontentloaded',
-                        timeout: 45000
-                    });
-                }
+export default async function ({ page }) {
+    try {
+        await page.goto("${escapedUrl}", {
+            waitUntil: 'networkidle2',
+            timeout: 45000
+        });
+    } catch (navError) {
+        await page.goto("${escapedUrl}", {
+            waitUntil: 'domcontentloaded',
+            timeout: 45000
+        });
+    }
 
-                await page.waitForTimeout(3000);
+    await page.waitForTimeout(3000);
 
-                // Scroll to trigger lazy loading
-                await page.evaluate(() => {
-                    window.scrollTo(0, document.body.scrollHeight / 2);
-                });
-                await page.waitForTimeout(1000);
-                await page.evaluate(() => {
-                    window.scrollTo(0, document.body.scrollHeight);
-                });
-                await page.waitForTimeout(2000);
+    // Scroll to trigger lazy loading
+    await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight / 2);
+    });
+    await page.waitForTimeout(1000);
+    await page.evaluate(() => {
+        window.scrollTo(0, document.body.scrollHeight);
+    });
+    await page.waitForTimeout(2000);
 
-                // Click on various floor plan/unit elements to expand
-                const expandSelectors = [
-                    '.floor-plan-card', '[class*="floor-plan"]', '[class*="floorplan"]',
-                    '.pricingGridItem', '[data-testid*="floorplan"]', '[data-testid*="unit"]',
-                    '.availability-card', '.unit-card', '[class*="unit-row"]',
-                    '.pricing-card', '[class*="pricing"]', 'button[class*="view"]',
-                    '[class*="expand"]', '[class*="details"]', '.accordion-header'
-                ];
+    // Click on various floor plan/unit elements to expand
+    const expandSelectors = [
+        '.floor-plan-card', '[class*="floor-plan"]', '[class*="floorplan"]',
+        '.pricingGridItem', '[data-testid*="floorplan"]', '[data-testid*="unit"]',
+        '.availability-card', '.unit-card', '[class*="unit-row"]',
+        '.pricing-card', '[class*="pricing"]', 'button[class*="view"]',
+        '[class*="expand"]', '[class*="details"]', '.accordion-header'
+    ];
 
-                for (const sel of expandSelectors) {
-                    try {
-                        const els = await page.$$(sel);
-                        for (let i = 0; i < Math.min(els.length, 8); i++) {
-                            await els[i].click().catch(() => {});
-                            await page.waitForTimeout(300);
-                        }
-                    } catch (e) {}
-                }
+    for (const sel of expandSelectors) {
+        try {
+            const els = await page.$$(sel);
+            for (let i = 0; i < Math.min(els.length, 8); i++) {
+                await els[i].click().catch(() => {});
+                await page.waitForTimeout(300);
+            }
+        } catch (e) {}
+    }
 
-                await page.waitForTimeout(1500);
+    await page.waitForTimeout(1500);
 
-                const content = await page.content();
-                const url = page.url();
-                return JSON.stringify({ html: content, finalUrl: url });
-            };
-        `;
+    const content = await page.content();
+    const finalUrl = page.url();
+
+    return {
+        data: { html: content, finalUrl: finalUrl },
+        type: "application/json"
+    };
+}
+`;
 
         const response = await fetch(`${BROWSERLESS_BASE}/function?token=${browserlessToken}`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ code })
+            headers: { 'Content-Type': 'application/javascript' },
+            body: code
         });
 
         if (!response.ok) {
