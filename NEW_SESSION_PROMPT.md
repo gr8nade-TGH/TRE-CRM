@@ -1,7 +1,7 @@
 # TRE CRM - Auto Unit Scanner Context
 
 ## Current Status
-We're testing the **Auto Unit Scanner** feature. The code is ready and pushed to GitHub but **Vercel is NOT auto-deploying**. You need to manually trigger a redeploy from the Vercel dashboard before testing.
+We're testing the **Auto Unit Scanner** feature that automatically scans property websites and ILS sites to find available units.
 
 ---
 
@@ -57,17 +57,11 @@ Changed from `setInterval` to `setTimeout` chain so countdown only starts AFTER 
 ### 4. Debug Button (ADDED)
 "Copy Debug" button captures last 30 log entries as JSON for troubleshooting
 
-## Current Issue
-- Code is pushed to GitHub but Vercel isn't auto-deploying
-- User needs to manually redeploy from Vercel dashboard
-- After deploy, test the auto-scanner and check debug output
-
 ## Testing Steps
-1. Deploy latest code to Vercel (manual redeploy needed)
-2. Go to Discovery page → Auto Unit Scanner panel
-3. Click "Start Auto-Scan"
-4. Watch for successful unit extraction
-5. If failures, click "Copy Debug" and analyze the JSON
+1. Go to Discovery page → Auto Unit Scanner panel
+2. Click "Start Auto-Scan"
+3. Watch for successful unit extraction
+4. If failures, click "Copy Debug" and analyze the JSON
 
 ## Supabase Project
 - **Project ID:** `mevirooooypfjbsrmzrk`

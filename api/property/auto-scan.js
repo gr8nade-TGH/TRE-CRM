@@ -469,10 +469,13 @@ export default async function handler(req, res) {
                 success: result.units.length > 0,
                 units_found: result.units.length,
                 error: result.errors?.join('; ') || null,
-                debug_info: result.debug ? JSON.stringify(result.debug) : null
+                debug_info: result.debug || null  // Pass as object for JSONB column
             };
 
-            await supabase.from('unit_scan_history').insert(historyEntry);
+            const { error: historyError } = await supabase.from('unit_scan_history').insert(historyEntry);
+            if (historyError) {
+                console.error('[Auto-Scan] Failed to record history:', historyError);
+            }
 
             // If we found units, track the successful domain for future reference
             if (result.units.length > 0 && result.sources?.length > 0) {
