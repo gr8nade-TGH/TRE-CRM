@@ -276,16 +276,21 @@ export default async function handler(req, res) {
                                 .single();
 
                             if (!existing) {
-                                await supabase.from('floor_plans').insert({
+                                const { error: fpError } = await supabase.from('floor_plans').insert({
                                     property_id: prop.id,
                                     name: fp.name,
-                                    bedrooms: fp.beds,
-                                    bathrooms: fp.baths,
-                                    square_feet: fp.sqft,
+                                    beds: fp.beds,
+                                    baths: fp.baths,
+                                    sqft: fp.sqft,
                                     market_rent: fp.rent_max || fp.rent_min,
                                     starting_at: fp.rent_min,
                                     image_url: fp.image_url || unitResult.images?.floorPlans?.[0]?.url || null
                                 });
+                                if (fpError) {
+                                    console.error(`[FloorPlan Insert Error] ${prop.name}:`, fpError.message);
+                                } else {
+                                    console.log(`[FloorPlan Saved] ${prop.name} - ${fp.name}`);
+                                }
                             }
                         }
                         unitsFound += unitResult.floorPlans.length;
@@ -341,6 +346,12 @@ export default async function handler(req, res) {
                             specials: unitResult.specials
                         };
                     }
+
+                    // Mark property as unit-scanned so it doesn't get re-processed
+                    await supabase.from('properties').update({
+                        enrichment_status: 'units_scanned',
+                        units_scanned_at: new Date().toISOString()
+                    }).eq('id', prop.id);
                 }
 
                 results.push(result);
