@@ -1775,6 +1775,37 @@
 						</div>
 					</div>
 
+					<!-- Auto Unit Scanner Panel -->
+					<div class="discovery-controls"
+						style="margin-top: 20px; border: 2px solid #10b981; background: linear-gradient(135deg, #064e3b 0%, #065f46 100%);">
+						<div class="controls-header">
+							<h2>🔄 Auto Unit Scanner</h2>
+							<p>Continuous scanning - rotates through properties every 10 minutes, trying different
+								methods each time.</p>
+						</div>
+						<div class="controls-row"
+							style="display: flex; gap: 15px; align-items: center; flex-wrap: wrap;">
+							<button id="autoScanToggle" class="btn btn-lg"
+								style="background: #10b981; color: white; min-width: 180px;">
+								▶️ Start Auto-Scan
+							</button>
+							<div style="display: flex; gap: 20px; color: #9ca3af; font-size: 14px;">
+								<span>📊 <span id="autoScanStats">0/0 properties</span></span>
+								<span>✅ <span id="autoScanSuccess">0% success</span></span>
+								<span>⏱️ <span id="autoScanTimer">--:--</span></span>
+							</div>
+						</div>
+						<div id="autoScanStatus"
+							style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;">
+							<div style="display: flex; justify-content: space-between; align-items: center;">
+								<span id="autoScanCurrentProperty" style="color: #34d399; font-weight: 500;">Idle</span>
+								<span id="autoScanMethod" style="color: #9ca3af; font-size: 12px;"></span>
+							</div>
+							<div id="autoScanLastResult" style="margin-top: 8px; color: #6b7280; font-size: 12px;">
+							</div>
+						</div>
+					</div>
+
 					<!-- Progress Section -->
 					<div class="discovery-progress" id="discoveryProgressSection" style="display: none;">
 						<h3>📊 Scan Progress</h3>

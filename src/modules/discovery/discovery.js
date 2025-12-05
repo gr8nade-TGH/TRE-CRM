@@ -51,6 +51,9 @@ export async function initDiscovery() {
 
     // Setup event listeners
     setupEventListeners();
+
+    // Initialize auto-scanner
+    await initAutoScanner();
 }
 
 /**
@@ -513,6 +516,136 @@ async function runUnitScan() {
     }
 }
 
+// ============ AUTO UNIT SCANNER ============
+let autoScanRunning = false;
+let autoScanInterval = null;
+let autoScanCountdown = 600; // 10 minutes in seconds
+const SCAN_INTERVAL_SECONDS = 600; // 10 minutes
+
+async function initAutoScanner() {
+    const toggleBtn = document.getElementById('autoScanToggle');
+    if (!toggleBtn) return;
+
+    toggleBtn.addEventListener('click', toggleAutoScan);
+
+    // Load initial stats
+    await updateAutoScanStats();
+}
+
+async function updateAutoScanStats() {
+    try {
+        const resp = await fetch(`${API_BASE_URL}/api/property/auto-scan`);
+        const data = await resp.json();
+
+        document.getElementById('autoScanStats').textContent =
+            `${data.stats.scannedProperties}/${data.stats.totalProperties} properties`;
+        document.getElementById('autoScanSuccess').textContent =
+            `${data.stats.successRate}% success`;
+
+        return data;
+    } catch (e) {
+        console.error('[AutoScan] Stats error:', e);
+        return null;
+    }
+}
+
+async function toggleAutoScan() {
+    const toggleBtn = document.getElementById('autoScanToggle');
+    const statusDiv = document.getElementById('autoScanStatus');
+
+    if (autoScanRunning) {
+        // Stop
+        autoScanRunning = false;
+        clearInterval(autoScanInterval);
+        toggleBtn.innerHTML = '▶️ Start Auto-Scan';
+        toggleBtn.style.background = '#10b981';
+        statusDiv.style.display = 'none';
+        document.getElementById('autoScanTimer').textContent = '--:--';
+        addLogEntry('info', '⏹️ Auto-scan stopped');
+    } else {
+        // Start
+        autoScanRunning = true;
+        toggleBtn.innerHTML = '⏸️ Stop Auto-Scan';
+        toggleBtn.style.background = '#ef4444';
+        statusDiv.style.display = 'block';
+        addLogEntry('info', '🔄 Auto-scan started - scanning every 10 minutes');
+
+        // Run first scan immediately
+        await runAutoScan();
+
+        // Start countdown timer
+        autoScanCountdown = SCAN_INTERVAL_SECONDS;
+        autoScanInterval = setInterval(async () => {
+            autoScanCountdown--;
+            updateTimerDisplay();
+
+            if (autoScanCountdown <= 0) {
+                autoScanCountdown = SCAN_INTERVAL_SECONDS;
+                await runAutoScan();
+            }
+        }, 1000);
+    }
+}
+
+function updateTimerDisplay() {
+    const mins = Math.floor(autoScanCountdown / 60);
+    const secs = autoScanCountdown % 60;
+    document.getElementById('autoScanTimer').textContent =
+        `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+async function runAutoScan() {
+    if (!autoScanRunning) return;
+
+    try {
+        // Get next property to scan
+        const statusResp = await fetch(`${API_BASE_URL}/api/property/auto-scan`);
+        const status = await statusResp.json();
+
+        if (!status.next) {
+            document.getElementById('autoScanCurrentProperty').textContent = 'No properties to scan';
+            addLogEntry('warning', '⚠️ No properties with leasing URLs found');
+            return;
+        }
+
+        const { propertyId, propertyName, method } = status.next;
+
+        // Update UI
+        document.getElementById('autoScanCurrentProperty').textContent = `🔍 ${propertyName}`;
+        document.getElementById('autoScanMethod').textContent = `Method: ${method}`;
+        addLogEntry('info', `🔍 Scanning: ${propertyName} (${method})`);
+
+        // Run the scan
+        const scanResp = await fetch(`${API_BASE_URL}/api/property/auto-scan`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ propertyId, method })
+        });
+
+        const result = await scanResp.json();
+
+        // Update last result
+        if (result.unitsFound > 0) {
+            document.getElementById('autoScanLastResult').textContent =
+                `✅ Found ${result.unitsFound} units from ${result.sources?.join(', ') || method}`;
+            addLogEntry('success', `✅ ${propertyName}: Found ${result.unitsFound} units!`);
+        } else {
+            document.getElementById('autoScanLastResult').textContent =
+                `⚪ No units found - will try different method next time`;
+            addLogEntry('info', `⚪ ${propertyName}: No units (will retry with different method)`);
+        }
+
+        // Refresh stats
+        await updateAutoScanStats();
+
+    } catch (e) {
+        console.error('[AutoScan] Error:', e);
+        document.getElementById('autoScanLastResult').textContent = `❌ Error: ${e.message}`;
+        addLogEntry('error', `❌ Auto-scan error: ${e.message}`);
+    }
+}
+
 // Export for global access
 window.initDiscovery = initDiscovery;
+window.initAutoScanner = initAutoScanner;
 
