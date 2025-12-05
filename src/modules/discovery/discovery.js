@@ -524,9 +524,10 @@ async function runUnitScan() {
 
 // ============ AUTO UNIT SCANNER ============
 let autoScanRunning = false;
-let autoScanInterval = null;
-let autoScanCountdown = 15; // 15 seconds between scans
-const SCAN_INTERVAL_SECONDS = 15; // 15 seconds
+let autoScanTimeout = null;
+let autoScanCountdown = 15;
+const SCAN_INTERVAL_SECONDS = 15;
+let autoScanDebugLog = []; // Store debug info for troubleshooting
 
 async function initAutoScanner() {
     const toggleBtn = document.getElementById('autoScanToggle');
@@ -635,6 +636,42 @@ function renderMethodStatsTable(methodStats) {
     }).join('');
 }
 
+function debugLog(message, data = null) {
+    const entry = {
+        time: new Date().toISOString(),
+        message,
+        data: data ? JSON.parse(JSON.stringify(data)) : null
+    };
+    autoScanDebugLog.push(entry);
+    // Keep last 100 entries
+    if (autoScanDebugLog.length > 100) autoScanDebugLog.shift();
+    console.log(`[AutoScan Debug] ${message}`, data || '');
+}
+
+function copyDebugInfo() {
+    const debugInfo = {
+        timestamp: new Date().toISOString(),
+        autoScanRunning,
+        autoScanCountdown,
+        SCAN_INTERVAL_SECONDS,
+        recentLogs: autoScanDebugLog.slice(-30),
+        userAgent: navigator.userAgent,
+        url: window.location.href
+    };
+
+    const text = '```json\n' + JSON.stringify(debugInfo, null, 2) + '\n```';
+    navigator.clipboard.writeText(text).then(() => {
+        alert('Debug info copied to clipboard! Paste it to share.');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        // Fallback: show in prompt
+        prompt('Copy this debug info:', JSON.stringify(debugInfo));
+    });
+}
+
+// Make copyDebugInfo globally accessible
+window.copyDebugInfo = copyDebugInfo;
+
 async function toggleAutoScan() {
     const toggleBtn = document.getElementById('autoScanToggle');
     const statusDiv = document.getElementById('autoScanStatus');
@@ -642,34 +679,56 @@ async function toggleAutoScan() {
     if (autoScanRunning) {
         // Stop
         autoScanRunning = false;
-        clearInterval(autoScanInterval);
+        if (autoScanTimeout) clearTimeout(autoScanTimeout);
         toggleBtn.innerHTML = '▶️ Start Auto-Scan';
         toggleBtn.style.background = '#10b981';
         statusDiv.style.display = 'none';
         document.getElementById('autoScanTimer').textContent = '--:--';
         addLogEntry('info', '⏹️ Auto-scan stopped');
+        debugLog('Auto-scan stopped by user');
     } else {
         // Start
         autoScanRunning = true;
+        autoScanDebugLog = []; // Clear debug log on fresh start
         toggleBtn.innerHTML = '⏸️ Stop Auto-Scan';
         toggleBtn.style.background = '#ef4444';
         statusDiv.style.display = 'block';
-        addLogEntry('info', '🔄 Auto-scan started - scanning every 10 minutes');
+        addLogEntry('info', '🔄 Auto-scan started - continuous mode (15s delay)');
+        debugLog('Auto-scan started');
 
-        // Run first scan immediately
-        await runAutoScan();
+        // Run first scan immediately, then chain
+        runAutoScanLoop();
+    }
+}
 
-        // Start countdown timer
+async function runAutoScanLoop() {
+    if (!autoScanRunning) {
+        debugLog('Loop stopped - autoScanRunning is false');
+        return;
+    }
+
+    // Run the scan
+    await runAutoScan();
+
+    // Only start countdown AFTER scan completes
+    if (autoScanRunning) {
+        debugLog('Scan complete, starting countdown', { seconds: SCAN_INTERVAL_SECONDS });
         autoScanCountdown = SCAN_INTERVAL_SECONDS;
-        autoScanInterval = setInterval(async () => {
-            autoScanCountdown--;
-            updateTimerDisplay();
+        startCountdown();
+    }
+}
 
-            if (autoScanCountdown <= 0) {
-                autoScanCountdown = SCAN_INTERVAL_SECONDS;
-                await runAutoScan();
-            }
-        }, 1000);
+function startCountdown() {
+    if (!autoScanRunning) return;
+
+    updateTimerDisplay();
+
+    if (autoScanCountdown <= 0) {
+        debugLog('Countdown complete, starting next scan');
+        runAutoScanLoop();
+    } else {
+        autoScanCountdown--;
+        autoScanTimeout = setTimeout(startCountdown, 1000);
     }
 }
 
@@ -683,18 +742,37 @@ function updateTimerDisplay() {
 async function runAutoScan() {
     if (!autoScanRunning) return;
 
+    const scanStartTime = Date.now();
+    debugLog('Starting scan...');
+
     try {
         // Get next property to scan
+        document.getElementById('autoScanCurrentProperty').textContent = '⏳ Finding next property...';
+        debugLog('Fetching next property from API');
+
         const statusResp = await fetch(`${API_BASE_URL}/api/property/auto-scan`);
         const status = await statusResp.json();
 
+        debugLog('API response received', {
+            hasNext: !!status.next,
+            stats: status.stats,
+            error: status.error
+        });
+
+        if (status.error) {
+            throw new Error(status.error);
+        }
+
         if (!status.next) {
             document.getElementById('autoScanCurrentProperty').textContent = 'No properties to scan';
+            document.getElementById('autoScanLastResult').textContent = 'All methods exhausted or no leasing URLs';
             addLogEntry('warning', '⚠️ No properties with leasing URLs found');
+            debugLog('No next property available');
             return;
         }
 
-        const { propertyId, propertyName, method } = status.next;
+        const { propertyId, propertyName, leasingUrl, method } = status.next;
+        debugLog('Got next property', { propertyId, propertyName, leasingUrl, method });
 
         // Update UI
         document.getElementById('autoScanCurrentProperty').textContent = `🔍 ${propertyName}`;
@@ -702,6 +780,7 @@ async function runAutoScan() {
         addLogEntry('info', `🔍 Scanning: ${propertyName} (${method})`);
 
         // Run the scan
+        debugLog('Sending POST to execute scan');
         const scanResp = await fetch(`${API_BASE_URL}/api/property/auto-scan`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -709,15 +788,25 @@ async function runAutoScan() {
         });
 
         const result = await scanResp.json();
+        const scanDuration = Date.now() - scanStartTime;
+
+        debugLog('Scan complete', {
+            result,
+            durationMs: scanDuration,
+            httpStatus: scanResp.status
+        });
 
         // Update last result
-        if (result.unitsFound > 0) {
+        if (result.error) {
+            document.getElementById('autoScanLastResult').textContent = `❌ ${result.error}`;
+            addLogEntry('error', `❌ ${propertyName}: ${result.error}`);
+        } else if (result.unitsFound > 0) {
             document.getElementById('autoScanLastResult').textContent =
-                `✅ Found ${result.unitsFound} units from ${result.sources?.join(', ') || method}`;
+                `✅ Found ${result.unitsFound} units (${(scanDuration / 1000).toFixed(1)}s)`;
             addLogEntry('success', `✅ ${propertyName}: Found ${result.unitsFound} units!`);
         } else {
             document.getElementById('autoScanLastResult').textContent =
-                `⚪ No units found - will try different method next time`;
+                `⚪ No units found (${(scanDuration / 1000).toFixed(1)}s) - will try different method`;
             addLogEntry('info', `⚪ ${propertyName}: No units (will retry with different method)`);
         }
 
@@ -725,7 +814,9 @@ async function runAutoScan() {
         await updateAutoScanStats();
 
     } catch (e) {
+        const scanDuration = Date.now() - scanStartTime;
         console.error('[AutoScan] Error:', e);
+        debugLog('Scan error', { error: e.message, stack: e.stack, durationMs: scanDuration });
         document.getElementById('autoScanLastResult').textContent = `❌ Error: ${e.message}`;
         addLogEntry('error', `❌ Auto-scan error: ${e.message}`);
     }

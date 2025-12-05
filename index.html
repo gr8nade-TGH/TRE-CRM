@@ -1804,7 +1804,14 @@
 							style="margin-top: 12px; padding: 12px; background: rgba(0,0,0,0.3); border-radius: 8px; display: none;">
 							<div style="display: flex; justify-content: space-between; align-items: center;">
 								<span id="autoScanCurrentProperty" style="color: #34d399; font-weight: 500;">Idle</span>
-								<span id="autoScanMethod" style="color: #9ca3af; font-size: 12px;"></span>
+								<div style="display: flex; align-items: center; gap: 10px;">
+									<span id="autoScanMethod" style="color: #9ca3af; font-size: 12px;"></span>
+									<button onclick="copyDebugInfo()"
+										style="background: #374151; color: #9ca3af; border: 1px solid #4b5563; padding: 4px 8px; border-radius: 4px; font-size: 11px; cursor: pointer;"
+										title="Copy debug info for troubleshooting">
+										📋 Copy Debug
+									</button>
+								</div>
 							</div>
 							<div id="autoScanLastResult" style="margin-top: 8px; color: #6b7280; font-size: 12px;">
 							</div>
