@@ -413,6 +413,41 @@ export default async function handler(req, res) {
             const nextProperty = findNextProperty(properties || [], historyByProperty, methodStats);
             const nextMethod = nextProperty ? findNextMethod(historyByProperty[nextProperty.id] || [], methodStats) : null;
 
+            // ========== BUILD RECENT SCAN HISTORY WITH FAILURE REASONS ==========
+            const recentScans = (history || [])
+                .slice(0, 20)  // Last 20 scans
+                .map(h => {
+                    let failureReason = null;
+                    if (!h.success) {
+                        if (h.error?.includes('HTTP 4')) failureReason = 'Scrape blocked/failed';
+                        else if (h.error?.includes('Page too short')) failureReason = 'Empty page';
+                        else if (h.error?.includes('No JSON')) failureReason = 'AI extraction failed';
+                        else if (h.debug_info?.browserlessError) failureReason = 'Browserless error';
+                        else if (h.debug_info?.aiReason) failureReason = h.debug_info.aiReason;
+                        else if (h.debug_info?.htmlLength > 1000) failureReason = 'No unit numbers on page';
+                        else failureReason = h.error || 'Unknown';
+                    }
+                    return {
+                        propertyId: h.property_id,
+                        method: h.scan_method,
+                        success: h.success,
+                        unitsFound: h.units_found || 0,
+                        failureReason,
+                        scannedAt: h.scanned_at,
+                        htmlLength: h.debug_info?.htmlLength,
+                        aiReason: h.debug_info?.aiReason
+                    };
+                });
+
+            // ========== FAILURE ANALYSIS ==========
+            const failureAnalysis = {
+                scrapeBlocked: (history || []).filter(h => h.error?.includes('HTTP 4')).length,
+                emptyPage: (history || []).filter(h => h.error?.includes('too short')).length,
+                noUnitNumbers: (history || []).filter(h => !h.success && h.debug_info?.htmlLength > 1000).length,
+                aiExtractionFailed: (history || []).filter(h => h.error?.includes('No JSON')).length,
+                browserlessError: (history || []).filter(h => h.debug_info?.browserlessError).length
+            };
+
             return res.status(200).json({
                 stats: {
                     totalProperties,
@@ -428,7 +463,9 @@ export default async function handler(req, res) {
                     propertyName: nextProperty.community_name,
                     leasingUrl: nextProperty.leasing_link,
                     method: nextMethod
-                } : null
+                } : null,
+                recentScans,
+                failureAnalysis
             });
         } catch (error) {
             console.error('[auto-scan GET] Error:', error);

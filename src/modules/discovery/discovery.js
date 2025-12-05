@@ -539,10 +539,16 @@ async function initAutoScanner() {
     await updateAutoScanStats();
 }
 
+// Store latest stats for debug export
+let latestAutoScanStats = null;
+
 async function updateAutoScanStats() {
     try {
         const resp = await fetch(`${API_BASE_URL}/api/property/auto-scan`);
         const data = await resp.json();
+
+        // Store for debug export
+        latestAutoScanStats = data;
 
         // Update summary stats
         document.getElementById('autoScanStats').textContent =
@@ -649,12 +655,45 @@ function debugLog(message, data = null) {
 }
 
 function copyDebugInfo() {
+    // Build comprehensive debug info
     const debugInfo = {
         timestamp: new Date().toISOString(),
         autoScanRunning,
         autoScanCountdown,
         SCAN_INTERVAL_SECONDS,
-        recentLogs: autoScanDebugLog.slice(-30),
+
+        // Stats summary
+        stats: latestAutoScanStats?.stats || {},
+
+        // Failure analysis from API
+        failureAnalysis: latestAutoScanStats?.failureAnalysis || {},
+
+        // Method performance
+        methodStats: (latestAutoScanStats?.methodStats || []).map(m => ({
+            method: m.id,
+            attempts: m.attempts,
+            successes: m.successes,
+            successRate: m.successRate,
+            status: m.status
+        })),
+
+        // Recent scans with failure reasons
+        recentScans: (latestAutoScanStats?.recentScans || []).slice(0, 15).map(s => ({
+            property: s.propertyId?.slice(0, 30),
+            method: s.method,
+            success: s.success,
+            units: s.unitsFound,
+            reason: s.failureReason,
+            htmlLen: s.htmlLength
+        })),
+
+        // Recent client-side logs
+        clientLogs: autoScanDebugLog.slice(-15).map(l => ({
+            time: l.time,
+            msg: l.message?.slice(0, 50),
+            data: l.data?.unitsFound !== undefined ? { units: l.data.unitsFound, ms: l.data.durationMs } : null
+        })),
+
         userAgent: navigator.userAgent,
         url: window.location.href
     };
