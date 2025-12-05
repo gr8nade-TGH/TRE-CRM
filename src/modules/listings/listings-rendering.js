@@ -280,7 +280,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 			const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
 			const isPUMI = prop.is_pumi || prop.isPUMI;
 			const markedForReview = prop.mark_for_review || prop.markForReview;
-			const hasUnits = prop.units && prop.units.length > 0;
+			// Show expand arrow if we have units OR floor plans
+			const hasUnits = (prop.units && prop.units.length > 0) || (prop.floorPlans && prop.floorPlans.length > 0);
 			const hasActiveSpecials = prop.activeSpecials && prop.activeSpecials.length > 0;
 
 			// Check if property needs AI enrichment (name is same as address or missing)
@@ -617,6 +618,48 @@ export async function renderListings(options, autoSelectProperty = null) {
 					}
 
 					tbody.appendChild(unitTr);
+				});
+			}
+
+			// If no units but has floor plans, show floor plans as expandable rows
+			if ((!prop.units || prop.units.length === 0) && prop.floorPlans && prop.floorPlans.length > 0) {
+				prop.floorPlans.forEach(fp => {
+					const fpTr = document.createElement('tr');
+					fpTr.classList.add('unit-row', 'floor-plan-row');
+					fpTr.dataset.parentPropertyId = prop.id;
+					fpTr.dataset.floorPlanId = fp.id;
+					fpTr.style.display = 'none'; // Initially hidden
+					fpTr.style.backgroundColor = '#f0fdf4'; // Light green for floor plans
+
+					const beds = fp.beds || '?';
+					const baths = fp.baths || '?';
+					const sqft = fp.sqft || '?';
+					const rentMin = fp.starting_at || fp.rent_min || 0;
+					const rentMax = fp.market_rent || fp.rent_max || rentMin;
+					const rentDisplay = rentMin === rentMax
+						? `$${rentMin?.toLocaleString() || '?'}`
+						: `$${rentMin?.toLocaleString() || '?'} - $${rentMax?.toLocaleString() || '?'}`;
+
+					fpTr.innerHTML = `
+					<td style="padding-left: 40px;"></td>
+					<td></td>
+					<td>
+						<div class="lead-name" style="font-size: 0.9em;">
+							<span style="color: #059669; font-weight: 500;">📐 ${fp.name || 'Floor Plan'}</span>
+							<span class="badge" style="background: #d1fae5; color: #065f46; margin-left: 8px;">${beds}bd/${baths}ba</span>
+							${sqft !== '?' ? `<span class="badge" style="background: #e0e7ff; color: #3730a3; margin-left: 4px;">${sqft.toLocaleString()} sqft</span>` : ''}
+						</div>
+						<div class="subtle mono" style="font-size: 0.85em; margin-top: 4px;">
+							${fp.units_available ? `<span style="color: #10b981;">${fp.units_available} available</span>` : ''}
+							${fp.soonest_available ? `<span style="margin-left: 8px;">Available: ${new Date(fp.soonest_available).toLocaleDateString()}</span>` : ''}
+						</div>
+					</td>
+					<td class="mono" style="font-size: 0.9em;">
+						${rentDisplay}
+					</td>
+				`;
+
+					tbody.appendChild(fpTr);
 				});
 			}
 		});
