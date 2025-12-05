@@ -457,7 +457,8 @@ export default async function handler(req, res) {
                         city: prop.city || 'San Antonio',
                         state: prop.state || 'TX',
                         floorPlans: existingFloorPlans || [],
-                        leasingUrl: overrideUrl || prop.leasing_link
+                        leasingUrl: overrideUrl || prop.leasing_link,
+                        address: prop.address // Pass address for better search matching
                     });
 
                     // Insert new floor plans discovered
