@@ -525,8 +525,8 @@ async function runUnitScan() {
 // ============ AUTO UNIT SCANNER ============
 let autoScanRunning = false;
 let autoScanInterval = null;
-let autoScanCountdown = 600; // 10 minutes in seconds
-const SCAN_INTERVAL_SECONDS = 600; // 10 minutes
+let autoScanCountdown = 15; // 15 seconds between scans
+const SCAN_INTERVAL_SECONDS = 15; // 15 seconds
 
 async function initAutoScanner() {
     const toggleBtn = document.getElementById('autoScanToggle');
