@@ -69,7 +69,13 @@ function getSupabase() {
     if (!supabaseUrl || !supabaseKey) {
         throw new Error('Supabase not configured');
     }
-    return createClient(supabaseUrl, supabaseKey);
+    // Use service role key with auth bypass to skip RLS policies
+    return createClient(supabaseUrl, supabaseKey, {
+        auth: {
+            autoRefreshToken: false,
+            persistSession: false
+        }
+    });
 }
 
 export default async function handler(req, res) {
@@ -180,15 +186,45 @@ export default async function handler(req, res) {
                             updates.enrichment_status = 'enriched';
                             updates.enriched_at = new Date().toISOString();
 
-                            await supabase.from('properties').update(updates).eq('id', prop.id);
-                            enriched++;
-                            result.phases.property = { status: 'enriched', fieldsUpdated: Object.keys(updates) };
+                            console.log(`[Enrich] Updating ${prop.id} with:`, JSON.stringify(Object.keys(updates)));
+
+                            const { data: updateData, error: updateError } = await supabase
+                                .from('properties')
+                                .update(updates)
+                                .eq('id', prop.id)
+                                .select('id, enrichment_status');
+
+                            if (updateError) {
+                                console.error(`[Enrich] Update FAILED for ${prop.id}:`, updateError);
+                                result.phases.property = { status: 'update_failed', error: updateError.message };
+                            } else if (!updateData || updateData.length === 0) {
+                                console.error(`[Enrich] Update returned NO DATA for ${prop.id} - row not found?`);
+                                result.phases.property = { status: 'update_failed', error: 'No rows updated' };
+                            } else {
+                                console.log(`[Enrich] SUCCESS - ${prop.id} now has status: ${updateData[0].enrichment_status}`);
+                                enriched++;
+                                result.phases.property = { status: 'enriched', fieldsUpdated: Object.keys(updates) };
+                            }
                         } else {
-                            await supabase.from('properties').update({ enrichment_status: 'reviewed' }).eq('id', prop.id);
+                            const { error: reviewError } = await supabase
+                                .from('properties')
+                                .update({ enrichment_status: 'reviewed' })
+                                .eq('id', prop.id);
+
+                            if (reviewError) {
+                                console.error(`[Enrich] Review status update failed for ${prop.id}:`, reviewError);
+                            }
                             result.phases.property = { status: 'no_new_data' };
                         }
                     } else {
-                        await supabase.from('properties').update({ enrichment_status: 'reviewed' }).eq('id', prop.id);
+                        const { error: reviewError } = await supabase
+                            .from('properties')
+                            .update({ enrichment_status: 'reviewed' })
+                            .eq('id', prop.id);
+
+                        if (reviewError) {
+                            console.error(`[Enrich] Review status update failed for ${prop.id}:`, reviewError);
+                        }
                         result.phases.property = { status: 'no_data_found' };
                     }
                 }
