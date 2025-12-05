@@ -528,7 +528,7 @@ async function initAutoScanner() {
 
     toggleBtn.addEventListener('click', toggleAutoScan);
 
-    // Load initial stats
+    // Load initial stats and method performance
     await updateAutoScanStats();
 }
 
@@ -537,16 +537,96 @@ async function updateAutoScanStats() {
         const resp = await fetch(`${API_BASE_URL}/api/property/auto-scan`);
         const data = await resp.json();
 
+        // Update summary stats
         document.getElementById('autoScanStats').textContent =
-            `${data.stats.scannedProperties}/${data.stats.totalProperties} properties`;
+            `${data.stats.scannedProperties}/${data.stats.totalProperties}`;
+        document.getElementById('autoScanUnits').textContent =
+            `${data.stats.totalUnitsFound || 0} units`;
         document.getElementById('autoScanSuccess').textContent =
-            `${data.stats.successRate}% success`;
+            `${data.stats.successRate}%`;
+
+        // Render method performance table
+        renderMethodStatsTable(data.methodStats || []);
 
         return data;
     } catch (e) {
         console.error('[AutoScan] Stats error:', e);
         return null;
     }
+}
+
+function renderMethodStatsTable(methodStats) {
+    const tbody = document.getElementById('methodStatsBody');
+    if (!tbody) return;
+
+    if (!methodStats || methodStats.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; padding: 20px; color: #6b7280;">No scan data yet. Start auto-scan to begin learning.</td></tr>';
+        return;
+    }
+
+    // Method display names
+    const methodNames = {
+        'property-floorplans': '🏠 Property /floorplans',
+        'property-floor-plans': '🏠 Property /floor-plans',
+        'property-availability': '🏠 Property /availability',
+        'apartments.com': '🌐 Apartments.com',
+        'zillow.com': '🌐 Zillow.com',
+        'rent.com': '🌐 Rent.com'
+    };
+
+    tbody.innerHTML = methodStats.map(m => {
+        // Status styling
+        let statusBadge, statusColor, rowOpacity;
+        if (m.status === 'disabled') {
+            statusBadge = '🚫 Disabled';
+            statusColor = '#ef4444';
+            rowOpacity = '0.5';
+        } else if (m.status === 'learning') {
+            statusBadge = '📊 Learning';
+            statusColor = '#f59e0b';
+            rowOpacity = '1';
+        } else {
+            statusBadge = '✅ Active';
+            statusColor = '#10b981';
+            rowOpacity = '1';
+        }
+
+        // Success rate bar color
+        let rateColor = '#ef4444'; // red
+        if (m.successRate >= 50) rateColor = '#10b981'; // green
+        else if (m.successRate >= 20) rateColor = '#f59e0b'; // yellow
+
+        // Success rate visual bar
+        const rateBar = m.attempts > 0 ? `
+            <div style="display: flex; align-items: center; gap: 8px;">
+                <div style="flex: 1; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+                    <div style="height: 100%; width: ${m.successRate}%; background: ${rateColor}; transition: width 0.3s;"></div>
+                </div>
+                <span style="color: ${rateColor}; font-weight: 600; min-width: 40px;">${m.successRate}%</span>
+            </div>
+        ` : '<span style="color: #6b7280;">--</span>';
+
+        return `
+            <tr style="border-bottom: 1px solid rgba(255,255,255,0.05); opacity: ${rowOpacity};">
+                <td style="padding: 10px; color: #e5e7eb;">
+                    ${methodNames[m.method] || m.method}
+                    ${m.type === 'property' ? '<span style="font-size: 10px; color: #6b7280; margin-left: 4px;">(direct)</span>' : ''}
+                </td>
+                <td style="text-align: center; padding: 10px; color: #9ca3af;">${m.attempts}</td>
+                <td style="text-align: center; padding: 10px; color: ${m.successes > 0 ? '#10b981' : '#6b7280'};">${m.successes}</td>
+                <td style="padding: 10px;">${rateBar}</td>
+                <td style="text-align: center; padding: 10px; color: ${m.totalUnitsFound > 0 ? '#34d399' : '#6b7280'}; font-weight: ${m.totalUnitsFound > 0 ? '600' : '400'};">
+                    ${m.totalUnitsFound || 0}
+                    ${m.avgUnitsPerSuccess > 0 ? `<span style="font-size: 10px; color: #6b7280;"> (avg ${m.avgUnitsPerSuccess})</span>` : ''}
+                </td>
+                <td style="text-align: center; padding: 10px;">
+                    <span style="background: ${statusColor}20; color: ${statusColor}; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 500;">
+                        ${statusBadge}
+                    </span>
+                </td>
+            </tr>
+        `;
+    }).join('');
 }
 
 async function toggleAutoScan() {

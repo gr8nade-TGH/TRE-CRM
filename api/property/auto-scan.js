@@ -151,6 +151,11 @@ async function scanILSSite(ilsSite, prop, floorPlans) {
     }
 }
 
+// Minimum attempts before a method's success rate matters
+const MIN_SAMPLE_SIZE = 5;
+// Methods with this success rate or below after MIN_SAMPLE_SIZE attempts get disabled
+const DISABLE_THRESHOLD = 0;
+
 export default async function handler(req, res) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -161,7 +166,7 @@ export default async function handler(req, res) {
 
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // GET - Get scan status and next property
+    // GET - Get scan status, method stats, and next property
     if (req.method === 'GET') {
         try {
             // Get properties with leasing URLs
@@ -171,13 +176,69 @@ export default async function handler(req, res) {
                 .not('leasing_link', 'is', null)
                 .neq('leasing_link', '');
 
-            // Get scan history
+            // Get ALL scan history
             const { data: history } = await supabase
                 .from('unit_scan_history')
                 .select('property_id, scan_method, success, units_found, scanned_at')
                 .order('scanned_at', { ascending: false });
 
-            // Group history by property
+            // ========== CALCULATE METHOD PERFORMANCE ==========
+            const methodStats = {};
+            for (const m of SCAN_METHODS) {
+                methodStats[m.id] = {
+                    method: m.id,
+                    type: m.type,
+                    attempts: 0,
+                    successes: 0,
+                    totalUnitsFound: 0,
+                    successRate: 0,
+                    avgUnitsPerSuccess: 0,
+                    status: 'active', // 'active', 'learning', 'disabled'
+                    lastUsed: null
+                };
+            }
+
+            for (const h of history || []) {
+                const stat = methodStats[h.scan_method];
+                if (stat) {
+                    stat.attempts++;
+                    if (h.success) {
+                        stat.successes++;
+                        stat.totalUnitsFound += h.units_found || 0;
+                    }
+                    if (!stat.lastUsed || new Date(h.scanned_at) > new Date(stat.lastUsed)) {
+                        stat.lastUsed = h.scanned_at;
+                    }
+                }
+            }
+
+            // Calculate rates and determine status
+            for (const id of Object.keys(methodStats)) {
+                const stat = methodStats[id];
+                stat.successRate = stat.attempts > 0 ? Math.round((stat.successes / stat.attempts) * 100) : 0;
+                stat.avgUnitsPerSuccess = stat.successes > 0 ? Math.round(stat.totalUnitsFound / stat.successes) : 0;
+
+                if (stat.attempts < MIN_SAMPLE_SIZE) {
+                    stat.status = 'learning';
+                } else if (stat.successRate <= DISABLE_THRESHOLD) {
+                    stat.status = 'disabled';
+                } else {
+                    stat.status = 'active';
+                }
+            }
+
+            // Sort methods by effectiveness (for UI display)
+            const methodStatsArray = Object.values(methodStats).sort((a, b) => {
+                // Active > Learning > Disabled
+                const statusOrder = { active: 0, learning: 1, disabled: 2 };
+                if (statusOrder[a.status] !== statusOrder[b.status]) {
+                    return statusOrder[a.status] - statusOrder[b.status];
+                }
+                // Then by success rate
+                return b.successRate - a.successRate;
+            });
+
+            // ========== GROUP HISTORY BY PROPERTY ==========
             const historyByProperty = {};
             for (const h of history || []) {
                 if (!historyByProperty[h.property_id]) {
@@ -186,15 +247,16 @@ export default async function handler(req, res) {
                 historyByProperty[h.property_id].push(h);
             }
 
-            // Calculate stats
+            // ========== CALCULATE OVERALL STATS ==========
             const totalProperties = properties?.length || 0;
             const scannedProperties = Object.keys(historyByProperty).length;
             const totalScans = history?.length || 0;
             const successfulScans = (history || []).filter(h => h.success).length;
+            const totalUnitsFound = (history || []).reduce((sum, h) => sum + (h.units_found || 0), 0);
 
-            // Find next property to scan
-            const nextProperty = findNextProperty(properties || [], historyByProperty);
-            const nextMethod = nextProperty ? findNextMethod(historyByProperty[nextProperty.id] || []) : null;
+            // ========== FIND NEXT PROPERTY & METHOD ==========
+            const nextProperty = findNextProperty(properties || [], historyByProperty, methodStats);
+            const nextMethod = nextProperty ? findNextMethod(historyByProperty[nextProperty.id] || [], methodStats) : null;
 
             return res.status(200).json({
                 stats: {
@@ -202,8 +264,10 @@ export default async function handler(req, res) {
                     scannedProperties,
                     totalScans,
                     successfulScans,
+                    totalUnitsFound,
                     successRate: totalScans > 0 ? Math.round((successfulScans / totalScans) * 100) : 0
                 },
+                methodStats: methodStatsArray,
                 next: nextProperty ? {
                     propertyId: nextProperty.id,
                     propertyName: nextProperty.community_name,
@@ -300,21 +364,53 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 }
 
-// Find next property to scan (least recently scanned with untried methods)
-function findNextProperty(properties, historyByProperty) {
+// Get active methods sorted by effectiveness
+function getActiveMethods(methodStats) {
+    return SCAN_METHODS
+        .filter(m => {
+            const stat = methodStats[m.id];
+            // Include if: still learning OR has some success
+            return !stat || stat.status !== 'disabled';
+        })
+        .sort((a, b) => {
+            const statA = methodStats[a.id];
+            const statB = methodStats[b.id];
+
+            // Untested methods get medium priority (let them learn)
+            if (!statA || statA.attempts === 0) return 0;
+            if (!statB || statB.attempts === 0) return 0;
+
+            // Sort by success rate (higher = first)
+            return (statB?.successRate || 0) - (statA?.successRate || 0);
+        });
+}
+
+// Find next property to scan
+function findNextProperty(properties, historyByProperty, methodStats) {
+    const activeMethods = getActiveMethods(methodStats);
+
+    if (activeMethods.length === 0) {
+        console.log('[Auto-Scan] All methods disabled!');
+        return null;
+    }
+
     // Score each property: lower = should scan next
     const scored = properties.map(p => {
         const history = historyByProperty[p.id] || [];
         const methodsTried = new Set(history.map(h => h.scan_method));
         const lastScan = history[0]?.scanned_at ? new Date(history[0].scanned_at) : new Date(0);
-        const hasUntriedMethods = SCAN_METHODS.some(m => !methodsTried.has(m.id));
+
+        // Check if there are untried ACTIVE methods for this property
+        const hasUntriedActiveMethods = activeMethods.some(m => !methodsTried.has(m.id));
         const hasAnySuccess = history.some(h => h.success);
+        const unitsFound = history.reduce((sum, h) => sum + (h.units_found || 0), 0);
 
         return {
             property: p,
-            score: (hasUntriedMethods ? 0 : 1000) + // Prioritize untried methods
-                (hasAnySuccess ? 500 : 0) +      // De-prioritize successful ones
-                methodsTried.size * 10 +         // Fewer methods tried = higher priority
+            score: (hasUntriedActiveMethods ? 0 : 1000) + // Prioritize properties with untried methods
+                (hasAnySuccess ? 500 : 0) +               // De-prioritize ones that already have units
+                (unitsFound * 2) +                        // De-prioritize by units found
+                methodsTried.size * 10 +                  // Fewer methods tried = higher priority
                 (Date.now() - lastScan.getTime()) / -86400000 // Older = higher priority
         };
     });
@@ -323,24 +419,42 @@ function findNextProperty(properties, historyByProperty) {
     return scored[0]?.property || null;
 }
 
-// Find next method to try for a property
-function findNextMethod(history) {
+// Find next method to try for a property (uses smart prioritization)
+function findNextMethod(history, methodStats) {
     const methodsTried = new Set(history.map(h => h.scan_method));
+    const activeMethods = getActiveMethods(methodStats);
 
-    // Find first untried method
-    for (const method of SCAN_METHODS) {
+    // Find first untried ACTIVE method (already sorted by effectiveness)
+    for (const method of activeMethods) {
         if (!methodsTried.has(method.id)) {
             return method.id;
         }
     }
 
-    // All methods tried - return least recently tried
-    const methodsByRecency = [...methodsTried].sort((a, b) => {
+    // All active methods tried - return the most effective one that was tried longest ago
+    const activeMethodIds = new Set(activeMethods.map(m => m.id));
+    const triedActiveMethods = [...methodsTried].filter(m => activeMethodIds.has(m));
+
+    if (triedActiveMethods.length === 0) {
+        // Fallback: try first active method anyway
+        return activeMethods[0]?.id || SCAN_METHODS[0].id;
+    }
+
+    // Sort by: effectiveness first, then by recency (oldest first)
+    triedActiveMethods.sort((a, b) => {
+        const statA = methodStats[a];
+        const statB = methodStats[b];
+
+        // First by success rate
+        const rateDiff = (statB?.successRate || 0) - (statA?.successRate || 0);
+        if (Math.abs(rateDiff) > 10) return rateDiff; // Significant difference
+
+        // Then by recency (oldest first to retry)
         const aLast = history.find(h => h.scan_method === a)?.scanned_at || '';
         const bLast = history.find(h => h.scan_method === b)?.scanned_at || '';
         return aLast.localeCompare(bLast);
     });
 
-    return methodsByRecency[0] || SCAN_METHODS[0].id;
+    return triedActiveMethods[0];
 }
 
