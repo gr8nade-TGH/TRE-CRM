@@ -23,8 +23,11 @@ async function scrapePage(url, browserlessToken) {
         const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 
         // V2 Browserless API format - use export default and return { data, type }
+        // Note: page.waitForTimeout is deprecated, use Promise-based delay instead
         const code = `
 export default async function ({ page }) {
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
     try {
         await page.goto("${escapedUrl}", {
             waitUntil: 'networkidle2',
@@ -37,17 +40,17 @@ export default async function ({ page }) {
         });
     }
 
-    await page.waitForTimeout(3000);
+    await delay(3000);
 
     // Scroll to trigger lazy loading
     await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight / 2);
     });
-    await page.waitForTimeout(1000);
+    await delay(1000);
     await page.evaluate(() => {
         window.scrollTo(0, document.body.scrollHeight);
     });
-    await page.waitForTimeout(2000);
+    await delay(2000);
 
     // Click on various floor plan/unit elements to expand
     const expandSelectors = [
@@ -63,12 +66,12 @@ export default async function ({ page }) {
             const els = await page.$$(sel);
             for (let i = 0; i < Math.min(els.length, 8); i++) {
                 await els[i].click().catch(() => {});
-                await page.waitForTimeout(300);
+                await delay(300);
             }
         } catch (e) {}
     }
 
-    await page.waitForTimeout(1500);
+    await delay(1500);
 
     const content = await page.content();
     const finalUrl = page.url();
