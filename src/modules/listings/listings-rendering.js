@@ -416,6 +416,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 						const propertyName = e.currentTarget.dataset.propertyName;
 						let leasingUrl = e.currentTarget.dataset.leasingUrl;
 
+						console.log(`[Scan Units] Property: ${propertyName}, URL from data attr: "${leasingUrl}"`);
+
 						// If no URL, prompt user to enter one
 						if (!leasingUrl) {
 							leasingUrl = prompt(`No website URL found for ${propertyName}.\n\nEnter the property website URL (e.g., https://www.brandonoakssanantonio.com):`)?.trim();
