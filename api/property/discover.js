@@ -136,7 +136,8 @@ function normalizeAddress(address) {
  * Generate a unique ID from place data
  */
 function generatePropertyId(place) {
-    const normalized = normalizeAddress(place.address);
+    const addr = place.address || place.street_address || '';
+    const normalized = normalizeAddress(addr);
     return `disc_${normalized.replace(/\s+/g, '_').substring(0, 40)}`;
 }
 
