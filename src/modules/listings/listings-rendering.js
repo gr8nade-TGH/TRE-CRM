@@ -418,71 +418,8 @@ export async function renderListings(options, autoSelectProperty = null) {
 
 						console.log(`[Scan Units] Property: ${propertyName}, URL from data attr: "${leasingUrl}"`);
 
-						// Ask user which scan type
-						const scanChoice = prompt(
-							`Scan Units for ${propertyName}\n\n` +
-							`Choose scan type:\n` +
-							`1 = Quick Scan (property website)\n` +
-							`2 = Deep Scan (apartments.com, zillow, rent.com)\n\n` +
-							`Enter 1 or 2:`
-						)?.trim();
-
-						if (!scanChoice || !['1', '2'].includes(scanChoice)) return;
-						const isDeepScan = scanChoice === '2';
-
-						// If no URL and quick scan, prompt user to enter one
-						if (!leasingUrl && !isDeepScan) {
-							leasingUrl = prompt(`No website URL found for ${propertyName}.\n\nEnter the property website URL (e.g., https://www.brandonoakssanantonio.com):`)?.trim();
-							if (!leasingUrl) return;
-							if (!leasingUrl.startsWith('http')) leasingUrl = 'https://' + leasingUrl;
-						}
-
-						// Show loading state
-						const iconContainer = e.currentTarget;
-						const icon = iconContainer.querySelector('svg');
-						const originalColor = icon.style.color;
-						icon.style.color = '#fbbf24';
-						iconContainer.classList.add('scanning');
-						iconContainer.title = isDeepScan ? 'Deep scanning ILS sites...' : 'Scanning units...';
-
-						try {
-							console.log(`[Scan Units] Starting ${isDeepScan ? 'deep' : 'quick'} scan for ${propertyName}...`);
-							const response = await fetch('/api/property/batch-enrich-v2', {
-								method: 'POST',
-								headers: { 'Content-Type': 'application/json' },
-								body: JSON.stringify({
-									phase: isDeepScan ? 'deep_scan' : 'units',
-									propertyIds: [propertyId],
-									overrideUrl: leasingUrl
-								})
-							});
-
-							const result = await response.json();
-							console.log(`[Scan Units] Result for ${propertyName}:`, result);
-
-							if (result.success) {
-								const propResult = result.results?.[0];
-								const phaseResult = isDeepScan ? propResult?.phases?.deep_scan : propResult?.phases?.units;
-								if (phaseResult?.status === 'found') {
-									const msg = isDeepScan
-										? `✅ Deep Scan found ${phaseResult.units || 0} units from: ${phaseResult.sources?.join(', ') || 'ILS sites'}`
-										: `✅ Found ${phaseResult.floorPlans || 0} floor plans and ${phaseResult.units || 0} units!`;
-									alert(msg);
-								} else {
-									alert(`ℹ️ No new unit data found for ${propertyName}.`);
-								}
-							} else {
-								alert(`❌ Error scanning ${propertyName}: ${result.error || 'Unknown error'}`);
-							}
-						} catch (error) {
-							console.error('[Scan Units] Error:', error);
-							alert(`❌ Error scanning ${propertyName}: ${error.message}`);
-						} finally {
-							// Reset icon
-							icon.style.color = originalColor;
-							iconContainer.classList.remove('scanning');
-							iconContainer.title = 'Scan Units for this property';
-						}
+						// Open scan modal
+						openScanUnitsModal(propertyId, propertyName, leasingUrl);
 					});
 				}
 			}
@@ -829,5 +766,327 @@ export async function renderListings(options, autoSelectProperty = null) {
 		toast('Error loading listings', 'error');
 		tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; padding: 20px; color: #ef4444;">Error loading listings. Please try again.</td></tr>';
 	}
+}
+
+/**
+ * Open Scan Units Modal with proper UX
+ */
+function openScanUnitsModal(propertyId, propertyName, leasingUrl) {
+	// Remove existing modal if any
+	const existingModal = document.getElementById('scanUnitsModal');
+	if (existingModal) existingModal.remove();
+
+	// Create modal
+	const modal = document.createElement('div');
+	modal.id = 'scanUnitsModal';
+	modal.className = 'modal-overlay';
+	modal.innerHTML = `
+		<div class="modal-content" style="max-width: 480px; border-radius: 12px;">
+			<div class="modal-header" style="border-bottom: 1px solid #e2e8f0; padding-bottom: 15px;">
+				<h3 style="margin: 0; display: flex; align-items: center; gap: 10px;">
+					<svg width="20" height="20" viewBox="0 0 24 24" fill="#10b981">
+						<path d="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M17,17H7V7H17V17M15,15V9H9V15H15Z"/>
+					</svg>
+					Scan Units
+				</h3>
+				<button class="modal-close" onclick="document.getElementById('scanUnitsModal').remove()">&times;</button>
+			</div>
+			<div class="modal-body" style="padding: 20px 0;">
+				<div id="scanModalContent">
+					<p style="color: #475569; margin-bottom: 20px; font-size: 14px;">
+						<strong>${propertyName}</strong>
+					</p>
+
+					<div style="display: flex; flex-direction: column; gap: 12px;">
+						<button id="quickScanBtn" class="scan-option-btn" style="
+							display: flex; align-items: center; gap: 12px; padding: 16px;
+							border: 2px solid #e2e8f0; border-radius: 10px; background: #f8fafc;
+							cursor: pointer; transition: all 0.2s; text-align: left;
+						">
+							<div style="
+								width: 44px; height: 44px; border-radius: 8px;
+								background: linear-gradient(135deg, #3b82f6, #2563eb);
+								display: flex; align-items: center; justify-content: center;
+							">
+								<svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+									<path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z"/>
+								</svg>
+							</div>
+							<div>
+								<div style="font-weight: 600; color: #1e293b; font-size: 15px;">Quick Scan</div>
+								<div style="color: #64748b; font-size: 13px;">Scan property website directly</div>
+							</div>
+						</button>
+
+						<button id="deepScanBtn" class="scan-option-btn" style="
+							display: flex; align-items: center; gap: 12px; padding: 16px;
+							border: 2px solid #e2e8f0; border-radius: 10px; background: #f8fafc;
+							cursor: pointer; transition: all 0.2s; text-align: left;
+						">
+							<div style="
+								width: 44px; height: 44px; border-radius: 8px;
+								background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+								display: flex; align-items: center; justify-content: center;
+							">
+								<svg width="22" height="22" viewBox="0 0 24 24" fill="white">
+									<path d="M12,3C7.58,3 4,4.79 4,7C4,9.21 7.58,11 12,11C16.42,11 20,9.21 20,7C20,4.79 16.42,3 12,3M4,9V12C4,14.21 7.58,16 12,16C16.42,16 20,14.21 20,12V9C20,11.21 16.42,13 12,13C7.58,13 4,11.21 4,9M4,14V17C4,19.21 7.58,21 12,21C16.42,21 20,19.21 20,17V14C20,16.21 16.42,18 12,18C7.58,18 4,16.21 4,14Z"/>
+								</svg>
+							</div>
+							<div>
+								<div style="font-weight: 600; color: #1e293b; font-size: 15px;">Deep Scan</div>
+								<div style="color: #64748b; font-size: 13px;">Search apartments.com, zillow, rent.com</div>
+							</div>
+						</button>
+					</div>
+
+					${!leasingUrl ? `
+					<div style="margin-top: 16px; padding: 12px; background: #fef3c7; border-radius: 8px; font-size: 13px; color: #92400e;">
+						⚠️ No website URL found. Quick Scan will ask for a URL.
+					</div>
+					` : ''}
+				</div>
+
+				<!-- Progress View (hidden initially) -->
+				<div id="scanProgressView" style="display: none;">
+					<div style="text-align: center; padding: 20px 0;">
+						<div class="scan-spinner" style="
+							width: 50px; height: 50px; margin: 0 auto 20px;
+							border: 4px solid #e2e8f0;
+							border-top-color: #3b82f6;
+							border-radius: 50%;
+							animation: spin 1s linear infinite;
+						"></div>
+						<div id="scanStatusText" style="font-weight: 600; color: #1e293b; margin-bottom: 8px;">
+							Initializing scan...
+						</div>
+						<div id="scanSubStatus" style="color: #64748b; font-size: 13px;">
+							Please wait
+						</div>
+					</div>
+
+					<!-- Progress Steps -->
+					<div id="scanSteps" style="margin-top: 20px; border-top: 1px solid #e2e8f0; padding-top: 20px;">
+						<div class="scan-step" id="step1" style="display: flex; align-items: center; gap: 12px; padding: 8px 0; color: #64748b;">
+							<div class="step-indicator" style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px;">1</div>
+							<span>Searching listing sites...</span>
+						</div>
+						<div class="scan-step" id="step2" style="display: flex; align-items: center; gap: 12px; padding: 8px 0; color: #64748b;">
+							<div class="step-indicator" style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px;">2</div>
+							<span>Extracting page content...</span>
+						</div>
+						<div class="scan-step" id="step3" style="display: flex; align-items: center; gap: 12px; padding: 8px 0; color: #64748b;">
+							<div class="step-indicator" style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px;">3</div>
+							<span>AI analyzing units...</span>
+						</div>
+						<div class="scan-step" id="step4" style="display: flex; align-items: center; gap: 12px; padding: 8px 0; color: #64748b;">
+							<div class="step-indicator" style="width: 24px; height: 24px; border-radius: 50%; background: #e2e8f0; display: flex; align-items: center; justify-content: center; font-size: 12px;">4</div>
+							<span>Saving results...</span>
+						</div>
+					</div>
+				</div>
+
+				<!-- Results View (hidden initially) -->
+				<div id="scanResultsView" style="display: none;"></div>
+			</div>
+		</div>
+		<style>
+			@keyframes spin { to { transform: rotate(360deg); } }
+			.scan-option-btn:hover { border-color: #3b82f6 !important; background: #eff6ff !important; }
+			.scan-step.active { color: #3b82f6 !important; font-weight: 500; }
+			.scan-step.active .step-indicator { background: #3b82f6 !important; color: white !important; }
+			.scan-step.complete { color: #10b981 !important; }
+			.scan-step.complete .step-indicator { background: #10b981 !important; color: white !important; }
+		</style>
+	`;
+
+	document.body.appendChild(modal);
+
+	// Add event listeners
+	document.getElementById('quickScanBtn').addEventListener('click', () => {
+		startScan(propertyId, propertyName, leasingUrl, false);
+	});
+
+	document.getElementById('deepScanBtn').addEventListener('click', () => {
+		startScan(propertyId, propertyName, leasingUrl, true);
+	});
+
+	// Close on overlay click
+	modal.addEventListener('click', (e) => {
+		if (e.target === modal) modal.remove();
+	});
+}
+
+/**
+ * Start the actual scan process
+ */
+async function startScan(propertyId, propertyName, leasingUrl, isDeepScan) {
+	// For quick scan, check if we need a URL
+	if (!isDeepScan && !leasingUrl) {
+		const url = prompt(`Enter the property website URL for ${propertyName}:\n\n(e.g., https://www.brandonoakssanantonio.com)`);
+		if (!url) return;
+		leasingUrl = url.startsWith('http') ? url : 'https://' + url;
+	}
+
+	// Switch to progress view
+	document.getElementById('scanModalContent').style.display = 'none';
+	document.getElementById('scanProgressView').style.display = 'block';
+
+	const statusText = document.getElementById('scanStatusText');
+	const subStatus = document.getElementById('scanSubStatus');
+
+	// Update status based on scan type
+	if (isDeepScan) {
+		statusText.textContent = 'Deep Scanning...';
+		subStatus.textContent = 'Searching apartments.com, zillow, rent.com';
+	} else {
+		statusText.textContent = 'Quick Scanning...';
+		subStatus.textContent = 'Analyzing property website';
+	}
+
+	// Simulate progress steps
+	const steps = ['step1', 'step2', 'step3', 'step4'];
+	let currentStep = 0;
+
+	const progressInterval = setInterval(() => {
+		if (currentStep < steps.length) {
+			const step = document.getElementById(steps[currentStep]);
+			if (step) {
+				step.classList.remove('active');
+				step.classList.add('complete');
+				step.querySelector('.step-indicator').innerHTML = '✓';
+			}
+			currentStep++;
+			if (currentStep < steps.length) {
+				const nextStep = document.getElementById(steps[currentStep]);
+				if (nextStep) nextStep.classList.add('active');
+			}
+		}
+	}, isDeepScan ? 4000 : 2000); // Slower for deep scan
+
+	// Mark first step as active
+	document.getElementById('step1')?.classList.add('active');
+
+	try {
+		console.log(`[Scan Units] Starting ${isDeepScan ? 'deep' : 'quick'} scan for ${propertyName}...`);
+
+		const response = await fetch('/api/property/batch-enrich-v2', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/json' },
+			body: JSON.stringify({
+				phase: isDeepScan ? 'deep_scan' : 'units',
+				propertyIds: [propertyId],
+				overrideUrl: leasingUrl
+			})
+		});
+
+		const result = await response.json();
+		console.log(`[Scan Units] Result for ${propertyName}:`, result);
+
+		clearInterval(progressInterval);
+
+		// Mark all steps complete
+		steps.forEach(stepId => {
+			const step = document.getElementById(stepId);
+			if (step) {
+				step.classList.remove('active');
+				step.classList.add('complete');
+				step.querySelector('.step-indicator').innerHTML = '✓';
+			}
+		});
+
+		// Show results
+		setTimeout(() => {
+			showScanResults(result, propertyName, isDeepScan);
+		}, 500);
+
+	} catch (error) {
+		clearInterval(progressInterval);
+		console.error('[Scan Units] Error:', error);
+		showScanResults({ success: false, error: error.message }, propertyName, isDeepScan);
+	}
+}
+
+/**
+ * Show scan results in the modal
+ */
+function showScanResults(result, propertyName, isDeepScan) {
+	const progressView = document.getElementById('scanProgressView');
+	const resultsView = document.getElementById('scanResultsView');
+
+	if (progressView) progressView.style.display = 'none';
+	if (resultsView) resultsView.style.display = 'block';
+
+	let html = '';
+
+	if (result.success) {
+		const propResult = result.results?.[0];
+		const phaseResult = isDeepScan ? propResult?.phases?.deep_scan : propResult?.phases?.units;
+
+		if (phaseResult?.status === 'found') {
+			const unitsFound = phaseResult.units || 0;
+			const floorPlansFound = phaseResult.floorPlans || 0;
+			const sources = phaseResult.sources?.join(', ') || 'property website';
+
+			html = `
+				<div style="text-align: center; padding: 20px 0;">
+					<div style="width: 60px; height: 60px; margin: 0 auto 16px; background: #dcfce7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="#10b981">
+							<path d="M9,20.42L2.79,14.21L5.62,11.38L9,14.77L18.88,4.88L21.71,7.71L9,20.42Z"/>
+						</svg>
+					</div>
+					<h4 style="margin: 0 0 8px; color: #10b981; font-size: 18px;">Scan Complete!</h4>
+					<p style="color: #475569; margin: 0 0 20px;">
+						${isDeepScan
+					? `Found <strong>${unitsFound}</strong> units from ${sources}`
+					: `Found <strong>${floorPlansFound}</strong> floor plans and <strong>${unitsFound}</strong> units`
+				}
+					</p>
+					<button onclick="document.getElementById('scanUnitsModal').remove(); location.reload();" style="
+						background: #10b981; color: white; border: none; padding: 12px 24px;
+						border-radius: 8px; font-weight: 600; cursor: pointer;
+					">Close & Refresh</button>
+				</div>
+			`;
+		} else {
+			html = `
+				<div style="text-align: center; padding: 20px 0;">
+					<div style="width: 60px; height: 60px; margin: 0 auto 16px; background: #fef3c7; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+						<svg width="32" height="32" viewBox="0 0 24 24" fill="#f59e0b">
+							<path d="M13,13H11V7H13M13,17H11V15H13M12,2A10,10 0 0,0 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z"/>
+						</svg>
+					</div>
+					<h4 style="margin: 0 0 8px; color: #f59e0b; font-size: 18px;">No New Data Found</h4>
+					<p style="color: #475569; margin: 0 0 20px;">
+						We couldn't find unit availability data for this property.
+						${!isDeepScan ? 'Try a Deep Scan to search listing sites.' : ''}
+					</p>
+					<button onclick="document.getElementById('scanUnitsModal').remove();" style="
+						background: #64748b; color: white; border: none; padding: 12px 24px;
+						border-radius: 8px; font-weight: 600; cursor: pointer;
+					">Close</button>
+				</div>
+			`;
+		}
+	} else {
+		html = `
+			<div style="text-align: center; padding: 20px 0;">
+				<div style="width: 60px; height: 60px; margin: 0 auto 16px; background: #fee2e2; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+					<svg width="32" height="32" viewBox="0 0 24 24" fill="#ef4444">
+						<path d="M19,6.41L17.59,5L12,10.59L6.41,5L5,6.41L10.59,12L5,17.59L6.41,19L12,13.41L17.59,19L19,17.59L13.41,12L19,6.41Z"/>
+					</svg>
+				</div>
+				<h4 style="margin: 0 0 8px; color: #ef4444; font-size: 18px;">Scan Failed</h4>
+				<p style="color: #475569; margin: 0 0 20px;">
+					${result.error || 'An unknown error occurred'}
+				</p>
+				<button onclick="document.getElementById('scanUnitsModal').remove();" style="
+					background: #64748b; color: white; border: none; padding: 12px 24px;
+					border-radius: 8px; font-weight: 600; cursor: pointer;
+				">Close</button>
+			</div>
+		`;
+	}
+
+	resultsView.innerHTML = html;
 }
 
