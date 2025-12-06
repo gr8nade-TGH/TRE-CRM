@@ -4,15 +4,16 @@ import { createClient } from '@supabase/supabase-js';
 const BROWSERLESS_BASE = 'https://production-sfo.browserless.io';
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
 
-// Scan methods - property methods first (most reliable), then ILS backup
+// Scan methods - PRIORITIZED by data quality (floorplans pages have pricing)
+// Analysis showed: homepages often lack pricing, apartments.com blocks scraping
 const SCAN_METHODS = [
-    { id: 'property-base', path: '', type: 'property', label: 'Property Homepage' },
-    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans' },
-    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans' },
-    { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability' },
-    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com' },
-    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b', label: 'Zillow.com' },
-    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com' }
+    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 1 },
+    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 1 },
+    { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability', priority: 2 },
+    { id: 'property-base', path: '', type: 'property', label: 'Property Homepage', priority: 3 },
+    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b', label: 'Zillow.com', priority: 4 },
+    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com', priority: 4 },
+    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 5 }
 ];
 
 // Scrape a page with Browserless /function API (V2 format)
@@ -639,13 +640,16 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
 }
 
-// Get ALL methods sorted by effectiveness - NEVER filter any out
+// Get ALL methods sorted by effectiveness - uses priority + success rate
 function getAllMethodsSorted(methodStats) {
     return [...SCAN_METHODS].sort((a, b) => {
         const statA = methodStats[a.id];
         const statB = methodStats[b.id];
 
-        // Learning methods (untested) get high priority
+        // First: Use defined priority (1=best, 5=worst)
+        if (a.priority !== b.priority) return a.priority - b.priority;
+
+        // Then: Untested methods get priority within same tier
         if ((!statA || statA.attempts === 0) && statB?.attempts > 0) return -1;
         if ((!statB || statB.attempts === 0) && statA?.attempts > 0) return 1;
 
