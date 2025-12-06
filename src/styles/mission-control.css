@@ -1467,8 +1467,14 @@ body.mission-control-active #smartMatchConfigForm {
 	align-items: flex-start;
 }
 
-.backup-actions .btn-primary {
-	background: linear-gradient(135deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
+.backup-action-buttons {
+	display: flex;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.backup-actions .btn-primary,
+.backup-actions .btn-danger {
 	border: none;
 	padding: 14px 24px;
 	font-size: 14px;
@@ -1480,6 +1486,10 @@ body.mission-control-active #smartMatchConfigForm {
 	align-items: center;
 	gap: 10px;
 	transition: all 0.3s ease;
+}
+
+.backup-actions .btn-primary {
+	background: linear-gradient(135deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
 	box-shadow: 0 0 20px var(--mc-glow-blue);
 }
 
@@ -1488,7 +1498,18 @@ body.mission-control-active #smartMatchConfigForm {
 	box-shadow: 0 0 30px var(--mc-glow-cyan);
 }
 
-.backup-actions .btn-primary:disabled {
+.backup-actions .btn-danger {
+	background: linear-gradient(135deg, #dc2626 0%, #b91c1c 100%);
+	box-shadow: 0 0 20px rgba(220, 38, 38, 0.3);
+}
+
+.backup-actions .btn-danger:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 0 30px rgba(220, 38, 38, 0.5);
+}
+
+.backup-actions .btn-primary:disabled,
+.backup-actions .btn-danger:disabled {
 	opacity: 0.6;
 	cursor: not-allowed;
 	transform: none;
