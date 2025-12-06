@@ -4,16 +4,17 @@ import { createClient } from '@supabase/supabase-js';
 const BROWSERLESS_BASE = 'https://production-sfo.browserless.io';
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
 
-// Scan methods - PRIORITIZED by data quality (floorplans pages have pricing)
-// Analysis showed: homepages often lack pricing, apartments.com blocks scraping
+// Scan methods - PRIORITIZED: ILS sites first (standardized formats), property sites disabled for now
+// ILS sites have consistent data formats across all properties = higher success rate
 const SCAN_METHODS = [
-    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 1 },
-    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 1 },
-    { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability', priority: 2 },
-    { id: 'property-base', path: '', type: 'property', label: 'Property Homepage', priority: 3 },
-    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b', label: 'Zillow.com', priority: 4 },
-    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com', priority: 4 },
-    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 5 }
+    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b', label: 'Zillow.com', priority: 1 },
+    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com', priority: 1 },
+    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 2 },
+    // Property sites disabled - too inconsistent, different CMS systems, many 404s
+    // { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 10 },
+    // { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 10 },
+    // { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability', priority: 10 },
+    // { id: 'property-base', path: '', type: 'property', label: 'Property Homepage', priority: 10 },
 ];
 
 // Scrape a page with Browserless /function API (V2 format)
