@@ -4,17 +4,18 @@ import { createClient } from '@supabase/supabase-js';
 const BROWSERLESS_BASE = 'https://production-sfo.browserless.io';
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
 
-// Scan methods - PRIORITIZED: ILS sites first (standardized formats), property sites disabled for now
-// ILS sites have consistent data formats across all properties = higher success rate
+// Scan methods - PRIORITIZED: ILS sites first (standardized formats)
+// NOTE: rent.com rate-limits aggressively, apartments.com blocks, so Zillow is primary
 const SCAN_METHODS = [
-    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com/b', label: 'Zillow.com', priority: 1 },
-    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com', label: 'Rent.com', priority: 1 },
+    // Zillow - removed /b filter, search for any zillow apartment listing
+    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com apartments', label: 'Zillow.com', priority: 1 },
+    // Apartments.com - often blocked but worth trying
     { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 2 },
-    // Property sites disabled - too inconsistent, different CMS systems, many 404s
-    // { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 10 },
-    // { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 10 },
-    // { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability', priority: 10 },
-    // { id: 'property-base', path: '', type: 'property', label: 'Property Homepage', priority: 10 },
+    // Rent.com - DEPRIORITIZED due to aggressive rate limiting (redirects to ratelimited.rent.com)
+    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com/apartment', label: 'Rent.com', priority: 5 },
+    // Property sites as fallback
+    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 3 },
+    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 3 },
 ];
 
 // Scrape a page with Browserless /function API (V2 format)
@@ -454,6 +455,38 @@ async function scanILSSite(ilsSite, prop) {
                     listingUrl: result.link,
                     scrapeError: scrapeResult.error,
                     browserlessError: scrapeResult.browserlessError
+                }
+            };
+        }
+
+        // Detect rate limiting - check if we got redirected to a rate limit page
+        const finalUrl = scrapeResult.finalUrl?.toLowerCase() || '';
+        if (finalUrl.includes('ratelimit') || finalUrl.includes('blocked') || finalUrl.includes('captcha') ||
+            scrapeResult.html.includes('rate limit') || scrapeResult.html.includes('too many requests')) {
+            console.log(`[Auto-Scan] RATE LIMITED by ${ilsSite}!`);
+            return {
+                units: [],
+                sources: [],
+                errors: [`Rate limited by ${ilsSite}`],
+                debug: {
+                    listingUrl: result.link,
+                    finalUrl: scrapeResult.finalUrl,
+                    rateLimited: true
+                }
+            };
+        }
+
+        // Check for minimal page (likely blocked or error page)
+        if (scrapeResult.html.length < 15000) {
+            console.log(`[Auto-Scan] Page too small (${scrapeResult.html.length} chars) - likely blocked or error`);
+            return {
+                units: [],
+                sources: [],
+                errors: [`Page too small - likely blocked (${scrapeResult.html.length} chars)`],
+                debug: {
+                    listingUrl: result.link,
+                    finalUrl: scrapeResult.finalUrl,
+                    htmlLength: scrapeResult.html.length
                 }
             };
         }
