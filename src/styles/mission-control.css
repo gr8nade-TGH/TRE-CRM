@@ -1698,3 +1698,88 @@ body.mission-control-active #smartMatchConfigForm {
 		grid-template-columns: 1fr;
 	}
 }
+
+/* ============================================
+   CONTACT INFO SCANNER STYLES
+   ============================================ */
+.contact-scan-panel {
+	border: 1px solid var(--mc-accent-orange);
+	box-shadow: 0 0 20px rgba(245, 158, 11, 0.15);
+}
+
+.contact-stat {
+	background: var(--mc-bg-secondary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 8px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.contact-stat-label {
+	font-size: 12px;
+	color: var(--mc-text-secondary);
+}
+
+.contact-stat-value {
+	font-size: 24px;
+	font-weight: 700;
+	color: var(--mc-accent-orange);
+}
+
+.btn-warning {
+	background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+	border: none;
+	color: #000;
+	font-weight: 600;
+}
+
+.btn-warning:hover {
+	background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+	transform: translateY(-2px);
+	box-shadow: 0 0 20px var(--mc-glow-orange);
+}
+
+.btn-warning:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.contact-scan-progress {
+	background: var(--mc-bg-secondary);
+	border-radius: 8px;
+	padding: 16px;
+}
+
+.contact-scan-log {
+	color: var(--mc-text-secondary);
+	border: 1px solid var(--mc-border-primary);
+}
+
+.contact-scan-log .log-success {
+	color: var(--mc-accent-green);
+}
+
+.contact-scan-log .log-error {
+	color: var(--mc-accent-red);
+}
+
+.contact-scan-log .log-info {
+	color: var(--mc-accent-cyan);
+}
+
+.contact-scan-log .log-warning {
+	color: var(--mc-accent-orange);
+}
+
+@media (max-width: 768px) {
+	.contact-scan-stats {
+		grid-template-columns: repeat(2, 1fr) !important;
+	}
+
+	.contact-stat-value {
+		font-size: 18px;
+	}
+}
