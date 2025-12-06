@@ -54,6 +54,9 @@ export async function initDiscovery() {
 
     // Initialize auto-scanner
     await initAutoScanner();
+
+    // Initialize image scanner
+    await initImageScanner();
 }
 
 /**
@@ -868,7 +871,155 @@ async function runAutoScan() {
     }
 }
 
+// ============================================================
+// IMAGE SCANNER
+// ============================================================
+
+let imageScanRunning = false;
+let imageScanCountdown = 0;
+let imageScanTimer = null;
+let imageScanStats = { scanned: 0, imagesFound: 0 };
+let imageScanStartTime = null;
+
+/**
+ * Initialize the image scanner panel
+ */
+async function initImageScanner() {
+    console.log('[ImageScan] Initializing...');
+
+    // Load initial stats
+    await updateImageScanStats();
+
+    // Setup toggle button
+    const toggleBtn = document.getElementById('imageScanToggle');
+    if (toggleBtn) {
+        toggleBtn.addEventListener('click', toggleImageScan);
+    }
+}
+
+/**
+ * Update image scan stats from API
+ */
+async function updateImageScanStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/property/image-scan`);
+        const data = await response.json();
+
+        if (data.success && data.stats) {
+            const s = data.stats;
+            document.getElementById('imageScanMissing').textContent = s.missingPhotos;
+            document.getElementById('imageScanComplete').textContent = s.hasPhotos;
+            document.getElementById('imageScanPercent').textContent = `${s.percentComplete}%`;
+            document.getElementById('imageScanToday').textContent = s.scannedLast24h;
+        }
+    } catch (e) {
+        console.error('[ImageScan] Stats error:', e);
+    }
+}
+
+/**
+ * Toggle image scanner on/off
+ */
+function toggleImageScan() {
+    if (imageScanRunning) {
+        stopImageScan();
+    } else {
+        startImageScan();
+    }
+}
+
+/**
+ * Start the image scanner
+ */
+function startImageScan() {
+    imageScanRunning = true;
+    imageScanStartTime = Date.now();
+    imageScanStats = { scanned: 0, imagesFound: 0 };
+
+    const toggleBtn = document.getElementById('imageScanToggle');
+    toggleBtn.textContent = '⏹️ Stop Scanning';
+    toggleBtn.style.background = '#ef4444';
+
+    document.getElementById('imageScanStatus').style.display = 'block';
+
+    addLogEntry('info', '📷 Image scanner started');
+    runImageScan();
+}
+
+/**
+ * Stop the image scanner
+ */
+function stopImageScan() {
+    imageScanRunning = false;
+    if (imageScanTimer) {
+        clearTimeout(imageScanTimer);
+        imageScanTimer = null;
+    }
+
+    const toggleBtn = document.getElementById('imageScanToggle');
+    toggleBtn.textContent = '📷 Start Image Scan';
+    toggleBtn.style.background = '#8b5cf6';
+
+    document.getElementById('imageScanStatus').style.display = 'none';
+    document.getElementById('imageScanTimer').textContent = '--:--';
+
+    addLogEntry('info', `📷 Image scanner stopped. Found ${imageScanStats.imagesFound} images for ${imageScanStats.scanned} properties.`);
+}
+
+/**
+ * Run a single image scan iteration
+ */
+async function runImageScan() {
+    if (!imageScanRunning) return;
+
+    try {
+        // Update timer
+        const elapsed = Date.now() - imageScanStartTime;
+        const minutes = Math.floor(elapsed / 60000);
+        const seconds = Math.floor((elapsed % 60000) / 1000);
+        document.getElementById('imageScanTimer').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+        // Call API
+        document.getElementById('imageScanCurrentProperty').textContent = '🔍 Searching...';
+
+        const response = await fetch(`${API_BASE_URL}/api/property/image-scan`, { method: 'POST' });
+        const result = await response.json();
+
+        if (result.done) {
+            addLogEntry('success', '🎉 All properties have images!');
+            stopImageScan();
+            return;
+        }
+
+        imageScanStats.scanned++;
+        if (result.imagesFound > 0) {
+            imageScanStats.imagesFound += result.imagesFound;
+            document.getElementById('imageScanCurrentProperty').textContent = `✅ ${result.property}`;
+            document.getElementById('imageScanResult').textContent = `Found ${result.imagesFound} images`;
+            addLogEntry('success', `📷 ${result.property}: ${result.imagesFound} images`);
+        } else {
+            document.getElementById('imageScanCurrentProperty').textContent = `⚪ ${result.property}`;
+            document.getElementById('imageScanResult').textContent = 'No images found';
+        }
+
+        // Update stats display
+        document.getElementById('imageScanFound').textContent = imageScanStats.imagesFound;
+        await updateImageScanStats();
+
+        // Schedule next scan (2 second delay to not hammer API)
+        imageScanTimer = setTimeout(runImageScan, 2000);
+
+    } catch (e) {
+        console.error('[ImageScan] Error:', e);
+        document.getElementById('imageScanResult').textContent = `Error: ${e.message}`;
+        addLogEntry('error', `📷 Error: ${e.message}`);
+        // Continue despite errors
+        imageScanTimer = setTimeout(runImageScan, 3000);
+    }
+}
+
 // Export for global access
 window.initDiscovery = initDiscovery;
 window.initAutoScanner = initAutoScanner;
+window.initImageScanner = initImageScanner;
 
