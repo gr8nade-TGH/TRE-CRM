@@ -17,15 +17,18 @@ const USER_AGENTS = [
 
 // Scan methods - PRIORITIZED by what actually works
 // NOTE: ILS sites (Zillow/Rent/Apartments) all block aggressively
-// Property websites with /floorplans are more reliable
+// Property websites with /floorplans are more reliable - try multiple path variations
 const SCAN_METHODS = [
-    // Property sites FIRST - these have the actual floor plan data and don't block as hard
+    // Property sites FIRST - try common path variations (some sites use Floorplans, some floor-plans, etc)
     { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 1 },
     { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 1 },
+    { id: 'property-Floorplans', path: '/Floorplans', type: 'property', label: 'Property /Floorplans', priority: 1 },
+    { id: 'property-apartments', path: '/apartments', type: 'property', label: 'Property /apartments', priority: 2 },
+    { id: 'property-availability', path: '/availability', type: 'property', label: 'Property /availability', priority: 2 },
     // ILS sites as backup - all have aggressive anti-bot
-    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com apartments', label: 'Zillow.com', priority: 3 },
-    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 4 },
-    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com/apartment', label: 'Rent.com', priority: 5 },
+    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com apartments', label: 'Zillow.com', priority: 5 },
+    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 5 },
+    { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com/apartment', label: 'Rent.com', priority: 6 },
 ];
 
 // Scrape a page with Browserless /function API (V2 format) + PRO STEALTH
@@ -178,6 +181,21 @@ async function extractUnits(html, propertyName, openaiKey) {
     if (!html || html.length < 500) {
         console.log(`[extractUnits] HTML too short: ${html?.length || 0} chars`);
         return { units: [], rawResponse: null, error: 'HTML too short' };
+    }
+
+    // Detect 404 pages - many property sites return styled 404 pages instead of real errors
+    const lowerHtml = html.toLowerCase();
+    const is404Page = lowerHtml.includes('page not found') ||
+        lowerHtml.includes('is404page') ||
+        lowerHtml.includes('404 error') ||
+        lowerHtml.includes("couldn't find that") ||
+        lowerHtml.includes('page doesn\'t exist') ||
+        lowerHtml.includes('uh oh!') ||
+        (lowerHtml.includes('oops') && lowerHtml.includes('link'));
+
+    if (is404Page) {
+        console.log(`[extractUnits] Detected 404 page for "${propertyName}"`);
+        return { units: [], rawResponse: null, error: '404 page - path does not exist', is404: true };
     }
 
     // FIRST: Extract JSON-LD structured data (many sites embed floor plan data here)
@@ -838,12 +856,14 @@ export default async function handler(req, res) {
                 .map(h => {
                     let failureReason = null;
                     if (!h.success) {
-                        if (h.error?.includes('HTTP 4')) failureReason = 'Scrape blocked/failed';
-                        else if (h.error?.includes('Page too short')) failureReason = 'Empty page';
+                        if (h.error?.includes('404')) failureReason = '404 - Path not found';
+                        else if (h.error?.includes('HTTP 4')) failureReason = 'Scrape blocked/failed';
+                        else if (h.error?.includes('Page too short') || h.error?.includes('too small')) failureReason = 'Empty/blocked page';
                         else if (h.error?.includes('No JSON')) failureReason = 'AI extraction failed';
+                        else if (h.error?.includes('Rate limit')) failureReason = 'Rate limited';
                         else if (h.debug_info?.browserlessError) failureReason = 'Browserless error';
                         else if (h.debug_info?.aiReason) failureReason = h.debug_info.aiReason;
-                        else if (h.debug_info?.htmlLength > 1000) failureReason = 'No unit numbers on page';
+                        else if (h.debug_info?.htmlLength > 1000) failureReason = 'No floor plans on page';
                         else failureReason = h.error || 'Unknown';
                     }
                     return {
@@ -860,9 +880,11 @@ export default async function handler(req, res) {
 
             // ========== FAILURE ANALYSIS ==========
             const failureAnalysis = {
-                scrapeBlocked: (history || []).filter(h => h.error?.includes('HTTP 4')).length,
-                emptyPage: (history || []).filter(h => h.error?.includes('too short')).length,
-                noUnitNumbers: (history || []).filter(h => !h.success && h.debug_info?.htmlLength > 1000).length,
+                notFoundPages: (history || []).filter(h => h.error?.includes('404')).length,
+                scrapeBlocked: (history || []).filter(h => h.error?.includes('HTTP 4') && !h.error?.includes('404')).length,
+                emptyOrBlocked: (history || []).filter(h => h.error?.includes('too short') || h.error?.includes('too small')).length,
+                rateLimited: (history || []).filter(h => h.error?.includes('Rate limit')).length,
+                noFloorPlans: (history || []).filter(h => !h.success && h.debug_info?.htmlLength > 1000 && !h.error).length,
                 aiExtractionFailed: (history || []).filter(h => h.error?.includes('No JSON')).length,
                 browserlessError: (history || []).filter(h => h.debug_info?.browserlessError).length
             };
