@@ -265,7 +265,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 		}
 
 		// Build properties with all data from batch queries
-		const propertiesWithData = availableProperties.map(prop => {
+		const propertiesWithData = properties.map(prop => {
 			try {
 				// Get data from batch query results
 				const notesCount = propertyNotesCountsMap[prop.id] || 0;
