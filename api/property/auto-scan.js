@@ -15,18 +15,17 @@ const USER_AGENTS = [
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
 ];
 
-// Scan methods - PRIORITIZED: ILS sites first (standardized formats)
-// NOTE: rent.com rate-limits aggressively, apartments.com blocks, so Zillow is primary
+// Scan methods - PRIORITIZED by what actually works
+// NOTE: ILS sites (Zillow/Rent/Apartments) all block aggressively
+// Property websites with /floorplans are more reliable
 const SCAN_METHODS = [
-    // Zillow - removed /b filter, search for any zillow apartment listing
-    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com apartments', label: 'Zillow.com', priority: 1 },
-    // Apartments.com - often blocked but worth trying
-    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 2 },
-    // Rent.com - DEPRIORITIZED due to aggressive rate limiting (redirects to ratelimited.rent.com)
+    // Property sites FIRST - these have the actual floor plan data and don't block as hard
+    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 1 },
+    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 1 },
+    // ILS sites as backup - all have aggressive anti-bot
+    { id: 'zillow.com', type: 'ils', searchPattern: 'site:zillow.com apartments', label: 'Zillow.com', priority: 3 },
+    { id: 'apartments.com', type: 'ils', searchPattern: 'site:apartments.com', label: 'Apartments.com', priority: 4 },
     { id: 'rent.com', type: 'ils', searchPattern: 'site:rent.com/apartment', label: 'Rent.com', priority: 5 },
-    // Property sites as fallback
-    { id: 'property-floorplans', path: '/floorplans', type: 'property', label: 'Property /floorplans', priority: 3 },
-    { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 3 },
 ];
 
 // Scrape a page with Browserless /function API (V2 format) + PRO STEALTH
