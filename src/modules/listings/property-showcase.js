@@ -195,7 +195,8 @@ function populateModal(property, units, floorPlans) {
  * Build the showcase HTML
  */
 function buildShowcaseHTML(property, data) {
-    return buildHeroSection(data) + buildDetailsSection(property, data) + buildUnitsSection(data);
+    // Units section comes FIRST (primary focus), then details
+    return buildHeroSection(data) + buildUnitsSection(data) + buildDetailsSection(property, data);
 }
 
 function buildHeroSection(data) {
@@ -219,12 +220,8 @@ function buildHeroSection(data) {
         ? (data.bathsMax !== data.bathsMin ? `${data.bathsMin}-${data.bathsMax}` : `${data.bathsMin}`)
         : null;
 
-    // Rent display - if no pricing, show "Call for Pricing" subtly
+    // Rent display - only show if we have actual data
     const hasRentData = data.rentDisplay && data.rentDisplay !== 'Contact for pricing';
-    const rentPillContent = hasRentData
-        ? `<span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span>`
-        : `<span class="stat-icon">📞</span><span class="stat-value">Call for Pricing</span>`;
-    const rentPillClass = hasRentData ? 'stat-pill rent' : 'stat-pill call-pricing';
 
     return `
         <div class="showcase-hero">
@@ -257,7 +254,7 @@ function buildHeroSection(data) {
             <p class="showcase-address">📍 ${data.fullAddress}</p>
 
             <div class="showcase-quick-stats">
-                <div class="${rentPillClass}">${rentPillContent}</div>
+                ${hasRentData ? `<div class="stat-pill rent"><span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span></div>` : ''}
                 ${bedsDisplay !== null ? `<div class="stat-pill beds"><span class="stat-icon">🛏</span><span class="stat-value">${bedsDisplay}</span><span class="stat-label">Beds</span></div>` : ''}
                 ${bathsDisplay !== null ? `<div class="stat-pill baths"><span class="stat-icon">🚿</span><span class="stat-value">${bathsDisplay}</span><span class="stat-label">Baths</span></div>` : ''}
                 ${data.sqftMin ? `<div class="stat-pill sqft"><span class="stat-icon">📐</span><span class="stat-value">${data.sqftMin.toLocaleString()}${data.sqftMax !== data.sqftMin ? `-${data.sqftMax.toLocaleString()}` : ''}</span><span class="stat-label">sqft</span></div>` : ''}
@@ -331,17 +328,10 @@ function buildDetailsSection(property, data) {
                     <div class="second-chance-grid">${secondChanceBadges.join('')}</div>
                 </div>
             ` : ''}
-            <div class="showcase-grid">
-                <div class="showcase-section">
-                    <h4>📞 Contact Information</h4>
-                    ${data.contactName ? `<p class="contact-name"><strong>${data.contactName}</strong></p>` : ''}
-                    <div class="contact-cards">${contactCards.join('') || '<p class="no-data">No contact info available</p>'}</div>
-                </div>
-                <div class="showcase-section">
-                    <h4>✨ Amenities</h4>
-                    <div class="amenities-grid">${amenityTags || '<p class="no-data">No amenities listed</p>'}</div>
-                    ${data.amenities.length > 16 ? `<p class="more-amenities">+${data.amenities.length - 16} more</p>` : ''}
-                </div>
+            <div class="showcase-section">
+                <h4>✨ Amenities</h4>
+                <div class="amenities-grid">${amenityTags || '<p class="no-data">No amenities listed</p>'}</div>
+                ${data.amenities.length > 16 ? `<p class="more-amenities">+${data.amenities.length - 16} more</p>` : ''}
             </div>
             ${data.petPolicy ? `
                 <div class="showcase-section pet-section">
@@ -355,37 +345,43 @@ function buildDetailsSection(property, data) {
 
 function buildUnitsSection(data) {
     if (data.units.length === 0 && data.floorPlans.length === 0) {
-        return `<div class="showcase-section units-section"><h4>🏠 Available Units</h4><p class="no-data">No units currently available</p></div>`;
+        return `<div class="showcase-section units-section featured"><h4>🏠 Available Units</h4><p class="no-data">No units currently available</p></div>`;
     }
 
     const items = data.units.length > 0 ? data.units : data.floorPlans;
-    const unitCards = items.slice(0, 6).map(item => {
+    const unitCards = items.slice(0, 8).map((item, index) => {
         const unitNum = item.unit_number || item.name || 'Unit';
-        const beds = item.beds ?? item.bedrooms ?? '-';
-        const baths = item.baths ?? item.bathrooms ?? '-';
-        const sqft = item.sqft || item.square_feet || '-';
+        const beds = item.beds ?? item.bedrooms;
+        const baths = item.baths ?? item.bathrooms;
+        const sqft = item.sqft || item.square_feet;
         const rent = item.rent || item.price || 0;
         const available = item.available_date || item.move_in_date;
+        const unitId = item.id || index;
+
+        // Build specs - only show what we have
+        const specs = [];
+        if (beds !== undefined && beds !== null) specs.push(`<span class="unit-spec">🛏 ${beds} bd</span>`);
+        if (baths !== undefined && baths !== null) specs.push(`<span class="unit-spec">🚿 ${baths} ba</span>`);
+        if (sqft) specs.push(`<span class="unit-spec">📐 ${sqft.toLocaleString()} sqft</span>`);
 
         return `
-            <div class="unit-card">
-                <div class="unit-header"><strong>${unitNum}</strong></div>
-                <div class="unit-specs">
-                    <span>🛏 ${beds} bd</span>
-                    <span>🚿 ${baths} ba</span>
-                    <span>📐 ${sqft} sqft</span>
+            <div class="unit-card" data-unit-id="${unitId}">
+                <div class="unit-header">
+                    <strong class="unit-name">${unitNum}</strong>
+                    ${rent > 0 ? `<span class="unit-rent">$${rent.toLocaleString()}/mo</span>` : ''}
                 </div>
-                <div class="unit-rent">$${rent.toLocaleString()}/mo</div>
-                ${available ? `<div class="unit-available">Available: ${formatDate(available)}</div>` : ''}
+                <div class="unit-specs">${specs.join('')}</div>
+                ${available ? `<div class="unit-available">📅 Available ${formatDate(available)}</div>` : ''}
+                ${data.canEdit ? `<button class="unit-showcase-btn" data-action="add-unit-to-showcase" data-unit-id="${unitId}" title="Add this unit to your showcase">⭐ Add to Showcase</button>` : ''}
             </div>
         `;
     }).join('');
 
     return `
-        <div class="showcase-section units-section">
-            <h4>🏠 Available Units (${items.length})</h4>
+        <div class="showcase-section units-section featured">
+            <h4>🏠 Available Units <span class="unit-count">(${items.length})</span></h4>
             <div class="units-grid">${unitCards}</div>
-            ${items.length > 6 ? `<p class="more-units">+${items.length - 6} more units</p>` : ''}
+            ${items.length > 8 ? `<p class="more-units">+${items.length - 8} more units available</p>` : ''}
         </div>
     `;
 }
