@@ -224,10 +224,10 @@ If NO floor plan data found in either source:
         }
 
         const data = await resp.json();
-        const content = data.choices?.[0]?.message?.content;
-        console.log(`[extractUnits] OpenAI response: ${content?.slice(0, 300)}`);
+        const aiResponse = data.choices?.[0]?.message?.content;
+        console.log(`[extractUnits] OpenAI response: ${aiResponse?.slice(0, 300)}`);
 
-        const match = content?.match(/\{[\s\S]*\}/);
+        const match = aiResponse?.match(/\{[\s\S]*\}/);
         if (!match) {
             return { units: [], rawResponse: content, error: 'No JSON in response' };
         }
