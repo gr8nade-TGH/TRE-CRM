@@ -419,6 +419,40 @@ export async function openListingEditModal(property, options) {
 
 	// Show the modal
 	showModal('listingEditModal');
+
+	// Handle field highlighting if requested (from data quality badges)
+	if (options.highlightField) {
+		setTimeout(() => {
+			// Expand the section if specified
+			if (options.expandSection) {
+				const sectionHeader = document.querySelector(`[data-section="${options.expandSection}"]`);
+				if (sectionHeader && sectionHeader.classList.contains('collapsed')) {
+					sectionHeader.click(); // Trigger expand
+				}
+			}
+
+			// Highlight the field
+			const fieldElement = document.getElementById(options.highlightField);
+			if (fieldElement) {
+				// Scroll to field
+				fieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+				// Add highlight animation
+				fieldElement.style.transition = 'box-shadow 0.3s, background-color 0.3s';
+				fieldElement.style.boxShadow = '0 0 0 3px #fbbf24';
+				fieldElement.style.backgroundColor = '#fffbeb';
+
+				// Focus the field
+				fieldElement.focus();
+
+				// Remove highlight after a few seconds
+				setTimeout(() => {
+					fieldElement.style.boxShadow = '';
+					fieldElement.style.backgroundColor = '';
+				}, 3000);
+			}
+		}, 300); // Wait for modal to fully open
+	}
 }
 
 // Initialize collapsible section handlers

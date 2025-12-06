@@ -1,11 +1,105 @@
 /**
  * Listings Rendering Module
  * EXACT COPY from script.js - Preserves all pre-modularization functionality
- * 
+ *
  * @module listings/rendering
  */
 
 import { formatDate, updateSortHeaders } from '../../utils/helpers.js';
+
+/**
+ * Data Quality Checker
+ * Returns arrays of missing (red) and flagged (orange) field issues
+ */
+function checkDataQuality(prop) {
+	const missing = [];  // Red badges - data is missing
+	const flagged = []; // Orange badges - data looks wrong
+
+	// Check for missing critical fields
+	if (!prop.community_name && !prop.name) {
+		missing.push({ field: 'editPropertyName', label: 'Name', section: 'property-name-address' });
+	}
+	if (!prop.street_address && !prop.address) {
+		missing.push({ field: 'editStreetAddress', label: 'Address', section: 'property-name-address' });
+	}
+	if (!prop.phone) {
+		missing.push({ field: 'editPhone', label: 'Phone', section: 'contact-info' });
+	}
+	if (!prop.contact_name) {
+		missing.push({ field: 'editContactName', label: 'Contact', section: 'contact-info' });
+	}
+	if (!prop.contact_email) {
+		missing.push({ field: 'editContactEmail', label: 'Email', section: 'contact-info' });
+	}
+	if (!prop.website && !prop.leasing_link) {
+		missing.push({ field: 'editWebsite', label: 'Website', section: 'property-name-address' });
+	}
+
+	// Check for flagged fields (data looks wrong)
+	const communityName = prop.community_name || prop.name || '';
+	const address = prop.street_address || prop.address || '';
+
+	// Name looks like address (needs review)
+	if (communityName && address && (communityName === address || communityName.toLowerCase().includes(address.split(',')[0].toLowerCase().substring(0, 15)))) {
+		flagged.push({ field: 'editPropertyName', label: 'Name?', section: 'property-name-address' });
+	}
+
+	// Phone looks invalid (too short/long)
+	if (prop.phone) {
+		const digits = prop.phone.replace(/\D/g, '');
+		if (digits.length < 10 || digits.length > 11) {
+			flagged.push({ field: 'editPhone', label: 'Phone?', section: 'contact-info' });
+		}
+	}
+
+	// No commission set (might need attention)
+	const commission = prop.commission_pct || Math.max(prop.escort_pct || 0, prop.send_pct || 0);
+	if (commission === 0) {
+		flagged.push({ field: 'editCommissionPct', label: 'Commission?', section: 'unit-details' });
+	}
+
+	return { missing, flagged };
+}
+
+/**
+ * Generate HTML for data quality badges
+ */
+function renderDataQualityBadges(prop) {
+	const { missing, flagged } = checkDataQuality(prop);
+
+	if (missing.length === 0 && flagged.length === 0) {
+		return '';
+	}
+
+	let html = '<div class="data-quality-badges" style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px;">';
+
+	// Missing fields (red)
+	missing.forEach(issue => {
+		html += `<span class="dq-badge dq-missing"
+            data-property-id="${prop.id}"
+            data-field="${issue.field}"
+            data-section="${issue.section}"
+            title="Missing: ${issue.label}"
+            style="background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; padding: 1px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 500;">
+            ${issue.label}
+        </span>`;
+	});
+
+	// Flagged fields (orange)
+	flagged.forEach(issue => {
+		html += `<span class="dq-badge dq-flagged"
+            data-property-id="${prop.id}"
+            data-field="${issue.field}"
+            data-section="${issue.section}"
+            title="Review: ${issue.label}"
+            style="background: #fffbeb; color: #d97706; border: 1px solid #fde68a; padding: 1px 6px; border-radius: 4px; font-size: 10px; cursor: pointer; font-weight: 500;">
+            ${issue.label}
+        </span>`;
+	});
+
+	html += '</div>';
+	return html;
+}
 
 /**
  * Render listings table
@@ -348,6 +442,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
 				<div class="subtle mono">${address}</div>
+				${state.role === 'manager' ? renderDataQualityBadges(prop) : ''}
 				<div class="community-details">
 					<span class="market-info">${prop.market}</span>
 				</div>
@@ -422,6 +517,19 @@ export async function renderListings(options, autoSelectProperty = null) {
 						openScanUnitsModal(propertyId, propertyName, leasingUrl);
 					});
 				}
+
+				// Add data quality badge click handlers
+				const dqBadges = tr.querySelectorAll('.dq-badge');
+				dqBadges.forEach(badge => {
+					badge.addEventListener('click', (e) => {
+						e.stopPropagation();
+						const fieldId = badge.dataset.field;
+						const sectionId = badge.dataset.section;
+
+						// Open edit modal with field to highlight
+						openListingEditModal(prop, { highlightField: fieldId, expandSection: sectionId });
+					});
+				});
 			}
 
 			// Add interest count click handler

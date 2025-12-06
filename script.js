@@ -357,11 +357,12 @@ let api, renderLeads, renderSpecials;
 	};
 
 	// Listing edit modal functions - defined in outer scope so renderListings can access them
-	async function openListingEditModal(property) {
+	async function openListingEditModal(property, highlightOptions = {}) {
 		await Modals.openListingEditModal(property, {
 			state,
 			showModal,
-			SupabaseAPI
+			SupabaseAPI,
+			...highlightOptions // Pass through highlightField and expandSection if provided
 		});
 	}
 
