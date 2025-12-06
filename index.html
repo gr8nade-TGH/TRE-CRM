@@ -166,6 +166,15 @@
 							</svg>
 							Data Feed Dashboard
 						</a>
+						<a href="#" class="manage-dropdown-item" data-action="backups">
+							<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+								stroke-width="2">
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+								<polyline points="7 10 12 15 17 10"></polyline>
+								<line x1="12" y1="15" x2="12" y2="3"></line>
+							</svg>
+							Backups
+						</a>
 					</div>
 				</div>
 				<button id="profileBtn" class="btn btn-secondary btn-sm" title="Profile Settings">
@@ -1944,6 +1953,205 @@
 						<h3>📋 Discovery Log</h3>
 						<div class="log-container" id="discoveryLogContainer">
 							<div class="log-entry info">Ready to start discovery scan...</div>
+						</div>
+					</div>
+				</div>
+			</section>
+
+			<!-- Route: #/backups -->
+			<section id="backupsView" class="route-view hidden">
+				<div class="backups-page mission-control-active">
+					<div class="mc-header">
+						<h1>🛡️ Data Backups</h1>
+						<p class="mc-subtitle">Snapshot and restore your CRM data</p>
+					</div>
+
+					<div class="mc-grid" style="gap: 24px; margin-top: 24px;">
+						<!-- Current Backup Status Panel -->
+						<div class="mc-control-panel">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon"
+									style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>Backup Status</h2>
+									<p class="mc-panel-description">Current backup health and Supabase PITR status</p>
+								</div>
+							</div>
+							<div class="mc-control-grid" style="gap: 16px;">
+								<div class="backup-status-grid">
+									<div class="backup-stat">
+										<span class="backup-stat-label">Supabase Daily Backups</span>
+										<span id="supabaseBackupStatus" class="badge badge-success">✓ Active</span>
+									</div>
+									<div class="backup-stat">
+										<span class="backup-stat-label">Last Supabase Backup</span>
+										<span id="lastSupabaseBackup" class="backup-stat-value">Loading...</span>
+									</div>
+									<div class="backup-stat">
+										<span class="backup-stat-label">PITR (Point-in-Time Recovery)</span>
+										<span id="pitrStatus" class="badge badge-inactive">Not Enabled</span>
+									</div>
+									<div class="backup-stat">
+										<span class="backup-stat-label">Custom Snapshots</span>
+										<span id="customSnapshotCount" class="backup-stat-value">Loading...</span>
+									</div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Create Snapshot Panel -->
+						<div class="mc-control-panel">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon"
+									style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+										<circle cx="8.5" cy="8.5" r="1.5"></circle>
+										<polyline points="21 15 16 10 5 21"></polyline>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>Create Snapshot</h2>
+									<p class="mc-panel-description">Export all tables and storage objects to a backup
+										file</p>
+								</div>
+							</div>
+							<div class="mc-control-grid">
+								<div class="backup-options">
+									<label class="backup-option">
+										<input type="checkbox" id="backupIncludeProperties" checked disabled>
+										<span>Properties & Units</span>
+										<span id="propertiesCount" class="backup-count">Loading...</span>
+									</label>
+									<label class="backup-option">
+										<input type="checkbox" id="backupIncludeLeads" checked disabled>
+										<span>Leads</span>
+										<span id="leadsCount" class="backup-count">Loading...</span>
+									</label>
+									<label class="backup-option">
+										<input type="checkbox" id="backupIncludeDocuments" checked disabled>
+										<span>Documents</span>
+										<span id="documentsCount" class="backup-count">Loading...</span>
+									</label>
+									<label class="backup-option">
+										<input type="checkbox" id="backupIncludeUsers" checked disabled>
+										<span>Users & Agents</span>
+										<span id="usersCount" class="backup-count">Loading...</span>
+									</label>
+									<label class="backup-option">
+										<input type="checkbox" id="backupIncludeStorage" checked>
+										<span>Storage Files (Photos, PDFs)</span>
+										<span id="storageCount" class="backup-count">Loading...</span>
+									</label>
+								</div>
+								<div class="backup-actions">
+									<button id="createSnapshotBtn" class="btn btn-primary btn-lg">
+										<svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+											stroke="currentColor" stroke-width="2">
+											<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+											<polyline points="7 10 12 15 17 10"></polyline>
+											<line x1="12" y1="15" x2="12" y2="3"></line>
+										</svg>
+										Create Snapshot Now
+									</button>
+									<p class="backup-hint">Snapshots are stored in Supabase Storage (backups bucket)</p>
+								</div>
+							</div>
+							<!-- Progress Bar (hidden by default) -->
+							<div id="backupProgress" class="backup-progress" style="display: none;">
+								<div class="progress-label">
+									<span id="backupProgressLabel">Creating snapshot...</span>
+									<span id="backupProgressPercent">0%</span>
+								</div>
+								<div class="progress-bar-container">
+									<div class="progress-bar" id="backupProgressBar" style="width: 0%;"></div>
+								</div>
+							</div>
+						</div>
+
+						<!-- Backup History Panel -->
+						<div class="mc-control-panel" style="grid-column: 1 / -1;">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon"
+									style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<circle cx="12" cy="12" r="10"></circle>
+										<polyline points="12 6 12 12 16 14"></polyline>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>Backup History</h2>
+									<p class="mc-panel-description">Previous snapshots available for download or restore
+									</p>
+								</div>
+							</div>
+							<div class="backup-history-table-container">
+								<table class="backup-history-table">
+									<thead>
+										<tr>
+											<th>Date</th>
+											<th>Type</th>
+											<th>Size</th>
+											<th>Tables</th>
+											<th>Storage</th>
+											<th>Status</th>
+											<th>Actions</th>
+										</tr>
+									</thead>
+									<tbody id="backupHistoryBody">
+										<tr class="backup-loading">
+											<td colspan="7">
+												<div class="backup-loading-spinner"></div>
+												Loading backup history...
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+
+						<!-- Info Panel -->
+						<div class="mc-control-panel"
+							style="grid-column: 1 / -1; background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%);">
+							<div class="mc-panel-header">
+								<div class="mc-panel-icon"
+									style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+									<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+										stroke-width="2">
+										<circle cx="12" cy="12" r="10"></circle>
+										<line x1="12" y1="16" x2="12" y2="12"></line>
+										<line x1="12" y1="8" x2="12.01" y2="8"></line>
+									</svg>
+								</div>
+								<div class="mc-panel-title-group">
+									<h2>Backup Strategy Info</h2>
+									<p class="mc-panel-description">Understanding your backup options</p>
+								</div>
+							</div>
+							<div class="backup-info-grid">
+								<div class="backup-info-card">
+									<h4>☁️ Supabase Daily Backups</h4>
+									<p>Automatic database backups every 24 hours. Included with Pro plan. <strong>Does
+											NOT include Storage files.</strong></p>
+								</div>
+								<div class="backup-info-card">
+									<h4>⏱️ Point-in-Time Recovery</h4>
+									<p>Restore to any point in the last 7 days with 2-minute precision. Requires PITR
+										add-on ($100/month).</p>
+								</div>
+								<div class="backup-info-card">
+									<h4>📦 Custom Snapshots</h4>
+									<p>Export all tables + storage files to a downloadable archive. Stored in Supabase
+										Storage bucket.</p>
+								</div>
+							</div>
 						</div>
 					</div>
 				</div>

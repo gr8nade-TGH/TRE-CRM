@@ -1155,6 +1155,8 @@ export function setupAllEventListeners(deps) {
 					window.location.hash = '#/data-feeds';
 				} else if (action === 'rentcast-api') {
 					window.location.hash = '#/rentcast-api';
+				} else if (action === 'backups') {
+					window.location.hash = '#/backups';
 				}
 
 				manageDropdown.classList.add('hidden');

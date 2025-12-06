@@ -218,6 +218,19 @@ export function route(deps) {
 				console.error('Error loading Discovery page:', error);
 			}
 		})();
+	} else if (hash === '/backups') {
+		state.currentPage = 'backups';
+		show(document.getElementById('backupsView'));
+		setRoleLabel('backups');
+		// Initialize Backups page
+		(async () => {
+			try {
+				const { initializeBackupsPage } = await import('../modules/admin/backups-page.js');
+				await initializeBackupsPage();
+			} catch (error) {
+				console.error('Error loading Backups page:', error);
+			}
+		})();
 	} else if (hash === '/leads' || hash.startsWith('/leads?')) {
 		// Leads page with optional query parameters
 		state.currentPage = 'leads';
