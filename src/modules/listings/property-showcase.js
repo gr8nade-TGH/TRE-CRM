@@ -1,15 +1,52 @@
 /**
  * Property Showcase Modal
- * A fancy popup to showcase property details when clicking property name
+ * A responsive modal to showcase property details and available units
+ *
+ * Structure:
+ * 1. Hero Section - Photos, title, quick stats, contact buttons
+ * 2. Units Section - Featured unit cards with "Add to Showcase" actions
+ * 3. Details Section - Description, specials, amenities, pet policy
  */
 
 import { formatDate } from '../../utils/helpers.js';
 import { invalidateCache } from './listings-cache.js';
 
+// Module state
 let currentProperty = null;
 let modalElement = null;
 let currentOptions = {};
 let currentPhotos = [];
+
+/**
+ * Escape HTML to prevent XSS attacks
+ * @param {string} str - String to escape
+ * @returns {string} Escaped string
+ */
+function escapeHtml(str) {
+    if (!str) return '';
+    const div = document.createElement('div');
+    div.textContent = str;
+    return div.innerHTML;
+}
+
+/**
+ * Sanitize URL to prevent javascript: protocol attacks
+ * @param {string} url - URL to sanitize
+ * @returns {string} Safe URL or placeholder
+ */
+function sanitizeUrl(url) {
+    if (!url) return '';
+    try {
+        const parsed = new URL(url, window.location.origin);
+        // Only allow http, https, and data URLs (for placeholders)
+        if (['http:', 'https:', 'data:'].includes(parsed.protocol)) {
+            return url;
+        }
+    } catch {
+        // Invalid URL
+    }
+    return 'https://via.placeholder.com/800x400?text=Invalid+URL';
+}
 
 /**
  * Open the property showcase modal
@@ -85,17 +122,16 @@ function createModal() {
         if (e.target === modalElement) closePropertyShowcase();
     });
 
-    // Keyboard navigation
+    // Keyboard navigation (Escape to close)
     document.addEventListener('keydown', handleKeyboard);
 }
 
-let keyboardHandler = null;
+/**
+ * Handle keyboard events for the modal
+ */
 function handleKeyboard(e) {
     if (!modalElement || modalElement.classList.contains('hidden')) return;
-
-    if (e.key === 'Escape') {
-        closePropertyShowcase();
-    }
+    if (e.key === 'Escape') closePropertyShowcase();
 }
 
 /**
@@ -110,10 +146,9 @@ function populateModal(property, units, floorPlans) {
     const zip = property.zip_code || '';
     const fullAddress = [address, city, stateAbbr, zip].filter(Boolean).join(', ');
 
-    // Photos - include floor plan images too
-    const photos = property.photos || [];
-    const thumbnail = property.thumbnail;
-    const floorPlanImages = floorPlans.filter(fp => fp.image_url).map(fp => fp.image_url);
+    // Photos - sanitize all URLs to prevent XSS
+    const photos = (property.photos || []).map(sanitizeUrl).filter(Boolean);
+    const thumbnail = property.thumbnail ? sanitizeUrl(property.thumbnail) : null;
     const allPhotos = thumbnail ? [thumbnail, ...photos.filter(p => p !== thumbnail)] : photos;
     currentPhotos = [...allPhotos]; // Store for delete functionality
     const primaryPhoto = allPhotos[0] || 'https://via.placeholder.com/800x400?text=No+Photo';
@@ -139,11 +174,12 @@ function populateModal(property, units, floorPlans) {
     const sqftMin = property.sqft_min || 0;
     const sqftMax = property.sqft_max || sqftMin;
 
-    // Contact
+    // Contact - sanitize URLs
     const phone = property.contact_phone || property.phone || '';
     const email = property.contact_email || '';
     const contactName = property.contact_name || '';
-    const website = property.website || property.leasing_link || '';
+    const rawWebsite = property.website || property.leasing_link || '';
+    const website = rawWebsite ? sanitizeUrl(rawWebsite) : '';
     const officeHours = property.office_hours || '';
 
     // Amenities - combine both arrays
@@ -245,13 +281,13 @@ function buildHeroSection(data) {
         </div>
         <div class="showcase-header-info">
             <div class="showcase-title-row">
-                <h2 class="showcase-name">${data.name}</h2>
+                <h2 class="showcase-name">${escapeHtml(data.name)}</h2>
                 <div class="showcase-badges">
-                    ${data.commission > 0 ? `<span class="showcase-commission">💰 ${data.commission}%</span>` : ''}
+                    ${data.commission > 0 ? `<span class="showcase-commission">💰 ${Number(data.commission)}%</span>` : ''}
                     ${data.canEdit ? `<span class="showcase-completeness" style="background: ${completenessColor}20; color: ${completenessColor}; border: 1px solid ${completenessColor};">${data.completeness}% Complete</span>` : ''}
                 </div>
             </div>
-            <p class="showcase-address">📍 ${data.fullAddress}</p>
+            <p class="showcase-address">📍 ${escapeHtml(data.fullAddress)}</p>
 
             <div class="showcase-quick-stats">
                 ${hasRentData ? `<div class="stat-pill rent"><span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span></div>` : ''}
@@ -271,13 +307,7 @@ function buildHeroSection(data) {
 }
 
 function buildDetailsSection(property, data) {
-    const contactCards = [];
-    if (data.phone) contactCards.push(`<a href="tel:${data.phone}" class="contact-card"><span class="contact-icon">📞</span><span>${data.phone}</span></a>`);
-    if (data.email) contactCards.push(`<a href="mailto:${data.email}" class="contact-card"><span class="contact-icon">✉️</span><span>${data.email}</span></a>`);
-    if (data.website) contactCards.push(`<a href="${data.website}" target="_blank" class="contact-card"><span class="contact-icon">🌐</span><span>Visit Website</span></a>`);
-    if (data.officeHours) contactCards.push(`<div class="contact-card"><span class="contact-icon">🕐</span><span>${data.officeHours}</span></div>`);
-
-    const amenityTags = data.amenities.slice(0, 16).map(a => `<span class="amenity-tag">${a}</span>`).join('');
+    const amenityTags = data.amenities.slice(0, 16).map(a => `<span class="amenity-tag">${escapeHtml(a)}</span>`).join('');
     const hasSpecials = property.activeSpecials && property.activeSpecials.length > 0;
 
     // Build 2nd chance housing badges
@@ -305,8 +335,8 @@ function buildDetailsSection(property, data) {
             ${data.description ? `
                 <div class="showcase-section description-section">
                     <h4>📝 About This Property</h4>
-                    <p class="property-description">${data.description}</p>
-                    ${data.managementCompany ? `<p class="management-company">Managed by: <strong>${data.managementCompany}</strong></p>` : ''}
+                    <p class="property-description">${escapeHtml(data.description)}</p>
+                    ${data.managementCompany ? `<p class="management-company">Managed by: <strong>${escapeHtml(data.managementCompany)}</strong></p>` : ''}
                     ${googleRatingHtml}
                 </div>
             ` : ''}
@@ -316,7 +346,7 @@ function buildDetailsSection(property, data) {
                     <div class="specials-list">
                         ${property.activeSpecials.map(s => `
                             <div class="special-card">
-                                <span class="special-text">${s.description || s.special_text || s}</span>
+                                <span class="special-text">${escapeHtml(s.description || s.special_text || String(s))}</span>
                             </div>
                         `).join('')}
                     </div>
@@ -336,13 +366,16 @@ function buildDetailsSection(property, data) {
             ${data.petPolicy ? `
                 <div class="showcase-section pet-section">
                     <h4>🐾 Pet Policy</h4>
-                    <p class="pet-policy-text">${data.petPolicy}</p>
+                    <p class="pet-policy-text">${escapeHtml(data.petPolicy)}</p>
                 </div>
             ` : ''}
         </div>
     `;
 }
 
+/**
+ * Build the units section - primary focus of the modal
+ */
 function buildUnitsSection(data) {
     if (data.units.length === 0 && data.floorPlans.length === 0) {
         return `<div class="showcase-section units-section featured"><h4>🏠 Available Units</h4><p class="no-data">No units currently available</p></div>`;
@@ -350,25 +383,25 @@ function buildUnitsSection(data) {
 
     const items = data.units.length > 0 ? data.units : data.floorPlans;
     const unitCards = items.slice(0, 8).map((item, index) => {
-        const unitNum = item.unit_number || item.name || 'Unit';
+        const unitNum = escapeHtml(item.unit_number || item.name || 'Unit');
         const beds = item.beds ?? item.bedrooms;
         const baths = item.baths ?? item.bathrooms;
         const sqft = item.sqft || item.square_feet;
         const rent = item.rent || item.price || 0;
         const available = item.available_date || item.move_in_date;
-        const unitId = item.id || index;
+        const unitId = escapeHtml(String(item.id || index));
 
         // Build specs - only show what we have
         const specs = [];
         if (beds !== undefined && beds !== null) specs.push(`<span class="unit-spec">🛏 ${beds} bd</span>`);
         if (baths !== undefined && baths !== null) specs.push(`<span class="unit-spec">🚿 ${baths} ba</span>`);
-        if (sqft) specs.push(`<span class="unit-spec">📐 ${sqft.toLocaleString()} sqft</span>`);
+        if (sqft) specs.push(`<span class="unit-spec">📐 ${Number(sqft).toLocaleString()} sqft</span>`);
 
         return `
             <div class="unit-card" data-unit-id="${unitId}">
                 <div class="unit-header">
                     <strong class="unit-name">${unitNum}</strong>
-                    ${rent > 0 ? `<span class="unit-rent">$${rent.toLocaleString()}/mo</span>` : ''}
+                    ${rent > 0 ? `<span class="unit-rent">$${Number(rent).toLocaleString()}/mo</span>` : ''}
                 </div>
                 <div class="unit-specs">${specs.join('')}</div>
                 ${available ? `<div class="unit-available">📅 Available ${formatDate(available)}</div>` : ''}
@@ -489,6 +522,9 @@ async function handlePhotoDelete(photoUrl) {
  * Setup quick action button handlers
  */
 function setupQuickActions(property) {
+    const { toast } = currentOptions;
+
+    // Edit button handler
     const editBtn = document.querySelector('.quick-action-btn.edit');
     if (editBtn) {
         editBtn.addEventListener('click', async () => {
@@ -504,4 +540,22 @@ function setupQuickActions(property) {
             }, 200);
         });
     }
+
+    // Add to Showcase buttons on units
+    const showcaseBtns = document.querySelectorAll('.unit-showcase-btn');
+    showcaseBtns.forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            const unitId = btn.dataset.unitId;
+
+            // TODO: Implement actual showcase functionality
+            // For now, show a "coming soon" message
+            toast?.('Showcase feature coming soon!', 'info');
+
+            // Visual feedback
+            btn.textContent = '✓ Added';
+            btn.disabled = true;
+            btn.style.background = 'linear-gradient(135deg, #22c55e 0%, #16a34a 100%)';
+        });
+    });
 }
