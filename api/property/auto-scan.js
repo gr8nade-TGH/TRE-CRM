@@ -522,8 +522,21 @@ export default async function handler(req, res) {
 
             if (methodConfig?.type === 'property') {
                 // Property website method - use specific path
-                const baseUrl = prop.leasing_link.replace(/\/?$/, '');
-                const scanUrl = baseUrl + (methodConfig.path || '');
+                // Properly handle URLs with query strings - insert path BEFORE query string
+                let scanUrl = prop.leasing_link;
+                if (methodConfig.path) {
+                    try {
+                        const urlObj = new URL(prop.leasing_link);
+                        // Remove trailing slash from pathname, add our path
+                        urlObj.pathname = urlObj.pathname.replace(/\/?$/, '') + methodConfig.path;
+                        scanUrl = urlObj.toString();
+                    } catch (e) {
+                        // Fallback for malformed URLs
+                        const baseUrl = prop.leasing_link.split('?')[0].replace(/\/?$/, '');
+                        scanUrl = baseUrl + methodConfig.path;
+                    }
+                }
+                console.log(`[Auto-Scan] Scanning URL: ${scanUrl}`);
                 result = await scanPropertyUrl(scanUrl, prop);
             } else {
                 // ILS method - search and scrape specific site
