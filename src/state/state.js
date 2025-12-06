@@ -58,7 +58,9 @@ export const state = {
 		maxPrice: '',
 		beds: 'any',
 		commission: '0',
-		amenities: 'any'
+		amenities: 'any',
+		pumiOnly: false,
+		specialsOnly: false
 	},
 
 	// Customer View state
@@ -118,7 +120,9 @@ export function resetState() {
 		maxPrice: '',
 		beds: 'any',
 		commission: '0',
-		amenities: 'any'
+		amenities: 'any',
+		pumiOnly: false,
+		specialsOnly: false
 	};
 	state.customerView = {
 		isActive: false,

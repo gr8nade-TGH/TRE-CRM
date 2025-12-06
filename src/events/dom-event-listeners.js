@@ -1636,6 +1636,7 @@ export function setupAllEventListeners(deps) {
 		if (state.listingsFilters.commission && state.listingsFilters.commission !== 'all' && state.listingsFilters.commission !== '0') count++;
 		if (state.listingsFilters.amenities && state.listingsFilters.amenities !== 'all' && state.listingsFilters.amenities !== 'any') count++;
 		if (state.listingsFilters.pumiOnly) count++;
+		if (state.listingsFilters.specialsOnly) count++;
 
 		if (count > 0) {
 			badge.textContent = count;
@@ -1717,6 +1718,15 @@ export function setupAllEventListeners(deps) {
 		});
 	}
 
+	const specialsOnlyFilterEl = document.getElementById('specialsOnlyFilter');
+	if (specialsOnlyFilterEl) {
+		specialsOnlyFilterEl.addEventListener('change', (e) => {
+			state.listingsFilters.specialsOnly = e.target.checked;
+			updateActiveFilterCount();
+			renderListings();
+		});
+	}
+
 	const clearListingsFiltersEl = document.getElementById('clearListingsFilters');
 	if (clearListingsFiltersEl) {
 		clearListingsFiltersEl.addEventListener('click', () => {
@@ -1728,7 +1738,8 @@ export function setupAllEventListeners(deps) {
 				beds: 'any',
 				commission: '0',
 				amenities: 'any',
-				pumiOnly: false
+				pumiOnly: false,
+				specialsOnly: false
 			};
 			if (listingsSearchInputEl) listingsSearchInputEl.value = '';
 			if (marketFilterEl) marketFilterEl.value = 'all';
@@ -1738,6 +1749,7 @@ export function setupAllEventListeners(deps) {
 			if (commissionFilterEl) commissionFilterEl.value = '0';
 			if (amenitiesFilterEl) amenitiesFilterEl.value = 'any';
 			if (pumiOnlyFilterEl) pumiOnlyFilterEl.checked = false;
+			if (specialsOnlyFilterEl) specialsOnlyFilterEl.checked = false;
 			updateActiveFilterCount();
 			renderListings();
 		});
@@ -2039,6 +2051,7 @@ export function setupAllEventListeners(deps) {
 			const commissionFilter = document.getElementById('commissionFilter');
 			const amenitiesFilter = document.getElementById('amenitiesFilter');
 			const pumiOnlyFilter = document.getElementById('pumiOnlyFilter');
+			const specialsOnlyFilter = document.getElementById('specialsOnlyFilter');
 			const listingsSearchInput = document.getElementById('listingsSearchInput');
 
 			if (marketFilter) marketFilter.value = 'all';
@@ -2048,6 +2061,7 @@ export function setupAllEventListeners(deps) {
 			if (commissionFilter) commissionFilter.value = 'all';
 			if (amenitiesFilter) amenitiesFilter.value = 'all';
 			if (pumiOnlyFilter) pumiOnlyFilter.checked = false;
+			if (specialsOnlyFilter) specialsOnlyFilter.checked = false;
 			if (listingsSearchInput) listingsSearchInput.value = '';
 
 			// Reset state
@@ -2059,7 +2073,8 @@ export function setupAllEventListeners(deps) {
 				beds: 'any',
 				commission: 'all',
 				amenities: 'all',
-				pumiOnly: false
+				pumiOnly: false,
+				specialsOnly: false
 			};
 
 			// Update filter count badge

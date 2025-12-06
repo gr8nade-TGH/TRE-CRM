@@ -72,6 +72,14 @@ export function matchesListingsFilters(property, filters) {
 		return false;
 	}
 
+	// Specials filter - only show properties with active specials
+	if (filters.specialsOnly) {
+		const hasActiveSpecials = property.activeSpecials && property.activeSpecials.length > 0;
+		if (!hasActiveSpecials) {
+			return false;
+		}
+	}
+
 	return true;
 }
 
