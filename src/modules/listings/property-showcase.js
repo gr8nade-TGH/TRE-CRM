@@ -4,6 +4,7 @@
  */
 
 import { formatDate } from '../../utils/helpers.js';
+import { invalidateCache } from './listings-cache.js';
 
 let currentProperty = null;
 let modalElement = null;
@@ -389,6 +390,9 @@ async function handlePhotoDelete(photoUrl) {
             // Update local property reference
             currentProperty.photos = updatedPhotos;
             currentProperty.thumbnail = updatedThumbnail;
+
+            // Invalidate listings cache so changes reflect on table
+            invalidateCache();
 
             // Refresh the modal content
             const units = await SupabaseAPI.getUnits({ propertyId: property.id }) || [];

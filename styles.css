@@ -11584,3 +11584,38 @@ input[type="radio"] {
 	color: #f59e0b;
 	background: rgba(245, 158, 11, 0.1);
 }
+
+
+/* ===============================================
+   SKELETON LOADING STYLES
+   =============================================== */
+
+.skeleton-row td {
+	padding: 12px 8px;
+}
+
+.skeleton-cell {
+	background: linear-gradient(90deg, #e2e8f0 25%, #f1f5f9 50%, #e2e8f0 75%);
+	background-size: 200% 100%;
+	animation: skeleton-shimmer 1.5s infinite;
+	border-radius: 4px;
+	height: 16px;
+}
+
+@keyframes skeleton-shimmer {
+	0% {
+		background-position: 200% 0;
+	}
+
+	100% {
+		background-position: -200% 0;
+	}
+}
+
+.skeleton-row:nth-child(odd) {
+	background: #fafafa;
+}
+
+.skeleton-row:nth-child(even) {
+	background: #ffffff;
+}

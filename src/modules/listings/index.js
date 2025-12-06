@@ -10,3 +10,4 @@ export * from './bulk-actions.js';
 export * from './listings-filters.js';
 export * from './map-manager.js';
 export * from './customer-view.js';
+export * from './listings-cache.js';

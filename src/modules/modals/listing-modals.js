@@ -1,6 +1,7 @@
 // Listing Modals Functions - EXACT COPY from script.js
 import { initAddressAutocomplete } from '../../utils/mapbox-autocomplete.js';
 import { geocodeAddress } from '../../utils/geocoding.js';
+import { invalidateCache } from '../listings/listings-cache.js';
 
 // Store autocomplete cleanup function
 let autocompleteCleanup = null;
@@ -629,6 +630,9 @@ export async function saveListingEdit(options) {
 
 		// Update in Supabase
 		await SupabaseAPI.updateProperty(property.id, formData, userEmail, userName);
+
+		// Invalidate cache to force fresh data on next render
+		invalidateCache();
 
 		// Show success message
 		toast(`Property "${formData.community_name}" updated successfully!`, 'success');

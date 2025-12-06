@@ -5,6 +5,8 @@
  * @module listings/photo-gallery
  */
 
+import { invalidateCache } from './listings-cache.js';
+
 let currentGalleryProperty = null;
 let currentGalleryOptions = {};
 
@@ -272,6 +274,9 @@ async function handlePhotoDelete(photoUrl, property, options) {
 			// Update local property and refresh gallery
 			property.photos = updatedPhotos;
 			property.thumbnail = updatedThumbnail;
+
+			// Invalidate listings cache
+			invalidateCache();
 
 			// Re-render gallery
 			await openPhotoGalleryModal(property, options);

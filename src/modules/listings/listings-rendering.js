@@ -6,6 +6,31 @@
  */
 
 import { formatDate, updateSortHeaders } from '../../utils/helpers.js';
+import { getCachedData, setCachedData, isCacheValid } from './listings-cache.js';
+
+// Debounce timer for filter changes
+let filterDebounceTimer = null;
+const FILTER_DEBOUNCE_MS = 150;
+
+/**
+ * Show skeleton loading state in the listings table
+ */
+function showSkeletonLoading(tbody) {
+	const skeletonRows = Array(8).fill(0).map(() => `
+		<tr class="skeleton-row">
+			<td><div class="skeleton-cell" style="width: 20px; height: 20px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 60px; height: 45px; border-radius: 6px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 180px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 200px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 100px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 60px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 50px;"></div></td>
+			<td><div class="skeleton-cell" style="width: 80px;"></div></td>
+		</tr>
+	`).join('');
+
+	tbody.innerHTML = skeletonRows;
+}
 
 /**
  * Data Quality Checker
@@ -155,54 +180,89 @@ export async function renderListings(options, autoSelectProperty = null) {
 	// Customer View: Highlight customer search if no customer selected
 	const customerSearchInput = document.getElementById('customerSearchInput');
 	if (state.customerView.isActive && !state.customerView.selectedCustomer && !state.customerView.skipped) {
-		// Add highlight to indicate customer selection is available
-		if (customerSearchInput) {
-			customerSearchInput.classList.add('highlight-prompt');
-		}
+		if (customerSearchInput) customerSearchInput.classList.add('highlight-prompt');
 	} else {
-		// Remove highlight when customer is selected or skipped
-		if (customerSearchInput) {
-			customerSearchInput.classList.remove('highlight-prompt');
-		}
+		if (customerSearchInput) customerSearchInput.classList.remove('highlight-prompt');
+	}
+
+	// Performance: Check cache first
+	const cachedData = getCachedData(state);
+	const useCache = cachedData !== null && !autoSelectProperty;
+
+	// Show skeleton loading immediately if not using cache
+	if (!useCache) {
+		showSkeletonLoading(tbody);
 	}
 
 	try {
-		// Fetch properties and specials (both manual and discovered) in parallel
-		const [properties, specialsData, discoveredSpecialsMap] = await Promise.all([
-			SupabaseAPI.getProperties({
-				search: state.search,
-				market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
-				minPrice: state.listingsFilters.minPrice,
-				maxPrice: state.listingsFilters.maxPrice,
-				beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
-			}),
-			SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' }),
-			SupabaseAPI.getAllSpecialsForListings()
-		]);
+		let properties, specials, discoveredSpecialsMap;
+		let propertyNotesCountsMap, floorPlansMap, unitsMap, interestedLeadsCountsMap, unitNotesCountsMap;
 
-		// Extract specials array from response
-		const specials = specialsData?.items || specialsData || [];
+		if (useCache) {
+			// Use cached data for instant render
+			console.log('📦 Using cached listings data');
+			properties = cachedData.properties;
+			specials = cachedData.specials;
+			discoveredSpecialsMap = cachedData.specialsMap;
+			propertyNotesCountsMap = cachedData.propertyNotesCounts;
+			floorPlansMap = cachedData.floorPlans;
+			unitsMap = cachedData.units;
+			interestedLeadsCountsMap = cachedData.interestedLeadsCounts;
+			unitNotesCountsMap = cachedData.unitNotesCounts;
+		} else {
+			// Fetch all data from API
+			console.log('🔄 Fetching listings data from API');
+			const fetchStart = performance.now();
 
-		// Filter out unavailable listings (is_available = false)
-		const availableProperties = properties.filter(prop => {
-			// If is_available field doesn't exist yet, assume available
-			return prop.is_available !== false;
-		});
+			// First batch: properties and specials in parallel
+			const [propertiesData, specialsData, specialsMapData] = await Promise.all([
+				SupabaseAPI.getProperties({
+					search: state.search,
+					market: state.listingsFilters.market !== 'all' ? state.listingsFilters.market : null,
+					minPrice: state.listingsFilters.minPrice,
+					maxPrice: state.listingsFilters.maxPrice,
+					beds: state.listingsFilters.beds !== 'any' ? state.listingsFilters.beds : null
+				}),
+				SupabaseAPI.getSpecials({ search: '', sortKey: 'valid_until', sortOrder: 'asc' }),
+				SupabaseAPI.getAllSpecialsForListings()
+			]);
 
-		// OPTIMIZED: Batch fetch all data for all properties (4 queries instead of N*4 queries)
-		const propertyIds = availableProperties.map(prop => prop.id);
+			properties = propertiesData;
+			specials = specialsData?.items || specialsData || [];
+			discoveredSpecialsMap = specialsMapData;
 
-		const [propertyNotesCountsMap, floorPlansMap, unitsMap, interestedLeadsCountsMap] = await Promise.all([
-			SupabaseAPI.getBatchPropertyNotesCounts(propertyIds),
-			SupabaseAPI.getBatchFloorPlans(propertyIds),
-			SupabaseAPI.getBatchUnits(propertyIds, { isActive: null }),
-			SupabaseAPI.getBatchInterestedLeadsCounts(propertyIds)
-		]);
+			// Filter out unavailable listings
+			properties = properties.filter(prop => prop.is_available !== false);
 
-		// OPTIMIZED: Batch fetch unit notes counts for ALL units across ALL properties (1 query instead of N*M queries)
-		const allUnits = Object.values(unitsMap).flat();
-		const unitIds = allUnits.map(unit => unit.id);
-		const unitNotesCountsMap = await SupabaseAPI.getBatchUnitNotesCounts(unitIds);
+			// Second batch: batch fetch all related data
+			const propertyIds = properties.map(prop => prop.id);
+			[propertyNotesCountsMap, floorPlansMap, unitsMap, interestedLeadsCountsMap] = await Promise.all([
+				SupabaseAPI.getBatchPropertyNotesCounts(propertyIds),
+				SupabaseAPI.getBatchFloorPlans(propertyIds),
+				SupabaseAPI.getBatchUnits(propertyIds, { isActive: null }),
+				SupabaseAPI.getBatchInterestedLeadsCounts(propertyIds)
+			]);
+
+			// Third: unit notes counts (depends on units)
+			const allUnits = Object.values(unitsMap).flat();
+			const unitIds = allUnits.map(unit => unit.id);
+			unitNotesCountsMap = await SupabaseAPI.getBatchUnitNotesCounts(unitIds);
+
+			const fetchEnd = performance.now();
+			console.log(`⚡ Listings data fetched in ${(fetchEnd - fetchStart).toFixed(0)}ms`);
+
+			// Store in cache
+			setCachedData(state, {
+				properties,
+				specials,
+				specialsMap: discoveredSpecialsMap,
+				propertyNotesCounts: propertyNotesCountsMap,
+				floorPlans: floorPlansMap,
+				units: unitsMap,
+				interestedLeadsCounts: interestedLeadsCountsMap,
+				unitNotesCounts: unitNotesCountsMap
+			});
+		}
 
 		// Build properties with all data from batch queries
 		const propertiesWithData = availableProperties.map(prop => {
@@ -351,10 +411,14 @@ export async function renderListings(options, autoSelectProperty = null) {
 		// Store listings in state for other functions (like Build Showcase)
 		state.listings = filtered;
 
-		tbody.innerHTML = '';
+		// Performance: Use DocumentFragment for batch DOM insertion
+		const fragment = document.createDocumentFragment();
+		const renderStart = performance.now();
+
 		console.log('Rendering', filtered.length, 'filtered properties');
 		filtered.forEach((prop, index) => {
-			console.log(`Property ${index + 1}:`, prop.name, 'isPUMI:', prop.isPUMI, 'Units:', prop.units?.length || 0);
+			// Reduce console noise in production - only log every 100th property
+			if (index % 100 === 0) console.log(`Rendering properties ${index + 1}-${Math.min(index + 100, filtered.length)}...`);
 
 			// Create property row (parent)
 			const tr = document.createElement('tr');
@@ -623,7 +687,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 				}
 			}
 
-			tbody.appendChild(tr);
+			fragment.appendChild(tr);
 
 			// Add unit rows (initially hidden)
 			// Sort units: active units first, then inactive units
@@ -763,7 +827,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 						});
 					}
 
-					tbody.appendChild(unitTr);
+					fragment.appendChild(unitTr);
 				});
 			}
 
@@ -805,57 +869,37 @@ export async function renderListings(options, autoSelectProperty = null) {
 					</td>
 				`;
 
-					tbody.appendChild(fpTr);
+					fragment.appendChild(fpTr);
 				});
 			}
 		});
 
-		// Update map - simplified marker addition
-		if (map) {
-			console.log('Map exists, clearing markers and adding new ones');
-			clearMarkers();
+		// Append all rows to DOM at once (much faster than individual appends)
+		tbody.innerHTML = '';
+		tbody.appendChild(fragment);
 
-			// Add markers directly (only for properties with valid coordinates)
-			if (filtered.length > 0) {
+		const renderEnd = performance.now();
+		console.log(`⚡ Rendered ${filtered.length} properties in ${(renderEnd - renderStart).toFixed(0)}ms`);
+
+		// Update sort headers immediately
+		updateSortHeaders('listingsTable');
+
+		// Defer map updates to avoid blocking main thread
+		if (map) {
+			requestAnimationFrame(() => {
+				clearMarkers();
 				const validProps = filtered.filter(prop => prop.lat && prop.lng);
-				console.log('Adding', validProps.length, 'markers to map (out of', filtered.length, 'total properties)');
 				validProps.forEach(prop => {
-					console.log('Adding marker for:', prop.name, 'at', prop.lng, prop.lat);
 					try {
-						// Pass match score if in Customer View
 						const matchScore = state.customerView.isActive ? state.customerView.matchScores.get(prop.id) : null;
 						addMarker(prop, matchScore);
 					} catch (error) {
 						console.error('Error adding marker for', prop.name, ':', error);
 					}
 				});
-			}
-		} else {
-			console.log('Map not available yet');
-		}
-
-		// Ensure map fills container after rendering
-		setTimeout(() => {
-			if (map) map.resize();
-		}, 100);
-
-		// Update sort headers
-		updateSortHeaders('listingsTable');
-
-		// Debug table column widths
-		console.log('=== TABLE WIDTH DEBUG ===');
-		const table = document.getElementById('listingsTable');
-		if (table) {
-			const cols = table.querySelectorAll('th');
-			cols.forEach((col, i) => {
-				console.log(`Column ${i + 1}:`, col.textContent.trim(), 'Width:', col.offsetWidth + 'px');
+				// Ensure map fills container after adding markers
+				setTimeout(() => map.resize(), 50);
 			});
-
-			const firstCol = table.querySelector('th:first-child');
-			if (firstCol) {
-				console.log('First column computed style:', getComputedStyle(firstCol).width);
-				console.log('First column offsetWidth:', firstCol.offsetWidth);
-			}
 		}
 
 		// Auto-select property if specified (deep linking support)
