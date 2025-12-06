@@ -280,7 +280,116 @@ async function scanPropertyUrl(url, prop) {
     };
 }
 
-// Scan ILS site (apartments.com, zillow, rent.com) - returns detailed result
+// ILS-specific scraping configurations - each site has different selectors
+const ILS_CONFIGS = {
+    'zillow.com': {
+        // Zillow-specific selectors to expand floor plan data
+        expandSelectors: [
+            '[data-testid="floor-plan-group"]',
+            'button[class*="ShowMore"]',
+            '[class*="FloorPlanCard"]',
+            '[data-testid*="floorplan"]',
+            '.floor-plan-card',
+            'button[aria-label*="floor plan"]'
+        ],
+        // Zillow structures data in specific patterns
+        aiHints: `Zillow shows floor plans with: plan name, beds/baths, sqft range, price range, "X Available" count.
+Look for patterns like: "Studio | 1 ba | 400-500 sqft | $1,200+ | 3 Available"
+The availability count is critical - create that many units per floor plan.`
+    },
+    'rent.com': {
+        expandSelectors: [
+            '.FloorplanCard',
+            '[data-testid="floorplan-card"]',
+            '.unit-card',
+            'button[class*="viewUnits"]',
+            '[class*="availability"]'
+        ],
+        aiHints: `Rent.com shows floor plans as cards with: name, beds, baths, sqft, price range.
+Availability shown as "X units available" or specific unit numbers.`
+    },
+    'apartments.com': {
+        expandSelectors: [
+            '.pricingGridItem',
+            '[data-testid="pricing-grid"]',
+            '.availabilityCard',
+            '.mortar-wrapper button',
+            '[class*="floorplan"]'
+        ],
+        aiHints: `Apartments.com shows floor plans in a grid with: model name, beds/baths, sqft, price.
+Each row may show specific units available with move-in dates.`
+    }
+};
+
+// Scrape ILS page with site-specific selectors
+async function scrapeILSPage(url, browserlessToken, ilsSite) {
+    console.log(`[scrapeILSPage] Fetching ${ilsSite}: ${url}`);
+    const config = ILS_CONFIGS[ilsSite] || {};
+
+    try {
+        const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
+        const expandSelectors = JSON.stringify(config.expandSelectors || []);
+
+        const code = `
+export default async function ({ page }) {
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+    await page.setViewport({ width: 1400, height: 900 });
+    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+
+    await page.goto('${escapedUrl}', { waitUntil: 'networkidle2', timeout: 30000 });
+    await delay(2000);
+
+    // ILS-specific expand selectors
+    const ilsSelectors = ${expandSelectors};
+    for (const sel of ilsSelectors) {
+        try {
+            const els = await page.$$(sel);
+            for (let i = 0; i < Math.min(els.length, 10); i++) {
+                await els[i].click().catch(() => {});
+                await delay(400);
+            }
+        } catch (e) {}
+    }
+
+    // Also try generic expand buttons
+    const genericSelectors = ['button[class*="Show"]', '[class*="expand"]', '[aria-expanded="false"]'];
+    for (const sel of genericSelectors) {
+        try {
+            const els = await page.$$(sel);
+            for (let i = 0; i < Math.min(els.length, 5); i++) {
+                await els[i].click().catch(() => {});
+                await delay(300);
+            }
+        } catch (e) {}
+    }
+
+    await delay(2000);
+
+    const content = await page.content();
+    return { data: { html: content, finalUrl: page.url() }, type: "application/json" };
+}`;
+
+        const response = await fetch(`${BROWSERLESS_BASE}/function?token=${browserlessToken}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/javascript' },
+            body: code
+        });
+
+        if (!response.ok) {
+            const errText = await response.text();
+            return { html: null, finalUrl: url, error: `HTTP ${response.status}`, browserlessError: errText.slice(0, 300) };
+        }
+
+        const parsed = JSON.parse(await response.text());
+        const html = parsed.data?.html || parsed.html;
+        return { html, finalUrl: parsed.data?.finalUrl || url };
+    } catch (e) {
+        return { html: null, finalUrl: url, error: e.message };
+    }
+}
+
+// Scan ILS site with site-specific logic
 async function scanILSSite(ilsSite, prop) {
     const serpApiKey = process.env.SERP_API_KEY;
     const browserlessToken = process.env.BROWSERLESS_TOKEN;
@@ -291,61 +400,162 @@ async function scanILSSite(ilsSite, prop) {
     }
 
     const methodConfig = SCAN_METHODS.find(m => m.id === ilsSite);
-    const query = `${methodConfig?.searchPattern || 'site:' + ilsSite} "${prop.community_name}" ${prop.city || ''} ${prop.state || ''}`.trim();
+    const config = ILS_CONFIGS[ilsSite] || {};
+
+    // Build search query - be specific to find the right listing
+    const query = `${methodConfig?.searchPattern || 'site:' + ilsSite} "${prop.community_name}" "${prop.city || ''}" ${prop.state || 'TX'}`.trim();
 
     console.log(`[Auto-Scan] Searching ${ilsSite}: ${query}`);
 
     try {
-        // Search for listing
-        const searchResp = await fetch(`${SERPAPI_BASE}?${new URLSearchParams({ engine: 'google', q: query, num: '5', api_key: serpApiKey })}`);
+        // Search for listing on this ILS
+        const searchResp = await fetch(`${SERPAPI_BASE}?${new URLSearchParams({
+            engine: 'google',
+            q: query,
+            num: '5',
+            api_key: serpApiKey
+        })}`);
         const searchData = await searchResp.json();
 
         console.log(`[Auto-Scan] SerpAPI returned ${searchData.organic_results?.length || 0} results`);
 
+        // Find the best matching result (skip reviews, photos, ratings pages)
         const result = searchData.organic_results?.find(r =>
             r.link?.includes(ilsSite.replace('.com', '')) &&
             !r.link?.includes('/reviews') &&
             !r.link?.includes('/photos') &&
-            !r.link?.includes('/ratings')
+            !r.link?.includes('/ratings') &&
+            !r.link?.includes('/nearby')
         );
 
         if (!result?.link) {
             return {
                 units: [],
                 sources: [],
-                errors: [`No ${ilsSite} listing found`],
-                debug: { query, serpResults: searchData.organic_results?.map(r => r.link)?.slice(0, 5) }
+                errors: [`No ${ilsSite} listing found for "${prop.community_name}"`],
+                debug: {
+                    query,
+                    serpResults: searchData.organic_results?.map(r => ({ title: r.title?.slice(0, 50), link: r.link }))?.slice(0, 5),
+                    error: searchData.error
+                }
             };
         }
 
-        console.log(`[Auto-Scan] Found listing: ${result.link}`);
+        console.log(`[Auto-Scan] Found ${ilsSite} listing: ${result.link}`);
 
-        // Scrape the listing
-        const scrapeResult = await scrapePage(result.link, browserlessToken);
+        // Scrape with ILS-specific selectors
+        const scrapeResult = await scrapeILSPage(result.link, browserlessToken, ilsSite);
         if (!scrapeResult.html) {
             return {
                 units: [],
                 sources: [],
                 errors: [scrapeResult.error || 'Failed to scrape ILS page'],
-                debug: { listingUrl: result.link, scrapeError: scrapeResult.error, browserlessError: scrapeResult.browserlessError }
+                debug: {
+                    listingUrl: result.link,
+                    scrapeError: scrapeResult.error,
+                    browserlessError: scrapeResult.browserlessError
+                }
             };
         }
 
-        const extractResult = await extractUnits(scrapeResult.html, prop.community_name, openaiKey);
+        // Extract with ILS-specific hints
+        const extractResult = await extractUnitsFromILS(scrapeResult.html, prop.community_name, openaiKey, ilsSite, config.aiHints);
+
         return {
             units: extractResult.units.map(u => ({ ...u, status: 'available', is_available: true, is_active: true })),
             sources: extractResult.units.length > 0 ? [ilsSite] : [],
             errors: extractResult.error ? [extractResult.error] : [],
             debug: {
                 listingUrl: result.link,
+                finalUrl: scrapeResult.finalUrl,
                 htmlLength: scrapeResult.html.length,
                 aiFoundData: extractResult.foundAnyData,
-                aiReason: extractResult.reason
+                aiReason: extractResult.reason,
+                rawResponse: extractResult.rawResponse?.slice(0, 500)
             }
         };
     } catch (e) {
         console.error(`[scanILSSite] Error:`, e);
         return { units: [], sources: [], errors: [e.message], debug: { exception: e.message } };
+    }
+}
+
+// Extract units from ILS page with site-specific prompts
+async function extractUnitsFromILS(html, propertyName, openaiKey, ilsSite, aiHints) {
+    // Extract JSON-LD first
+    let jsonLdData = '';
+    const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+    if (jsonLdMatches) {
+        jsonLdData = jsonLdMatches.map(m => m.replace(/<\/?script[^>]*>/gi, '')).join('\n').slice(0, 3000);
+    }
+
+    // Clean HTML
+    const text = html
+        .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+        .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+        .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 18000);
+
+    const prompt = `Extract apartment floor plans from this ${ilsSite} listing.
+
+PROPERTY: "${propertyName}"
+
+${aiHints || ''}
+
+EXTRACT:
+- Floor plan name (A1, Studio, The Marina, etc.)
+- Beds, Baths, Sqft
+- Rent (lowest price if range, NUMBER only - no $ or commas)
+- Availability count ("5 Available" = create 5 units)
+- Available date (use ${new Date().toISOString().split('T')[0]} if "Now" or not specified)
+
+RULES:
+1. If "3 Available" for a floor plan, create 3 units: 101, 102, 103
+2. Generate sequential unit_number: 101, 102, 103...
+3. Rent as NUMBER only (1200 not $1,200)
+4. Maximum 20 units total
+5. Check JSON-LD data if present - it's very reliable!
+
+Return JSON only:
+{"units":[{"unit_number":"101","beds":1,"baths":1,"sqft":650,"rent":1195,"available_from":"2025-01-15","floor_plan_name":"A1"}],"found_any_unit_data":true}
+
+If no floor plan data: {"units":[],"found_any_unit_data":false,"reason":"No floor plans found"}`;
+
+    let content = `${prompt}\n\n---PAGE CONTENT---\n${text}`;
+    if (jsonLdData) content += `\n\n---JSON-LD---\n${jsonLdData}`;
+
+    try {
+        const resp = await fetch('https://api.openai.com/v1/chat/completions', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
+            body: JSON.stringify({
+                model: 'gpt-4o-mini',
+                messages: [{ role: 'user', content }],
+                temperature: 0.1,
+                max_tokens: 4000
+            })
+        });
+
+        if (!resp.ok) return { units: [], error: `OpenAI ${resp.status}` };
+
+        const data = await resp.json();
+        const aiResponse = data.choices?.[0]?.message?.content;
+        const match = aiResponse?.match(/\{[\s\S]*\}/);
+
+        if (!match) return { units: [], rawResponse: aiResponse, error: 'No JSON in response' };
+
+        const parsed = JSON.parse(match[0]);
+        return {
+            units: parsed.units || [],
+            foundAnyData: parsed.found_any_unit_data,
+            reason: parsed.reason,
+            rawResponse: aiResponse
+        };
+    } catch (e) {
+        return { units: [], error: e.message };
     }
 }
 
