@@ -192,17 +192,48 @@ async function extractUnits(html, propertyName, openaiKey) {
         console.log(`[extractUnits] Found ${jsonLdMatches.length} JSON-LD blocks (${jsonLdData.length} chars)`);
     }
 
-    // Clean HTML to text (for visible content)
-    const text = html
+    // SMART HTML extraction - focus on floor plan content, not just first 15K chars
+    const cleanHtml = html
         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
         .replace(/<nav[^>]*>[\s\S]*?<\/nav>/gi, '')
         .replace(/<header[^>]*>[\s\S]*?<\/header>/gi, '')
-        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '')
-        .replace(/<[^>]+>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim()
-        .slice(0, 15000);  // Reduced to make room for JSON-LD
+        .replace(/<footer[^>]*>[\s\S]*?<\/footer>/gi, '');
+
+    // Try to find floor plan specific sections first
+    let floorPlanSection = '';
+    const sectionPatterns = [
+        /<section[^>]*(?:floor|plan|pricing|availability)[^>]*>[\s\S]*?<\/section>/gi,
+        /<div[^>]*(?:floor[_-]?plan|pricing|availability)[^>]*>[\s\S]*?<\/div>/gi,
+        /<article[^>]*(?:floor|plan)[^>]*>[\s\S]*?<\/article>/gi,
+    ];
+
+    for (const pattern of sectionPatterns) {
+        const matches = cleanHtml.match(pattern);
+        if (matches) {
+            floorPlanSection = matches.join(' ');
+            console.log(`[extractUnits] Found floor plan section: ${floorPlanSection.length} chars`);
+            break;
+        }
+    }
+
+    // Convert to text
+    const fullText = cleanHtml.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+    const sectionText = floorPlanSection.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+
+    // Use floor plan section if found, otherwise sample from multiple parts of page
+    let text;
+    if (sectionText.length > 500) {
+        text = sectionText.slice(0, 20000);
+        console.log(`[extractUnits] Using floor plan section: ${text.length} chars`);
+    } else {
+        // Sample from start, middle, and end of page (floor plans could be anywhere)
+        const start = fullText.slice(0, 8000);
+        const middle = fullText.slice(Math.floor(fullText.length / 2) - 4000, Math.floor(fullText.length / 2) + 4000);
+        const end = fullText.slice(-6000);
+        text = `${start}\n\n[...MIDDLE OF PAGE...]\n\n${middle}\n\n[...END OF PAGE...]\n\n${end}`;
+        console.log(`[extractUnits] Sampling from full page: start(8K) + middle(8K) + end(6K) = ${text.length} chars`);
+    }
 
     console.log(`[extractUnits] Sending ${text.length} chars + ${jsonLdData.length} JSON-LD chars to OpenAI for "${propertyName}"`);
 
@@ -271,13 +302,13 @@ If NO floor plan data found in either source:
 
         const match = aiResponse?.match(/\{[\s\S]*\}/);
         if (!match) {
-            return { units: [], rawResponse: content, error: 'No JSON in response' };
+            return { units: [], rawResponse: aiResponse, error: 'No JSON in response' };
         }
 
         const parsed = JSON.parse(match[0]);
         return {
             units: parsed.units || [],
-            rawResponse: content,
+            rawResponse: aiResponse,
             foundAnyData: parsed.found_any_unit_data,
             reason: parsed.reason
         };
