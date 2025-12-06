@@ -33,25 +33,41 @@ export default async function handler(req, res) {
             if (error) throw error;
 
             const total = allProps.length;
-            const missingPhone = allProps.filter(p => !p.contact_phone || p.contact_phone === '').length;
-            const missingEmail = allProps.filter(p => !p.contact_email || p.contact_email === '').length;
-            const missingWebsite = allProps.filter(p => !p.website || p.website === '').length;
-            const missingAny = allProps.filter(p =>
-                (!p.contact_phone || p.contact_phone === '') ||
-                (!p.contact_email || p.contact_email === '') ||
-                (!p.website || p.website === '')
+
+            // Count properties with actual data (not null, not empty string)
+            const hasPhone = allProps.filter(p => p.contact_phone && p.contact_phone !== '').length;
+            const hasEmail = allProps.filter(p => p.contact_email && p.contact_email !== '').length;
+            const hasWebsite = allProps.filter(p => p.website && p.website !== '').length;
+
+            // Count properties that haven't been scanned yet (NULL values only)
+            // Empty string means "scanned but nothing found"
+            const needsScanPhone = allProps.filter(p => p.contact_phone === null).length;
+            const needsScanEmail = allProps.filter(p => p.contact_email === null).length;
+            const needsScanWebsite = allProps.filter(p => p.website === null).length;
+
+            // Properties that still need to be scanned (have at least one NULL field)
+            const needsScan = allProps.filter(p =>
+                p.contact_phone === null ||
+                p.contact_email === null ||
+                p.website === null
             ).length;
 
             return res.status(200).json({
                 success: true,
                 stats: {
                     totalProperties: total,
-                    missingPhone,
-                    missingEmail,
-                    missingWebsite,
-                    missingAny,
-                    hasAllContact: total - missingAny,
-                    percentComplete: Math.round(((total - missingAny) / total) * 100)
+                    hasPhone,
+                    hasEmail,
+                    hasWebsite,
+                    needsScan,
+                    needsScanPhone,
+                    needsScanEmail,
+                    needsScanWebsite,
+                    // For display - show how many are missing (including already scanned)
+                    missingPhone: total - hasPhone,
+                    missingEmail: total - hasEmail,
+                    missingWebsite: total - hasWebsite,
+                    percentComplete: Math.round((hasPhone / total) * 100)
                 }
             });
         } catch (error) {
@@ -128,10 +144,17 @@ export default async function handler(req, res) {
             }
 
             if (Object.keys(updates).length === 0) {
-                // Nothing new found, but mark as checked
+                // Nothing new found - set empty strings so property won't be selected again
+                const markAsChecked = { updated_at: new Date().toISOString() };
+
+                // Set empty strings for null fields so they don't match .is.null filter
+                if (prop.contact_phone === null) markAsChecked.contact_phone = '';
+                if (prop.contact_email === null) markAsChecked.contact_email = '';
+                if (prop.website === null) markAsChecked.website = '';
+
                 await supabase
                     .from('properties')
-                    .update({ updated_at: new Date().toISOString() })
+                    .update(markAsChecked)
                     .eq('id', prop.id);
 
                 return res.status(200).json({

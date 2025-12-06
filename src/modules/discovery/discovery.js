@@ -549,9 +549,10 @@ async function loadContactScanStats() {
             const emailEl = document.getElementById('missingEmailCount');
             const websiteEl = document.getElementById('missingWebsiteCount');
 
-            if (phoneEl) phoneEl.textContent = s.missingPhone;
-            if (emailEl) emailEl.textContent = s.missingEmail;
-            if (websiteEl) websiteEl.textContent = s.missingWebsite;
+            // Show "has X" / "need scan Y" format
+            if (phoneEl) phoneEl.textContent = `${s.hasPhone} ✓ / ${s.needsScanPhone} to scan`;
+            if (emailEl) emailEl.textContent = `${s.hasEmail} ✓ / ${s.needsScanEmail} to scan`;
+            if (websiteEl) websiteEl.textContent = `${s.hasWebsite} ✓ / ${s.needsScanWebsite} to scan`;
         }
     } catch (e) {
         console.error('[ContactScan] Stats error:', e);
@@ -594,9 +595,9 @@ async function runContactScan() {
         // Get initial stats
         const statsResp = await fetch(`${API_BASE_URL}/api/property/scan-contacts`);
         const statsData = await statsResp.json();
-        const totalMissing = statsData.stats?.missingAny || 0;
+        const needsScan = statsData.stats?.needsScan || 0;
 
-        addLogEntry('info', `📋 Found ${totalMissing} properties missing contact info`);
+        addLogEntry('info', `📋 Found ${needsScan} properties to scan for contact info`);
 
         // Scan loop - one property at a time
         while (!contactScanShouldStop) {
