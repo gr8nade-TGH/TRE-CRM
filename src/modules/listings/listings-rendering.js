@@ -601,7 +601,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					console.log('Property:', prop.name);
 
 					const { openPhotoGalleryModal } = await import('./photo-gallery.js');
-					await openPhotoGalleryModal(prop);
+					await openPhotoGalleryModal(prop, { state, SupabaseAPI, toast });
 				});
 			}
 

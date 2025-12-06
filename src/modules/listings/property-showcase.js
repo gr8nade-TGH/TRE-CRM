@@ -63,13 +63,15 @@ function createModal() {
     modalElement.id = 'propertyShowcaseModal';
     modalElement.className = 'modal hidden';
     modalElement.innerHTML = `
-        <div class="modal-card showcase-modal" style="max-width: 1000px; width: 95%; max-height: 90vh;">
-            <div class="modal-header showcase-header">
-                <h3 id="showcasePropertyTitle">🏢 Property Details</h3>
-                <button class="icon-btn close-showcase" aria-label="Close">×</button>
-            </div>
-            <div class="modal-body showcase-body" style="padding: 0; overflow-y: auto; max-height: calc(90vh - 60px);">
-                <div id="showcaseContent"></div>
+        <div class="modal-card showcase-modal">
+            <button class="showcase-close-btn" aria-label="Close">×</button>
+            <div class="showcase-body-wrapper">
+                <div id="showcaseContent">
+                    <div class="showcase-loading">
+                        <div class="loading-spinner"></div>
+                        <p>Loading property details...</p>
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -77,15 +79,22 @@ function createModal() {
     document.body.appendChild(modalElement);
 
     // Close handlers
-    modalElement.querySelector('.close-showcase').addEventListener('click', closePropertyShowcase);
+    modalElement.querySelector('.showcase-close-btn').addEventListener('click', closePropertyShowcase);
     modalElement.addEventListener('click', (e) => {
         if (e.target === modalElement) closePropertyShowcase();
     });
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && !modalElement.classList.contains('hidden')) {
-            closePropertyShowcase();
-        }
-    });
+
+    // Keyboard navigation
+    document.addEventListener('keydown', handleKeyboard);
+}
+
+let keyboardHandler = null;
+function handleKeyboard(e) {
+    if (!modalElement || modalElement.classList.contains('hidden')) return;
+
+    if (e.key === 'Escape') {
+        closePropertyShowcase();
+    }
 }
 
 /**
@@ -100,9 +109,10 @@ function populateModal(property, units, floorPlans) {
     const zip = property.zip_code || '';
     const fullAddress = [address, city, stateAbbr, zip].filter(Boolean).join(', ');
 
-    // Photos
+    // Photos - include floor plan images too
     const photos = property.photos || [];
     const thumbnail = property.thumbnail;
+    const floorPlanImages = floorPlans.filter(fp => fp.image_url).map(fp => fp.image_url);
     const allPhotos = thumbnail ? [thumbnail, ...photos.filter(p => p !== thumbnail)] : photos;
     currentPhotos = [...allPhotos]; // Store for delete functionality
     const primaryPhoto = allPhotos[0] || 'https://via.placeholder.com/800x400?text=No+Photo';
@@ -111,17 +121,22 @@ function populateModal(property, units, floorPlans) {
     const isManager = currentOptions.state?.role === 'manager';
     const isAgentView = !currentOptions.state?.customerView?.isActive;
     const canDeletePhotos = isManager && isAgentView;
+    const canEdit = isManager && isAgentView;
 
     // Pricing
     const rentMin = property.rent_range_min || property.rent_min || 0;
     const rentMax = property.rent_range_max || property.rent_max || 0;
-    const rentDisplay = rentMin === rentMax ? `$${rentMin.toLocaleString()}` : `$${rentMin.toLocaleString()} - $${rentMax.toLocaleString()}`;
+    const rentDisplay = rentMin && rentMax
+        ? (rentMin === rentMax ? `$${rentMin.toLocaleString()}` : `$${rentMin.toLocaleString()} - $${rentMax.toLocaleString()}`)
+        : 'Contact for pricing';
 
     // Beds/Baths
     const bedsMin = property.beds_min || 0;
     const bedsMax = property.beds_max || bedsMin;
     const bathsMin = property.baths_min || 0;
     const bathsMax = property.baths_max || bathsMin;
+    const sqftMin = property.sqft_min || 0;
+    const sqftMax = property.sqft_max || sqftMin;
 
     // Contact
     const phone = property.contact_phone || property.phone || '';
@@ -135,17 +150,22 @@ function populateModal(property, units, floorPlans) {
     // Commission
     const commission = property.commission_pct || Math.max(property.escort_pct || 0, property.send_pct || 0);
 
-    // Update title
-    document.getElementById('showcasePropertyTitle').innerHTML = `🏢 ${name}`;
+    // Data completeness score
+    const completenessFields = [name, address, phone, email, website, allPhotos.length > 0, amenities.length > 0, rentMin > 0];
+    const completeness = Math.round((completenessFields.filter(Boolean).length / completenessFields.length) * 100);
 
     content.innerHTML = buildShowcaseHTML(property, {
         name, fullAddress, primaryPhoto, allPhotos, rentDisplay,
-        bedsMin, bedsMax, bathsMin, bathsMax, phone, email, contactName,
-        website, amenities, commission, units, floorPlans, canDeletePhotos
+        bedsMin, bedsMax, bathsMin, bathsMax, sqftMin, sqftMax,
+        phone, email, contactName, website, amenities, commission,
+        units, floorPlans, floorPlanImages, canDeletePhotos, canEdit, completeness
     });
 
     // Add photo gallery click handlers
     setupPhotoGallery(allPhotos, canDeletePhotos);
+
+    // Setup quick action handlers
+    setupQuickActions(property);
 }
 
 /**
@@ -156,34 +176,56 @@ function buildShowcaseHTML(property, data) {
 }
 
 function buildHeroSection(data) {
-    const photoThumbs = data.allPhotos.slice(0, 5).map((photo, i) => `
+    const photoThumbs = data.allPhotos.slice(0, 6).map((photo, i) => `
         <div class="showcase-thumb ${i === 0 ? 'active' : ''}" data-photo-index="${i}">
             <img src="${photo}" alt="Photo ${i + 1}" onerror="this.src='https://via.placeholder.com/100x70?text=Error'">
             ${data.canDeletePhotos ? `<button class="photo-delete-btn" data-photo-url="${encodeURIComponent(photo)}" data-photo-index="${i}" title="Delete photo">×</button>` : ''}
         </div>
     `).join('');
 
+    // Completeness indicator color
+    const completenessColor = data.completeness >= 80 ? '#22c55e' : data.completeness >= 50 ? '#f59e0b' : '#ef4444';
+
     return `
         <div class="showcase-hero">
             <div class="showcase-main-photo">
                 <img id="showcaseMainPhoto" src="${data.primaryPhoto}" alt="${data.name}"
                      onerror="this.src='https://via.placeholder.com/800x400?text=No+Photo'">
-                ${data.allPhotos.length > 1 ? `<span class="photo-nav photo-prev">❮</span><span class="photo-nav photo-next">❯</span>` : ''}
+                ${data.allPhotos.length > 1 ? `<span class="photo-nav photo-prev" title="Previous (←)">❮</span><span class="photo-nav photo-next" title="Next (→)">❯</span>` : ''}
                 ${data.canDeletePhotos && data.allPhotos.length > 0 ? `<button class="photo-delete-btn main-photo-delete" data-photo-url="${encodeURIComponent(data.primaryPhoto)}" data-photo-index="0" title="Delete this photo">×</button>` : ''}
-                <div class="showcase-photo-count">${data.allPhotos.length} photos</div>
+                <div class="showcase-photo-count">
+                    <span class="photo-counter-current">1</span> / ${data.allPhotos.length || 1}
+                </div>
             </div>
-            ${data.allPhotos.length > 1 ? `<div class="showcase-thumbs">${photoThumbs}</div>` : ''}
+            ${data.allPhotos.length > 1 ? `
+                <div class="showcase-thumbs-wrapper">
+                    <div class="showcase-thumbs">${photoThumbs}</div>
+                    ${data.allPhotos.length > 6 ? `<span class="more-photos">+${data.allPhotos.length - 6} more</span>` : ''}
+                </div>
+            ` : ''}
         </div>
         <div class="showcase-header-info">
             <div class="showcase-title-row">
                 <h2 class="showcase-name">${data.name}</h2>
-                ${data.commission > 0 ? `<span class="showcase-commission">💰 ${data.commission}% Commission</span>` : ''}
+                <div class="showcase-badges">
+                    ${data.commission > 0 ? `<span class="showcase-commission">💰 ${data.commission}%</span>` : ''}
+                    ${data.canEdit ? `<span class="showcase-completeness" style="background: ${completenessColor}20; color: ${completenessColor}; border: 1px solid ${completenessColor};">${data.completeness}% Complete</span>` : ''}
+                </div>
             </div>
             <p class="showcase-address">📍 ${data.fullAddress}</p>
+
             <div class="showcase-quick-stats">
-                <div class="stat-pill rent"><span class="stat-icon">💵</span>${data.rentDisplay}/mo</div>
-                <div class="stat-pill beds"><span class="stat-icon">🛏</span>${data.bedsMin}-${data.bedsMax} Beds</div>
-                <div class="stat-pill baths"><span class="stat-icon">🚿</span>${data.bathsMin}-${data.bathsMax} Baths</div>
+                <div class="stat-pill rent"><span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span></div>
+                <div class="stat-pill beds"><span class="stat-icon">🛏</span><span class="stat-value">${data.bedsMin}${data.bedsMax !== data.bedsMin ? `-${data.bedsMax}` : ''}</span><span class="stat-label">Beds</span></div>
+                <div class="stat-pill baths"><span class="stat-icon">🚿</span><span class="stat-value">${data.bathsMin}${data.bathsMax !== data.bathsMin ? `-${data.bathsMax}` : ''}</span><span class="stat-label">Baths</span></div>
+                ${data.sqftMin ? `<div class="stat-pill sqft"><span class="stat-icon">📐</span><span class="stat-value">${data.sqftMin.toLocaleString()}${data.sqftMax !== data.sqftMin ? `-${data.sqftMax.toLocaleString()}` : ''}</span><span class="stat-label">sqft</span></div>` : ''}
+            </div>
+
+            <div class="showcase-quick-actions">
+                ${data.phone ? `<a href="tel:${data.phone}" class="quick-action-btn call"><span>📞</span> Call</a>` : ''}
+                ${data.email ? `<a href="mailto:${data.email}" class="quick-action-btn email"><span>✉️</span> Email</a>` : ''}
+                ${data.website ? `<a href="${data.website}" target="_blank" class="quick-action-btn website"><span>🌐</span> Website</a>` : ''}
+                ${data.canEdit ? `<button class="quick-action-btn edit" data-action="edit"><span>✏️</span> Edit</button>` : ''}
             </div>
         </div>
     `;
@@ -279,6 +321,10 @@ function setupPhotoGallery(photos, canDeletePhotos = false) {
         mainPhoto.src = photos[currentIndex];
         thumbs.forEach((t, i) => t.classList.toggle('active', i === currentIndex));
 
+        // Update photo counter
+        const counterEl = document.querySelector('.photo-counter-current');
+        if (counterEl) counterEl.textContent = currentIndex + 1;
+
         // Update main delete button to current photo
         if (mainDeleteBtn) {
             mainDeleteBtn.dataset.photoUrl = encodeURIComponent(photos[currentIndex]);
@@ -357,3 +403,23 @@ async function handlePhotoDelete(photoUrl) {
     }
 }
 
+/**
+ * Setup quick action button handlers
+ */
+function setupQuickActions(property) {
+    const editBtn = document.querySelector('.quick-action-btn.edit');
+    if (editBtn) {
+        editBtn.addEventListener('click', async () => {
+            closePropertyShowcase();
+            // Small delay to let the modal close
+            setTimeout(async () => {
+                try {
+                    const { openListingEditModal } = await import('../modals/listing-modals.js');
+                    await openListingEditModal(property, currentOptions);
+                } catch (error) {
+                    console.error('Error opening edit modal:', error);
+                }
+            }, 200);
+        });
+    }
+}

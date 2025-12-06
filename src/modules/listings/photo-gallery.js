@@ -1,15 +1,19 @@
 /**
  * Photo Gallery Module
  * Handles displaying property photos and floor plan images in a modal gallery
- * 
+ *
  * @module listings/photo-gallery
  */
+
+let currentGalleryProperty = null;
+let currentGalleryOptions = {};
 
 /**
  * Open the photo gallery modal for a property
  * @param {Object} property - The property object containing photos and floor plans
+ * @param {Object} options - Options including state, SupabaseAPI, toast
  */
-export async function openPhotoGalleryModal(property) {
+export async function openPhotoGalleryModal(property, options = {}) {
 	const modal = document.getElementById('photoGalleryModal');
 	const titleEl = document.getElementById('photoGalleryTitle');
 	const contentEl = document.getElementById('photoGalleryContent');
@@ -19,6 +23,12 @@ export async function openPhotoGalleryModal(property) {
 		console.error('Photo gallery modal elements not found');
 		return;
 	}
+
+	currentGalleryProperty = property;
+	currentGalleryOptions = options;
+
+	// Check if user can delete photos (manager in Agent View)
+	const canDelete = options.state?.role === 'manager' && !options.state?.customerView?.isActive;
 
 	const propertyName = property.community_name || property.name;
 	titleEl.textContent = `📷 ${propertyName} - Photos`;
@@ -64,11 +74,12 @@ export async function openPhotoGalleryModal(property) {
 					<h4 class="gallery-section-title">🏢 Property Photos</h4>
 					<div class="gallery-grid">
 						${exteriorPhotos.map((img, i) => `
-							<div class="gallery-item" data-index="${i}" data-type="exterior">
-								<img src="${img.url}" alt="${img.label}" 
+							<div class="gallery-item" data-index="${i}" data-type="exterior" data-url="${encodeURIComponent(img.url)}">
+								<img src="${img.url}" alt="${img.label}"
 									loading="lazy"
 									onerror="this.parentElement.classList.add('load-error'); this.style.display='none';">
 								<div class="gallery-item-label">${img.label}</div>
+								${canDelete ? `<button class="gallery-delete-btn" data-url="${encodeURIComponent(img.url)}" data-type="exterior" title="Delete photo">×</button>` : ''}
 							</div>
 						`).join('')}
 					</div>
@@ -79,11 +90,12 @@ export async function openPhotoGalleryModal(property) {
 					<h4 class="gallery-section-title">📐 Floor Plans</h4>
 					<div class="gallery-grid floor-plans">
 						${floorPlanImages.map((img, i) => `
-							<div class="gallery-item floor-plan" data-index="${exteriorPhotos.length + i}" data-type="floorplan">
+							<div class="gallery-item floor-plan" data-index="${exteriorPhotos.length + i}" data-type="floorplan" data-floorplan-id="${floorPlans[i]?.id || ''}">
 								<img src="${img.url}" alt="${img.label}"
 									loading="lazy"
 									onerror="this.parentElement.classList.add('load-error'); this.style.display='none';">
 								<div class="gallery-item-label">${img.label}</div>
+								${canDelete ? `<button class="gallery-delete-btn" data-floorplan-id="${floorPlans[i]?.id || ''}" data-type="floorplan" title="Delete floor plan image">×</button>` : ''}
 							</div>
 						`).join('')}
 					</div>
@@ -93,13 +105,20 @@ export async function openPhotoGalleryModal(property) {
 
 		// Add click handlers to open full-size images
 		contentEl.querySelectorAll('.gallery-item').forEach(item => {
-			item.addEventListener('click', () => {
+			item.addEventListener('click', (e) => {
+				// Don't open viewer if clicking delete button
+				if (e.target.classList.contains('gallery-delete-btn')) return;
 				const img = item.querySelector('img');
 				if (img && img.src) {
-					openFullSizeViewer(img.src, allImages, parseInt(item.dataset.index));
+					openFullSizeViewer(img.src, allImages, parseInt(item.dataset.index), canDelete);
 				}
 			});
 		});
+
+		// Add delete button handlers
+		if (canDelete) {
+			setupDeleteHandlers(contentEl, property, options);
+		}
 	}
 
 	// Show modal
@@ -206,3 +225,92 @@ function openFullSizeViewer(initialSrc, allImages, startIndex) {
 	observer.observe(document.body, { childList: true });
 }
 
+/**
+ * Setup delete handlers for gallery items
+ */
+function setupDeleteHandlers(contentEl, property, options) {
+	const deleteButtons = contentEl.querySelectorAll('.gallery-delete-btn');
+	deleteButtons.forEach(btn => {
+		btn.addEventListener('click', async (e) => {
+			e.stopPropagation();
+			const type = btn.dataset.type;
+
+			if (type === 'exterior') {
+				const photoUrl = decodeURIComponent(btn.dataset.url);
+				await handlePhotoDelete(photoUrl, property, options);
+			} else if (type === 'floorplan') {
+				const floorplanId = btn.dataset.floorplanId;
+				await handleFloorPlanImageDelete(floorplanId, property, options);
+			}
+		});
+	});
+}
+
+/**
+ * Handle photo deletion
+ */
+async function handlePhotoDelete(photoUrl, property, options) {
+	const { SupabaseAPI, toast } = options;
+
+	const confirmed = confirm('Are you sure you want to delete this photo?\n\nThis action cannot be undone.');
+	if (!confirmed) return;
+
+	try {
+		const photos = property.photos || [];
+		const thumbnail = property.thumbnail;
+
+		// Remove photo from array
+		const updatedPhotos = photos.filter(p => p !== photoUrl);
+		const updatedThumbnail = thumbnail === photoUrl ? (updatedPhotos[0] || null) : thumbnail;
+
+		if (SupabaseAPI) {
+			await SupabaseAPI.updateProperty(property.id, {
+				photos: updatedPhotos,
+				thumbnail: updatedThumbnail
+			});
+
+			// Update local property and refresh gallery
+			property.photos = updatedPhotos;
+			property.thumbnail = updatedThumbnail;
+
+			// Re-render gallery
+			await openPhotoGalleryModal(property, options);
+			toast?.('Photo deleted successfully', 'success');
+		}
+	} catch (error) {
+		console.error('Error deleting photo:', error);
+		toast?.('Failed to delete photo', 'error');
+	}
+}
+
+/**
+ * Handle floor plan image deletion
+ */
+async function handleFloorPlanImageDelete(floorplanId, property, options) {
+	const { SupabaseAPI, toast } = options;
+
+	if (!floorplanId) {
+		toast?.('Cannot delete: floor plan ID not found', 'error');
+		return;
+	}
+
+	const confirmed = confirm('Are you sure you want to delete this floor plan image?\n\nThis will remove the image from the floor plan record.');
+	if (!confirmed) return;
+
+	try {
+		if (SupabaseAPI) {
+			// Update floor plan to remove image_url
+			await SupabaseAPI.updateFloorPlan(floorplanId, { image_url: null });
+
+			// Refresh floor plans and re-render gallery
+			const floorPlans = await SupabaseAPI.getFloorPlans(property.id) || [];
+			property.floorPlans = floorPlans;
+
+			await openPhotoGalleryModal(property, options);
+			toast?.('Floor plan image deleted successfully', 'success');
+		}
+	} catch (error) {
+		console.error('Error deleting floor plan image:', error);
+		toast?.('Failed to delete floor plan image', 'error');
+	}
+}
