@@ -1356,3 +1356,324 @@ body.mission-control-active #smartMatchConfigForm {
 	border-color: var(--mc-accent-cyan);
 	background: rgba(6, 182, 212, 0.1);
 }
+
+/* ============================================
+   BACKUPS PAGE STYLES
+   ============================================ */
+.backups-page {
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 24px;
+	background: var(--mc-bg-primary);
+	min-height: 100vh;
+	color: var(--mc-text-primary);
+}
+
+.backups-page .mc-header h1 {
+	font-size: 28px;
+	margin: 0 0 8px 0;
+	background: linear-gradient(135deg, var(--mc-accent-cyan) 0%, var(--mc-accent-blue) 100%);
+	-webkit-background-clip: text;
+	-webkit-text-fill-color: transparent;
+	background-clip: text;
+}
+
+.backups-page .mc-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 24px;
+}
+
+/* Backup Status Grid */
+.backup-status-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 16px;
+}
+
+.backup-stat {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 16px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 8px;
+}
+
+.backup-stat-label {
+	font-size: 12px;
+	color: var(--mc-text-secondary);
+	font-weight: 500;
+}
+
+.backup-stat-value {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--mc-accent-cyan);
+	font-family: 'Courier New', monospace;
+}
+
+/* Backup Options */
+.backup-options {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.backup-option {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 12px 16px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.backup-option:hover {
+	border-color: var(--mc-accent-blue);
+}
+
+.backup-option input[type="checkbox"] {
+	width: 18px;
+	height: 18px;
+	accent-color: var(--mc-accent-cyan);
+}
+
+.backup-option span:first-of-type {
+	flex: 1;
+	color: var(--mc-text-primary);
+	font-size: 14px;
+}
+
+.backup-count {
+	font-size: 12px;
+	color: var(--mc-text-muted);
+	font-family: 'Courier New', monospace;
+	padding: 4px 8px;
+	background: var(--mc-bg-secondary);
+	border-radius: 4px;
+}
+
+/* Backup Actions */
+.backup-actions {
+	margin-top: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.backup-actions .btn-primary {
+	background: linear-gradient(135deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
+	border: none;
+	padding: 14px 24px;
+	font-size: 14px;
+	font-weight: 600;
+	color: white;
+	border-radius: 8px;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	transition: all 0.3s ease;
+	box-shadow: 0 0 20px var(--mc-glow-blue);
+}
+
+.backup-actions .btn-primary:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 0 30px var(--mc-glow-cyan);
+}
+
+.backup-actions .btn-primary:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	transform: none;
+}
+
+.backup-hint {
+	font-size: 12px;
+	color: var(--mc-text-muted);
+	margin: 0;
+}
+
+/* Backup Progress */
+.backup-progress {
+	margin-top: 20px;
+	padding: 16px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 8px;
+}
+
+.backup-progress .progress-label {
+	display: flex;
+	justify-content: space-between;
+	margin-bottom: 10px;
+	font-size: 13px;
+	color: var(--mc-text-secondary);
+}
+
+.backup-progress .progress-bar-container {
+	height: 8px;
+	background: var(--mc-bg-secondary);
+	border-radius: 4px;
+	overflow: hidden;
+}
+
+.backup-progress .progress-bar {
+	height: 100%;
+	background: linear-gradient(90deg, var(--mc-accent-blue) 0%, var(--mc-accent-cyan) 100%);
+	border-radius: 4px;
+	transition: width 0.3s ease;
+	box-shadow: 0 0 10px var(--mc-glow-blue);
+}
+
+/* Backup History Table */
+.backup-history-table-container {
+	overflow-x: auto;
+}
+
+.backup-history-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 14px;
+}
+
+.backup-history-table th,
+.backup-history-table td {
+	padding: 14px 16px;
+	text-align: left;
+	border-bottom: 1px solid var(--mc-border-primary);
+}
+
+.backup-history-table th {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--mc-text-secondary);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	background: var(--mc-bg-tertiary);
+}
+
+.backup-history-table td {
+	color: var(--mc-text-primary);
+}
+
+.backup-history-table tbody tr:hover {
+	background: var(--mc-bg-tertiary);
+}
+
+/* Backup Info Grid */
+.backup-info-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+}
+
+.backup-info-card {
+	padding: 20px;
+	background: var(--mc-bg-tertiary);
+	border: 1px solid var(--mc-border-primary);
+	border-radius: 8px;
+}
+
+.backup-info-card h4 {
+	margin: 0 0 12px 0;
+	font-size: 14px;
+	color: var(--mc-text-primary);
+}
+
+.backup-info-card p {
+	margin: 0;
+	font-size: 13px;
+	color: var(--mc-text-secondary);
+	line-height: 1.5;
+}
+
+.backup-info-card strong {
+	color: var(--mc-accent-orange);
+}
+
+/* Badges */
+.badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 4px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 12px;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.badge-success {
+	background: rgba(16, 185, 129, 0.15);
+	color: var(--mc-accent-green);
+	border: 1px solid var(--mc-accent-green);
+}
+
+.badge-inactive {
+	background: rgba(107, 114, 128, 0.15);
+	color: var(--mc-text-muted);
+	border: 1px solid var(--mc-border-primary);
+}
+
+.badge-info {
+	background: rgba(59, 130, 246, 0.15);
+	color: var(--mc-accent-blue);
+	border: 1px solid var(--mc-accent-blue);
+}
+
+.badge-warning {
+	background: rgba(245, 158, 11, 0.15);
+	color: var(--mc-accent-orange);
+	border: 1px solid var(--mc-accent-orange);
+}
+
+.badge-error {
+	background: rgba(239, 68, 68, 0.15);
+	color: var(--mc-accent-red);
+	border: 1px solid var(--mc-accent-red);
+}
+
+/* Loading spinner for backup history */
+.backup-loading td {
+	text-align: center;
+	padding: 40px !important;
+	color: var(--mc-text-muted);
+}
+
+.backup-loading-spinner {
+	width: 24px;
+	height: 24px;
+	border: 3px solid var(--mc-border-primary);
+	border-top-color: var(--mc-accent-cyan);
+	border-radius: 50%;
+	animation: spin 0.8s linear infinite;
+	margin: 0 auto 12px;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+	.backups-page .mc-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.backup-info-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+@media (max-width: 768px) {
+	.backups-page {
+		padding: 16px;
+	}
+
+	.backup-status-grid {
+		grid-template-columns: 1fr;
+	}
+}
