@@ -278,7 +278,8 @@ export async function smartUnitSearch({ propertyId, propertyName, leasingUrl, ci
             console.log(`[Step 3] ✅ Scraped ${scrapeResult.floorPlans.length} floor plans`);
         }
         if (scrapeResult.specials?.length > 0 && results.specials.length === 0) {
-            results.specials = scrapeResult.specials;
+            // Add source URL to scraped specials
+            results.specials = scrapeResult.specials.map(s => ({ ...s, source_url: leasingUrl }));
             console.log(`[Step 3] 🔥 Scraped ${scrapeResult.specials.length} specials`);
         }
         if (scrapeResult.images?.length > 0) results.images.floorPlans.push(...scrapeResult.images);

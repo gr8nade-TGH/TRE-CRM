@@ -2127,6 +2127,7 @@ export async function getAllSpecialsForListings() {
                 id: special.id,
                 text: special.special_text,
                 source: special.source,
+                sourceUrl: special.source_url,
                 expires: special.expires_at,
                 discoveredAt: special.discovered_at,
                 isActive: special.is_active && (!special.expires_at || new Date(special.expires_at) > new Date()),

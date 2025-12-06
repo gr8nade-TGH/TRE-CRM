@@ -431,6 +431,7 @@ export default async function handler(req, res) {
                                     property_id: prop.id,
                                     special_text: special.text,
                                     source: unitResult.sources.includes('browserless') ? 'browserless' : 'serpapi',
+                                    source_url: special.source_url || prop.leasing_link || prop.website || null,
                                     discovered_at: new Date().toISOString(),
                                     expires_at: special.expires ? new Date(special.expires).toISOString() : null,
                                     is_active: true,
