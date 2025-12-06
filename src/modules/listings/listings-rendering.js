@@ -541,7 +541,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					console.log('Opening showcase for:', prop.name);
 					try {
 						const { openPropertyShowcase } = await import('./property-showcase.js');
-						await openPropertyShowcase(prop, { SupabaseAPI, toast });
+						await openPropertyShowcase(prop, { SupabaseAPI, toast, state });
 					} catch (error) {
 						console.error('Error opening property showcase:', error);
 						toast?.('Failed to open property showcase', 'error');

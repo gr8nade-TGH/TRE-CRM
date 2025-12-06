@@ -7,13 +7,16 @@ import { formatDate } from '../../utils/helpers.js';
 
 let currentProperty = null;
 let modalElement = null;
+let currentOptions = {};
+let currentPhotos = [];
 
 /**
  * Open the property showcase modal
  */
 export async function openPropertyShowcase(property, options = {}) {
-    const { SupabaseAPI, toast } = options;
+    const { SupabaseAPI, toast, state } = options;
     currentProperty = property;
+    currentOptions = options;
 
     // Fetch full property data including units and floor plans
     let fullProperty = property;
@@ -93,15 +96,21 @@ function populateModal(property, units, floorPlans) {
     const name = property.community_name || property.name || 'Unknown Property';
     const address = property.street_address || property.address || '';
     const city = property.city || '';
-    const state = property.state || 'TX';
+    const stateAbbr = property.state || 'TX';
     const zip = property.zip_code || '';
-    const fullAddress = [address, city, state, zip].filter(Boolean).join(', ');
+    const fullAddress = [address, city, stateAbbr, zip].filter(Boolean).join(', ');
 
     // Photos
     const photos = property.photos || [];
     const thumbnail = property.thumbnail;
     const allPhotos = thumbnail ? [thumbnail, ...photos.filter(p => p !== thumbnail)] : photos;
+    currentPhotos = [...allPhotos]; // Store for delete functionality
     const primaryPhoto = allPhotos[0] || 'https://via.placeholder.com/800x400?text=No+Photo';
+
+    // Check if user is manager (can delete photos)
+    const isManager = currentOptions.state?.role === 'manager';
+    const isAgentView = !currentOptions.state?.customerView?.isActive;
+    const canDeletePhotos = isManager && isAgentView;
 
     // Pricing
     const rentMin = property.rent_range_min || property.rent_min || 0;
@@ -132,11 +141,11 @@ function populateModal(property, units, floorPlans) {
     content.innerHTML = buildShowcaseHTML(property, {
         name, fullAddress, primaryPhoto, allPhotos, rentDisplay,
         bedsMin, bedsMax, bathsMin, bathsMax, phone, email, contactName,
-        website, amenities, commission, units, floorPlans
+        website, amenities, commission, units, floorPlans, canDeletePhotos
     });
 
     // Add photo gallery click handlers
-    setupPhotoGallery(allPhotos);
+    setupPhotoGallery(allPhotos, canDeletePhotos);
 }
 
 /**
@@ -150,6 +159,7 @@ function buildHeroSection(data) {
     const photoThumbs = data.allPhotos.slice(0, 5).map((photo, i) => `
         <div class="showcase-thumb ${i === 0 ? 'active' : ''}" data-photo-index="${i}">
             <img src="${photo}" alt="Photo ${i + 1}" onerror="this.src='https://via.placeholder.com/100x70?text=Error'">
+            ${data.canDeletePhotos ? `<button class="photo-delete-btn" data-photo-url="${encodeURIComponent(photo)}" data-photo-index="${i}" title="Delete photo">×</button>` : ''}
         </div>
     `).join('');
 
@@ -159,6 +169,7 @@ function buildHeroSection(data) {
                 <img id="showcaseMainPhoto" src="${data.primaryPhoto}" alt="${data.name}"
                      onerror="this.src='https://via.placeholder.com/800x400?text=No+Photo'">
                 ${data.allPhotos.length > 1 ? `<span class="photo-nav photo-prev">❮</span><span class="photo-nav photo-next">❯</span>` : ''}
+                ${data.canDeletePhotos && data.allPhotos.length > 0 ? `<button class="photo-delete-btn main-photo-delete" data-photo-url="${encodeURIComponent(data.primaryPhoto)}" data-photo-index="0" title="Delete this photo">×</button>` : ''}
                 <div class="showcase-photo-count">${data.allPhotos.length} photos</div>
             </div>
             ${data.allPhotos.length > 1 ? `<div class="showcase-thumbs">${photoThumbs}</div>` : ''}
@@ -254,23 +265,95 @@ function buildUnitsSection(data) {
     `;
 }
 
-function setupPhotoGallery(photos) {
-    if (photos.length <= 1) return;
-
+function setupPhotoGallery(photos, canDeletePhotos = false) {
     let currentIndex = 0;
     const mainPhoto = document.getElementById('showcaseMainPhoto');
     const thumbs = document.querySelectorAll('.showcase-thumb');
     const prevBtn = document.querySelector('.photo-prev');
     const nextBtn = document.querySelector('.photo-next');
+    const mainDeleteBtn = document.querySelector('.main-photo-delete');
 
     function showPhoto(index) {
+        if (photos.length === 0) return;
         currentIndex = (index + photos.length) % photos.length;
         mainPhoto.src = photos[currentIndex];
         thumbs.forEach((t, i) => t.classList.toggle('active', i === currentIndex));
+
+        // Update main delete button to current photo
+        if (mainDeleteBtn) {
+            mainDeleteBtn.dataset.photoUrl = encodeURIComponent(photos[currentIndex]);
+            mainDeleteBtn.dataset.photoIndex = currentIndex;
+        }
     }
 
-    thumbs.forEach((thumb, i) => thumb.addEventListener('click', () => showPhoto(i)));
-    if (prevBtn) prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
-    if (nextBtn) nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
+    if (photos.length > 1) {
+        thumbs.forEach((thumb, i) => {
+            thumb.addEventListener('click', (e) => {
+                // Ignore if clicking delete button
+                if (e.target.classList.contains('photo-delete-btn')) return;
+                showPhoto(i);
+            });
+        });
+        if (prevBtn) prevBtn.addEventListener('click', () => showPhoto(currentIndex - 1));
+        if (nextBtn) nextBtn.addEventListener('click', () => showPhoto(currentIndex + 1));
+    }
+
+    // Setup delete handlers
+    if (canDeletePhotos) {
+        const deleteButtons = document.querySelectorAll('.photo-delete-btn');
+        deleteButtons.forEach(btn => {
+            btn.addEventListener('click', async (e) => {
+                e.stopPropagation();
+                const photoUrl = decodeURIComponent(btn.dataset.photoUrl);
+                await handlePhotoDelete(photoUrl);
+            });
+        });
+    }
+}
+
+/**
+ * Handle photo deletion
+ */
+async function handlePhotoDelete(photoUrl) {
+    const { SupabaseAPI, toast } = currentOptions;
+
+    // Confirmation dialog
+    const confirmed = confirm('Are you sure you want to delete this photo?\n\nThis action cannot be undone.');
+    if (!confirmed) return;
+
+    try {
+        // Get current property photos
+        const property = currentProperty;
+        const photos = property.photos || [];
+        const thumbnail = property.thumbnail;
+
+        // Remove the photo from the array
+        const updatedPhotos = photos.filter(p => p !== photoUrl);
+
+        // If deleting thumbnail, update that too
+        const updatedThumbnail = thumbnail === photoUrl ? (updatedPhotos[0] || null) : thumbnail;
+
+        // Update in Supabase
+        if (SupabaseAPI) {
+            await SupabaseAPI.updateProperty(property.id, {
+                photos: updatedPhotos,
+                thumbnail: updatedThumbnail
+            });
+
+            // Update local property reference
+            currentProperty.photos = updatedPhotos;
+            currentProperty.thumbnail = updatedThumbnail;
+
+            // Refresh the modal content
+            const units = await SupabaseAPI.getUnits({ propertyId: property.id }) || [];
+            const floorPlans = await SupabaseAPI.getFloorPlans(property.id) || [];
+            populateModal(currentProperty, units, floorPlans);
+
+            toast?.('Photo deleted successfully', 'success');
+        }
+    } catch (error) {
+        console.error('Error deleting photo:', error);
+        toast?.('Failed to delete photo', 'error');
+    }
 }
 
