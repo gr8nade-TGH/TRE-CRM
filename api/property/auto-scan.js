@@ -119,7 +119,7 @@ export default async function ({ page }) {
     }
 }
 
-// Extract units from HTML using AI - ENHANCED prompt
+// Extract units from HTML using AI - RELAXED prompt that accepts floor plan data
 async function extractUnits(html, propertyName, openaiKey) {
     if (!html || html.length < 500) {
         console.log(`[extractUnits] HTML too short: ${html?.length || 0} chars`);
@@ -140,29 +140,36 @@ async function extractUnits(html, propertyName, openaiKey) {
 
     console.log(`[extractUnits] Sending ${text.length} chars to OpenAI for "${propertyName}"`);
 
-    const prompt = `You are extracting apartment unit availability data from a property website.
+    const prompt = `You are extracting apartment availability data from a property website.
 
 PROPERTY: "${propertyName}"
 
-Look for:
-- Individual unit numbers (like "101", "A-202", "#1234")
+Extract ALL available units. Look for:
+- Floor plan names/types (like "A1", "1BR Deluxe", "The Austin")
 - Bedroom/bathroom counts
 - Square footage
-- Monthly rent prices
-- Move-in/availability dates
+- Monthly rent prices (take the lowest if a range like "$1,200 - $1,400")
+- Move-in/availability dates ("Available Now" = today's date, "January" = 2025-01-01)
+- Number of units available (like "3 available", "5 units")
 
-IMPORTANT:
-- Only extract SPECIFIC unit numbers, not floor plan types
-- If you see "5 units available" for a floor plan, that's not enough detail - we need actual unit numbers
-- Rent should be a number only (no $ or commas)
-- Dates as YYYY-MM-DD format
-- If no specific units found, return empty array
+CRITICAL RULES:
+1. If you find a floor plan with rent + availability, CREATE UNITS for it
+2. If it says "3 available" or "3 units" for a floor plan, create 3 separate unit entries
+3. Generate unit_number as sequential IDs: "101", "102", "103", etc.
+4. Rent should be a NUMBER only (no $ or commas) - use the LOWEST price if range shown
+5. Dates as YYYY-MM-DD format. Use 2025-01-01 for "January", 2025-02-01 for "February", etc.
+6. "Available Now" or "Immediate" = "${new Date().toISOString().split('T')[0]}"
+7. If availability count not specified but floor plan is shown as available, assume 1 unit
+8. Maximum 20 units total to avoid duplicates
 
-Return ONLY valid JSON in this exact format:
-{"units":[{"unit_number":"101","beds":1,"baths":1,"sqft":750,"rent":1250,"available_from":"2025-01-15","floor_plan_name":"A1"}],"found_any_unit_data":true}
+EXAMPLE: If page shows "The Marina - 1BR/1BA - 650 sqft - $1,195 - 4 Available"
+Create 4 units: 101, 102, 103, 104 all with that floor plan data.
 
-If you cannot find specific unit numbers, return:
-{"units":[],"found_any_unit_data":false,"reason":"explanation"}`;
+Return ONLY valid JSON:
+{"units":[{"unit_number":"101","beds":1,"baths":1,"sqft":650,"rent":1195,"available_from":"2025-01-15","floor_plan_name":"The Marina"}],"found_any_unit_data":true,"floor_plans_found":3}
+
+If NO pricing or availability data found at all:
+{"units":[],"found_any_unit_data":false,"reason":"No pricing or availability shown"}`;
 
     try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
