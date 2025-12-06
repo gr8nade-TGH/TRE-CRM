@@ -97,20 +97,32 @@ export default async function ({ page }) {
         }
 
         const text = await response.text();
+        console.log(`[scrapePage] Raw response (first 200 chars): ${text?.slice(0, 200)}`);
+
         try {
             const parsed = JSON.parse(text);
-            console.log(`[scrapePage] Got ${parsed.html?.length || 0} chars from ${parsed.finalUrl}`);
-            return {
-                html: parsed.html?.length > 1000 ? parsed.html : null,
-                finalUrl: parsed.finalUrl,
-                error: parsed.html?.length <= 1000 ? 'Page too short' : null
-            };
+            // V2 format returns { data: { html, finalUrl }, type: "..." }
+            const html = parsed.data?.html || parsed.html;
+            const finalUrl = parsed.data?.finalUrl || parsed.finalUrl || url;
+
+            console.log(`[scrapePage] Got ${html?.length || 0} chars from ${finalUrl}`);
+
+            if (!html || html.length <= 1000) {
+                return {
+                    html: null,
+                    finalUrl,
+                    error: `Page too short (${html?.length || 0} chars)`
+                };
+            }
+
+            return { html, finalUrl, error: null };
         } catch (e) {
+            console.error('[scrapePage] JSON parse error:', e.message, 'Raw:', text?.slice(0, 300));
             // Might be raw HTML (old format)
             return {
                 html: text?.length > 1000 ? text : null,
                 finalUrl: url,
-                error: text?.length <= 1000 ? 'Page too short' : null
+                error: text?.length <= 1000 ? `Page too short (${text?.length || 0} chars)` : null
             };
         }
     } catch (e) {
