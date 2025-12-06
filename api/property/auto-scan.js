@@ -1,8 +1,19 @@
-// Auto Unit Scanner API - Enhanced with domain tracking and never-disable logic
+// Auto Unit Scanner API - Enhanced with PRO-LEVEL STEALTH techniques
 import { createClient } from '@supabase/supabase-js';
 
 const BROWSERLESS_BASE = 'https://production-sfo.browserless.io';
 const SERPAPI_BASE = 'https://serpapi.com/search.json';
+
+// PRO-LEVEL STEALTH: User agents rotation pool (real Chrome on Windows/Mac/Linux)
+const USER_AGENTS = [
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36',
+    'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15',
+    'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+    'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+];
 
 // Scan methods - PRIORITIZED: ILS sites first (standardized formats)
 // NOTE: rent.com rate-limits aggressively, apartments.com blocks, so Zillow is primary
@@ -18,18 +29,43 @@ const SCAN_METHODS = [
     { id: 'property-floor-plans', path: '/floor-plans', type: 'property', label: 'Property /floor-plans', priority: 3 },
 ];
 
-// Scrape a page with Browserless /function API (V2 format)
+// Scrape a page with Browserless /function API (V2 format) + PRO STEALTH
 async function scrapePage(url, browserlessToken) {
     console.log(`[scrapePage] Fetching: ${url}`);
+
+    // PRO STEALTH: Randomize for each request
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    const viewportWidth = 1280 + Math.floor(Math.random() * 200);
+    const viewportHeight = 800 + Math.floor(Math.random() * 150);
+
     try {
         // Escape URL for use in JavaScript code
         const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
 
-        // V2 Browserless API format - use export default and return { data, type }
-        // Note: page.waitForTimeout is deprecated, use Promise-based delay instead
+        // V2 Browserless API format with PRO STEALTH techniques
         const code = `
 export default async function ({ page }) {
-    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+    // Human-like random delay
+    const humanDelay = (min, max) => new Promise(r => setTimeout(r, min + Math.random() * (max - min)));
+
+    // PRO STEALTH: Set viewport and user agent
+    await page.setViewport({ width: ${viewportWidth}, height: ${viewportHeight}, deviceScaleFactor: 1 });
+    await page.setUserAgent('${userAgent}');
+
+    // PRO STEALTH: Realistic headers
+    await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        'DNT': '1',
+        'Upgrade-Insecure-Requests': '1'
+    });
+
+    // PRO STEALTH: Remove automation flags
+    await page.evaluateOnNewDocument(() => {
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+    });
 
     try {
         await page.goto("${escapedUrl}", {
@@ -43,17 +79,21 @@ export default async function ({ page }) {
         });
     }
 
-    await delay(3000);
+    // PRO STEALTH: Human-like wait (2-4 seconds, randomized)
+    await humanDelay(2000, 4000);
 
-    // Scroll to trigger lazy loading
-    await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight / 2);
+    // PRO STEALTH: Natural scrolling (not instant jumps)
+    await page.evaluate(async () => {
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        for (let i = 0; i < 3; i++) {
+            window.scrollBy(0, 250 + Math.random() * 150);
+            await delay(300 + Math.random() * 300);
+        }
     });
-    await delay(1000);
-    await page.evaluate(() => {
-        window.scrollTo(0, document.body.scrollHeight);
-    });
-    await delay(2000);
+    await humanDelay(800, 1500);
+
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await humanDelay(1500, 2500);
 
     // Click on various floor plan/unit elements to expand
     const expandSelectors = [
@@ -69,12 +109,12 @@ export default async function ({ page }) {
             const els = await page.$$(sel);
             for (let i = 0; i < Math.min(els.length, 8); i++) {
                 await els[i].click().catch(() => {});
-                await delay(300);
+                await humanDelay(250, 500);
             }
         } catch (e) {}
     }
 
-    await delay(1500);
+    await humanDelay(1000, 2000);
 
     const content = await page.content();
     const finalUrl = page.url();
@@ -322,10 +362,16 @@ Each row may show specific units available with move-in dates.`
     }
 };
 
-// Scrape ILS page with site-specific selectors
+// Scrape ILS page with PRO-LEVEL STEALTH techniques
 async function scrapeILSPage(url, browserlessToken, ilsSite) {
     console.log(`[scrapeILSPage] Fetching ${ilsSite}: ${url}`);
     const config = ILS_CONFIGS[ilsSite] || {};
+
+    // Randomize user agent for each request
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    // Randomize viewport slightly (real users have different screen sizes)
+    const viewportWidth = 1280 + Math.floor(Math.random() * 200);  // 1280-1480
+    const viewportHeight = 800 + Math.floor(Math.random() * 150);  // 800-950
 
     try {
         const escapedUrl = url.replace(/\\/g, '\\\\').replace(/'/g, "\\'").replace(/"/g, '\\"');
@@ -333,13 +379,69 @@ async function scrapeILSPage(url, browserlessToken, ilsSite) {
 
         const code = `
 export default async function ({ page }) {
-    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+    // Human-like random delay function (not fixed intervals)
+    const humanDelay = (min, max) => new Promise(r => setTimeout(r, min + Math.random() * (max - min)));
 
-    await page.setViewport({ width: 1400, height: 900 });
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+    // PRO STEALTH: Randomized viewport (not standard 1920x1080)
+    await page.setViewport({
+        width: ${viewportWidth},
+        height: ${viewportHeight},
+        deviceScaleFactor: 1,
+        isMobile: false,
+        hasTouch: false
+    });
 
-    await page.goto('${escapedUrl}', { waitUntil: 'networkidle2', timeout: 30000 });
-    await delay(2000);
+    // PRO STEALTH: Rotating user agent
+    await page.setUserAgent('${userAgent}');
+
+    // PRO STEALTH: Set realistic headers (Accept-Language, etc)
+    await page.setExtraHTTPHeaders({
+        'Accept-Language': 'en-US,en;q=0.9',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Encoding': 'gzip, deflate, br',
+        'DNT': '1',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'none',
+        'Sec-Fetch-User': '?1'
+    });
+
+    // PRO STEALTH: Remove automation indicators
+    await page.evaluateOnNewDocument(() => {
+        // Remove webdriver property
+        Object.defineProperty(navigator, 'webdriver', { get: () => undefined });
+        // Fake plugins (real browsers have plugins)
+        Object.defineProperty(navigator, 'plugins', { get: () => [1, 2, 3, 4, 5] });
+        // Fake languages
+        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
+        // Override permissions query
+        const originalQuery = window.navigator.permissions.query;
+        window.navigator.permissions.query = (parameters) => (
+            parameters.name === 'notifications' ?
+                Promise.resolve({ state: Notification.permission }) :
+                originalQuery(parameters)
+        );
+    });
+
+    // Navigate with realistic timeout
+    await page.goto('${escapedUrl}', { waitUntil: 'networkidle2', timeout: 45000 });
+
+    // PRO STEALTH: Human-like initial wait (1.5-3 seconds, not fixed)
+    await humanDelay(1500, 3000);
+
+    // PRO STEALTH: Scroll down naturally (humans don't see everything at once)
+    await page.evaluate(async () => {
+        const delay = ms => new Promise(r => setTimeout(r, ms));
+        const scrollStep = 300 + Math.random() * 200;
+        for (let i = 0; i < 3; i++) {
+            window.scrollBy(0, scrollStep);
+            await delay(400 + Math.random() * 300);
+        }
+        window.scrollTo(0, 0); // Scroll back to top
+    });
+
+    await humanDelay(1000, 2000);
 
     // ILS-specific expand selectors
     const ilsSelectors = ${expandSelectors};
@@ -347,8 +449,9 @@ export default async function ({ page }) {
         try {
             const els = await page.$$(sel);
             for (let i = 0; i < Math.min(els.length, 10); i++) {
+                // PRO STEALTH: Random delay between clicks (humans aren't robots)
                 await els[i].click().catch(() => {});
-                await delay(400);
+                await humanDelay(300, 700);
             }
         } catch (e) {}
     }
@@ -360,12 +463,13 @@ export default async function ({ page }) {
             const els = await page.$$(sel);
             for (let i = 0; i < Math.min(els.length, 5); i++) {
                 await els[i].click().catch(() => {});
-                await delay(300);
+                await humanDelay(250, 500);
             }
         } catch (e) {}
     }
 
-    await delay(2000);
+    // PRO STEALTH: Final natural wait for content to load
+    await humanDelay(1500, 2500);
 
     const content = await page.content();
     return { data: { html: content, finalUrl: page.url() }, type: "application/json" };
