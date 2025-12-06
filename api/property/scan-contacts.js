@@ -1,210 +1,244 @@
 /**
  * Contact Info Scanner API
- * 
- * Focused endpoint for finding missing Phone, Email, and Website
- * for properties using SerpAPI Local search.
+ *
+ * Uses SerpAPI Google Local to find Phone, Email, and Website
+ * for properties missing contact info.
+ *
+ * GET  /api/property/scan-contacts - Get stats on properties missing contact info
+ * POST /api/property/scan-contacts - Scan next property and update contact info
  */
 
 import { createClient } from '@supabase/supabase-js';
 
-export const config = {
-    maxDuration: 300  // 5 minutes max
-};
-
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-function getSupabase() {
-    if (!supabaseUrl || !supabaseKey) {
-        throw new Error('Supabase not configured');
-    }
-    return createClient(supabaseUrl, supabaseKey, {
-        auth: { autoRefreshToken: false, persistSession: false }
-    });
-}
-
-/**
- * Search Google Local for business contact info
- */
-async function searchGoogleLocal(query, location, apiKey) {
-    const url = new URL('https://serpapi.com/search.json');
-    url.searchParams.set('engine', 'google_local');
-    url.searchParams.set('q', query);
-    url.searchParams.set('location', location);
-    url.searchParams.set('api_key', apiKey);
-
-    try {
-        const response = await fetch(url.toString());
-        const data = await response.json();
-        return {
-            success: !data.error,
-            results: data.local_results || [],
-            error: data.error
-        };
-    } catch (error) {
-        return { success: false, results: [], error: error.message };
-    }
-}
-
-/**
- * Extract contact info from local result
- */
-function extractContactInfo(result) {
-    const info = {
-        phone: null,
-        website: null,
-        email: null
-    };
-
-    // Phone from Google Local
-    if (result.phone) {
-        info.phone = result.phone;
-    }
-
-    // Website - prefer property's own site
-    if (result.website) {
-        const url = result.website.toLowerCase();
-        // Skip aggregator sites
-        const skipDomains = ['apartments.com', 'zillow.com', 'rent.com', 'apartment', 'realtor.com', 'trulia.com'];
-        const isAggregator = skipDomains.some(d => url.includes(d));
-        if (!isAggregator) {
-            info.website = result.website;
-        }
-    }
-
-    // Sometimes email is in description
-    if (result.description) {
-        const emailMatch = result.description.match(/[\w.-]+@[\w.-]+\.\w+/);
-        if (emailMatch) {
-            info.email = emailMatch[0];
-        }
-    }
-
-    return info;
-}
+const SERPAPI_BASE_URL = 'https://serpapi.com/search.json';
 
 export default async function handler(req, res) {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-
-    if (req.method !== 'GET') {
-        return res.status(405).json({ error: 'Method not allowed' });
-    }
-
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     const serpApiKey = process.env.SERP_API_KEY;
-    if (!serpApiKey) {
-        return res.status(503).json({ error: 'SerpAPI not configured' });
-    }
 
-    let supabase;
-    try {
-        supabase = getSupabase();
-    } catch (e) {
+    if (!supabaseUrl || !supabaseKey) {
         return res.status(500).json({ error: 'Supabase not configured' });
     }
 
-    const limit = Math.min(parseInt(req.query.limit || '50'), 100);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // GET: Return stats on properties missing contact info
+    if (req.method === 'GET') {
+        try {
+            const { data: allProps, error } = await supabase
+                .from('properties')
+                .select('id, contact_phone, contact_email, website');
+
+            if (error) throw error;
+
+            const total = allProps.length;
+            const missingPhone = allProps.filter(p => !p.contact_phone || p.contact_phone === '').length;
+            const missingEmail = allProps.filter(p => !p.contact_email || p.contact_email === '').length;
+            const missingWebsite = allProps.filter(p => !p.website || p.website === '').length;
+            const missingAny = allProps.filter(p =>
+                (!p.contact_phone || p.contact_phone === '') ||
+                (!p.contact_email || p.contact_email === '') ||
+                (!p.website || p.website === '')
+            ).length;
+
+            return res.status(200).json({
+                success: true,
+                stats: {
+                    totalProperties: total,
+                    missingPhone,
+                    missingEmail,
+                    missingWebsite,
+                    missingAny,
+                    hasAllContact: total - missingAny,
+                    percentComplete: Math.round(((total - missingAny) / total) * 100)
+                }
+            });
+        } catch (error) {
+            console.error('[Contact Scan] GET error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    // POST: Scan next property for contact info
+    if (req.method === 'POST') {
+        if (!serpApiKey) {
+            return res.status(500).json({ error: 'SERP_API_KEY not configured' });
+        }
+
+        try {
+            // Get next property missing contact info (prioritize those with names)
+            const { data: property, error: fetchError } = await supabase
+                .from('properties')
+                .select('id, name, community_name, city, state, street_address, contact_phone, contact_email, website')
+                .or('contact_phone.is.null,contact_email.is.null,website.is.null')
+                .not('name', 'is', null)
+                .order('created_at', { ascending: false })
+                .limit(1)
+                .single();
+
+            if (fetchError && fetchError.code !== 'PGRST116') throw fetchError;
+
+            if (!property) {
+                // Try properties without names as fallback
+                const { data: fallback } = await supabase
+                    .from('properties')
+                    .select('id, name, community_name, city, state, street_address, contact_phone, contact_email, website')
+                    .or('contact_phone.is.null,contact_email.is.null,website.is.null')
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (!fallback) {
+                    return res.status(200).json({
+                        success: true,
+                        done: true,
+                        message: 'All properties have contact info!'
+                    });
+                }
+            }
+
+            const prop = property || fallback;
+            const propertyName = prop.community_name || prop.name || prop.street_address;
+            const city = prop.city || 'San Antonio';
+            const state = prop.state || 'TX';
+
+            console.log(`[Contact Scan] Searching for: ${propertyName}, ${city} ${state}`);
+
+            // Search Google Local for contact info
+            const contactInfo = await searchContactInfo(propertyName, city, state, serpApiKey);
+
+            // Build update object (only update missing fields)
+            const updates = {};
+            const found = [];
+
+            if (contactInfo.phone && (!prop.contact_phone || prop.contact_phone === '')) {
+                updates.contact_phone = contactInfo.phone;
+                found.push(`📞 ${contactInfo.phone}`);
+            }
+
+            if (contactInfo.email && (!prop.contact_email || prop.contact_email === '')) {
+                updates.contact_email = contactInfo.email;
+                found.push(`📧 ${contactInfo.email}`);
+            }
+
+            if (contactInfo.website && (!prop.website || prop.website === '')) {
+                updates.website = contactInfo.website;
+                found.push(`🌐 ${contactInfo.website}`);
+            }
+
+            if (Object.keys(updates).length === 0) {
+                // Nothing new found, but mark as checked
+                await supabase
+                    .from('properties')
+                    .update({ updated_at: new Date().toISOString() })
+                    .eq('id', prop.id);
+
+                return res.status(200).json({
+                    success: true,
+                    property: propertyName,
+                    propertyId: prop.id,
+                    updated: false,
+                    message: 'No new contact info found'
+                });
+            }
+
+            // Update property
+            updates.updated_at = new Date().toISOString();
+            const { error: updateError } = await supabase
+                .from('properties')
+                .update(updates)
+                .eq('id', prop.id);
+
+            if (updateError) throw updateError;
+
+            console.log(`[Contact Scan] Updated ${propertyName}: ${found.join(', ')}`);
+
+            return res.status(200).json({
+                success: true,
+                property: propertyName,
+                propertyId: prop.id,
+                updated: true,
+                found,
+                phone: contactInfo.phone,
+                email: contactInfo.email,
+                website: contactInfo.website
+            });
+
+        } catch (error) {
+            console.error('[Contact Scan] POST error:', error);
+            return res.status(500).json({ error: error.message });
+        }
+    }
+
+    return res.status(405).json({ error: 'Method not allowed' });
+}
+
+/**
+ * Search for contact info using SerpAPI Google Local
+ */
+async function searchContactInfo(propertyName, city, state, serpApiKey) {
+    const result = { phone: null, email: null, website: null };
 
     try {
-        // Get properties missing contact info (prioritize those with names)
-        const { data: properties, error } = await supabase
-            .from('properties')
-            .select('id, name, street_address, address, city, state, contact_phone, contact_email, website, leasing_link')
-            .or('contact_phone.is.null,contact_email.is.null,website.is.null,contact_phone.eq.,contact_email.eq.,website.eq.')
-            .not('name', 'is', null)
-            .order('name', { ascending: true })
-            .limit(limit);
+        const query = `${propertyName} apartments`;
+        const location = `${city}, ${state}`;
 
-        if (error) throw error;
+        const params = new URLSearchParams({
+            engine: 'google_local',
+            q: query,
+            location: location,
+            api_key: serpApiKey
+        });
 
-        console.log(`[Contact Scanner] Found ${properties.length} properties to scan`);
+        console.log(`[Contact Scan] SerpAPI query: ${query} in ${location}`);
 
-        const results = [];
-        let updated = 0;
+        const response = await fetch(`${SERPAPI_BASE_URL}?${params}`);
+        const data = await response.json();
 
-        for (const prop of properties) {
-            const result = { id: prop.id, name: prop.name || prop.address, updated: false };
+        if (data.error) {
+            console.error('[Contact Scan] SerpAPI error:', data.error);
+            return result;
+        }
 
-            try {
-                // Build search query
-                const searchName = prop.name || prop.street_address || prop.address;
-                const location = `${prop.city || 'San Antonio'}, ${prop.state || 'TX'}`;
+        const localResults = data.local_results || [];
+        console.log(`[Contact Scan] Found ${localResults.length} local results`);
 
-                console.log(`[Contact Scanner] Searching: ${searchName} in ${location}`);
+        if (localResults.length === 0) {
+            return result;
+        }
 
-                // Search Google Local
-                const localResults = await searchGoogleLocal(
-                    `${searchName} apartments`,
-                    location,
-                    serpApiKey
-                );
+        // Get the best match (first result)
+        const match = localResults[0];
+        console.log(`[Contact Scan] Best match: ${match.title}`);
 
-                if (!localResults.success || localResults.results.length === 0) {
-                    result.error = 'No results found';
-                    results.push(result);
-                    continue;
-                }
+        // Extract phone
+        if (match.phone) {
+            result.phone = match.phone;
+        }
 
-                // Get contact info from best match
-                const contactInfo = extractContactInfo(localResults.results[0]);
-
-                // Build update object (only update missing fields)
-                const updates = {};
-
-                if (contactInfo.phone && (!prop.contact_phone || prop.contact_phone === '')) {
-                    updates.contact_phone = contactInfo.phone;
-                    result.phone = contactInfo.phone;
-                }
-
-                if (contactInfo.email && (!prop.contact_email || prop.contact_email === '')) {
-                    updates.contact_email = contactInfo.email;
-                    result.email = contactInfo.email;
-                }
-
-                if (contactInfo.website && (!prop.website || prop.website === '')) {
-                    updates.website = contactInfo.website;
-                    result.website = contactInfo.website;
-                }
-
-                // Update if we found any new data
-                if (Object.keys(updates).length > 0) {
-                    updates.updated_at = new Date().toISOString();
-
-                    const { error: updateError } = await supabase
-                        .from('properties')
-                        .update(updates)
-                        .eq('id', prop.id);
-
-                    if (updateError) {
-                        result.error = updateError.message;
-                    } else {
-                        result.updated = true;
-                        updated++;
-                    }
-                }
-
-                results.push(result);
-
-                // Small delay to avoid rate limiting
-                await new Promise(r => setTimeout(r, 200));
-
-            } catch (e) {
-                console.error(`[Contact Scanner] Error for ${prop.name}:`, e.message);
-                result.error = e.message;
-                results.push(result);
+        // Extract website (skip aggregators)
+        if (match.website) {
+            const url = match.website.toLowerCase();
+            const skipDomains = ['apartments.com', 'zillow.com', 'rent.com', 'realtor.com', 'trulia.com', 'apartmentguide.com', 'forrent.com'];
+            const isAggregator = skipDomains.some(d => url.includes(d));
+            if (!isAggregator) {
+                result.website = match.website;
             }
         }
 
-        console.log(`[Contact Scanner] Complete: ${updated}/${properties.length} updated`);
+        // Try to extract email from description or other fields
+        const textToSearch = [match.description, match.snippet].filter(Boolean).join(' ');
+        const emailMatch = textToSearch.match(/[\w.-]+@[\w.-]+\.\w+/);
+        if (emailMatch) {
+            result.email = emailMatch[0];
+        }
 
-        return res.status(200).json({
-            scanned: properties.length,
-            updated,
-            results
-        });
+        return result;
 
     } catch (error) {
-        console.error('[Contact Scanner] Error:', error);
-        return res.status(500).json({ error: error.message });
+        console.error('[Contact Scan] Search error:', error);
+        return result;
     }
 }
 

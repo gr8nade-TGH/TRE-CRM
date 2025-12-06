@@ -540,84 +540,113 @@ async function runUnitScan() {
  */
 async function loadContactScanStats() {
     try {
-        const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
+        const response = await fetch(`${API_BASE_URL}/api/property/scan-contacts`);
         const data = await response.json();
 
-        // We need to query the actual missing counts
-        // For now, fetch from a simple endpoint or estimate
-        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
-        const supabase = window.supabaseClient || createClient(
-            'https://mevirooooypfjbsrmzrk.supabase.co',
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NDcxNzAsImV4cCI6MjA2NDAyMzE3MH0.QGZbGcCUz2QOdKG5J2x8sRXcie7dWMo9Y-qOFMYKPbw'
-        );
+        if (data.success && data.stats) {
+            const s = data.stats;
+            const phoneEl = document.getElementById('missingPhoneCount');
+            const emailEl = document.getElementById('missingEmailCount');
+            const websiteEl = document.getElementById('missingWebsiteCount');
 
-        const { data: props } = await supabase
-            .from('properties')
-            .select('contact_phone, contact_email, website');
-
-        if (props) {
-            const missingPhone = props.filter(p => !p.contact_phone || p.contact_phone === '').length;
-            const missingEmail = props.filter(p => !p.contact_email || p.contact_email === '').length;
-            const missingWebsite = props.filter(p => !p.website || p.website === '').length;
-
-            document.getElementById('missingPhoneCount').textContent = missingPhone;
-            document.getElementById('missingEmailCount').textContent = missingEmail;
-            document.getElementById('missingWebsiteCount').textContent = missingWebsite;
+            if (phoneEl) phoneEl.textContent = s.missingPhone;
+            if (emailEl) emailEl.textContent = s.missingEmail;
+            if (websiteEl) websiteEl.textContent = s.missingWebsite;
         }
     } catch (e) {
         console.error('[ContactScan] Stats error:', e);
     }
 }
 
+// Contact scan state
+let contactScanRunning = false;
+let contactScanShouldStop = false;
+
 /**
- * Run contact info scan
+ * Run contact info scan - scans one property at a time via POST
  */
 async function runContactScan() {
     const contactScanBtn = document.getElementById('runContactScanBtn');
     const scanBtn = document.getElementById('startFullScanBtn');
 
+    // Toggle behavior - if running, stop it
+    if (contactScanRunning) {
+        contactScanShouldStop = true;
+        addLogEntry('warning', '⏸️ Stopping contact scan...');
+        return;
+    }
+
+    contactScanRunning = true;
+    contactScanShouldStop = false;
+
     addLogEntry('info', '📞 Starting Contact Info Scan...');
     addLogEntry('info', '  → Searching Google Local for phone, email, website');
 
-    contactScanBtn.disabled = true;
-    contactScanBtn.innerHTML = '⏳ Scanning...';
+    contactScanBtn.innerHTML = '⏹️ Stop Scan';
+    contactScanBtn.style.background = '#ef4444';
     scanBtn.disabled = true;
     document.getElementById('discoveryStatus').textContent = 'Scanning Contacts...';
 
+    let scanned = 0;
+    let updated = 0;
+
     try {
-        // Run scan with limit of 50 properties
-        const response = await fetch(`${API_BASE_URL}/api/property/scan-contacts?limit=50`);
-        const data = await response.json();
+        // Get initial stats
+        const statsResp = await fetch(`${API_BASE_URL}/api/property/scan-contacts`);
+        const statsData = await statsResp.json();
+        const totalMissing = statsData.stats?.missingAny || 0;
 
-        if (data.error) {
-            throw new Error(data.error);
-        }
+        addLogEntry('info', `📋 Found ${totalMissing} properties missing contact info`);
 
-        addLogEntry('info', `📋 Scanned ${data.scanned} properties`);
+        // Scan loop - one property at a time
+        while (!contactScanShouldStop) {
+            const response = await fetch(`${API_BASE_URL}/api/property/scan-contacts`, {
+                method: 'POST'
+            });
+            const data = await response.json();
 
-        // Log each result
-        for (const result of data.results) {
-            if (result.updated) {
-                const found = [];
-                if (result.phone) found.push(`📞 ${result.phone}`);
-                if (result.email) found.push(`📧 ${result.email}`);
-                if (result.website) found.push(`🌐 ${result.website.substring(0, 30)}...`);
-                addLogEntry('success', `✅ ${result.name}: ${found.join(', ')}`);
-            } else if (result.error) {
-                addLogEntry('warning', `⚠️ ${result.name}: ${result.error}`);
+            if (data.error) {
+                addLogEntry('error', `❌ Error: ${data.error}`);
+                break;
             }
+
+            // Check if we're done
+            if (data.done) {
+                addLogEntry('success', '✅ All properties have contact info!');
+                break;
+            }
+
+            scanned++;
+
+            if (data.updated) {
+                updated++;
+                addLogEntry('success', `✅ ${data.property}: ${data.found?.join(', ') || 'Updated'}`);
+            } else {
+                addLogEntry('warning', `⚠️ ${data.property}: ${data.message || 'No new info found'}`);
+            }
+
+            // Update stats display periodically
+            if (scanned % 5 === 0) {
+                await loadContactScanStats();
+            }
+
+            // Small delay between requests
+            await new Promise(r => setTimeout(r, 500));
         }
 
-        addLogEntry('success', `\n🎉 Contact scan complete! Updated ${data.updated}/${data.scanned} properties`);
+        addLogEntry('success', `\n🎉 Contact scan complete! Scanned ${scanned}, Updated ${updated}`);
 
-        // Refresh stats
+        // Final stats refresh
         await loadContactScanStats();
 
     } catch (error) {
         addLogEntry('error', `❌ Contact scan error: ${error.message}`);
     } finally {
+        contactScanRunning = false;
+        contactScanShouldStop = false;
         contactScanBtn.disabled = false;
         contactScanBtn.innerHTML = '📞 Scan Contacts';
+        contactScanBtn.style.background = '#f59e0b';
         scanBtn.disabled = false;
         document.getElementById('discoveryStatus').textContent = 'Ready';
     }
