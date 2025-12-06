@@ -139,7 +139,18 @@ async function extractUnits(html, propertyName, openaiKey) {
         return { units: [], rawResponse: null, error: 'HTML too short' };
     }
 
-    // Clean HTML to text
+    // FIRST: Extract JSON-LD structured data (many sites embed floor plan data here)
+    let jsonLdData = '';
+    const jsonLdMatches = html.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi);
+    if (jsonLdMatches) {
+        jsonLdData = jsonLdMatches.map(match => {
+            const content = match.replace(/<\/?script[^>]*>/gi, '').trim();
+            return content;
+        }).join('\n\n');
+        console.log(`[extractUnits] Found ${jsonLdMatches.length} JSON-LD blocks (${jsonLdData.length} chars)`);
+    }
+
+    // Clean HTML to text (for visible content)
     const text = html
         .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
         .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
@@ -149,40 +160,50 @@ async function extractUnits(html, propertyName, openaiKey) {
         .replace(/<[^>]+>/g, ' ')
         .replace(/\s+/g, ' ')
         .trim()
-        .slice(0, 20000);
+        .slice(0, 15000);  // Reduced to make room for JSON-LD
 
-    console.log(`[extractUnits] Sending ${text.length} chars to OpenAI for "${propertyName}"`);
+    console.log(`[extractUnits] Sending ${text.length} chars + ${jsonLdData.length} JSON-LD chars to OpenAI for "${propertyName}"`);
 
     const prompt = `You are extracting apartment availability data from a property website.
 
 PROPERTY: "${propertyName}"
 
+DATA SOURCES (check BOTH):
+1. PAGE CONTENT - visible text from the website
+2. JSON-LD STRUCTURED DATA - embedded machine-readable data (very reliable if present!)
+
 Extract ALL available units. Look for:
-- Floor plan names/types (like "A1", "1BR Deluxe", "The Austin")
-- Bedroom/bathroom counts
-- Square footage
+- Floor plan names/types (like "A1", "1BR Deluxe", "The Austin", "B2")
+- Bedroom/bathroom counts (numberOfRooms, numberOfBathroomsTotal in JSON-LD)
+- Square footage (floorSize in JSON-LD, or "X sq. ft." in text)
 - Monthly rent prices (take the lowest if a range like "$1,200 - $1,400")
 - Move-in/availability dates ("Available Now" = today's date, "January" = 2025-01-01)
 - Number of units available (like "3 available", "5 units")
 
 CRITICAL RULES:
-1. If you find a floor plan with rent + availability, CREATE UNITS for it
+1. CHECK JSON-LD FIRST - if you find FloorPlan objects, create units from them!
 2. If it says "3 available" or "3 units" for a floor plan, create 3 separate unit entries
 3. Generate unit_number as sequential IDs: "101", "102", "103", etc.
-4. Rent should be a NUMBER only (no $ or commas) - use the LOWEST price if range shown
-5. Dates as YYYY-MM-DD format. Use 2025-01-01 for "January", 2025-02-01 for "February", etc.
-6. "Available Now" or "Immediate" = "${new Date().toISOString().split('T')[0]}"
-7. If availability count not specified but floor plan is shown as available, assume 1 unit
-8. Maximum 20 units total to avoid duplicates
+4. Rent should be a NUMBER only (no $ or commas) - if no rent shown, use 0
+5. Dates as YYYY-MM-DD format. If no availability shown, use "${new Date().toISOString().split('T')[0]}"
+6. If availability count not specified but floor plan exists, assume 1 unit per floor plan
+7. Maximum 20 units total to avoid duplicates
+8. Even if page shows 404 error, still check for JSON-LD data!
 
-EXAMPLE: If page shows "The Marina - 1BR/1BA - 650 sqft - $1,195 - 4 Available"
-Create 4 units: 101, 102, 103, 104 all with that floor plan data.
+EXAMPLE JSON-LD: {"@type": "FloorPlan", "name": "A1", "numberOfRooms": "1", "numberOfBathroomsTotal": "1", "floorSize": {"value": "697"}}
+→ Create unit: {"unit_number":"101","beds":1,"baths":1,"sqft":697,"rent":0,"available_from":"${new Date().toISOString().split('T')[0]}","floor_plan_name":"A1"}
 
 Return ONLY valid JSON:
 {"units":[{"unit_number":"101","beds":1,"baths":1,"sqft":650,"rent":1195,"available_from":"2025-01-15","floor_plan_name":"The Marina"}],"found_any_unit_data":true,"floor_plans_found":3}
 
-If NO pricing or availability data found at all:
-{"units":[],"found_any_unit_data":false,"reason":"No pricing or availability shown"}`;
+If NO floor plan data found in either source:
+{"units":[],"found_any_unit_data":false,"reason":"No floor plan data in content or JSON-LD"}`;
+
+    // Build content with both sources
+    let content = `${prompt}\n\n---PAGE CONTENT---\n${text}`;
+    if (jsonLdData) {
+        content += `\n\n---JSON-LD STRUCTURED DATA---\n${jsonLdData.slice(0, 5000)}`;
+    }
 
     try {
         const resp = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -190,7 +211,7 @@ If NO pricing or availability data found at all:
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey}` },
             body: JSON.stringify({
                 model: 'gpt-4o-mini',
-                messages: [{ role: 'user', content: `${prompt}\n\n---PAGE CONTENT---\n${text}` }],
+                messages: [{ role: 'user', content }],
                 temperature: 0.1,
                 max_tokens: 4000
             })
