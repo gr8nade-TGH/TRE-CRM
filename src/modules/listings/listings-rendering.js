@@ -442,7 +442,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 					${hasUnits ? `<span class="unit-count" style="color: #6b7280; font-size: 0.85em; margin-left: 8px;">(${prop.units.length} units)</span>` : ''}
 				</div>
 				<div class="subtle mono">${address}</div>
-				${state.role === 'manager' ? renderDataQualityBadges(prop) : ''}
+				${state.role === 'manager' && !state.customerView.isActive ? renderDataQualityBadges(prop) : ''}
 				<div class="community-details">
 					<span class="market-info">${prop.market}</span>
 				</div>

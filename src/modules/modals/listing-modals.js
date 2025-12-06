@@ -422,36 +422,57 @@ export async function openListingEditModal(property, options) {
 
 	// Handle field highlighting if requested (from data quality badges)
 	if (options.highlightField) {
+		console.log('[DQ Badge] Highlighting field:', options.highlightField, 'in section:', options.expandSection);
+
 		setTimeout(() => {
 			// Expand the section if specified
 			if (options.expandSection) {
-				const sectionHeader = document.querySelector(`[data-section="${options.expandSection}"]`);
-				if (sectionHeader && sectionHeader.classList.contains('collapsed')) {
-					sectionHeader.click(); // Trigger expand
+				const sectionHeader = document.querySelector(`#listingEditModal [data-section="${options.expandSection}"]`);
+				console.log('[DQ Badge] Found section header:', sectionHeader);
+
+				if (sectionHeader) {
+					// Check if collapsed and expand
+					if (sectionHeader.classList.contains('collapsed')) {
+						console.log('[DQ Badge] Section is collapsed, clicking to expand');
+						sectionHeader.click();
+					}
+
+					// Also manually expand the content in case click doesn't work
+					const sectionContent = document.getElementById(`section-${options.expandSection}`);
+					if (sectionContent) {
+						sectionContent.style.maxHeight = '1000px';
+						sectionContent.style.padding = '16px';
+						sectionHeader.classList.remove('collapsed');
+					}
 				}
 			}
 
-			// Highlight the field
-			const fieldElement = document.getElementById(options.highlightField);
-			if (fieldElement) {
-				// Scroll to field
-				fieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			// Wait a bit more for section to expand before highlighting
+			setTimeout(() => {
+				// Highlight the field
+				const fieldElement = document.getElementById(options.highlightField);
+				console.log('[DQ Badge] Found field element:', fieldElement);
 
-				// Add highlight animation
-				fieldElement.style.transition = 'box-shadow 0.3s, background-color 0.3s';
-				fieldElement.style.boxShadow = '0 0 0 3px #fbbf24';
-				fieldElement.style.backgroundColor = '#fffbeb';
+				if (fieldElement) {
+					// Scroll to field
+					fieldElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
-				// Focus the field
-				fieldElement.focus();
+					// Add highlight animation
+					fieldElement.style.transition = 'box-shadow 0.3s, background-color 0.3s';
+					fieldElement.style.boxShadow = '0 0 0 3px #fbbf24';
+					fieldElement.style.backgroundColor = '#fffbeb';
 
-				// Remove highlight after a few seconds
-				setTimeout(() => {
-					fieldElement.style.boxShadow = '';
-					fieldElement.style.backgroundColor = '';
-				}, 3000);
-			}
-		}, 300); // Wait for modal to fully open
+					// Focus the field
+					fieldElement.focus();
+
+					// Remove highlight after a few seconds
+					setTimeout(() => {
+						fieldElement.style.boxShadow = '';
+						fieldElement.style.backgroundColor = '';
+					}, 3000);
+				}
+			}, 200);
+		}, 400); // Wait for modal to fully open
 	}
 }
 
