@@ -432,7 +432,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 			</td>
 			<td data-sort="name">
 				<div class="lead-name">
-					<strong>${communityName}</strong>
+					<strong class="property-name-link" data-property-id="${prop.id}" style="cursor: pointer; color: #3b82f6; transition: color 0.2s;" onmouseover="this.style.color='#1d4ed8'; this.style.textDecoration='underline';" onmouseout="this.style.color='#3b82f6'; this.style.textDecoration='none';">${communityName}</strong>
 					${matchScoreBadge}
 					${hasActiveSpecials ? `<span class="special-icon" onclick="window.viewPropertySpecialsFromListing('${prop.id}', '${communityName.replace(/'/g, "\\'")}', ${JSON.stringify(prop.activeSpecials).replace(/"/g, '&quot;')})" title="${specialsTooltip}" style="cursor: pointer; margin-left: 6px; font-size: 1em;">🔥</span>` : ''}
 					${isPUMI ? '<span class="pumi-label">PUMI</span>' : ''}
@@ -529,6 +529,23 @@ export async function renderListings(options, autoSelectProperty = null) {
 						// Open edit modal with field to highlight
 						openListingEditModal(prop, { highlightField: fieldId, expandSection: sectionId });
 					});
+				});
+			}
+
+			// Add property name click handler to open showcase
+			const propertyNameLink = tr.querySelector('.property-name-link');
+			if (propertyNameLink) {
+				propertyNameLink.addEventListener('click', async (e) => {
+					e.stopPropagation();
+					console.log('=== PROPERTY NAME CLICKED ===');
+					console.log('Opening showcase for:', prop.name);
+					try {
+						const { openPropertyShowcase } = await import('./property-showcase.js');
+						await openPropertyShowcase(prop, { SupabaseAPI, toast });
+					} catch (error) {
+						console.error('Error opening property showcase:', error);
+						toast?.('Failed to open property showcase', 'error');
+					}
 				});
 			}
 
