@@ -28,8 +28,7 @@ export async function initializeDataFeedsPage() {
     // Check all service statuses and load missing data counts in parallel
     await Promise.all([
         checkRentcastStatus(),
-        checkAIEnrichmentStatus(),
-        loadMissingContactCounts()
+        checkAIEnrichmentStatus()
     ]);
 
     console.log('✅ Data Feeds Dashboard initialized');
@@ -82,11 +81,6 @@ function setupEventListeners() {
         });
     }
 
-    // Contact Info Scan button
-    const scanContactBtn = document.getElementById('scanContactInfoBtn');
-    if (scanContactBtn) {
-        scanContactBtn.addEventListener('click', runContactInfoScan);
-    }
 }
 
 /**
@@ -172,156 +166,6 @@ async function checkAIEnrichmentStatus() {
         });
     }
 }
-
-/**
- * Load missing contact info counts
- */
-async function loadMissingContactCounts() {
-    try {
-        const supabase = getSupabase();
-
-        // Get all properties and count missing fields
-        const { data: properties, error } = await supabase
-            .from('properties')
-            .select('contact_phone, contact_email, website, leasing_link');
-
-        if (error) throw error;
-
-        const counts = {
-            phone: 0,
-            email: 0,
-            website: 0,
-            leasing: 0
-        };
-
-        for (const p of properties) {
-            if (!p.contact_phone || p.contact_phone === '') counts.phone++;
-            if (!p.contact_email || p.contact_email === '') counts.email++;
-            if (!p.website || p.website === '') counts.website++;
-            if (!p.leasing_link || p.leasing_link === '') counts.leasing++;
-        }
-
-        // Update UI
-        const phoneEl = document.getElementById('missingPhoneCount');
-        const emailEl = document.getElementById('missingEmailCount');
-        const websiteEl = document.getElementById('missingWebsiteCount');
-        const leasingEl = document.getElementById('missingLeasingCount');
-
-        if (phoneEl) phoneEl.textContent = counts.phone.toLocaleString();
-        if (emailEl) emailEl.textContent = counts.email.toLocaleString();
-        if (websiteEl) websiteEl.textContent = counts.website.toLocaleString();
-        if (leasingEl) leasingEl.textContent = counts.leasing.toLocaleString();
-
-    } catch (error) {
-        console.error('Error loading missing contact counts:', error);
-    }
-}
-
-/**
- * Run contact info scan for properties
- */
-async function runContactInfoScan() {
-    const btn = document.getElementById('scanContactInfoBtn');
-    const progressDiv = document.getElementById('contactScanProgress');
-    const progressBar = document.getElementById('contactScanProgressBar');
-    const progressLabel = document.getElementById('contactScanProgressLabel');
-    const progressPercent = document.getElementById('contactScanProgressPercent');
-    const logDiv = document.getElementById('contactScanLog');
-    const limitSelect = document.getElementById('contactScanLimit');
-
-    const limit = parseInt(limitSelect?.value || '50');
-
-    // Disable button and show progress
-    if (btn) {
-        btn.disabled = true;
-        btn.innerHTML = '<span class="spinner"></span> Scanning...';
-    }
-
-    if (progressDiv) progressDiv.style.display = 'block';
-    if (logDiv) {
-        logDiv.style.display = 'block';
-        logDiv.innerHTML = '';
-    }
-
-    const addLog = (type, message) => {
-        if (logDiv) {
-            const line = document.createElement('div');
-            line.className = `log-${type}`;
-            line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-            logDiv.appendChild(line);
-            logDiv.scrollTop = logDiv.scrollHeight;
-        }
-    };
-
-    const updateProgress = (current, total, label) => {
-        const pct = Math.round((current / total) * 100);
-        if (progressBar) progressBar.style.width = pct + '%';
-        if (progressLabel) progressLabel.textContent = label;
-        if (progressPercent) progressPercent.textContent = pct + '%';
-    };
-
-    try {
-        addLog('info', `Starting contact info scan for up to ${limit} properties...`);
-
-        // Call the API endpoint
-        const response = await fetch(`/api/property/scan-contacts?limit=${limit}`);
-
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.error || `HTTP ${response.status}`);
-        }
-
-        const result = await response.json();
-
-        // Process results
-        const { scanned, updated, results: propertyResults } = result;
-
-        updateProgress(100, 100, 'Complete!');
-
-        // Log individual results
-        for (const r of propertyResults || []) {
-            if (r.updated) {
-                const fields = [];
-                if (r.phone) fields.push('📞 Phone');
-                if (r.email) fields.push('📧 Email');
-                if (r.website) fields.push('🌐 Website');
-                addLog('success', `✓ ${r.name}: Found ${fields.join(', ')}`);
-            } else if (r.error) {
-                addLog('error', `✗ ${r.name}: ${r.error}`);
-            } else {
-                addLog('warning', `○ ${r.name}: No new data found`);
-            }
-        }
-
-        addLog('info', `\n━━━ SCAN COMPLETE ━━━`);
-        addLog('info', `Scanned: ${scanned} | Updated: ${updated}`);
-
-        toast(`✅ Scan complete! Updated ${updated} of ${scanned} properties`, 'success');
-
-        // Refresh counts
-        await loadMissingContactCounts();
-
-    } catch (error) {
-        console.error('Contact scan failed:', error);
-        addLog('error', `Scan failed: ${error.message}`);
-        toast(`❌ Scan failed: ${error.message}`, 'error');
-    } finally {
-        // Reset button
-        if (btn) {
-            btn.disabled = false;
-            btn.innerHTML = `
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="M21 21l-4.35-4.35"></path>
-                </svg>
-                Scan for Contact Info
-            `;
-        }
-    }
-}
-
-// Expose to window for button onclick
-window.runContactInfoScan = runContactInfoScan;
 
 export default {
     initializeDataFeedsPage

@@ -106,6 +106,7 @@ function setupEventListeners() {
     const stopBtn = document.getElementById('stopScanBtn');
     const enrichBtn = document.getElementById('runEnrichmentBtn');
     const unitScanBtn = document.getElementById('runUnitScanBtn');
+    const contactScanBtn = document.getElementById('runContactScanBtn');
 
     if (startBtn) {
         startBtn.addEventListener('click', startFullScan);
@@ -122,6 +123,13 @@ function setupEventListeners() {
     if (unitScanBtn) {
         unitScanBtn.addEventListener('click', runUnitScan);
     }
+
+    if (contactScanBtn) {
+        contactScanBtn.addEventListener('click', runContactScan);
+    }
+
+    // Load contact scan stats
+    loadContactScanStats();
 }
 
 /**
@@ -520,6 +528,96 @@ async function runUnitScan() {
         addLogEntry('error', `❌ Unit scan error: ${error.message}`);
     } finally {
         unitScanBtn.disabled = false;
+        scanBtn.disabled = false;
+        document.getElementById('discoveryStatus').textContent = 'Ready';
+    }
+}
+
+// ============ CONTACT INFO SCANNER ============
+
+/**
+ * Load contact scan stats (missing phone, email, website)
+ */
+async function loadContactScanStats() {
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/property/batch-enrich-v2`);
+        const data = await response.json();
+
+        // We need to query the actual missing counts
+        // For now, fetch from a simple endpoint or estimate
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2');
+        const supabase = window.supabaseClient || createClient(
+            'https://mevirooooypfjbsrmzrk.supabase.co',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1ldmlyb29vb3lwZmpic3JtenJrIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg0NDcxNzAsImV4cCI6MjA2NDAyMzE3MH0.QGZbGcCUz2QOdKG5J2x8sRXcie7dWMo9Y-qOFMYKPbw'
+        );
+
+        const { data: props } = await supabase
+            .from('properties')
+            .select('contact_phone, contact_email, website');
+
+        if (props) {
+            const missingPhone = props.filter(p => !p.contact_phone || p.contact_phone === '').length;
+            const missingEmail = props.filter(p => !p.contact_email || p.contact_email === '').length;
+            const missingWebsite = props.filter(p => !p.website || p.website === '').length;
+
+            document.getElementById('missingPhoneCount').textContent = missingPhone;
+            document.getElementById('missingEmailCount').textContent = missingEmail;
+            document.getElementById('missingWebsiteCount').textContent = missingWebsite;
+        }
+    } catch (e) {
+        console.error('[ContactScan] Stats error:', e);
+    }
+}
+
+/**
+ * Run contact info scan
+ */
+async function runContactScan() {
+    const contactScanBtn = document.getElementById('runContactScanBtn');
+    const scanBtn = document.getElementById('startFullScanBtn');
+
+    addLogEntry('info', '📞 Starting Contact Info Scan...');
+    addLogEntry('info', '  → Searching Google Local for phone, email, website');
+
+    contactScanBtn.disabled = true;
+    contactScanBtn.innerHTML = '⏳ Scanning...';
+    scanBtn.disabled = true;
+    document.getElementById('discoveryStatus').textContent = 'Scanning Contacts...';
+
+    try {
+        // Run scan with limit of 50 properties
+        const response = await fetch(`${API_BASE_URL}/api/property/scan-contacts?limit=50`);
+        const data = await response.json();
+
+        if (data.error) {
+            throw new Error(data.error);
+        }
+
+        addLogEntry('info', `📋 Scanned ${data.scanned} properties`);
+
+        // Log each result
+        for (const result of data.results) {
+            if (result.updated) {
+                const found = [];
+                if (result.phone) found.push(`📞 ${result.phone}`);
+                if (result.email) found.push(`📧 ${result.email}`);
+                if (result.website) found.push(`🌐 ${result.website.substring(0, 30)}...`);
+                addLogEntry('success', `✅ ${result.name}: ${found.join(', ')}`);
+            } else if (result.error) {
+                addLogEntry('warning', `⚠️ ${result.name}: ${result.error}`);
+            }
+        }
+
+        addLogEntry('success', `\n🎉 Contact scan complete! Updated ${data.updated}/${data.scanned} properties`);
+
+        // Refresh stats
+        await loadContactScanStats();
+
+    } catch (error) {
+        addLogEntry('error', `❌ Contact scan error: ${error.message}`);
+    } finally {
+        contactScanBtn.disabled = false;
+        contactScanBtn.innerHTML = '📞 Scan Contacts';
         scanBtn.disabled = false;
         document.getElementById('discoveryStatus').textContent = 'Ready';
     }
