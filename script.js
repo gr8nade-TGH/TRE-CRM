@@ -341,6 +341,7 @@ let api, renderLeads, renderSpecials;
 			}
 
 			const tr = document.createElement('tr');
+			tr.setAttribute('data-special-id', special.id || '');
 			tr.innerHTML = `
 				<td>
 					<strong>${specialText}</strong>
@@ -353,8 +354,50 @@ let api, renderLeads, renderSpecials;
 				<td style="font-size: 0.9em;">
 					${expiresDate ? (isActive ? `Expires: ${expiresStr}` : `Expired: ${expiresStr}`) : '<span style="color: #f59e0b;">⚠️ No expiry date</span>'}
 				</td>
+				<td style="text-align: center;">
+					${special.id ? `<button class="icon-btn delete-special-btn" data-special-id="${special.id}" data-source="${source}" title="Delete this special" style="color: #ef4444; font-size: 1.1em;">✕</button>` : ''}
+				</td>
 			`;
 			tbody.appendChild(tr);
+		});
+
+		// Add click handlers for delete buttons
+		tbody.querySelectorAll('.delete-special-btn').forEach(btn => {
+			btn.addEventListener('click', async (e) => {
+				const specialId = btn.dataset.specialId;
+				const source = btn.dataset.source;
+				if (!confirm('Delete this special?')) return;
+
+				try {
+					btn.disabled = true;
+					btn.textContent = '...';
+
+					if (source === 'manual') {
+						await SupabaseAPI.deleteSpecial(specialId);
+					} else {
+						// Delete from property_specials table
+						await SupabaseAPI.deleteDiscoveredSpecial(specialId);
+					}
+
+					// Remove the row
+					const row = btn.closest('tr');
+					if (row) row.remove();
+
+					// If no more specials, close modal
+					if (tbody.querySelectorAll('tr').length === 0) {
+						hideModal('listingSpecialsModal');
+						toast('All specials deleted', 'success');
+						renderListings(); // Refresh to remove fire icon
+					} else {
+						toast('Special deleted', 'success');
+					}
+				} catch (err) {
+					console.error('Error deleting special:', err);
+					toast('Failed to delete special', 'error');
+					btn.disabled = false;
+					btn.textContent = '✕';
+				}
+			});
 		});
 
 		showModal('listingSpecialsModal');

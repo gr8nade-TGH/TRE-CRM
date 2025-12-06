@@ -2176,6 +2176,22 @@ export async function deleteSpecial(id) {
     return { success: true };
 }
 
+export async function deleteDiscoveredSpecial(id) {
+    const supabase = getSupabase();
+
+    const { error } = await supabase
+        .from('property_specials')
+        .delete()
+        .eq('id', id);
+
+    if (error) {
+        console.error('Error deleting discovered special:', error);
+        throw error;
+    }
+
+    return { success: true };
+}
+
 /**
  * Bugs API
  */
