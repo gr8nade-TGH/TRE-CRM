@@ -312,16 +312,10 @@
     color: white;
 }
 
-.stat-pill.showcase-action {
-    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+.stat-pill.call-pricing {
+    background: rgba(100, 116, 139, 0.2);
+    border: 1px solid rgba(100, 116, 139, 0.4);
     color: white;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.stat-pill.showcase-action:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.4);
 }
 
 .stat-pill.beds,
@@ -355,15 +349,17 @@
 /* Quick Action Buttons */
 .showcase-quick-actions {
     display: flex;
-    gap: 10px;
+    gap: 12px;
     flex-wrap: wrap;
+    margin-top: 8px;
 }
 
 .quick-action-btn {
     display: inline-flex;
     align-items: center;
+    justify-content: center;
     gap: 6px;
-    padding: 10px 18px;
+    padding: 12px 20px;
     border-radius: 8px;
     font-size: 0.9rem;
     font-weight: 600;
@@ -371,6 +367,8 @@
     cursor: pointer;
     transition: all 0.2s;
     border: none;
+    white-space: nowrap;
+    min-width: fit-content;
 }
 
 .quick-action-btn.call {

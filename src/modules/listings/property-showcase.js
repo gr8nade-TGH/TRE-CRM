@@ -210,19 +210,21 @@ function buildHeroSection(data) {
     const completenessColor = data.completeness >= 80 ? '#22c55e' : data.completeness >= 50 ? '#f59e0b' : '#ef4444';
 
     // Format beds/baths display - handle 0 values gracefully
-    const bedsDisplay = data.bedsMin > 0
+    const hasBeds = data.bedsMin > 0 || data.bedsMax > 0;
+    const hasBaths = data.bathsMin > 0 || data.bathsMax > 0;
+    const bedsDisplay = hasBeds
         ? (data.bedsMax !== data.bedsMin ? `${data.bedsMin}-${data.bedsMax}` : `${data.bedsMin}`)
-        : '—';
-    const bathsDisplay = data.bathsMin > 0
+        : null;
+    const bathsDisplay = hasBaths
         ? (data.bathsMax !== data.bathsMin ? `${data.bathsMin}-${data.bathsMax}` : `${data.bathsMin}`)
-        : '—';
+        : null;
 
-    // Rent display - if no pricing, show "Add to Showcase" button style
+    // Rent display - if no pricing, show "Call for Pricing" subtly
     const hasRentData = data.rentDisplay && data.rentDisplay !== 'Contact for pricing';
     const rentPillContent = hasRentData
         ? `<span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span>`
-        : `<span class="stat-icon">⭐</span><span class="stat-value">Add to Showcase</span>`;
-    const rentPillClass = hasRentData ? 'stat-pill rent' : 'stat-pill showcase-action';
+        : `<span class="stat-icon">📞</span><span class="stat-value">Call for Pricing</span>`;
+    const rentPillClass = hasRentData ? 'stat-pill rent' : 'stat-pill call-pricing';
 
     return `
         <div class="showcase-hero">
@@ -255,9 +257,9 @@ function buildHeroSection(data) {
             <p class="showcase-address">📍 ${data.fullAddress}</p>
 
             <div class="showcase-quick-stats">
-                <div class="${rentPillClass}" ${!hasRentData ? 'data-action="add-to-showcase" style="cursor: pointer;"' : ''}>${rentPillContent}</div>
-                <div class="stat-pill beds"><span class="stat-icon">🛏</span><span class="stat-value">${bedsDisplay}</span><span class="stat-label">Beds</span></div>
-                <div class="stat-pill baths"><span class="stat-icon">🚿</span><span class="stat-value">${bathsDisplay}</span><span class="stat-label">Baths</span></div>
+                <div class="${rentPillClass}">${rentPillContent}</div>
+                ${bedsDisplay !== null ? `<div class="stat-pill beds"><span class="stat-icon">🛏</span><span class="stat-value">${bedsDisplay}</span><span class="stat-label">Beds</span></div>` : ''}
+                ${bathsDisplay !== null ? `<div class="stat-pill baths"><span class="stat-icon">🚿</span><span class="stat-value">${bathsDisplay}</span><span class="stat-label">Baths</span></div>` : ''}
                 ${data.sqftMin ? `<div class="stat-pill sqft"><span class="stat-icon">📐</span><span class="stat-value">${data.sqftMin.toLocaleString()}${data.sqftMax !== data.sqftMin ? `-${data.sqftMax.toLocaleString()}` : ''}</span><span class="stat-label">sqft</span></div>` : ''}
             </div>
 
