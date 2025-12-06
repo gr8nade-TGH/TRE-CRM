@@ -558,22 +558,66 @@ export default async function handler(req, res) {
                     })
                     .eq('id', propertyId);
 
-                // Upsert units
+                // Group units by floor plan and create floor_plans first
+                const floorPlanMap = {};
                 for (const unit of result.units) {
-                    await supabase.from('units').upsert({
-                        property_id: propertyId,
-                        unit_number: unit.unit_number,
-                        floor_plan_id: unit.floor_plan_id,
-                        beds: unit.beds,
-                        baths: unit.baths,
-                        sqft: unit.sqft,
-                        rent: unit.rent,
-                        available_from: unit.available_from,
-                        status: 'available',
-                        is_available: true,
-                        is_active: true
-                    }, { onConflict: 'property_id,unit_number' });
+                    const fpName = unit.floor_plan_name || `${unit.beds}BR-${unit.baths}BA`;
+                    if (!floorPlanMap[fpName]) {
+                        floorPlanMap[fpName] = {
+                            name: fpName,
+                            beds: unit.beds || 1,
+                            baths: unit.baths || 1,
+                            sqft: unit.sqft || 0,
+                            rent: unit.rent || 0,
+                            units: []
+                        };
+                    }
+                    floorPlanMap[fpName].units.push(unit);
                 }
+
+                // Create/upsert floor plans and then units
+                for (const [fpName, fpData] of Object.entries(floorPlanMap)) {
+                    // Generate floor_plan_id from property + name
+                    const floorPlanId = `${propertyId}_fp_${fpName.toLowerCase().replace(/[^a-z0-9]/g, '_')}`;
+
+                    // Upsert floor plan
+                    const { error: fpError } = await supabase.from('floor_plans').upsert({
+                        id: floorPlanId,
+                        property_id: propertyId,
+                        name: fpName,
+                        beds: fpData.beds,
+                        baths: fpData.baths,
+                        sqft: fpData.sqft || null,
+                        market_rent: fpData.rent,
+                        starting_at: fpData.rent,
+                        units_available: fpData.units.length,
+                        soonest_available: fpData.units[0]?.available_from || null
+                    }, { onConflict: 'id' });
+
+                    if (fpError) {
+                        console.error(`[Auto-Scan] Floor plan upsert error for ${fpName}:`, fpError);
+                    }
+
+                    // Upsert units with floor_plan_id
+                    for (const unit of fpData.units) {
+                        const { error: unitError } = await supabase.from('units').upsert({
+                            property_id: propertyId,
+                            floor_plan_id: floorPlanId,
+                            unit_number: unit.unit_number,
+                            rent: unit.rent,
+                            available_from: unit.available_from,
+                            status: 'available',
+                            is_available: true,
+                            is_active: true
+                        }, { onConflict: 'property_id,unit_number' });
+
+                        if (unitError) {
+                            console.error(`[Auto-Scan] Unit upsert error for ${unit.unit_number}:`, unitError);
+                        }
+                    }
+                }
+
+                console.log(`[Auto-Scan] Saved ${Object.keys(floorPlanMap).length} floor plans and ${result.units.length} units`);
             }
 
             return res.status(200).json({
