@@ -4175,6 +4175,78 @@
 			</div>
 		</div>
 
+		<!-- Add Unit Modal -->
+		<div id="addUnitModal" class="modal hidden">
+			<div class="modal-card" style="max-width: 500px;">
+				<div class="modal-header">
+					<h3>➕ Add Unit</h3>
+					<button id="closeAddUnitModal" class="icon-btn" aria-label="Close">×</button>
+				</div>
+				<div class="modal-body">
+					<div id="addUnitFloorPlanInfo"
+						style="background: #f0fdf4; padding: 12px; border-radius: 8px; margin-bottom: 16px;">
+						<!-- Floor plan info will be populated here -->
+					</div>
+					<form id="addUnitForm">
+						<input type="hidden" id="addUnitPropertyId">
+						<input type="hidden" id="addUnitFloorPlanId">
+						<input type="hidden" id="addUnitBeds">
+						<input type="hidden" id="addUnitBaths">
+						<input type="hidden" id="addUnitSqft">
+
+						<div class="field">
+							<label for="addUnitNumber">Unit Number *</label>
+							<input type="text" id="addUnitNumber" required placeholder="e.g., 101, A-201, 3B">
+						</div>
+
+						<div class="field-row" style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+							<div class="field">
+								<label for="addUnitRent">Monthly Rent *</label>
+								<input type="number" id="addUnitRent" required placeholder="1200" min="0">
+							</div>
+							<div class="field">
+								<label for="addUnitFloor">Floor</label>
+								<input type="number" id="addUnitFloor" placeholder="1" min="1">
+							</div>
+						</div>
+
+						<div class="field">
+							<label for="addUnitAvailableFrom">Available From *</label>
+							<input type="date" id="addUnitAvailableFrom" required>
+						</div>
+
+						<div class="field">
+							<label for="addUnitNotes">Notes</label>
+							<textarea id="addUnitNotes" rows="2" placeholder="Corner unit, renovated, etc."></textarea>
+						</div>
+
+						<!-- Bulk creation option -->
+						<div style="border-top: 1px solid #e5e7eb; padding-top: 16px; margin-top: 16px;">
+							<label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+								<input type="checkbox" id="addUnitBulkMode">
+								<span style="font-weight: 500;">Create multiple units</span>
+							</label>
+							<div id="addUnitBulkOptions"
+								style="display: none; margin-top: 12px; padding: 12px; background: #f8fafc; border-radius: 8px;">
+								<div class="field" style="margin-bottom: 0;">
+									<label for="addUnitBulkCount">How many units?</label>
+									<input type="number" id="addUnitBulkCount" min="2" max="50" value="5"
+										style="width: 80px;">
+								</div>
+								<p style="font-size: 12px; color: #6b7280; margin: 8px 0 0;">
+									Units will be numbered sequentially (e.g., 101, 102, 103...)
+								</p>
+							</div>
+						</div>
+					</form>
+				</div>
+				<div class="modal-footer">
+					<button type="button" id="cancelAddUnitBtn" class="btn btn-secondary">Cancel</button>
+					<button type="button" id="saveAddUnitBtn" class="btn btn-primary">Add Unit</button>
+				</div>
+			</div>
+		</div>
+
 		<!-- Toasts -->
 		<div id="toast" class="toast hidden"></div>
 

@@ -144,22 +144,44 @@ function populateModal(property, units, floorPlans) {
     const email = property.contact_email || '';
     const contactName = property.contact_name || '';
     const website = property.website || property.leasing_link || '';
+    const officeHours = property.office_hours || '';
 
-    // Amenities
-    const amenities = property.amenities || [];
+    // Amenities - combine both arrays
+    const amenities = [...(property.amenities || []), ...(property.amenities_tags || [])];
+    const uniqueAmenities = [...new Set(amenities)];
+
+    // Extra enrichment data
+    const description = property.description || '';
+    const petPolicy = property.pet_policy || '';
+    const googleRating = property.google_rating || 0;
+    const googleReviewsCount = property.google_reviews_count || 0;
+    const managementCompany = property.management_company || '';
+    const neighborhood = property.neighborhood || (property.neighborhoods || [])[0] || '';
+    const isPumi = property.is_pumi || false;
+
+    // 2nd Chance Housing criteria
+    const secondChance = {
+        brokenLease: property.accepts_broken_lease_under_1 || property.accepts_broken_lease_1_year || property.accepts_broken_lease_2_year || property.accepts_broken_lease_3_plus,
+        eviction: property.accepts_eviction_under_1 || property.accepts_eviction_1_year || property.accepts_eviction_2_year || property.accepts_eviction_3_plus,
+        criminal: property.accepts_misdemeanor || property.accepts_felony,
+        badCredit: property.accepts_bad_credit,
+        section8: property.accepts_section_8,
+        sameDayMoveIn: property.same_day_move_in
+    };
 
     // Commission
     const commission = property.commission_pct || Math.max(property.escort_pct || 0, property.send_pct || 0);
 
     // Data completeness score
-    const completenessFields = [name, address, phone, email, website, allPhotos.length > 0, amenities.length > 0, rentMin > 0];
+    const completenessFields = [name, address, phone, email, website, allPhotos.length > 0, uniqueAmenities.length > 0, rentMin > 0];
     const completeness = Math.round((completenessFields.filter(Boolean).length / completenessFields.length) * 100);
 
     content.innerHTML = buildShowcaseHTML(property, {
         name, fullAddress, primaryPhoto, allPhotos, rentDisplay,
         bedsMin, bedsMax, bathsMin, bathsMax, sqftMin, sqftMax,
-        phone, email, contactName, website, amenities, commission,
-        units, floorPlans, floorPlanImages, canDeletePhotos, canEdit, completeness
+        phone, email, contactName, website, officeHours, amenities: uniqueAmenities, commission,
+        units, floorPlans, floorPlanImages, canDeletePhotos, canEdit, completeness,
+        description, petPolicy, googleRating, googleReviewsCount, managementCompany, neighborhood, isPumi, secondChance
     });
 
     // Add photo gallery click handlers
@@ -179,7 +201,7 @@ function buildShowcaseHTML(property, data) {
 function buildHeroSection(data) {
     const photoThumbs = data.allPhotos.slice(0, 6).map((photo, i) => `
         <div class="showcase-thumb ${i === 0 ? 'active' : ''}" data-photo-index="${i}">
-            <img src="${photo}" alt="Photo ${i + 1}" onerror="this.src='https://via.placeholder.com/100x70?text=Error'">
+            <img src="${photo}" alt="Photo ${i + 1}" loading="lazy" onerror="this.src='https://via.placeholder.com/100x70?text=Error'">
             ${data.canDeletePhotos ? `<button class="photo-delete-btn" data-photo-url="${encodeURIComponent(photo)}" data-photo-index="${i}" title="Delete photo">×</button>` : ''}
         </div>
     `).join('');
@@ -187,10 +209,27 @@ function buildHeroSection(data) {
     // Completeness indicator color
     const completenessColor = data.completeness >= 80 ? '#22c55e' : data.completeness >= 50 ? '#f59e0b' : '#ef4444';
 
+    // Format beds/baths display - handle 0 values gracefully
+    const bedsDisplay = data.bedsMin > 0
+        ? (data.bedsMax !== data.bedsMin ? `${data.bedsMin}-${data.bedsMax}` : `${data.bedsMin}`)
+        : '—';
+    const bathsDisplay = data.bathsMin > 0
+        ? (data.bathsMax !== data.bathsMin ? `${data.bathsMin}-${data.bathsMax}` : `${data.bathsMin}`)
+        : '—';
+
+    // Rent display - if no pricing, show "Add to Showcase" button style
+    const hasRentData = data.rentDisplay && data.rentDisplay !== 'Contact for pricing';
+    const rentPillContent = hasRentData
+        ? `<span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span>`
+        : `<span class="stat-icon">⭐</span><span class="stat-value">Add to Showcase</span>`;
+    const rentPillClass = hasRentData ? 'stat-pill rent' : 'stat-pill showcase-action';
+
     return `
         <div class="showcase-hero">
             <div class="showcase-main-photo">
                 <img id="showcaseMainPhoto" src="${data.primaryPhoto}" alt="${data.name}"
+                     loading="eager" decoding="async" fetchpriority="high"
+                     style="image-rendering: auto; -webkit-backface-visibility: hidden; backface-visibility: hidden;"
                      onerror="this.src='https://via.placeholder.com/800x400?text=No+Photo'">
                 ${data.allPhotos.length > 1 ? `<span class="photo-nav photo-prev" title="Previous (←)">❮</span><span class="photo-nav photo-next" title="Next (→)">❯</span>` : ''}
                 ${data.canDeletePhotos && data.allPhotos.length > 0 ? `<button class="photo-delete-btn main-photo-delete" data-photo-url="${encodeURIComponent(data.primaryPhoto)}" data-photo-index="0" title="Delete this photo">×</button>` : ''}
@@ -216,9 +255,9 @@ function buildHeroSection(data) {
             <p class="showcase-address">📍 ${data.fullAddress}</p>
 
             <div class="showcase-quick-stats">
-                <div class="stat-pill rent"><span class="stat-icon">💵</span><span class="stat-value">${data.rentDisplay}</span><span class="stat-label">/mo</span></div>
-                <div class="stat-pill beds"><span class="stat-icon">🛏</span><span class="stat-value">${data.bedsMin}${data.bedsMax !== data.bedsMin ? `-${data.bedsMax}` : ''}</span><span class="stat-label">Beds</span></div>
-                <div class="stat-pill baths"><span class="stat-icon">🚿</span><span class="stat-value">${data.bathsMin}${data.bathsMax !== data.bathsMin ? `-${data.bathsMax}` : ''}</span><span class="stat-label">Baths</span></div>
+                <div class="${rentPillClass}" ${!hasRentData ? 'data-action="add-to-showcase" style="cursor: pointer;"' : ''}>${rentPillContent}</div>
+                <div class="stat-pill beds"><span class="stat-icon">🛏</span><span class="stat-value">${bedsDisplay}</span><span class="stat-label">Beds</span></div>
+                <div class="stat-pill baths"><span class="stat-icon">🚿</span><span class="stat-value">${bathsDisplay}</span><span class="stat-label">Baths</span></div>
                 ${data.sqftMin ? `<div class="stat-pill sqft"><span class="stat-icon">📐</span><span class="stat-value">${data.sqftMin.toLocaleString()}${data.sqftMax !== data.sqftMin ? `-${data.sqftMax.toLocaleString()}` : ''}</span><span class="stat-label">sqft</span></div>` : ''}
             </div>
 
@@ -237,12 +276,41 @@ function buildDetailsSection(property, data) {
     if (data.phone) contactCards.push(`<a href="tel:${data.phone}" class="contact-card"><span class="contact-icon">📞</span><span>${data.phone}</span></a>`);
     if (data.email) contactCards.push(`<a href="mailto:${data.email}" class="contact-card"><span class="contact-icon">✉️</span><span>${data.email}</span></a>`);
     if (data.website) contactCards.push(`<a href="${data.website}" target="_blank" class="contact-card"><span class="contact-icon">🌐</span><span>Visit Website</span></a>`);
+    if (data.officeHours) contactCards.push(`<div class="contact-card"><span class="contact-icon">🕐</span><span>${data.officeHours}</span></div>`);
 
-    const amenityTags = data.amenities.slice(0, 12).map(a => `<span class="amenity-tag">${a}</span>`).join('');
+    const amenityTags = data.amenities.slice(0, 16).map(a => `<span class="amenity-tag">${a}</span>`).join('');
     const hasSpecials = property.activeSpecials && property.activeSpecials.length > 0;
+
+    // Build 2nd chance housing badges
+    const secondChanceBadges = [];
+    if (data.secondChance) {
+        if (data.secondChance.brokenLease) secondChanceBadges.push(`<span class="second-chance-badge">✓ Broken Lease</span>`);
+        if (data.secondChance.eviction) secondChanceBadges.push(`<span class="second-chance-badge">✓ Prior Eviction</span>`);
+        if (data.secondChance.criminal) secondChanceBadges.push(`<span class="second-chance-badge">✓ Criminal History</span>`);
+        if (data.secondChance.badCredit) secondChanceBadges.push(`<span class="second-chance-badge">✓ Bad Credit</span>`);
+        if (data.secondChance.section8) secondChanceBadges.push(`<span class="second-chance-badge section8">🏠 Section 8</span>`);
+        if (data.secondChance.sameDayMoveIn) secondChanceBadges.push(`<span class="second-chance-badge fast">⚡ Same-Day Move-In</span>`);
+    }
+
+    // Google rating display
+    const googleRatingHtml = data.googleRating > 0 ? `
+        <div class="google-rating">
+            <span class="rating-stars">${'⭐'.repeat(Math.round(data.googleRating))}</span>
+            <span class="rating-value">${data.googleRating.toFixed(1)}</span>
+            ${data.googleReviewsCount > 0 ? `<span class="rating-count">(${data.googleReviewsCount} reviews)</span>` : ''}
+        </div>
+    ` : '';
 
     return `
         <div class="showcase-details">
+            ${data.description ? `
+                <div class="showcase-section description-section">
+                    <h4>📝 About This Property</h4>
+                    <p class="property-description">${data.description}</p>
+                    ${data.managementCompany ? `<p class="management-company">Managed by: <strong>${data.managementCompany}</strong></p>` : ''}
+                    ${googleRatingHtml}
+                </div>
+            ` : ''}
             ${hasSpecials ? `
                 <div class="showcase-section specials-section">
                     <h4>🔥 Current Specials</h4>
@@ -255,6 +323,12 @@ function buildDetailsSection(property, data) {
                     </div>
                 </div>
             ` : ''}
+            ${secondChanceBadges.length > 0 ? `
+                <div class="showcase-section second-chance-section">
+                    <h4>🤝 2nd Chance Housing</h4>
+                    <div class="second-chance-grid">${secondChanceBadges.join('')}</div>
+                </div>
+            ` : ''}
             <div class="showcase-grid">
                 <div class="showcase-section">
                     <h4>📞 Contact Information</h4>
@@ -264,9 +338,15 @@ function buildDetailsSection(property, data) {
                 <div class="showcase-section">
                     <h4>✨ Amenities</h4>
                     <div class="amenities-grid">${amenityTags || '<p class="no-data">No amenities listed</p>'}</div>
-                    ${data.amenities.length > 12 ? `<p class="more-amenities">+${data.amenities.length - 12} more</p>` : ''}
+                    ${data.amenities.length > 16 ? `<p class="more-amenities">+${data.amenities.length - 16} more</p>` : ''}
                 </div>
             </div>
+            ${data.petPolicy ? `
+                <div class="showcase-section pet-section">
+                    <h4>🐾 Pet Policy</h4>
+                    <p class="pet-policy-text">${data.petPolicy}</p>
+                </div>
+            ` : ''}
         </div>
     `;
 }

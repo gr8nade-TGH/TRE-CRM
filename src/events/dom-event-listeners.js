@@ -313,6 +313,16 @@ export function setupAllEventListeners(deps) {
 				openInterestedLeads(propertyId, propertyName);
 				return;
 			}
+
+			// Handle Add Unit button clicks
+			const addUnitBtn = e.target.closest('.add-unit-btn');
+			if (addUnitBtn) {
+				e.stopPropagation();
+				const propertyId = addUnitBtn.dataset.propertyId;
+				const floorPlanData = JSON.parse(decodeURIComponent(addUnitBtn.dataset.floorPlan));
+				window.openAddUnitModal(propertyId, floorPlanData);
+				return;
+			}
 		});
 
 		// Handle checkbox changes for bulk actions (unit checkboxes)
@@ -1426,6 +1436,32 @@ export function setupAllEventListeners(deps) {
 	if (closeListingSpecialsBtn) {
 		closeListingSpecialsBtn.addEventListener('click', () => {
 			hideModal('listingSpecialsModal');
+		});
+	}
+
+	// Add Unit Modal
+	const closeAddUnitModal = document.getElementById('closeAddUnitModal');
+	const cancelAddUnitBtn = document.getElementById('cancelAddUnitBtn');
+	const saveAddUnitBtn = document.getElementById('saveAddUnitBtn');
+	const addUnitBulkMode = document.getElementById('addUnitBulkMode');
+
+	if (closeAddUnitModal) {
+		closeAddUnitModal.addEventListener('click', () => hideModal('addUnitModal'));
+	}
+	if (cancelAddUnitBtn) {
+		cancelAddUnitBtn.addEventListener('click', () => hideModal('addUnitModal'));
+	}
+	if (addUnitBulkMode) {
+		addUnitBulkMode.addEventListener('change', (e) => {
+			const bulkOptions = document.getElementById('addUnitBulkOptions');
+			if (bulkOptions) {
+				bulkOptions.style.display = e.target.checked ? 'block' : 'none';
+			}
+		});
+	}
+	if (saveAddUnitBtn) {
+		saveAddUnitBtn.addEventListener('click', async () => {
+			await window.saveNewUnit();
 		});
 	}
 

@@ -403,6 +403,142 @@ let api, renderLeads, renderSpecials;
 		showModal('listingSpecialsModal');
 	};
 
+	// Add Unit Modal functions
+	window.openAddUnitModal = function (propertyId, floorPlanData) {
+		const modal = document.getElementById('addUnitModal');
+		const infoDiv = document.getElementById('addUnitFloorPlanInfo');
+
+		if (!modal || !infoDiv) {
+			console.error('Add Unit modal elements not found');
+			return;
+		}
+
+		// Populate hidden fields
+		document.getElementById('addUnitPropertyId').value = propertyId;
+		document.getElementById('addUnitFloorPlanId').value = floorPlanData.id;
+		document.getElementById('addUnitBeds').value = floorPlanData.beds;
+		document.getElementById('addUnitBaths').value = floorPlanData.baths;
+		document.getElementById('addUnitSqft').value = floorPlanData.sqft;
+
+		// Pre-fill rent with floor plan's rent
+		const rentInput = document.getElementById('addUnitRent');
+		if (rentInput) {
+			rentInput.value = floorPlanData.rentMin || floorPlanData.rentMax || '';
+		}
+
+		// Set default available date to today
+		const availableInput = document.getElementById('addUnitAvailableFrom');
+		if (availableInput) {
+			availableInput.value = new Date().toISOString().split('T')[0];
+		}
+
+		// Show floor plan info
+		infoDiv.innerHTML = `
+			<div style="display: flex; align-items: center; gap: 12px;">
+				<span style="font-size: 1.5em;">📐</span>
+				<div>
+					<strong style="color: #059669;">${floorPlanData.name}</strong>
+					<div style="font-size: 0.9em; color: #6b7280;">
+						${floorPlanData.beds}bd / ${floorPlanData.baths}ba
+						${floorPlanData.sqft !== '?' ? ` • ${floorPlanData.sqft} sqft` : ''}
+						${floorPlanData.rentMin ? ` • $${floorPlanData.rentMin.toLocaleString()}${floorPlanData.rentMax && floorPlanData.rentMax !== floorPlanData.rentMin ? ' - $' + floorPlanData.rentMax.toLocaleString() : ''}/mo` : ''}
+					</div>
+				</div>
+			</div>
+		`;
+
+		// Reset form fields
+		document.getElementById('addUnitNumber').value = '';
+		document.getElementById('addUnitFloor').value = '';
+		document.getElementById('addUnitNotes').value = '';
+		document.getElementById('addUnitBulkMode').checked = false;
+		document.getElementById('addUnitBulkOptions').style.display = 'none';
+		document.getElementById('addUnitBulkCount').value = '5';
+
+		showModal('addUnitModal');
+	};
+
+	window.saveNewUnit = async function () {
+		const saveBtn = document.getElementById('saveAddUnitBtn');
+		const propertyId = document.getElementById('addUnitPropertyId').value;
+		const floorPlanId = document.getElementById('addUnitFloorPlanId').value;
+		const unitNumber = document.getElementById('addUnitNumber').value.trim();
+		const rent = parseInt(document.getElementById('addUnitRent').value) || 0;
+		const floor = parseInt(document.getElementById('addUnitFloor').value) || null;
+		const availableFrom = document.getElementById('addUnitAvailableFrom').value;
+		const notes = document.getElementById('addUnitNotes').value.trim();
+		const isBulkMode = document.getElementById('addUnitBulkMode').checked;
+		const bulkCount = parseInt(document.getElementById('addUnitBulkCount').value) || 5;
+
+		// Validate
+		if (!unitNumber) {
+			toast('Please enter a unit number', 'error');
+			return;
+		}
+		if (!rent) {
+			toast('Please enter a rent amount', 'error');
+			return;
+		}
+		if (!availableFrom) {
+			toast('Please enter an available date', 'error');
+			return;
+		}
+
+		try {
+			saveBtn.disabled = true;
+			saveBtn.textContent = 'Adding...';
+
+			if (isBulkMode) {
+				// Create multiple units
+				const units = [];
+				const baseNumber = unitNumber.replace(/\d+$/, ''); // Get non-numeric prefix
+				const startNum = parseInt(unitNumber.match(/\d+$/)?.[0] || '1');
+
+				for (let i = 0; i < bulkCount; i++) {
+					units.push({
+						property_id: propertyId,
+						floor_plan_id: floorPlanId,
+						unit_number: baseNumber + (startNum + i),
+						rent: rent,
+						floor: floor,
+						available_from: availableFrom,
+						notes: notes || null,
+						is_available: true,
+						is_active: true,
+						status: 'available'
+					});
+				}
+
+				await SupabaseAPI.createUnits(units);
+				toast(`${bulkCount} units created successfully!`, 'success');
+			} else {
+				// Create single unit
+				await SupabaseAPI.createUnit({
+					property_id: propertyId,
+					floor_plan_id: floorPlanId,
+					unit_number: unitNumber,
+					rent: rent,
+					floor: floor,
+					available_from: availableFrom,
+					notes: notes || null,
+					is_available: true,
+					is_active: true,
+					status: 'available'
+				});
+				toast('Unit created successfully!', 'success');
+			}
+
+			hideModal('addUnitModal');
+			renderListings(); // Refresh to show new unit
+		} catch (err) {
+			console.error('Error creating unit:', err);
+			toast('Failed to create unit: ' + err.message, 'error');
+		} finally {
+			saveBtn.disabled = false;
+			saveBtn.textContent = 'Add Unit';
+		}
+	};
+
 	// Listing edit modal functions - defined in outer scope so renderListings can access them
 	async function openListingEditModal(property, highlightOptions = {}) {
 		await Modals.openListingEditModal(property, {

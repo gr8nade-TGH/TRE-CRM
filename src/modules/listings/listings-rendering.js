@@ -850,6 +850,17 @@ export async function renderListings(options, autoSelectProperty = null) {
 						? `$${rentMin?.toLocaleString() || '?'}`
 						: `$${rentMin?.toLocaleString() || '?'} - $${rentMax?.toLocaleString() || '?'}`;
 
+					// Encode floor plan data for the button
+					const fpDataEncoded = encodeURIComponent(JSON.stringify({
+						id: fp.id,
+						name: fp.name || 'Floor Plan',
+						beds: beds,
+						baths: baths,
+						sqft: sqft,
+						rentMin: rentMin,
+						rentMax: rentMax
+					}));
+
 					fpTr.innerHTML = `
 					<td style="padding-left: 40px;"></td>
 					<td></td>
@@ -858,6 +869,7 @@ export async function renderListings(options, autoSelectProperty = null) {
 							<span style="color: #059669; font-weight: 500;">📐 ${fp.name || 'Floor Plan'}</span>
 							<span class="badge" style="background: #d1fae5; color: #065f46; margin-left: 8px;">${beds}bd/${baths}ba</span>
 							${sqft !== '?' ? `<span class="badge" style="background: #e0e7ff; color: #3730a3; margin-left: 4px;">${sqft.toLocaleString()} sqft</span>` : ''}
+							<button class="add-unit-btn" data-property-id="${prop.id}" data-floor-plan="${fpDataEncoded}" style="margin-left: 12px; padding: 2px 8px; font-size: 0.85em; background: #3b82f6; color: white; border: none; border-radius: 4px; cursor: pointer;" title="Add a unit of this floor plan type">➕ Add Unit</button>
 						</div>
 						<div class="subtle mono" style="font-size: 0.85em; margin-top: 4px;">
 							${fp.units_available ? `<span style="color: #10b981;">${fp.units_available} available</span>` : ''}

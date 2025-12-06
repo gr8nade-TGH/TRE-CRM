@@ -1579,6 +1579,24 @@ export async function createUnit(unitData) {
     return data;
 }
 
+export async function createUnits(unitsArray) {
+    console.log('🔵 createUnits called with:', unitsArray.length, 'units');
+    const supabase = getSupabase();
+
+    const { data, error } = await supabase
+        .from('units')
+        .insert(unitsArray)
+        .select();
+
+    if (error) {
+        console.error('❌ Error creating units:', error);
+        throw error;
+    }
+
+    console.log('✅ createUnits returning:', data?.length, 'units');
+    return data;
+}
+
 // Note: updateUnit already exists at line 472, so we don't redefine it here
 
 export async function deleteUnit(id) {
